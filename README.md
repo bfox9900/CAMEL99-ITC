@@ -3,9 +3,8 @@ CAMEL99 V2 finally has TI file access.  The binary program is in folder DSK1 and
 All of the loadable source files have a .F extension except the START file which is unique.
 
 The system boots when you load the TI-99 binary program file called DSK1.CAMEL2 with the Editor/Assembler cartridge. When CAMEL2 starts, it looks for a file called DSK1.START. If found it loads that file as source code.  You can put any new Forth definitions in the START file that you want. Currently START adds the following Forth words to the dictionary:
-  CELLS  CELL+  CHAR+ 
-  CHAR [CHAR]
-  INCLUDE
+  CELLS, CELL+, CHAR+, CHAR , [CHAR] , INCLUDE
+
 It also sets the default RADIX to DECIMAL and reports that on the screen.
 
 NOTE: Currently there are bugs with nested INCLUDEs so don't try that inside START.
