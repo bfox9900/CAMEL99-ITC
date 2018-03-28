@@ -9,8 +9,6 @@ https://github.com/bfox9900/CAMEL99/tree/master/Compiler
 ### FOLDER Changes Required
 In the file CAMEL2.HSF find the section that looks like this:
 
-\ =======================================================================
-
 \ ADD-ONS
 
 \ ** commment out everything to build the smallest kernel  **
