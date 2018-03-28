@@ -3,6 +3,7 @@
 This files must be compiled with XFC99.EXE under DOS.
 
 See CAMEL99 V1.x /COMPILER for the program.
+https://github.com/bfox9900/CAMEL99/tree/master/Compiler
 
 ### FOLDER Changes Required
 
