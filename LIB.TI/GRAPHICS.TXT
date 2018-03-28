@@ -1,0 +1,178 @@
+\ GRAPHICS mode with and color control words for CAMEL99  BJF 21MAR17
+\ uses 818 bytes of expansion memory
+
+\ TI-BASIC color values are the machine values + 1
+\ CAMEL99 values are the same as TI BASIC
+\
+\ Code Color
+\  1   Transparent    9    Medium Red
+\  2   Black         10    Light Red
+\  3   Medium Green  11    Dark Yellow
+\  4   Light Green   12    Light Yellow
+\  5   Dark Blue     13    Dark Red
+\  6   Light Blue    14    Magenta
+\  7   Dark Red      15    Gray
+\  8   Cyan          16    White
+\
+
+HEX
+\ =============================================================
+\ DEFINE VDP TABLES AS ARRAYS
+0300 CONSTANT SATR      \ VDP address of SPRITE ATTRIBUTE TABLE
+0380 CONSTANT CTAB      \ VDP address of the COLOUR TABLE(HEX)
+0800 CONSTANT PDT       \ VDP address of "PATTERN DESCRIPTOR TABLE"
+
+\ access VDP tables like arrays.  Usage:  9 ]CTAB returns VDP addr
+: ]SATR  ( char# -- 'satr[n])  4* SATR + ;  \ 4 byte fields
+: ]PDT   ( char# -- 'pdt[n] )  8* PDT + ;   \ 8 byte fields
+: ]CTAB  ( char# -- 'ctab[n])  CTAB + ;     \ 1 byte fields
+
+( value checking words. They ABORT to Forth with a msg if input is bad)
+: ?MODE  ( n -- )      VMODE @ <> ABORT" Video mode" ;
+: ?COLOR ( n -- n )    DUP 0 10 WITHIN 0= ABORT" color #" ;
+: ?EOSCR ( vdpadr -- ) C/SCR @ > ABORT" off screen" ;
+
+(  TI hardware needs colors combined into 1 byte. This word does it)
+: >BYTE  ( nibble nibble -- byte ) 04 LSHIFT + ;
+
+( takes fg nibble, bg nibble, convert to TI hardware #s)
+( test for legal values, and combine into 1 byte)
+: >COLR ( fg bg -- byte) 1- ?COLOR SWAP 1- ?COLOR >BYTE ;
+
+: >VPOS ( col row -- VPOS) C/L@ * + ; ( calc VDP address from row & col)
+
+( HEX" converts a string into HEX numbers and returns to DECIMAL radix)
+: HEX"  ( -- <text>)  HEX [CHAR] " PARSE EVALUATE DECIMAL   ;
+
+( BIN" converts a binary number string onto the stack returns to DECIMAL radix)
+: BIN"  ( -- <text>)  2 BASE ! [CHAR] " PARSE EVALUATE DECIMAL   ;
+
+\ ==============================================================
+\ 4 cell fetch and store to/from VDP RAM
+( this version is 12 bytes smaller and almost as fast as using >R R@ etc.)
+
+: 4V!     ( u u u u VDP-addr --)
+          6 + TUCK V!
+          2-  TUCK V!
+          2-  TUCK V!
+          2-       V! ;        \ 30 bytes   462uS
+
+: 4V@    ( VDP-addr -- )
+          DUP V@
+          SWAP 2+ DUP V@
+          SWAP 2+ DUP V@
+          SWAP 2+ V@ ;         \ 30 BYTES 387uS
+
+
+( =============================================================)
+( T I - B A S I C   S U B - P R O G R A M S   B E G I N )
+
+: CLEAR  ( -- )  PAGE  0 17 AT-XY  ;   ( just because you love it )
+
+( -------------------------------------------------------------)
+( COLOR is bigger than in TI-BASIC)
+( The hardware supports 255 characters 127 not just 32.. 159 =127)
+( *Please* look over the new Set numbers vs BASIC)
+
+(  Char. Code  Forth Set#  Basic Set# )
+(  ----------  ----------  ---------- )
+(    0-7          0        N/A )
+(    8-15         1        N/A )
+(   16-23         2        N/A )
+(   24-31         3        N/A )
+(   32-39         4         1  )
+(   40-47         5         2  )
+(   48-55         6         3  )
+(   56-63         7         4  )
+(   64-71         8         5  )
+(   72-79         9         6  )
+(   80-87        10         7  )
+(   88-95        11         8  )
+(   96-103       12         9  )
+(  104-111       13        10  )
+(  112-119       14        11  )
+(  120-127       15        12  )
+(  128-135       16        13  )
+(  136-143       17        14  )
+(  144-151       18        15  )
+(  152-159       19        16  )
+(  160-167       20        N/A ) \ sprites
+(  168-175       21        N/A )
+(  176-183       22        N/A )
+(  184-191       23        N/A )
+(  192-199       24        N/A )
+(  200-207       25        N/A )
+(  208-215       27        N/A )
+(  216-223       28        N/A )
+(  224-231       29        N/A )
+(  232-239       30        N/A )
+(  240-247       31        N/A )
+(  248-255       32        N/A )
+
+
+: COLOR  ( fg-color bg-color character-set   -- )
+         1 ?MODE  ]CTAB >R >COLR R> VC! ;
+
+( *NEW* )
+( given an ascii value function returns the character set no. )
+( no need to remember the color set# Yay!)
+: SET#  ( ascii -- set#) 3 RSHIFT ;     ( usage:  CHAR A SET# 2 8 COLOR)
+
+( *NEW*)
+( change contiguous character sets at once)
+: COLORS  ( set1 set2 fg bg  -- )
+          1 ?MODE
+          >COLR >R
+          SWAP ]CTAB SWAP ]CTAB OVER - R> VFILL ;
+
+: SCREEN ( color -- )
+         1 ?MODE                \ check for MODE 1
+         1- ?COLOR              \ convert TI-BASIC color to VDP color and test if valid
+            7 VWTR              \ set screen colour in Video register 7
+         4 ]CTAB VC@            \ read an ASCII set# color byte
+         F0 AND                 \ mask out BG color so it's transparent
+         3 ]CTAB 10 ROT VFILL ; \ fill ASCII chars. with this color byte
+
+( NOT like TI-BASIC: Changes to familiar CYAN screen)
+: GRAPHICS  ( -- )
+             1 VMODE !          \ we'll call this video mode 1
+             SATR   80  0 VFILL \ erase the SPRITE attribute table
+             20 C/L!            \ 32 chars/line
+             E0 DUP KTP C!      \ KSCAN re-writes VDP Reg1 with this byte
+      ( -- E0) 1 VWTR           \ VDP register 1  bit3 = 0 = Graphics Mode
+             1 6 VWTR           \ set sprite descriptor table to 1x$800=$800
+         3 ]CTAB 10 17 VFILL    \ set ASCII chars to black on cyan [1,7]
+               8 SCREEN  ;      \ VDP register 7 set to 7 ie: cyan border
+
+\ CHAR sub-program is renamed to CHARDEF
+\ USAGE: HEX" 7C7C 7C7C 7C7C 7C00" 30 CHARDEF
+
+: CHARDEF  ( FFFF FFFF FFFF FFFF char# --)  ]PDT 4V! ;
+: CHARDEF@ ( char# -- FFFF FFFF FFFF FFFF)  ]PDT 4V@ ;   \ TI-Forth CHARPAT
+
+: GCHAR ( row col -- char)  >VPOS VC@ ;
+
+( ** NOTE: for HCHAR & VCHAR you must give the number of repetitions )
+: HCHAR  ( col row char cnt -- ) ( parameter order not ideal so we shuffle)
+          SWAP >R >R             ( swap char & cnt, push to return stack)
+          >VPOS                  ( -- vadr )
+          R> 2DUP + ?EOSCR       ( bring back count add to Vadr and see if it's too many)
+          R>  VFILL ;            ( bring back char and FILL Video memory)
+
+: VCHAR  ( x y char cnt -- ) ( parameter order not ideal so we shuffle)
+         C/SCR @ 1- VLIM !   ( End of screen - 1, is the Video Limit)
+         >R >R               ( -- x y ) ( push char & cnt to rstack)
+         >VPOS               ( -- vdpaddr)   ( calc the Video position in memory)
+         R> SWAP             ( -- char vadr) ( get the char and reverse order)
+         R> 0                ( -- char vadr cnt index) ( all that crap to get this)
+         ?DO                 ( -- char vadr) ( let 'er rip)
+            2DUP VC!         ( write char to video memory)
+            C/L@ +
+            DUP VLIM @ >     ( vertical wrap. VLIM@ is a fast fetch of VLIM )
+            IF  VLIM @ - THEN
+         LOOP
+         2DROP ;
+
+DECIMAL
+
+GRAPHICS CLEAR .( *CAMEL99 GRAPHICS READY*) CR QUIT

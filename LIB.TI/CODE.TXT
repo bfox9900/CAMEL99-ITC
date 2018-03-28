@@ -1,0 +1,21 @@
+\ CODE.FTH let's you make machine code words
+\ for use with the assembler OR CODE[  ] compiler words
+\ USING inlin99.hsf
+
+: CODE      ( -- )  HEADER  HERE >BODY , !CSP ;
+: NEXT,     ( -- )  045A , ;  \ B *R10
+: ENDCODE  ( -- )  ?CSP  ;
+
+\ machine code demonstration
+\ HEX
+\ CODE !  ( n addr -- )
+\      C536 ,   \ *SP+ *TOS MOV,
+\      C136 ,   \ TOS POP,
+\      NEXT,
+\ ENDCODE
+
+\ how to use CODE[  ] 
+\ This compiles the assembler code from '*' and '+' 
+\ but is faster because it does not call NEXT in between
+
+\ CODE *+ ( n n n -- ) CODE[ * + ] NEXT, END-CODE

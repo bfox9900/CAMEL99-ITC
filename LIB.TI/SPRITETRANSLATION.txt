@@ -1,0 +1,68 @@
+*         AUTOMATIC SPRITE MOTION     (INTERRUPT ROUTINE)
+TSTMOT SLA  R1,1                                                   \
+       JOC  TSTSND
+       MOVB @MOTION,R12
+       JEQ  TSTSND
+       SRL  R12,8
+       LI   R2,VDPRD+VDPWA                                         \ READDATA->R2
+       LI   R3,VDPWD+VDPWA                                         \ WRITEDATA->R3
+       MOV  @SVL,R8                                                \ Sprite vector list->r8
+       MOV  R8,R11           R11=OFFSET FROM SAL TO SVL            \ SVL->R11
+       S    @SAL,R11                                               \ SVL-SAL->R11
+                                                               \ BEGIN
+MLOOP  MOVB @R8LB,*R15       LOAD ADDRESS TO READ SML              \
+       MOVB R8,*R15          write SVL as VDP write address        \
+       CLR  R4
+       MOVB *R2,R4           READ DELTA Y                          \ 0 ]MT->Y C@
+       CLR  R6
+       MOVB *R2,R6           READ DELTA X                          \ 0 ]MT->X C@    ( -- YY XX )
+       SRA  R4,4             MOVE RIGHT ONE DIGIT                  \ SWAP 4 RSHIFT  ( -- XX 0Y )
+
+       MOVB *R2,R5           READ TEMP Y                           \ 0 ]AUX->Y C@   ( -- XX 0Y yy)
+       SRA  R5,4             MOVE RIGHT ONE DIGIT                  \  4 RSHIFT      ( -- XX 0Y 0y)
+       A    R4,R5                                                  \ +              ( -- XX Y )
+                                                                   \ SWAP           ( -- Y  XX)
+       MOVB *R2,R7           READ TEMP X                           \ 0 ]AUX->X C@   ( -- Y  XX xx)
+       SRA  R6,4             MOVE RIGHT ONE DIGIT                  \ 4 RSHIFT SWAP
+       SRA  R7,4             MOVE RIGHT ONE DIGIT                  \ 4 RSHIFT
+       A    R6,R7                                                  \ +
+       S    R11,R8           CHANGE ADDRESS TO SAL
+       MOVB @R8LB,*R15       LOAD ADDRESS TO READ SAL
+       MOVB R8,*R15
+       CLR  R4
+       MOVB *R2,R4           READ Y POSITION
+       A    R5,R4            ADD Y MOVEMENT TO POSITION
+**********************************************************
+***    To fix the sprite flicker problem,
+***    add following code back (it has been taken out
+***    of the /4A shipped 03/16/81) 07/29/81.
+       CI   R4,6*VDELTA+255
+       JLE  ONSCRN
+       CI   R4,7*VDELTA
+       JH   ONSCRN
+       MOV  R5,R5
+       JGT  $+6   \ ONSCRN ?
+       AI   R4,6*VDELTA
+       AI   R4,VDELTA
+************************************************************
+ONSCRN CLR  R6
+       MOVB *R2,R6
+       A    R7,R6
+       ORI  R8,WRVDP
+       MOVB @R8LB,*R15       LOAD ADDRESS TO WRITE SAL
+       MOVB R8,*R15
+       MOVB R4,*R3
+       A    R11,R8           BACK TO SVL FOR FRACTIONS
+       INCT R8
+       MOVB R6,*R3
+       SWPB R5
+       MOVB @R8LB,*R15       LOAD ADDRESS TO WRITE SML
+       MOVB R8,*R15
+       SRL  R5,4
+       MOVB R5,*R3
+       SWPB R7
+       SRL  R7,4
+       MOVB R7,*R3
+       AI   R8,2-WRVDP
+       DEC  R12
+       JGT  MLOOP                                                  \ AGAIN

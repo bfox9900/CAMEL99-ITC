@@ -1,0 +1,14 @@
+\ repeating key
+
+: KEY?       0500 (KEY?) ;                     \ 0500 is BASIC keyboard
+
+: RKEY    ( -- char)
+              BEGIN  CURS@ VPOS VC! KEY? UNTIL
+              BEGIN  
+                 KEY? DROP  KVAL C@
+                 25 MS
+                 DUP FF =
+              UNTIL
+              DROP
+              BL VPOS VC! ;
+

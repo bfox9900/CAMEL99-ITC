@@ -1,0 +1,85 @@
+CR .( TOOLS for Camel99 Forth V2)
+
+HEX
+: MARKER  ( -- )
+          LATEST @ HERE
+          ALIGN
+          CREATE  ,   ,
+
+          DOES>  2@  LATEST ! DP ! ;
+
+CR .( MARKER )
+
+.( ? DEPTH .S )
+: ?         ( adr -- ) @ . ;
+
+: DEPTH     ( -- n )   SP0 SP@ CELL+ - 2/ ;
+
+\ .S is more complicated with TOS in a register
+: .S        ( -- )
+            ." |"
+            DEPTH
+            IF   0 DEPTH 2- DO   I PICK  U.  -1 +LOOP
+            THEN ;
+
+.( ?BREAK )
+\ ABORT if control C key is pressed
+: ?BREAK    ( -- )
+	    ?TERMINAL IF CR ." *BREAK*" ABORT THEN ;
+
+.( WORDS )
+: WORDS     ( -- )
+             CR
+             0         ( word counter on stack)
+             LATEST @
+             BEGIN
+                DUP   ( -- nfa) COUNT TYPE SPACE
+                SWAP 1+ SWAP        \ inc. the counter
+                NFA>LFA @ DUP
+                ?BREAK
+             0= UNTIL
+            DROP
+            CR  U. SPACE ." words" ;
+
+\ BFox DUMP looks like dos debug, but without segment address
+\ modified for TI-99 40 column screen
+
+: .####       ( n --) 0 <# # # # # #> TYPE ;
+
+2E CONSTANT '.'
+3A CONSTANT ':'
+
+: .ASCII      ( adr n --)
+              BOUNDS
+              DO
+                 I C@ DUP
+                 BL 1-  80 WITHIN
+                 0= IF DROP  '.'
+                 THEN EMIT
+              LOOP ;
+DECIMAL
+: ?80         ( -- 16 | 8)
+              VMODE @ 80 = IF 16 ELSE 8 THEN ;
+
+.( DUMP )
+HEX
+: DUMP        ( offset n -- )
+               BASE @ >R
+               HEX
+               BOUNDS   ( -- endadr startadr)
+               DO PAUSE
+                  CR @
+                  I  .####  ':' EMIT
+                  I  ?80  BOUNDS DO  SPACE I @ .#### 2 +LOOP SPACE
+                  I  ?80  .ASCII
+                  ?BREAK
+               8 +LOOP
+               CR
+               R> BASE ! ;
+.( .FREE )
+: .FREE      CR ." Free Mem"
+             3F20 H @  - CR ." Low Heap : " U.
+             FF00 HERE - CR ." Upper mem: " U.  ;
+
+DECIMAL
+

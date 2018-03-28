@@ -1,0 +1,4 @@
+Directory of C:\HSF2000\CC9900\LIB\.
+[.]             [..]            [TESTS]         ASM9900.FTH     BOOLEAN.FTH     BREAK.FTH       BUFFER.FTH      BYTES.FTH       CASE.FTH        CHAR.HSF        CHARSET.FTH     CODE.FTH        COMPARE.FTH     DATA.FTH        DATABYTE.FTH    DEFER99.FTH     DOES.FTH        ERASE.FTH       FLOORED.FTH     GNURND.FTH      GRAFIX2.FTH     GRAPHICS.FTH    GROMS.FTH       HEAP.FTH        HEXSTR.FTH      INLIN99.FTH     INPUT.FTH       LEHMER.FTH      LIBS.TXT        LOWCASE.FTH     MINI-OOF.FTH    PATTERN.FTH     RANDHSF.FTH     RANDOM.FTH      README.TXT      SEARCH.FTH      SERIFS99.FTH    SOUND.FTH       SPRITES.FTH     SQRT.FTH        STRINGS.FTH     STRPLUS.FTH     TILOGO.FTH      TINYHEAP.FTH    TIPRNG.FTH      TOOLS.FTH       TRIG.FTH        UDOTR.FTH       VALUES.FTH      VHEAP.FTH       VOCAB79.FTH     
+   48 File(s)            82,561 Bytes.
+    3 Dir(s)        262,111,744 Bytes free.
