@@ -29,19 +29,21 @@ DECIMAL
      255 CONSTANT MXLEN   \ 255 bytes is longest string
 MXLEN 1+ CONSTANT SSW     \ width of string stack items
 
-: NEW:     ( -- ) SSW SSP +! ;  \ bump the string stack pointer by 256
+: NEW:     ( -- ) SSW SSP +! ;  \ bump string stack pointer by 256
 : COLLAPSE ( -- ) SSP OFF  ;    \ reset string stack pointer to zero
 
 \ * You have a choice where to place the string stack *
-\ : TOP$     ( -- $) SSP @ PAD + ; \ string stack in free dictionary space
-: TOP$     ( -- $) SSP @ H @ + ;   \ string stack in free HEAP memory (low mem)
 
+\ : TOP$     ( -- $) SSP @ PAD + ; \ string stack in dictionary
+
+: TOP$     ( -- $) SSP @ H @ + ; \ string stack in free HEAP memory
 
 \ From Wil Baden's Tool Belt [R.I.P. Wil] ====
-\ : C+!         ( n addr -- )   DUP >R  C@ +  R> C! ; \ in Kernel as code word
+\ : C+!         ( n addr -- )   DUP >R  C@ +  R> C! ; \ now a code word
 : APPEND      ( addr n $ -- ) 2DUP 2>R  COUNT +  SWAP CMOVE 2R> C+! ;
-\ : PLACE     ( addr n dst$ -- ) 2DUP C! 1+ SWAP CMOVE ;  \ in CAMEL99 Kernel
+\ : PLACE     ( addr n dst$ -- ) 2DUP C! 1+ SWAP CMOVE ; \ in Kernel
 
+.( ..)
 \ string stack helpers ====
 : SPUSH    ( addr len -- top$ ) NEW: TOP$ DUP >R PLACE R> ;
 : ?SSP     ( -- ) SSP @ 0= ABORT" Empty $ stack" ;
@@ -54,24 +56,28 @@ MXLEN 1+ CONSTANT SSW     \ width of string stack items
 : VAL$     ( adr$ - # )  ?NUMBER 0= ABORT" VAL$ err"  ;
 : CHR$     ( ascii# -- top$ ) NEW: TOP$ 1 OVER C! SWAP OVER 1+ C! ;
 : ASC      ( $ -- c)   1+ C@ ;
-
+.( .)
 : &        ( $1 $2 -- top$)   \ concatenate operator
-           SWAP COUNT SPUSH >R COUNT R@ APPEND R>  ; \ A$ B$ &  PRINT
+           SWAP COUNT SPUSH >R COUNT R@ APPEND R>  ;
 
-: POS$    ( $1 $2 -- n )     \ return "position" of $1 in $2
-           DUP -ROT                \ copy $2 under the inputs
-           COUNT OVER + SWAP       \ step $2 char by char
+: POS$    ( $1 $2 -- n )       \ return "position" of $1 in $2
+           DUP -ROT            \ copy $2 under the inputs
+           COUNT OVER + SWAP   \ step $2 char by char
            DO
-             I OVER COUNT S=       \ S= part of CAMEL Forth.
-             0= IF I LEAVE THEN    \ if 0 we found a match, push loop index & leave
+             I OVER COUNT S=   \ S= part of CAMEL Forth.
+             0= IF I LEAVE THEN  \ match! push loop index & leave
            LOOP
-           NIP SWAP -  ;           \ subtract addresses to get position
+           NIP SWAP -  ;       \ subtract addresses to get position
+
+\ much faster find position of char in $
+: CPOS     ( $ char -- n) >R COUNT 2DUP R> SCAN NIP - NIP ;
 
 : COPY$    ( $1 $2 -- )  >R COUNT R> PLACE ;
 
 \ compare strings also use S=
 : COMPARE$ ( $1 $2 -- flag) DUP C@ 1+ S= ;
 
+.( ..)
 : =$       ( $1 $1 -- flag)  COMPARE$ 0= ;
 : <>$      =$ 0= ;
 : >$       ( $1 $2 -- flag)  COMPARE$ 0> ;  \ $1 > $2
@@ -83,7 +89,7 @@ MXLEN 1+ CONSTANT SSW     \ width of string stack items
 
 : ?$IZE    ( n -- ) MXLEN > ABORT" $ too big!" ;
 \ DIM creates a named string of n size in the Dictionary
-: DIM      ( n -- ) 
+: DIM      ( n -- )
            DUP ?$IZE
            CREATE 0 C, ALLOT ;
 
@@ -96,9 +102,11 @@ MXLEN 1+ CONSTANT SSW     \ width of string stack items
 
 : PUT      ( $1 $2 -- ) COPY$ COLLAPSE ;
 : PRINT$   ( $ -- )   COUNT TYPE ;
-: PRINT    ( $ -- )   CR PRINT$ COLLAPSE ;    \ print on new line, clean $stack
+.( ...)
+\ Emulate BASIC's print. New line, collapse stringstack
+: PRINT    ( $ -- )   CR PRINT$ COLLAPSE ;
 
-: (")      ( -- ) R> DUP COUNT + ALIGNED >R ; \ advance IP on Rstack, past end of string
+: (")      ( -- ) R> DUP COUNT + ALIGNED >R ;
 
 : "        ( -- )   \ create string literal when compiling
            [CHAR] " PARSE              \ parse input upto quote char
@@ -107,6 +115,6 @@ MXLEN 1+ CONSTANT SSW     \ width of string stack items
            ELSE  SPUSH                 \ action when interpreted
            THEN ; IMMEDIATE
 
-COLLAPSE  ( initializes the string stack)
+COLLAPSE  \ initialize the string stack
 
 ( 700+ BYTES)
