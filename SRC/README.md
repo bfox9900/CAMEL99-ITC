@@ -1,12 +1,12 @@
 ## CAMEL99 FORTH V2 Source files
-
 This files must be compiled with XFC99.EXE under DOS.
 
 See CAMEL99 V1.x /COMPILER for the program.
+
 https://github.com/bfox9900/CAMEL99/tree/master/Compiler
 
-### FOLDER Changes Required
 
+### FOLDER Changes Required
 In the file CAMEL2.HSF find the section that looks like this:
 
 \ =======================================================================
