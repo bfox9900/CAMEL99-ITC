@@ -20,7 +20,6 @@
 [CC] HEX  [TC]
 
 \ PAB location and size
-\ 3EDF CONSTANT: PAB0    \ 1ST peripheral access block at top of VDP RAM
    20 CONSTANT: PSIZE     \ size of a PAB in CAMEL99 Forth 32 bytes
 
 \ VARIABLE: ^PAB
@@ -97,7 +96,7 @@ CODE: _FNAME  ( addr -- addr') TOS 9 ADDI, NEXT, END-CODE
 ;
 
 \ return VDP buffer and characters read as a Forth stack string
-: VDATA    ( -- vaddr len) PAB _FBUFF V@  PAB _CHARS VC@ ;
+\ : VDATA    ( -- vaddr len) PAB _FBUFF V@  PAB _CHARS VC@ ;
 
 VARIABLE: LDBUFF        \ hold File loading buffer. Set by COLD (startup)
 
@@ -136,21 +135,20 @@ VARIABLE: LDBUFF        \ hold File loading buffer. Set by COLD (startup)
            BEGIN
              REFILL
            WHILE
-             VDATA  LDBUFF @ VGET          \ transfer VDP data to buffer
+             PAB _FBUFF V@  PAB _CHARS VC@  ( vaddr len -- ) 
+             LDBUFF @ VGET                 \ transfer VDP data to buffer
              LDBUFF @ COUNT INTERPRET      \ interpret the new string
              1 LINES +!
            REPEAT
            50 MFREE                           \ release the buffer using size on stack
            CLS                             \ close currently open file
-
-\ restore everything from Rstack
            R> DSRNAM !                     \ restore old file ID
            R> >IN !
            2R> 'SOURCE 2!                  \ restore input
-           SOURCE-ID OFF                   \ SOURCE-ID is conole (0)
+           SOURCE-ID OFF                   \ SOURCE-ID is console (0)
 ;
 
-: .LOC ( -- ) DECIMAL LINES @ . T." lines" ;      \ print lines of code compiled
+\ : .LOC ( -- ) DECIMAL LINES @ . T." lines" ;      \ print lines of code compiled
 
 \ This word bootstraps the system on startup.
 \ FILESYS8 is nestable. Allocates a new PAB and LDBUFF
@@ -159,6 +157,5 @@ VARIABLE: LDBUFF        \ hold File loading buffer. Set by COLD (startup)
            CR T." Loading: " 2DUP TYPE
            LINES OFF
            LD
-           CR .LOC
            HEX ;
 
