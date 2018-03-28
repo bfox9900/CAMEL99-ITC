@@ -829,6 +829,7 @@ TARGET-COMPILING
 : QUIT         ( -- )
                L0 LP !                                       \ init LEAVE stack pointer LP
                RP0 RP!                                       \ reset rstack
+               3FFF ^PAB !                                   \ reset file PAB stack to top of VDP
                t[COMPILE] [                                  \ STATE = 0 (Interpreting mode)
                BEGIN
                   TIB DUP TIB# ACCEPT SPACE ( -- adr len)    \ accept input to TIB, maxlen=TIB#
@@ -878,7 +879,7 @@ TARGET-COMPILING
    variable: lines                     \ track lines compiled in a file
 
    : ?ABORT  ( f c-addr u --)
-              ROT IF  CR CR ." >>" TYPE  T."  ? "
+              ROT IF  CR CR T." ? " TYPE  T."  ? "
                       SOURCE-ID @ 0>
                       IF   T." Line " LINES @ .
                       THEN ABORT
@@ -889,7 +890,7 @@ TARGET-COMPILING
 
 [THEN]
 
-: ?FIND       ( ? -- )       0=    TS" Not found"      ?ABORT ;
+: ?FIND       ( ? -- )       0=    HERE COUNT  ?ABORT ;
 : ?PAIRS      ( n1 n2 --)     -    TS" Unpaired"       ?ABORT ;
 : ?COMP       ( -- ) STATE @ 0=    TS" Compile only"   ?ABORT ;
 : ?EXEC       ( -- ) STATE @       TS" Interpret only" ?ABORT ;
@@ -1126,7 +1127,7 @@ TARGET-COMPILING
               2 KUNIT# C!       \ keyboard #2 is the BASIC keyboard
               3FFF ^PAB !       \ init pab pointer to TOP of VDP mem
 \ VDP start screen
-              TEXT BEEP T." CAMEL99 2.0.2"
+              TEXT BEEP T." CAMEL99 2.0.3"
               TIB 0 'SOURCE 2!   >IN OFF
               SOURCE-ID OFF
               TS" DSK1.START" INCLUDED
