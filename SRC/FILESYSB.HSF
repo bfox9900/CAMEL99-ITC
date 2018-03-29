@@ -1,0 +1,161 @@
+\ filesys is a minimal single PAB file mechanism  BJF 17MAR2018
+\  *** NEEDS DISKDSR4.HSF
+
+\ TI-99 File error Code Meaninq
+\ ------------------------------
+\ 0  Bad device name.
+\ 1  Device is write protected.
+\ 2  Bad open attribute such as incorrect file type, incorrect record length,
+\    incorrect I/O mode, or no records in a relative record file.
+\ 3  Illegal operation; i.e., an operation not supported on the peripheral or a
+\    conflict with the OPEN attributes.
+\ 4  Out of table or buffer space on the device.
+\ 5  Attempt to read past the end of file. When this error occurs, the file is
+\    closed. Also given for non-extant records in a relative record file.
+\ 6  Device error. Covers all hard device errors such as parity and bad medium errors.
+\ 7  File error such as program/data file mismatch, non-existing file opened in
+\    INPUT mode, etc.
+
+\ ============================
+[CC] HEX  [TC]
+
+   20 CONSTANT: PSIZE     \ size of a PAB in CAMEL99 Forth 32 bytes
+ 8356 CONSTANT: DSRNAM    \ OS system variable that enables a device
+
+\ VARIABLE: ^PAB          \ *moved to CAMEL2.HSF
+
+[TC]
+\ fast fetch of pab pointer
+CODE: PAB   ( -- adr) TOS PUSH,  ^PAB @@ TOS MOV,  NEXT, END-CODE
+
+\  RAM<->VDP string transfers
+: VPLACE   ( $addr len Vaddr -- ) 2DUP VC! 1+ SWAP VWRITE ;
+: VGET     ( Vaddr len $addr -- ) 2DUP C!  1+ SWAP  VREAD ;
+
+\ PAB fields:
+\ these are 8 bytes smaller than Forth code & ASM is faster
+CODE: _FLG    ( addr -- addr') CODE[ 1+ ]  NEXT, END-CODE  \ re-use code primitive
+CODE: _FBUFF  ( addr -- addr') CODE[ 2+ ]  NEXT, END-CODE
+CODE: _RECLEN ( addr -- addr') TOS 4 ADDI, NEXT, END-CODE
+CODE: _CHARS  ( addr -- addr') TOS 5 ADDI, NEXT, END-CODE
+CODE: _REC#   ( addr -- addr') TOS 6 ADDI, NEXT, END-CODE
+CODE: _STAT   ( addr -- addr') TOS 8 ADDI, NEXT, END-CODE
+CODE: _FNAME  ( addr -- addr') TOS 9 ADDI, NEXT, END-CODE
+
+
+[CC] HEX [TC]
+\ PAB FLAGS/STATUS field access words
+\ : PAB_FLG!    ( c-- ) PAB _FLG VC! ;
+\ : PAB_FLG@    ( -- c) PAB _FLG VC@ ;
+
+: ERR@    ( -- n)  \ *NEW* combine GPL status and file err# into one 16bit number
+          PAB _FLG VC@ 5 RSHIFT ;    \ shift error bits down
+
+: FILEOP  ( opcode -- err)                  \ TI99 O/S call
+          PAB VC!                           \ write opcode byte to VDP PAB
+          PAB _FLG DUP VC@ 1F AND SWAP VC!  \ clear err code bits
+          0 GPLSTAT C!                      \ clear GPL status register
+          DISKON
+          DSKLNK BLWP ERR@
+          DISKOFF  ;
+
+\ Error handlers
+: ?CARDID  ( -- )  'ID C@ AA <> TS" CARD not found" ?ABORT ;
+
+: ?DEVERR  ( link -- )
+           0= IF DISKOFF   ( turn off the Disk card )
+                 CR T." * Device not found" ABORT
+           THEN ;
+
+\ generic file error handler
+: ?FILERR  ( ior -- ) ?DUP IF CR T." * File Err " .  ABORT THEN ;
+
+\ MAKEPAB writes PAB directly to VDP ram 1 field at a time.
+\ Returns address of filename at the first '.'  ex: .TEST
+: MAKEPAB  ( addr len -- )
+           PAB PSIZE 0 VFILL             \ erase the VDP PAB to be safe.
+           PAB PSIZE +  PAB _FBUFF V!    \ set FBUFF 32 bytes past PAB
+           14   PAB _FLG    VC!          \ default to: DISPLAY,VARIABLE
+           50   PAB _RECLEN VC!          \ 80 bytes/record
+           2DUP PAB _FNAME VPLACE        \ dup & write string to PAB
+           /DOT NIP 1+ ( -- n)           \ compute offset upto '.' in string
+           PAB _FNAME +  DSRNAM ! ;      \ offset + PAB_FNAME -> DSRNAM
+
+\ address navigation helpers.
+\ : REG#    ( workspace R# -- addr)  2* + ;       \ COMPUTE address of R# in workspace
+\ : >ENTRY  ( DSRlink -- entry_addr) 2+ @ ;       \ convert a LINK in ROM to code entry
+
+
+: NEWFILE ( $addr len REALpab -- FID )            \ returns FID. but does NOT set it!
+         DISKON ?CARDID                           \ abort if card is not 'AA'
+         DSRFIND        ( -- realpab link)
+         DUP ?DEVERR                              \ ABORT if link=0
+         DUP 4 +        ( -- link $)              \ link+4=DSR$ ie: Name of the DSR in CARD ROM
+             C@ 8355 C!                           \ len(DSR$) -> hex8355
+                        ( -- link)
+ ( >ENTRY) 2+ @ 83E0  9 ( REG#) 2* + !            \ DSR code entry into GPL.R9
+;
+
+\ return VDP buffer and characters read as a Forth stack string
+\ : VDATA    ( -- vaddr len) PAB _FBUFF V@  PAB _CHARS VC@ ;
+
+VARIABLE: LDBUFF        \ hold File loading buffer. Set by COLD (startup)
+
+\ ** HI LEVEL FUNCTIONS **
+
+: FSTAT ( -- c) 9 FILEOP DROP PAB _STAT VC@ ; \ see E/A Manual page 298 for meaning
+
+: REFILL ( -- flag )  \ flag=true if there is more data
+            2 FileOp ?FILERR
+            FSTAT 1 AND 0=
+            >IN OFF ;
+
+\ primitive file words to bootstrap the system on startup
+: OPN    ( addr len -- )
+           -120 ^PAB +!                     \ get a new PAB on PAB stack
+            2DUP MAKEPAB ( -- $addr len realpab)
+            NEWFILE
+            0 FILEOP ?FILERR ;
+
+: CLS    ( OLD_FID -- )
+           1 FILEOP ?FILERR
+           120 ^PAB +!                     \ pop back 1 pab on the pabstack
+;
+
+\ VARIABLE: LINES \ moved to CAMEL2.HSF
+
+\ load file primitive.
+: LD     ( addr len -- ior)
+           SOURCE 2>R                      \ save interpreter input source
+           >IN @ >R                        \ save input string pointer
+           DSRNAM @ >R                     \ save current DSR name
+            1 SOURCE-ID !                   \ source ID is file (1)
+           OPN                             \ open new file (sets new DSRNAM)
+ 
+           50 MALLOC LDBUFF !              \ get a buffer
+           BEGIN
+             REFILL
+           WHILE
+             PAB _FBUFF V@  PAB _CHARS VC@  LDBUFF @  VGET \ transfer VDP data to buffer
+             LDBUFF @ COUNT INTERPRET      \ interpret the new string
+             1 LINES +!
+           REPEAT
+           50 MFREE                        \ release the buffer using size on stack
+
+           CLS                             \ close currently open file
+           R> DSRNAM !                     \ restore old file ID
+           R> >IN !
+           2R> 'SOURCE 2!                  \ restore input
+           SOURCE-ID OFF                   \ SOURCE-ID is conole (0)
+;
+
+\ This word bootstraps the system on startup.
+\ FILESYS8 is nestable. Allocates a new PAB and LDBUFF
+\ Typically: TS" DSK1.START" FLOAD
+: INCLUDED  ( caddr len -- )
+           DUP 0= TS" Filename" ?ABORT
+           CR T." Loading: " 2DUP TYPE
+           LINES OFF
+           LD \ SPACE .LOC
+           HEX ;
+
