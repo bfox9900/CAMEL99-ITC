@@ -872,23 +872,17 @@ TARGET-COMPILING
 \
 : ABORT       ( -- ) 
               HONK SP0 SP! 
-              SOURCE-ID OFF  
+              SOURCE-ID OFF
               CR QUIT ;
--1 [IF]
- 
+
    variable: lines                     \ track lines compiled in a file
 
    : ?ABORT  ( f c-addr u --)
-              ROT IF  CR CR T." ? " TYPE  T."  ? "
+              ROT IF  CR CR T." * " TYPE  T."  ? "
                       SOURCE-ID @ 0>
                       IF   T." Line " LINES @ .
                       THEN ABORT
               THEN 2DROP ;
-[ELSE]
-
-  : ?ABORT      ( f c-addr u --) ROT IF  TYPE  T."  ?"  ABORT THEN 2DROP ;
-
-[THEN]
 
 : ?FIND       ( ? -- )       0=    HERE COUNT  ?ABORT ;
 : ?PAIRS      ( n1 n2 --)     -    TS" Unpaired"       ?ABORT ;
@@ -1069,7 +1063,7 @@ TARGET-COMPILING
 \ ** commment out everything to build the smallest kernel  **
  [CC] include CC9900\cclib\crusmall.hsf
  [CC] include CC9900\cclib\diskdsr4.hsf
- [CC] include CC9900\cclib\filesysA.hsf
+ [CC] include CC9900\cclib\filesysB.hsf
 \ [CC] include cc9900\cclib\tools.hsf
 \ [CC] include cc9900\cclib\grafix2.hsf
 \ [CC] include CC9900\cclib\mem2mem.hsf     \ operate directly on variables
@@ -1119,7 +1113,7 @@ TARGET-COMPILING
               80 83C2 C!       \ COLD boot starts the system
               ORGDP @ DP !
               ORGLAST @ LATEST !
-              2020 H !         \ inits H (HEAP) past the DSRWKSP at >2000
+              2000 H !         \ inits H (HEAP) to >2000
 \ allocate space for CPU RAM  include file buffer
               SP0 SP!  RP0 RP!  \ reset stacks
               HEX
@@ -1127,7 +1121,7 @@ TARGET-COMPILING
               2 KUNIT# C!       \ keyboard #2 is the BASIC keyboard
               3FFF ^PAB !       \ init pab pointer to TOP of VDP mem
 \ VDP start screen
-              TEXT BEEP T." CAMEL99 2.0.3"
+              TEXT BEEP T." CAMEL99 2.0.4"
               TIB 0 'SOURCE 2!   >IN OFF
               SOURCE-ID OFF
               TS" DSK1.START" INCLUDED
