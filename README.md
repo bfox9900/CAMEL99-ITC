@@ -2,16 +2,15 @@
 CAMEL99 V2 finally has TI file access.  The binary program is in folder DSK1 and is called CAMEL2.
 All of the loadable source files have a .F extension except the START file which is unique.
 
-The system boots when you load the TI-99 binary program file called DSK1.CAMEL2 with the Editor/Assembler cartridge. When CAMEL2 starts, it looks for a file called DSK1.START. If found it loads that file as source code.  You can put any new Forth definitions in the START file that you want. Currently START adds the following Forth words to the dictionary:
-  CELLS, CELL+, CHAR+, CHAR , [CHAR] , INCLUDE
+The system boots when you load the TI-99 binary program file called DSK1.CAMEL2 with the Editor/Assembler cartridge. When CAMEL2 starts, it looks for a file called DSK1.START. If found it loads that file as source code.  You can put any new Forth definitions in the START file that you want. Currently START "INCLUDES" the following Forth words into the dictionary:
+     INCLUDE, CELLS, CELL+, CHAR+, CHAR , [CHAR]
 
-It also sets the default RADIX to DECIMAL and reports that on the screen.
-
-NOTE: Currently there are bugs with nested INCLUDEs so don't try that inside START.
+NOTE: Nested INCLUDE files are now working in V2.0.4
 
 ## Loading Source Code Files
-At the console TYPE INCLUDE DSK1.TOOLS.F 
-When it returns to you type WORDS and you will all the words in the Forth dictionary.  Press FNCT 4 (BREAK) to stop the display.
+At the console TYPE INCLUDE DSK1.TOOLS.F  -or- S" DSK1.TOOLS.F" INCLUDED
+When Forth returns to you type WORDS and you will all the words in the Forth dictionary.  
+Press FNCT 4 (BREAK) to stop the display.
 It's that easy.
 
 ## Making TI Source Code Files
