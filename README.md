@@ -9,8 +9,11 @@ NOTE: Nested INCLUDE files are now working in V2.0.4
 
 ## Loading Source Code Files
 At the console TYPE INCLUDE DSK1.TOOLS.F  -or- S" DSK1.TOOLS.F" INCLUDED
-When Forth returns to you type WORDS and you will all the words in the Forth dictionary.  
+
+When Forth returns to you type WORDS and press enter and you will see all the words in the Forth dictionary.  
+
 Press FNCT 4 (BREAK) to stop the display.
+
 It's that easy.
 
 ## Making TI Source Code Files
