@@ -1,0 +1,331 @@
+
+( This is the original Forth comment. Notice the required 1st space!)
+\ This is the full line comment. This file is to get you started with CAMEL99 V2
+
+( This code came from https://learnxinyminutes.com/docs/forth/ )
+( It has been edited/corrected and modified for CAMEL99 Forth )
+
+\ --------------------------------- Preamble -----------------------------------
+( ** CAMEL99 Forth is case sensitive. ALL CAMEL99 commands are UPPERCASE **)
+
+\ ************************************************
+\ *  All Forth commands are separated by a SPACE *
+\ ************************************************
+
+\ Forth commands are called WORDS. They are like sub-routines in other languages.
+\ WORDs are kept in the Forth Dictionary.
+
+\ In Forth, everything is either a WORD in the dictionary or a number.
+
+\ All programming in Forth is done by using existing WORDs to make new WORDs.
+
+\ FORTH is one of the first "CONCATENTIVE" languages which means you can 
+\ string words together end to end to make more powerful words.
+
+\ Numbers and math are typically performed on the parameter stack 
+( commonly called "the stack")
+
+\ Typing numbers pushes them onto the stack. 1st number is on the bottom.
+
+5 2 3 56 76 23 65    \ ok
+
+( .S prints the stack contents)
+.S    \ 5 2 3 56 76 23 65 ok
+
+\ ------------------------------ Basic Arithmetic ------------------------------
+\ set the interpreter to DECIMAL arithimetic with: 
+DECIMAL 
+
+\ Arithmetic operators (+,-,*,/ etc) are also just Forth WORDs
+\ They operate on numbers sitting on the stack
+\ '+' takes two inputs, adds them and leaves the answer on the stack
+
+5 4 +    \ ok  ( looks like nothing happened but 9 is on the stack)
+
+\ The `.` word pops the top item from the stack and prints it:
+.    \ 9 ok
+
+\ More examples of arithmetic:
+6 7 * .        \ 42 ok
+1360 23 - .    \ 1337 ok
+12 12 / .      \ 1 ok
+13 2 MOD .     \ 1 ok
+
+99 NEGATE .    \ -99 ok
+-99 ABS .      \ 99 ok
+52 23 MAX .    \ 52 ok
+52 23 MIN .    \ 23 ok
+
+
+\ HEXADECIMAL arithmetic and other BASEs
+\ Forth can switch to HEX numbers with the word HEX
+
+\ AND performs a logical AND so we can mask bits like this
+HEX
+ 1234 00FF AND . \ 34
+ 
+ DECIMAL  ( changes the system back to DECIMAL arithmetic)
+ 
+
+\ ----------------------------- Stack Manipulation -----------------------------
+\ Naturally, as we work with the stack, we'll need these WORDs:
+\                                                               STACK
+\                                                               -----
+3 DUP            \ duplicate the top item (1st now equals 2nd): 3 3
+4 0 DROP .S      \ remove the top item :                        4
+1 2 3 NIP .S     \ remove the second item (similar to drop):    1 3
+2 5 SWAP .S      \ swap the top with the second element:        5 2
+6 4 5 ROT .S     \ rotate the 3rd item to top:                  4 5 6
+6 4 5 -ROT .S    \ rotate top item to 3rd position              5 6 4
+
+\ ---------------------- More Advanced Stack Manipulation ----------------------
+1 2 3 4 TUCK    \ duplicate the top item below the second slot:     1 2 4 3 4 ok
+1 2 3 4 OVER    \ duplicate the second item to the top:             1 2 3 4 3 ok
+1 2 3 4  2 PICK \ *duplicate* the item at that position to the top: 1 2 3 4 2 ok
+
+\ When referring to stack indexes, they are zero-based. ( ie: 0 PICK = DUP)
+
+\ ------------------------------ Creating Words --------------------------------
+\ The `:` word puts Forth into compile mode until it sees the `;` word.
+: SQUARED ( n -- n ) DUP * ;    \ ok
+5 SQUARED .                     \ 25 ok
+
+\ WORDs that we create are just added to the dictionary
+\ WORDs can be combined with other words to any depth
+: 2(X^2) ( n -- n) SQUARED  2 * ; \ returns  2(n^2)
+
+\ Printing text is unusua but workable.
+\ ANS Forth has ." to print a text string inside a compiled word.
+\ There are two unusual things about "dot-quote", as it is called.
+
+\ 1. You must put a space after ."
+\    Do you understand why? Because it is a Forth word like all the rest.
+
+\ 2. "dot-quote"is a state-smart word. This means it does one thing in compiling mode
+\     and something else in immediate mode (interpreting)
+
+\  In compile mode it has to "compile" strings of text into a new word definition.
+
+: HELLO  
+         CR ." Hello World!"  
+	 CR ." uses 'dot-quote' in the word HELLO" ;
+	 
+HELLO	
+\ CR (carriage return) is the word for a new line
+
+In IMMEDIATE mode it simply has to type a string to the output device.
+
+\ You can also print text in the interpret mode ONLY using .(  
+\ This is called a talking comment.
+CR .( This message will print from the interpreter)
+CR .( This is also called a "talking comment")
+CR .( It is used to inform the programmer while a file is compiling)
+
+\ Remember to put space between ." or .( and the text!
+
+\ -------------------------------- Conditionals --------------------------------
+\ TRUE and FALSE are constants in CAMEL99. TRUE returns -1  FALSE returns 0
+( However, any non-zero value is also treated as being true)
+TRUE .     \ -1 ok
+FALSE .    \ 0 ok
+42 42 =    \ -1 ok
+12 53 =    \ 0 ok
+
+\ `IF` is a compile-only word that does stuff if top of stack is TRUE
+\ Syntax: `IF` <stuff to do when TOS is true> `THEN` <rest of program>.
+: ?>64 ( n -- n ) DUP 64 > IF ." Greater than 64!" THEN ; \ ok
+100 ?>64     \ Greater than 64! ok
+
+\ 'ELSE'
+: ?>64 ( n -- n ) DUP 64 > IF ." Greater than 64!" ELSE ." Less than 64!" THEN ;
+100 ?>64    \ Greater than 64! ok
+20 ?>64     \ Less than 64! ok
+
+\ ------------------------------------ Loops -----------------------------------
+\ looping words are compile-only. (must be inside a colon defintion)
+: MYLOOP ( -- ) 5 0 DO CR ." Hello!" LOOP ; \ ok
+MYLOOP
+\ Hello!
+\ Hello!
+\ Hello!
+\ Hello!
+\ Hello! ok
+
+\ `DO` expects two numbers on the stack: the end number and the start number.
+\ (the loop limit and the loop index)
+\ We can get the value of the index as we loop with `I`:
+: ONE-TO-12 ( -- ) 12 0 DO I . LOOP ;     \ ok
+ONE-TO-12   \ 0 1 2 3 4 5 6 7 8 9 10 11 ok
+
+\ Notice the loop stops when the limit and index are equal.
+\ We printed 12 numbers... 0 to 11
+
+\ `?DO` works similarly, except it will skip the LOOP if the end and start
+\ numbers are equal on the parameter stack. This is used if there is a chance
+\ that limit=index as input arguments and you want to prevent a run-away loop.
+
+( We defined SQUARE earlier so we can use it now)
+: SQUARES ( n -- ) 0 ?DO I SQUARE . LOOP ;   \ ok
+10 SQUARES   \ 0 1 4 9 16 25 36 49 64 81 ok
+0 SQUARES    \ OK
+
+\ Change the looping "step" with `+LOOP`:
+: THREES ( n n -- ) 3 ?DO  I .   3 +LOOP ;  \ ok
+20 THREES  \ 3 6 9 12 15 18 ok
+
+\ Indefinite loops with `BEGIN` <stuff to do>  `AGAIN`:
+: FOREVER ( -- ) BEGIN ." Are we there yet?" AGAIN ;  ( YOU CAN'T STOP THIS)  
+
+\ Conditional loops use 'BEGIN' <stuff to do> <condition> 'UNTIL'
+: DECREMENTER ( n -- ) BEGIN 1-  DUP  0= UNTIL ; 
+99 DECREMENTER \ OK
+
+\ Breaking out of a loop from the keyboard is possible by testing for a 
+\ key with KEY? which reads any key -or- ?TERMINAL which reads FNCT 4 on TI-99
+( also called BREAK in TI-BASIC)
+: KEYLOOP   BEGIN  ." Press a key to stop me..."  KEY? UNTIL ; 
+: BREAKLOOP  BEGIN ." Press FNCT 4 to stop me..." ?TERMINAL UNTIL ;
+
+\ WHILE loops use 'BEGIN'  <condition> 'WHILE' <stuff to do> 'REPEAT'
+: UPTO10  ( -- )  0 BEGIN  1+  DUP 10 < WHILE  ." NOT YET!  "  REPEAT DROP ; 
+
+\ ---------------------------- Variables and Memory ----------------------------
+
+\ Use `VARIABLE` to create an integer variable.
+VARIABLE AGE    \ ok
+
+\ VARIABLEs simply give us a named address in memory where we can store numbers
+( like a pointer but easier to understand)
+
+\ We write 21 to AGE with the word `!` (pronounced "store")
+21 AGE !    \ ok
+
+\ We can read the value of our variable using the `@` word called "fetch"
+\ '@' just reads the value in an address and puts in the stack
+AGE @     \ 21 is sitting on the top of the stack now
+
+\ to print the value on the top of the stack use the '.' command
+( AGE @ ) .    \ 21 ok
+
+\ A common tool to fetch and print is '?' which is easy to make.
+: ?   ( addr -- )  @  . ;
+
+AGE ?      \ 21 ok
+
+\ We can work in a new RADIX by changing the system variable BASE
+\ Binary...
+ HEX F0  2 BASE ! .  \ 11110000 ok
+
+\ Octal...
+8 BASE !   7 1 + .   \ 10 ok
+
+DECIMAL
+ 
+\ Constants work as expected and return their value to the top of stack
+100 CONSTANT WATER-BOILING-POINT    \ ok
+WATER-BOILING-POINT .               \ 100 ok
+\ ----------------------------------- Arrays -----------------------------------
+\ Like Assembly language Forth has no standard way to make arrays.
+
+\ We can create arrays by naming a block of memory with the WORD CREATE
+\ and allocating memory space with ALLOT.
+
+\ A CELL in Forth is the memory for a single integer
+\ For TI-99, a CELL is 2 bytes 
+\ For 32 bit computer, it would be 4 bytes.
+
+\ 'CELLS' calculates memory size for n CELLS of memory
+
+\ All together it looks like this:
+CREATE MYNUMBERS   10 CELLS ALLOT    \ ok
+
+\ Initialize all the values to 0
+MYNUMBERS 10 CELLS 0 FILL   \ ok
+
+\ If we needed to do this a lot, we would define ERASE
+: ERASE  ( addr len -- ) 0 FILL ;
+
+\ ... and do this...
+MYNUMBERS 10 CELLS ERASE
+
+\ or we can CREATE an array initialized with specific values
+\ using the 'comma' number compiler. (puts 1 integer in next available memory)
+CREATE MYNUMBERS    64 , 9001 , 1337 , \ ok (the last `,` is important!)
+
+\ ...which is equivalent to:
+
+\ Manually writing values to each index:
+  64 MYNUMBERS 0 CELLS + !    \ ok
+9001 MYNUMBERS 1 CELLS + !    \ ok
+1337 MYNUMBERS 2 CELLS + !    \ ok
+
+\ Reading values from our array at indexes, the hard way:
+MYNUMBERS 0 CELLS + ?    \ 64 ok
+MYNUMBERS 1 CELLS + ?    \ 9001 ok
+
+\ Normally we would extend the language and make a helper word for 
+\ accessing arrays for example we could create '[]'
+( FORTH lets us use any characters except space as identifiers)
+
+: [] ( n array -- addr[n] ) SWAP CELLS + ;    \ ok
+  2 MYNUMBERS [] ?     \ 1337 ok
+
+\ Now we have an array syntax like this.
+20 1 MYNUMBERS [] !    \ ok
+   1 MYNUMBERS [] ?    \ 20 ok
+
+\ If you don't like this syntax you are free to change it!
+
+\ *Notice there is no index checking. You could add it if you need it.
+
+\ ------------------------------ The Return Stack ------------------------------
+
+\ Just like a sub-routine stack, the Forth return stack holds the address (pointer)
+\ of the word that called the currently running word.  This lets a Forth Word'return'  
+\ to the word that called it. (ie: where it came from)
+\ In CAMEL99 the return stack also holds the limit and index of any running DO LOOP. 
+
+\ The programmer is free to use the return stack BUT be very careful.
+\ You can easily crash the system if you make a mistake.
+
+\ Return stack Example: Print 4 numbers in reverse order
+: .REVERSE ( n1 n2 n3 n4 -- )  
+		>R >R >R               \ push 3 #s onto return stack
+		.                      \ print n1, 
+		R> . R> . R> .  ;      \ pop the rest and print
+
+\ NOTE: Because Forth uses the return stack internally, `>R` should
+\ always be matched by `R>` inside of your word definitions or expect a crash!
+
+\ --------------------------------- Final Notes --------------------------------
+
+\ Typing a non-existent word will empty the stack because it calls the word ABORT
+\ which resets the data stack and the return stack
+
+\ Clear the screen:
+\ PAGE
+
+\ Loading Forth files into the system:
+\ INCLUDE MYFILE.FTH  (NOT yet implemented in verison 1.9)
+
+\ TOOLS.FTH is loaded in the system so you can list every word that's in Forth's 
+\ dictionary.  You can stop the listing by pressing FNCT 4 (CLEAR) on the TI-99.
+\ WORDS
+
+\ SEE the /LIB folder for extensions to the CAMEL99 Forth like STRINGS, BUFFERs, SPRITES and more.
+
+\ Exiting CAMEL99 Forth type
+\ BYE
+
+\ Version 2 Enhancements
+\ This version of CAMEL99 has access to the TI-99 file system via the Floppy disk drives.
+\ You must make a copy of the DSK1 folder on your emulator (CLASSIC99 is what we used)
+\ or make an actual floppy disk with this data on it.
+\ The default word to compile source code in ANS Forth is INCLUDED with a literal string.
+
+INCLUDE DSK1.BUFFER.F
+
+\ We have used the .F file name extension for source code files but it has no affect on operation.
+
+
+
