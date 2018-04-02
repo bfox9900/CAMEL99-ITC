@@ -1,0 +1,114 @@
+\ ti-99 sepcific equates
+
+\ keeping EQUates in the cross-compiler vocabulary 
+\ makes them accessible to Xassembler and TARGET
+
+ CROSS-COMPILING
+
+\ ===================================================================
+\ M E M O R Y   M A P P E D   D E V I C E S
+
+hex
+8800 equ vdprd               \ vdp ram read data
+8802 equ vdpsts              \ vdp status
+8C00 equ vdpwd               \ vdp ram write data
+8C02 equ vdpwa               \ vdp ram read/write address
+83D4 equ vr1cpy              \ copy of vdp register 1 - see e/a manual pg. 248
+\ 8400 equ _sndport            \ moved to TMS9919.hsf
+
+\ Meet the GROM ports
+9800 equ GRMRD ( GROM base)   \ GROM read byte
+9802 equ GRMRA                \ GROM set read address
+9C00 equ GRMWD                \ GROM write byte
+9C02 equ GRMWA                \ GROM set write address
+
+
+DECIMAL
+\ 32 equ COLS                  \ # of chars in a LINE on TI-99 screen
+24 equ _L/SCR
+
+\ ===================================================================
+\ T I - 9 9   R O M   U T I L I T Y   E Q U A T E S
+
+HEX
+000E equ KSCAN                   \ pointer to address of the ROM keyboard scanning routine
+
+
+\ ===================================================================
+\ * W O R K  S P A C E  R E G I S T E R S
+\ *
+HEX
+8300 equ wrksp0                 \ workspace 0 for program use
+83E0 equ GPLWS                  \ GPL interpreter's registers live here.
+
+\ ===================================================================
+\ GPL addresses
+8374 equ keyunit                \ keyboard layout code. CALL KEY( unit#, ...)see docs
+8375 equ keyval                 \ location of ascii key pressed (via KSCAN)
+837C equ status                 \ gpl status byte
+
+834A equ fac                    \ FAC as in What the FAC is this?
+83C4 equ ISR                    \ address of isr hook
+837B equ VDPSTS                 \ copy of VDP status byte
+837D equ inbuff                 \ VDP character input buffer
+
+
+\ CAMEL99 screen control variables steals 
+\ GPL floating point argument space for speed
+835C equ _VCOL
+835E equ _VROW
+8360 equ _C/L
+8362 equ _C/SCR
+8364 equ _spr#                  \ sprite count for automotion.
+                                \ basic use byte:837A, too slow in Forth
+837E equ _OUT                   \ Steal BASIC's ROW,COL to count chars output
+
+83D6 equ SCRTO                  \ screen time out timer
+83A0 equ GSTK                   \ steal the GPL stack for Forth?
+8EBE equ GRSTK                  \ steal the GPL stack for Forth?
+83D4 equ VDPR1                  \ copy of VDP Register 1
+
+
+\ ===================================================================
+\ UTLTAB memory table used by DSRLINK to report back to ASM progs
+\ From TI-99 Editor Assembler manual page 265
+
+\ Address   Name       Information
+\ -------   -----     ------------
+\  2022  equ UTLTAB    \ Entry address.
+\  2024  equ FSTHI     \ First free address in high memory.
+\  2026  equ LSTHI     \ Last free address in high memory.
+\  2028  equ FSTLOW    \ First free address in low memory.
+\  202A  equ LSTLOW    \ Last free address in low memory.
+\  202C  equ CHKSAV    \ Checksum.
+\  202E  equ FLGPTR    \ Pointer to the flag in the PAB.
+\  2030  equ SVGPRT    \ GPL return address.
+\  2032  equ SAVCRU    \ CRU address of the peripheral.
+\  2034  equ SAVENT    \ Entry address of the DSR or subprogram.
+\  2036  equ SAVLEN    \ Device or subprogram name length.
+\  2038  equ SAVPAB    \ Pointer to the device or subprogram name in
+\  203A  equ SAVVER    \ Version number of the DSR.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -11,8 +11,8 @@
 \ a way to return to Forth.  Sad :-(
 
 TARGET-COMPILING
-
-2000 VALUE: DSRWKSP \ workspace in LOW RAM
+\ take 32 bytes of the data stack and use for DSRWSP
+[CC] SP0 100 - [TC] VALUE: DSRWKSP
 
 \ ========================================================
                [CC] [PUBLIC] [TC]
@@ -33,10 +33,9 @@ END-CODE
 \               ---------    -----------------------
 CREATE: DSKLNK   DSRWKSP T,  T' CALLDSR [CC] >BODY T, [TC]
 
-
 \ ========================================================
 
-                 [CC] [PRIVATE] [TC]
+\                 [CC] [PRIVATE] [TC]
  \ Define PAB constants
 [CC] HEX [TC]
  1100 CONSTANT: DSKCARD   \ No need to scan for the Floppy DISK CARD. It's here
@@ -46,8 +45,6 @@ CREATE: DSKLNK   DSRWKSP T,  T' CALLDSR [CC] >BODY T, [TC]
 \ Create the DSR card scanner
 [CC] HEX [TC]
 
-CREATE: DEV$   [CC] 08 TALLOT  [TC]  \ holds the device name: RS232 DSK3
-
 : /DOT    ( caddr len -- caddr len')  \ cut string at the dot
            2DUP T[CHAR] . SCAN NIP -  ;
 
@@ -56,16 +53,19 @@ CREATE: DEV$   [CC] 08 TALLOT  [TC]  \ holds the device name: RS232 DSK3
 : =$ ( $1 $2 -- flag) OVER C@ 1+ S= 0= ; \ compare 2 counted strings
 
 \ DSRFIND searches for a matching device NAME in the DSR ROM
-\ It returns the link-address. Link-address+2 = runnable code address
+\ It returns the link-address. (Link-address+2 = runnable code address)
 : DSRFIND ( addr len -- link_addr)
-           /DOT DEV$ PLACE
+           20 MALLOC >R                \ get a temp$ buffer address
+           /DOT  R@ PLACE              \ cut filename at dot, place in temp$
            'DSRLIST                    \ 1st LINK in ROM linked list
            BEGIN
               @                        \ fetch the next link
               DUP 0=                   \ test for end of list
-              SWAP DEV$ OVER 4 +  =$   \ test string match in ROM
+              SWAP  R@ OVER 4 +  =$    \ match TEMP$ to $ in ROM
               ROT OR                   \ if either is true we're done.
-           UNTIL ;
+           UNTIL
+           20 MFREE
+           R> DROP ;                  \ free the heap
 
                 [CC] [PUBLIC] [TC]
 
@@ -77,11 +77,11 @@ CREATE: DEV$   [CC] 08 TALLOT  [TC]  \ holds the device name: RS232 DSK3
 
 : Disable  ( CRU -- )  CRU! 0SBZ ;
 
-\ hi level commands
-: DiskON  ( -- ) DSKCARD  DUP 83D0 ! Enable ;  \ 99-4A needs CRU copied to 83D0 (magic)
-: DiskOFF ( -- ) DSKCARD  Disable ;
+\ hi level commands : REMOVED TO SAVE SPACE
+\ : DiskON  ( -- ) DSKCARD ( DUP 83D0 !) Enable ;  \ 99-4A needs CRU copied to 83D0. I do not!
+\ : DiskOFF ( -- ) DSKCARD  Disable ;
 
 
-           
+
 
 

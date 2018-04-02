@@ -5,13 +5,15 @@
 \  \____/_/   \_|_|  |_|_____|_____|/_/   /_/
 \
 \
-\  _____ ___  ____ _____ _   _
-\ |  ___/ _ \|  _ |_   _| | | |
-\ | |_ | | | | |_) || | | |_| |
-\ |  _|| |_| |  _ < | | |  _  |
-\ |_|   \___/|_| \_\|_| |_| |_|
+\ __      __           _               ___
+\ \ \    / /          (_)             |__ \
+\  \ \  / /__ _ __ ___ _  ___  _ __      ) |
+\   \ \/ / _ \ '__/ __| |/ _ \| '_ \    / /
+\    \  /  __/ |  \__ \ | (_) | | | |  / /_
+\     \/ \___|_|  |___/_|\___/|_| |_| |____|
 \
-\ Copyright (c) 2017 Brian Fox
+
+\ Copyright (c) 2018 Brian Fox
 \ KOMOKA Ontario Canada
 \ brian.fox@foxaudioresearch.ca
 \ This program is free software; you can redistribute it and/or modify
@@ -34,34 +36,7 @@
 
 \ Nov 29,2016  - Ported CAMEL FORTH V .1 to TI-99
 
-\ ========================================================================
-\                    *** CHANGES FROM V1.0 ***
-\ ------------------------------------------------------------------------
-\ Oct 7, 2017  - Version 1.9 includes POSTPONE, ;CODE and DOES>
-\              - 99.2% ANS CORE compliant. Missing 1 word: ENVIRONMENT?
-\              - change to CHARDEF in GRAFIX2.FTH
-\                -Now uses pointer to data, not stack data
-\              - S" now uses a string POOL at >2000
-\              - HEAP memory system added. Starts at >2180
-\              - Target loops now in separate file. (targloop.hsf)
-\                - LEAVE has been implemented per CAMEL Forth method
-\              - numerous speedups and size reductions in CODE words
-\              - new word: ^C? scans keyboard for control C
-\                - 4X faster than KEY?
-\              - TMR! TMR@ let you use the 9901 timer for limit timing
-\              - MS word uses the 9901 timer for accurate delays
-\              - added :NONAME to improved compliance
-
-\ Nov 18, 2017 - V1.96 Found ROM routine for Fnct 4 key test. Very fast!
-\              - Removed ^C?.  Replaced with ?TERMINAL like TI-Forth
-
-\ Dec  1, 2017 - V1.97 added smart MOVE word, put it in PLACE.
-\ Dec 17, 2017 - removed GRAFIX2.HSF from build and added MULTI99
-
-\ Jan 29,2018  - removed (.") to save space. Added 'TYPE to cross-compiler
-\              - simplified HEADER by using PARSE-NAME and S,
-\              - now version 1.99
-
+\ Mar 30,2018  - First release of Version 2 with file access
 
 
 \ Requirements: XFC99.EXE, Cross-Compiler/Assembler  by Brian Fox
@@ -214,15 +189,6 @@ HEX
 \     |   CONSOLE ROMS     |
 \     +--------------------+ $0000
 
-
-\ ========================================================================
-\ conditional compiling control
-
-FALSE VALUE TOOLS                  \  tools compilation flag
-FALSE VALUE DEBUGGING              \  debugging words compilation flag
-FALSE VALUE FILES?
-FALSE VALUE FASTER
-
 \ ========================================================================
 \ C O D E   P R I M I T I V E S
 
@@ -279,8 +245,8 @@ TARGET-COMPILING
 
 \ The words in this file "bootstrap" the compiler.
 \ They allow the compiler to do things before they are defined in the
-\ Target system.  IF,ELSE,THEN, BEGIN,WHILE,REPEAT,UNTIL ':' AND ';'
-\ Are all defined in this file.
+\ Target system.  IF,ELSE,THEN, BEGIN,WHILE,REPEAT,UNTIL ':'  ';'
+\ are all defined in the BOOTSTRP,HSF file.
 
 CROSS-COMPILING
 
@@ -829,7 +795,7 @@ TARGET-COMPILING
 : QUIT         ( -- )
                L0 LP !                                       \ init LEAVE stack pointer LP
                RP0 RP!                                       \ reset rstack
-               3FFF ^PAB !                                   \ reset file PAB stack to top of VDP
+\               3FFF ^PAB !                                   \ reset file PAB stack to top of VDP
                t[COMPILE] [                                  \ STATE = 0 (Interpreting mode)
                BEGIN
                   TIB DUP TIB# ACCEPT SPACE ( -- adr len)    \ accept input to TIB, maxlen=TIB#
@@ -1063,14 +1029,7 @@ TARGET-COMPILING
 \ ** commment out everything to build the smallest kernel  **
  [CC] include CC9900\cclib\crusmall.hsf
  [CC] include CC9900\cclib\diskdsr4.hsf
- [CC] include CC9900\cclib\filesysB.hsf
-\ [CC] include cc9900\cclib\tools.hsf
-\ [CC] include cc9900\cclib\grafix2.hsf
-\ [CC] include CC9900\cclib\mem2mem.hsf     \ operate directly on variables
-\ [cc] include cc9900\cclib\map.hsf         \ SAMS 1M memory card mapper
-\ [CC] include cc9900\cclib\groms.hsf
-\ [CC] include cc9900\cclib\mtask99.hsf
-\ [CC] include cc9900\cclib\filesys.hsf
+ [CC] include CC9900\cclib\filesysD.hsf
 
 \ =======================================================================
 \ T E S T   C O D E   G O E S   H E R E
@@ -1121,7 +1080,7 @@ TARGET-COMPILING
               2 KUNIT# C!       \ keyboard #2 is the BASIC keyboard
               3FFF ^PAB !       \ init pab pointer to TOP of VDP mem
 \ VDP start screen
-              TEXT BEEP T." CAMEL99 2.0.4"
+              TEXT BEEP T." CAMEL99 2.0.5"
               TIB 0 'SOURCE 2!   >IN OFF
               SOURCE-ID OFF
               TS" DSK1.START" INCLUDED
