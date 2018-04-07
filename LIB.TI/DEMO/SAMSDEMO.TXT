@@ -1,0 +1,106 @@
+\ =====================================================
+\ Create words to allow easy integration with 16 bit
+\ CAMEL Forth universe
+\ ---------------------------------
+
+: D,     ( d -- )
+         SWAP , ,  ;          \ compile a 32bit number into dictionary
+
+\ We need a 32bit variable to keep track of 900K of memory
+CREATE SAMS    0 0 D,
+
+\ == simple memory manager ==
+\ return the 32bit pointer to next available SAMS memory location
+: SHERE   ( -- d)  SAMS 2@ ;
+
+\ allocate n bytes in the SAMS memory space (max 64K)
+: SALLOT  ( n -- ) SHERE ROT M+ SAMS 2! ;
+
+\ == create some data type managers
+: SAMS-INT: (  -- <text>)
+\ compile time action:
+           CREATE           \ create a word in dictionary
+              SHERE D,      \ compile the 32bit SAMS location into the word
+              2 SALLOT      \ allot 2 bytes of SAMS space
+
+\ runtime action:  ( -- addr)
+           DOES> 2@ >BANK ; \ fetch the 32bit from myself, convert to a bank address
+
+: SAMS-BUFFER: ( n -- <text>) ( 4K is the largest practical buffer we can allocate)
+\ compile time action:
+           DUP B/BANK U> ABORT" >4K"
+           CREATE           \ create a word in dictionary
+              SHERE D,    \ compile the 32bit SAMS location into the word
+              SALLOT        \ allot n bytes of SAMS space
+
+\ runtime action: ( -- addr)
+           DOES> 2@ >BANK ; \ fetch the 32bit from myself, convert to a bank address
+
+: SAMS-ARRAY: ( n -- <text>)
+\ compile time action:
+           CREATE           \ create a word in dictionary
+              SHERE D,      \ compile the 32bit SAMS location into the word
+              CELLS SALLOT  \ allot n * 2 bytes of SAMS space (int = 2bytes)
+
+\ runtime action:  ( n -- addr)
+           DOES> 2@            \ fetch the 32bit base address from myself
+                 ROT CELLS M+  \ rotate the index 'n' to top, multiply by cell size & add to base
+                 >BANK ;       \ convert to a bank address
+
+: SAMS-BYTES: ( n -- <text>) \ we can index upto 64K bytes (>FFFF)
+\ compile time action:
+           CREATE           \ create a word in dictionary
+              SHERE D,      \ compile the 32bit SAMS location into the word
+              SALLOT        \ allot n bytes of SAMS space
+
+\ runtime action:  ( n -- addr)
+           DOES> 2@            \ fetch the 32bit base address from myself
+                 ROT M+        \ rotate the index 'n' to top, add to base
+                 >BANK ;       \ convert to a bank address
+
+
+\ ===========================================
+\ example code
+
+\ SAMS-INT: X
+\ SAMS-INT: Y
+\ SAMS-INT: Z
+
+0400 CONSTANT 1K
+1000 CONSTANT 4K
+ 200 SAMS-BUFFER: FARBUFF
+
+FFFF SAMS-BYTES: []BYTES
+7FFF SAMS-ARRAY: ]COWS
+7FFF SAMS-ARRAY: ]PIGS
+
+: FILLCOWS ( n -- )
+        7FFF 0
+        DO
+           DUP I ]COWS !
+        LOOP
+        DROP ;
+
+: ERASE    ( adr cnt -- ) 0 FILL  ;
+
+: FASTFILL ( char -- )
+           FFFF 0
+           DO
+               I  U.
+               I []BYTES 4K 2 PICK FILL
+           4K +LOOP 
+           DROP ;
+
+: FASTERASE
+           FFFF 0
+           DO
+               I []BYTES 4K ERASE
+           4K +LOOP ;
+
+
+\ : COPYPIGS
+\        7FFF 0
+\        DO
+\            I ]COWS @  I ]PIGS !
+\        LOOP ;
+

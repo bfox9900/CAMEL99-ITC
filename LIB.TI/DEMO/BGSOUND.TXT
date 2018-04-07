@@ -1,0 +1,162 @@
+\ BACKGROUND TI sound list player in CAMEL99 Forth V1.99
+
+\ *** requires MTASK99.HSF installed ***
+
+\ 1. This player uses a final '0' to mark the end of the sound data
+\ 2. It turns off all sounds when the data is ended
+\ 3. Uses the TMS9901 timer to control sound duration
+\ 4. It can Queue up to 16 sound lists to play
+\ 5. Player goes to sleep when sound Queue is empty
+\ 6. Only two end user comands:  >Q  BGPLAY
+
+\ MARKER BGSOUND
+\ ========================================================
+\ sound list player
+HEX
+: SILENT ( --)  9F SND!  BF SND!  DF SND! FF SND! ;  \ turn off all sounds
+
+: PLAY$ ( sound_string -- ) \ play 1 sound string
+       COUNT                \ -- addr len
+       2DUP + C@  >R        \ get duration at end of string, Rpush
+       BOUNDS               \ convert addr/len to end-addr. start-addr.
+       DO  I C@ SND! LOOP   \ feed bytes to sound chip
+       R> JIFFS ;           \ use the delay from Rstack (JIFF=1/60)
+
+: PLAYLIST   ( addr -- )    \ play a TI sound list
+         BEGIN DUP C@ WHILE \ while the length is not 0
+            PAUSE           \ give somebody else some time
+            DUP PLAY$       \ play a single string
+            COUNT + 1+      \ advance to the next sound string
+         REPEAT
+         SILENT
+         DROP ;             \ mom said always clean up after yourself
+\ ========================================================
+HEX
+\ create a fifo to feed the sound player
+VARIABLE SHEAD
+VARIABLE STAIL
+
+CREATE SOUNDQ   20 CELLS ALLOT
+\ circular Q access words
+: Q+!    ( fifo -- n) DUP @ 2+ 1F AND DUP ROT ! ;
+: Q@     ( fifo -- n) STAIL Q+! + @ ;      \ bump tail and fetch data
+: Q!     ( n fifo --) SHEAD Q+! + ! ;      \ bump head and add to FIFO
+: Q?     ( fifo -- ?) SHEAD @ STAIL @ <> ; \ is data ready?
+
+\ BackgroundPlayer
+: BGPLAYER ( -- )   \ play all lists in the Q then goto sleep
+           BEGIN 
+           Q? WHILE
+             SOUNDQ Q@ PLAYLIST
+           REPEAT
+           MYSELF SLEEP
+           PAUSE ;      \ hand-off to next task
+
+
+\ === MULTI-TASKING SET-UP ===
+INIT-MULTI
+
+\ CREATE TASK1 USIZE ALLOT  ( task in dictionary space)
+USIZE MALLOC CONSTANT TASK1
+       TASK1 FORK
+
+' BGPLAYER TASK1 ASSIGN
+
+ : RESTART ( pid -- )
+           DUP DUP DUP
+           JOB LOCAL    SWAP 'IP LOCAL !  \ JOB->local IP register
+           DUP USIZE +  SWAP 'RP LOCAL !  \ reset local Rstack
+           WAKE ;                         \ pid wake
+
+\ ===============================================
+\ end user commands
+\ Usage:  MUNCHMAN >Q  PACMAN >Q  BGPLAY
+
+: >Q      ( list -- ) SOUNDQ Q! ;
+: BGPLAY  ( addr -- ) TASK1 RESTART ;
+
+\ ===============================================
+\ sound list examples
+
+: ?BYTE ( n -- ) FF00 AND  ABORT" Not a byte" ;
+
+: BYTE ( -- )   \ puts bytes in
+         BEGIN  [CHAR] , PARSE-NAME DUP
+         WHILE
+            EVALUATE DUP ?BYTE
+            C,
+         REPEAT
+         2DROP ;
+         
+VARIABLE VP   \ VDP RAM pointer
+HEX 1000 VP !
+
+: VC,   ( c -- ) VP @ VC!  1 VP +! ;
+
+: VCREATE ( <text> -- ) VP @ CONSTANT ;
+
+: VBYTE ( -- )
+         BEGIN  [CHAR] , PARSE-NAME DUP
+         WHILE
+            EVALUATE DUP ?BYTE
+            VC,
+         REPEAT
+         2DROP ;
+
+
+: /END   0 C,  ALIGN  ;   \ compile zero, force even memory boundary
+
+
+: PLAY$ ( sound_string -- ) \ play 1 sound string
+       COUNT                \ -- addr len
+       2DUP + VC@  >R        \ get duration at end of string, Rpush
+       BOUNDS               \ convert addr/len to end-addr. start-addr.
+       DO  I C@ SND! LOOP   \ feed bytes to sound chip
+       R> JIFFS ;           \ use the delay from Rstack (JIFF=1/60)
+
+: PLAYLIST   ( addr -- )    \ play a TI sound list
+         BEGIN DUP C@ WHILE \ while the length is not 0
+            PAUSE           \ give somebody else some time
+            DUP PLAY$       \ play a single string
+            COUNT + 1+      \ advance to the next sound string
+         REPEAT
+         SILENT
+         DROP ;             \ mom said always clean up after yourself
+HEX
+ CREATE MUNCHMAN
+       BYTE 08,85,2A,90,A6,08,B0,CC,1F,12
+       BYTE 08,85,2A,90,A4,1C,B0,C9,0A,12
+ /END
+
+ CREATE PACMAN
+       BYTE 06,86,0D,97,AC,1A,B7,08
+       BYTE 02,8F,08,02
+       BYTE 02,AB,23,05
+       BYTE 02,86,0D,04
+       BYTE 01,BF,03
+       BYTE 02,8E,0B,08
+       BYTE 02,8A,0A,02
+       BYTE 03,AC,1A,B7,08
+ /END
+
+VCREATE NOKIA
+       VBYTE 01,9F,20,
+       VBYTE 03,90,85,05,09,
+       VBYTE 02,8F,05,09,
+       VBYTE 02,87,09,12,
+       VBYTE 02,87,08,12,
+       VBYTE 02,85,06,09,
+       VBYTE 02,81,07,09,
+       VBYTE 02,8E,0B,12
+       VBYTE 02,8A,0A,12,
+       VBYTE 02,81,07,09,
+       VBYTE 02,8F,07,09,
+       VBYTE 02,8A,0C,12,
+       VBYTE 02,8A,0A,12,
+       VBYTE 02,8F,07,24,
+       VBYTE 01,9F,00,
+/END
+
+
+: QALL   MUNCHMAN >Q  PACMAN >Q MUNCHMAN >Q PACMAN >Q NOKIA >Q ;
+
