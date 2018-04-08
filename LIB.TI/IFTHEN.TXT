@@ -1,5 +1,5 @@
 CR .( Compiler extensions...)
-\ ** MUST be loaded when the KERNEL boots to complete the system
+\ part of the kernel. Here for reference or if you need them
 
 \ branch calculators/compilers help me understand this code better
 : AHEAD   ( -- addr)  HERE   0 , ;
