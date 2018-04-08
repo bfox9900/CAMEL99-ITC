@@ -1,5 +1,5 @@
 \ PATTERN: lets us define a named character patterns
-
+\ part of GRAFIX.FTH now
 \ usage: 
 \  HEX 3C42 A581 A599 423C PATTERN: HAPPY_FACE
 \      3C42 A581 99A5 423C PATTERN: SAD_FACE
