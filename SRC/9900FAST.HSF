@@ -216,7 +216,7 @@ CODE: LIT     ( -- w )                              \ Execute a LITERAL number i
 \              END-CODE
 
 
-CODE: DOCON   ( -- n )                             \ Executor that executes a "CONSTANT"
+ODE: DOCON   ( -- n )                             \ Executor that executes a "CONSTANT"
               TOS PUSH,                            \ make room in TOS
              *W TOS MOV,                           \ put contents of PFA (W+2) in TOS
               NEXT,
@@ -243,14 +243,14 @@ CODE: DOUSER ( -- addr)
 \ defined word:  CFA: doescode
 \                PFA: parameter field
 \
-\ Note: in the TMS9900 implementation we use BL @DODOES. (branch and link to sub-routine)
+\ Note: in the TMS9900 implementation we use B @DODOES. (see: CAMEL2.HSF DOES> )
 \ DODOES is entered with W=PFA.  ( parameter field address)
 \ DODOES moves  W to the TOP of Stack (TOS)
 \ So the high-level Forth code begins with the address of the parameter
 \ field on top of stack. ( cached in R4 in this version)
 \
 \ MSP430 version translates to TMS9900 very easily
-CODE: DODOES  ( -- a-addr)
+CODE: DODOES  ( -- addr)
               TOS PUSH,       \ save TOS reg on pstack (uses PUSH macro)
               W TOS MOV,      \ put defined word's PFA in TOS
               IP RPUSH,       \ push old IP onto return stack
