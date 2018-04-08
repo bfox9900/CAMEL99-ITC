@@ -151,8 +151,6 @@ CODE: FNAME]  ( addr -- addr') TOS 9 ADDI, NEXT, END-CODE
 : ?FILE    ( c -- ) 0= TS" Filename" ?ABORT ;
 
 \ This word bootstraps the system on startup.
-\ FILESYS8 is nestable. Allocates a new PAB and LDBUFF
-\ Typically: TS" DSK1.START" FLOAD
 : INCLUDED  ( caddr len -- )
            DUP ?FILE
            CR T." Loading: " 2DUP TYPE
