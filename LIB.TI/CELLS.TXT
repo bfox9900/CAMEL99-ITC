@@ -1,9 +1,0 @@
-
-\ CELLS ANS Forth Core wordset
-\ added to CAMEL99 Forth in file DSK1.START
-
-: CELLS ( n -- n') 2* ;
-: CELL+ ( n -- n') 2+ ;
-
-: CHAR+ ( n -- n') 1+ ;
-
