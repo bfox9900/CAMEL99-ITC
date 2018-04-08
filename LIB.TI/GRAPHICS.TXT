@@ -1,6 +1,8 @@
 \ GRAPHICS mode with and color control words for CAMEL99  BJF 21MAR17
 \ uses 818 bytes of expansion memory
 
+\ **obsolete original version**
+
 \ TI-BASIC color values are the machine values + 1
 \ CAMEL99 values are the same as TI BASIC
 \
