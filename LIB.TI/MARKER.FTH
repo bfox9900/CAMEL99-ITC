@@ -1,9 +1,9 @@
 
 \ MARKER create word to restore dictionary
 
-\ Use:  MARKER RESTORE
+\ Use:  MARKER FENCE
 \ < ... make new words ... >
-\ FENCE  removes all new words including the word RESTORE
+\ FENCE  removes all new words including the word FENCE
 
 : MARKER  ( -- )
    LATEST @ HERE         \ get latest word NFA and location of HERE
