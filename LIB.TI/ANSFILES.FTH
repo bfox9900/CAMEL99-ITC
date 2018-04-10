@@ -6,7 +6,7 @@ CR .( ANSFILES  for CAMEL99 V2 BJF 02APR2018)
 
 \ Dependancy:
 \ TI-99 file system is record oriented not byte oriented
-\ therefore READ-FILE and WRITE-FILE are part of this lexicon.
+\ therefore READ-FILE and WRITE-FILE are NOT part of this lexicon.
 
 \ ANS/ISO Forth Definitions used in this code:
 \         fid -  file identifier (a file handle)
