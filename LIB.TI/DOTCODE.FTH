@@ -1,4 +1,5 @@
 \ print TI code as loadable text code word
+\ USAGE: ' <ACODEWORD>  .CODE
 
 HEX
 
