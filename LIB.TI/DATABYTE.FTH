@@ -11,7 +11,7 @@
 HEX
 : BYTE ( -- )
          BEGIN
-           [CHAR] , PARSE-NAME  DUP
+           [CHAR] , PARSE-WORD  DUP
          WHILE
             EVALUATE  DUP FF00 AND  ABORT" Not a byte"
             C,
@@ -20,7 +20,7 @@ HEX
 
 : DATA ( -- )
          BEGIN
-            [CHAR] , PARSE-NAME  DUP
+            [CHAR] , PARSE-WORD  DUP
          WHILE
             EVALUATE ,
          REPEAT 

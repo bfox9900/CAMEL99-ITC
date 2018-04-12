@@ -1,4 +1,4 @@
-\ inline.hsf  a simple speedup for ITC FORTH July 2017  B Fox
+\ inline.fth  a simple speedup for ITC FORTH July 2017  B Fox
 
 \ Premis:
 \ An indirect threaded code (ITC) system can spend up to 50% of its time 
@@ -13,14 +13,9 @@
 
 \ **not portable Forth code**  Uses TMS9900/CAMEL99 CARNAL Knowledge
 
+INCLUDE DSK1.CODE.F
+
 HEX
-
-: CODE        HEADER  HERE >BODY , !CSP ;
-: ;CODE       (;CODE) !CSP ;
-: NEXT,       045A , ;        \ compile code for "B *R10"
-: END-CODE    ?CSP  ;         \ check if any junk was left on the stack
-
-\ ==============
 \ TEST for CODE word
 \ CFA of a code word contains the address of the next cell
 : ?CODE ( cfa -- ) DUP @ 2- - ABORT" Not code word" ;
@@ -56,7 +51,7 @@ HEX
 
 \ create code words using primitives
 : CODE[    BEGIN
-             BL WORD COUNT PAD PLACE
+             BL PARSE-WORD PAD PLACE
              PAD CHAR+ C@ [CHAR] ] <>
            WHILE
              PAD FIND 0= ABORT" not found"
