@@ -312,34 +312,35 @@ TARGET-COMPILING
 \      1C USER: 'R14
 \      1E USER: 'R15
 
-      20 USER: TFLAG               \ TASK flag awake/asleep status
-      22 USER: JOB                 \ Forth word that runs in a task
-      24 USER: DP
-      26 USER: HP
+      20 USER: TFLAG             \ TASK flag awake/asleep status
+      22 USER: JOB               \ Forth word that runs in a task
+      24 USER: DP                \ dictionary pointer
+      26 USER: HP                \ hold pointer, for text->number convertion
       28 USER: CSP
       2A USER: BASE
       2C USER: >IN
-\      2E USER: 'EMIT              \ vector for char. output routine
-\      30 USER: 'CR                \ vector for carriage return
-\      32 USER: 'KEY               \ vector for key input  >8332
-\      34 USER: 'TYPE              \ vector for block output
-\      36 USER: 'PAGE              \ vector for screen clear
-      38 USER: LP                  \ LEAVE stack pointer.
-      3A USER: SOURCE-ID           \ =true if EVALUATE is running, false otherwise
-      3C USER: 'SOURCE             \ WATCH OUT! This is 2variable, occupies 3C and 3E
+\      2E USER: 'EMIT            \ vector for char. output routine
+\      30 USER: 'CR              \ vector for carriage return
+\      32 USER: 'KEY             \ vector for key input  >8332
+\      34 USER: 'TYPE            \ vector for block output
+\      36 USER: 'PAGE            \ vector for screen clear
+      38 USER: LP                \ LEAVE stack pointer.
+      3A USER: SOURCE-ID         \ =true if EVALUATE is running, false otherwise
+      3C USER: 'SOURCE           \ WATCH OUT! This is 2variable, occupies 3C and 3E
 \     3E USER: 'SOURCE2
-                                                                                                                                                 
+
 \      40 USER: CURRENT
 \      42 USER: CONTEXT
 \      44 USER:
-\      46 USER:                \ last free space in hi speed RAM (PAD)
+\      46 USER:                  \ last free space in hi speed RAM (PAD)
 
-variable: LATEST                   \ LATEST returns the NFA (a counted string)
+variable: LATEST                 \ LATEST returns the NFA (a counted string)
 
 \ These system variables control cold starting the system
-variable: ORGDP                    \ restore DP to this on COLD boot
-variable: ORGLAST                  \ restore LATEST to this on COLD boot
-variable: BOOT                     \ ADDRESS OF THE FIRST Forth word to run
+variable: ORGDP                  \ restore DP to this on COLD boot
+variable: ORGLAST                \ restore LATEST to this on COLD boot
+variable: BOOT                   \ ADDRESS OF THE FIRST Forth word to run
+\ variable: MENU
 
 \ screen control variables are addresses defined in file: 99EQU.HSF
 \ See: 9900fast.hsf
@@ -373,7 +374,7 @@ variable: BOOT                     \ ADDRESS OF THE FIRST Forth word to run
 \ _TSTAT constant: 'TSTAT                    \ address of task status routine
 
         variable: L0    3 TCELLS TALLOT     \ LEAVE stack used to resolve nested LEAVEs (4 LEAVEs max)
-        
+
         VARIABLE: ^PAB
 
 ?stk
@@ -486,11 +487,6 @@ TARGET-COMPILING
 \ S T R I N G   T H I N G S
 
 TARGET-COMPILING
-\ : MOVE        ( src dst n -- )
-\              >R  2DUP SWAP DUP R@ +  \ -- src dst dst src src+n
-\              WITHIN
-\              IF    R> CMOVE>         \ src <= dst < src+n
-\              ELSE  R> MOVE16  THEN ;  \ otherwise
 
 \ CAMEL Forth calls this ">COUNTED"
 : PLACE       ( src n dst -- ) 2DUP C! 1+ SWAP CMOVE ;
@@ -538,13 +534,13 @@ TARGET-COMPILING
               ADR>IN                      \ advance >IN   -- adr"
               R> TUCK - ;
 
-: PARSE-NAME  ( char -- c-addr n)         \ Forth 2012 word
+: PARSE-WORD  ( char -- c-addr n)         \ Non-standard. gForth word. Nice factor
               DUP SOURCE >IN @ /STRING    \ -- c c adr n
               ROT SKIP                    \ -- c adr' n'
               DROP ADR>IN PARSE ;         \ -- adr" n"
 
 : WORD        ( char -- c-addr)           \ word delim'd by char
-              PARSE-NAME HERE PLACE
+              PARSE-WORD HERE PLACE
               HERE BL OVER COUNT + C! ;  \ append trailing blank
               
 
@@ -641,7 +637,7 @@ TARGET-COMPILING
               0 17 CLRLN ;                       \ clear last line
 
 [ELSE]
-\ 20% slower line by line scroll
+\ 20% slower line by line scroll, only uses 1 line of HEAP 
 \ *** 6 BYTES BIGGER code ***
 \ but uses only 1 line of HEAP space and releases it when done.
 \ and is better for multi-tasking
@@ -756,7 +752,7 @@ TARGET-COMPILING
 
 \ : >DIGIT ( n -- c)          DUP 9 > 7 AND + t[CHAR] 0 + ;  \ REMOVED to save space. Put into #
 
-: <#     ( --)              PAD HP ! ;                       \ initialize Hold Pointer to end of the number buffer (#pad)
+: <#     ( --)              PAD HP ! ;                      \ initialize Hold Pointer to end of the number buffer (#pad)
 : #      ( ud1 -- ud2) BASE @ UD/MOD ROT DUP 9 > 7 AND + t[CHAR] 0 +  HOLD  ;
 : #S     ( ud1 -- ud2) BEGIN # 2DUP OR  0= UNTIL ;          \ convert all digits in ud1. ud2 will be 0 (the remainder)
 : #>     ( ud1 -- c-addr u) 2DROP HP @ PAD OVER - ;         \ return a stack string (address, length)  of the converted number
@@ -795,7 +791,6 @@ TARGET-COMPILING
 : QUIT         ( -- )
                L0 LP !                                       \ init LEAVE stack pointer LP
                RP0 RP!                                       \ reset rstack
-\               3FFF ^PAB !                                   \ reset file PAB stack to top of VDP
                t[COMPILE] [                                  \ STATE = 0 (Interpreting mode)
                BEGIN
                   TIB DUP TIB# ACCEPT SPACE ( -- adr len)    \ accept input to TIB, maxlen=TIB#
@@ -845,7 +840,7 @@ TARGET-COMPILING
 
    : ?ABORT  ( f c-addr u --)
               ROT IF  CR CR T." * " TYPE  T."  ? "
-                      SOURCE-ID @ 0>
+                      SOURCE-ID @ 
                       IF   T." Line " LINES @ .
                       THEN ABORT
               THEN 2DROP ;
@@ -898,7 +893,7 @@ TARGET-COMPILING
 : '           ( -- xt) BL WORD FIND ?FIND ;
 : [']         ( -- <name> ) ?COMP  '  T[COMPILE] LITERAL ; XIMMEDIATE
 
-\ : [COMPILE]   ( -- ) ?COMP  '   ,   ;  XIMMEDIATE  ( 2012 word is Obsolete)
+\ : [COMPILE]   ( -- ) ?COMP  '   ,   ;  XIMMEDIATE  ( 2012: word is Obsolete)
 
 : POSTPONE      ( <name> -- )      \ replaces COMPILE and [COMPILE]
                 ?COMP
@@ -994,7 +989,7 @@ TARGET-COMPILING
             LATEST @ ,                     \ record the LATEST NFA as the LINK in this new word
             0 C,                           \ create the immediate field (1 BYTE)
             HERE LATEST !                  \ update the LATEST variable to this new definition's NFA
-            BL PARSE-NAME S,  ;            \ parse input and compile NAME string into dictionary
+            BL PARSE-WORD S, ;             \ parse input and compile NAME string into dictionary
             
 
 \ ========================================================================
@@ -1049,8 +1044,8 @@ include cc9900\cclib\targloop.hsf  \ these compile code on the TARGET system
 
 CROSS-ASSEMBLING
 
-CODE: INIT    WRKSP0 LWPI,
-
+CODE: INIT  
+              WRKSP0 LWPI,
               R0 HSprims LI,
               R1 HSstart LI,
 @@1:         *R0+ *R1+ MOV,
@@ -1068,8 +1063,8 @@ CODE: INIT    WRKSP0 LWPI,
 \ ======================================================================
 \ B O O T   U P   C O D E
 TARGET-COMPILING
-: COLD
-              80 83C2 C!       \ COLD boot starts the system
+: COLD   \ COLD boot starts the system
+              80 83C2 C!       \ ISR disable flags: >80 All, >40 Motion, >20 Sound, >10 Quit key
               ORGDP @ DP !
               ORGLAST @ LATEST !
               2000 H !         \ inits H (HEAP) to >2000
@@ -1080,7 +1075,7 @@ TARGET-COMPILING
               2 KUNIT# C!       \ keyboard #2 is the BASIC keyboard
               3FFF ^PAB !       \ init pab pointer to TOP of VDP mem
 \ VDP start screen
-              TEXT BEEP T." CAMEL99 2.0.5"
+              TEXT BEEP T." CAMEL99 2.0.6"
               TIB 0 'SOURCE 2!   >IN OFF
               SOURCE-ID OFF
               TS" DSK1.START" INCLUDED
