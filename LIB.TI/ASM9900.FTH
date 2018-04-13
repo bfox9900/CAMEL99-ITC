@@ -91,33 +91,37 @@ CR .( jump instructions)
 : ()        20     ;  \ indexed addressing
 
 CR .( Define CAMEL99 special registers & addressing modes )
-: TOS       R4 ;
-: (TOS)     R4 () ;
-: *TOS      R4 ** ;
-: *TOS+     R4 *+ ;
 
-: W         R6    ;
-: (W)       W ()  ;
-: *W        W **  ;
-: *W+       W *+  ;
+4 CONSTANT TOS
+: (TOS)     TOS () ;
+: *TOS      TOS ** ;
+: *TOS+     TOS *+ ;
 
-: RP        R6    ;
-: (RP)      RP () ;
-: *RP       RP ** ;
-: *RP+      RP *+ ;
 
-: IP        R3    ;
-: (IP)      IP () ;
-: *IP       IP ** ;
-: *IP+      IP *+ ;
-
-: SP        R4    ;
+6 CONSTANT SP
 : (SP)      SP () ;
 : *SP       SP ** ;
 : *SP+      SP *+ ;
 
-: *R10       R10 ** ;
-: *R11       R11 ** ;
+7 CONSTANT RP
+: (RP)      RP () ;
+: *RP       RP ** ;
+: *RP+      RP *+ ;
+
+8 CONSTANT W
+: (W)       W ()  ;
+: *W        W **  ;
+: *W+       W *+  ;
+
+9 CONSTANT IP
+: (IP)      IP () ;
+: *IP       IP ** ;
+: *IP+      IP *+ ;
+
+
+: *R10       10 ** ;
+: *R11       11 ** ;
+
 
 CR .( Jump tokens) \ for use with CJMP
 HEX
@@ -196,8 +200,15 @@ CR .( Structured branching and looping )
 CR .( Pseudo instructions)
 : RT,     R11 ** B, ;
 : NOP,    2 JMP, ;
-
 : NEXT,     ( -- )  *R10 B, ;  \ CAMEL99 NEXT: B *R10
+
+\ PUSH & POP for both stacks
+: PUSH,         ( src -- )  SP DECT,  *SP   MOV, ;    \ 10+18 = 28  cycles
+: POP,          ( dst -- )  *SP+      SWAP  MOV, ;    \ 22 cycles
+
+: RPUSH,        ( src -- ) RP DECT,  *RP   MOV,  ;
+: RPOP,         ( dst -- ) *RP+      SWAP  MOV,  ;
+
 
 : CODE      ( -- )  HEADER  HERE >BODY , !CSP ;
 : ENDCODE   ( -- )  ?CSP  ;
