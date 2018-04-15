@@ -1,4 +1,4 @@
-#Demo programs
+# Demo programs
 This folder contains some DEMO programs in Forth and BASIC.
 
 Files with no extension are BASIC.  
@@ -7,6 +7,6 @@ Files with no extension are BASIC.
 
 There is also a Font file that takes time to compile but it changes the lower case font to something better than stock.
 
-###*CHANGE: 
+### *CHANGE: 
 You no longer need to load any other files to load SANSERIF.F.   
 SANSERIF.F uses NO new memory.  ONLY the VDP pattern descriptor files are changed.
