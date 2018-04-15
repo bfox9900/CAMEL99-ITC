@@ -173,7 +173,7 @@ l: _HSend                     \ this label tells the compiler where the high spe
 \ --------------------------------------------------
  _exit  >HSRAM equ EXIT2
  _next  >HSRAM equ NEXT2       \ entry address of NEXT in fast RAM
- _enter >HSRAM equ ENTR      \ code address of enter. This resolves 'DOCOL in CAMEL99.HSF
+ _enter >HSRAM equ ENTR        \ code address of enter. This resolves 'DOCOL in CAMEL99.HSF
 \  _lit   >HSRAM equ '_LIT       \ code address of LIT
   _HSend >HSRAM equ HSend      \ end of hi-speed memory code. Needed by copy loop in INIT
   _branch >HSRAM equ BRANCH2
@@ -203,7 +203,7 @@ CODE: LIT     ( -- w )                              \ Execute a LITERAL number i
              _LIT >HSRAM CFA!
 \              TOS PUSH,       \ 28
 \             *IP+ TOS MOV,    \ 22
-              NEXT,
+\              NEXT,
               END-CODE
 
 \ CODE: DLIT
@@ -216,7 +216,7 @@ CODE: LIT     ( -- w )                              \ Execute a LITERAL number i
 \              END-CODE
 
 
-ODE: DOCON   ( -- n )                             \ Executor that executes a "CONSTANT"
+CODE: DOCON   ( -- n )                             \ Executor that executes a "CONSTANT"
               TOS PUSH,                            \ make room in TOS
              *W TOS MOV,                           \ put contents of PFA (W+2) in TOS
               NEXT,
@@ -243,14 +243,14 @@ CODE: DOUSER ( -- addr)
 \ defined word:  CFA: doescode
 \                PFA: parameter field
 \
-\ Note: in the TMS9900 implementation we use B @DODOES. (see: CAMEL2.HSF DOES> )
+\ Note: in the TMS9900 implementation we use BL @DODOES. (branch and link to sub-routine)
 \ DODOES is entered with W=PFA.  ( parameter field address)
 \ DODOES moves  W to the TOP of Stack (TOS)
 \ So the high-level Forth code begins with the address of the parameter
 \ field on top of stack. ( cached in R4 in this version)
 \
 \ MSP430 version translates to TMS9900 very easily
-CODE: DODOES  ( -- addr)
+CODE: DODOES  ( -- a-addr)
               TOS PUSH,       \ save TOS reg on pstack (uses PUSH macro)
               W TOS MOV,      \ put defined word's PFA in TOS
               IP RPUSH,       \ push old IP onto return stack
@@ -929,7 +929,7 @@ CODE: OFF     ( adr -- )
               END-CODE           \        36
 
 \ ===================================================================
-cr .( SKIP SCAN /STRING S= )
+cr .( SKIP SCAN S= )
 
 \ used CAMEL Forth MSP430 as reference code
 
@@ -973,17 +973,6 @@ CODE: SCAN   ( adr len char -- adr' len' )    \ find matching char
 @@2: @@3:     W *SP  MOV,                     \ store updated address on stack
               R1 TOS MOV,                     \ updated count to TOS
               NEXT,
-              END-CODE
-
-\ : /STRING       ( c-addr1 u1 n -- c-addr2 u2 ) ROT OVER + -ROT - ; ~ 1000uS
-\ After seeing the VFX intel code for this I realized it's WAY better as a code word
-\ 6 bytes vs 10 bytes and 8X faster
-\ Speeds up WORD and PARSE for faster compiling
-CODE: /STRING ( c-addr1 u1 n -- c-addr2 u2 )                \ Clks
-              TOS *SP SUB,                                  \ 18
-              TOS 2 (SP) ADD,                               \ 22
-              TOS POP,                         \ refill TOS   22
-              NEXT,                            \ 8 bytes      62
               END-CODE
 
 \ ========================================================================
@@ -1371,15 +1360,6 @@ CODE: BYE    ( -- )
             0000 @@ BLWP,             \ ROM reset vector is at 0000
             END-CODE
 
-\ : >DIGIT  DUP 9 > 7 AND + 30 + ;    \ ASM is 2 bytes smaller 4X faster
-\ CODE: >DIGIT  ( n -- c)               \ convert n to ascii digit c
-\            TOS 9 CMPI,
-\            @@1 JLE,                  \ if n<=9 jump to convert it
-\            TOS  7 ADDI,              \ else number is not base 10, add 7
-\ @@1:        TOS 30 ADDI,              \ add 30 to create ASCII value
-\            NEXT,
-\            END-CODE
-
 \ CODE: LIMI0   0 LIMI, NEXT, END-CODE  \ disable interrupts
 \ CODE: LIMI2   2 LIMI, NEXT, END-CODE  \ enable interrupts
 
@@ -1395,7 +1375,6 @@ CODE: BLWP  ( vector -- )
             TOS POP,
             NEXT,
             END-CODE
-
 
 cr .( Code primitives complete)
 

@@ -373,9 +373,8 @@ variable: BOOT                   \ ADDRESS OF THE FIRST Forth word to run
 \  NEXT2 constant: 'NEXT                     \ address of Forth NEXT
 \ _TSTAT constant: 'TSTAT                    \ address of task status routine
 
-        variable: L0    3 TCELLS TALLOT     \ LEAVE stack used to resolve nested LEAVEs (4 LEAVEs max)
-
-        VARIABLE: ^PAB
+        variable: L0    3 TCELLS TALLOT      \ LEAVE stack used to resolve nested LEAVEs (4 LEAVEs max)
+        variable: ^PAB
 
 ?stk
 \ ==============================================
@@ -383,23 +382,28 @@ variable: BOOT                   \ ADDRESS OF THE FIRST Forth word to run
 [cc] cr .( Hi-level FORTH Primitives...)
 
 TARGET-COMPILING
-: ALLOT     ( n --)    DP +!  ;     \ allocate dictionary space
-: HERE  ( -- addr)     DP @  ;
+
+\ : ALLOT    ( n --)  DP +!  ;      \ allocate dictionary space
+CODE: ALLOT  ( n -- ) TOS DP @@ ADD,  TOS POP,  NEXT,  END-CODE
+
+\ it turns out that by making HERE faster, the system goes faster because HERE is used a lot.
+\ : HERE   DP @ ;
+CODE: HERE   ( -- addr) TOS PUSH,  DP @@ TOS MOV,  NEXT, END-CODE
+
 : ALIGN     ( -- )     HERE ALIGNED DP ! ;
 : ,         ( n --)    HERE !   2 ALLOT ;
 : C,        ( c --)    HERE C!  1 ALLOT ;
 
-: PAD       ( -- addr) HERE 26 + ;  \ general purpose buffer in un-allocated space grows UPWARD
+: PAD       ( -- addr) HERE 26 + ;
 
 : >BODY     ( cfa-addr -- pfa-addr) 2+ ;
-
 \ : COMPILE,  ( n --)  ,  ;                \ for ITC Forth this is the same as , (comma compiler)
 
 : COMPILE   ( -- )  R> DUP >BODY >R @ , ;     \ append inline execution token
 
 : IMMEDIATE  ( --)  01 LATEST @ 1- ( -- imm-fld) C! ;  \ set the precedence BIT in the last word defined
 
-: LITERAL    ( n -- n|~)  STATE @ IF  COMPILE LIT  , THEN ;  XIMMEDIATE
+: LITERAL    ( n -- n|~)  STATE @ IF  COMPILE LIT ,  THEN ;  XIMMEDIATE
 
 : ]          ( -- ) STATE ON  ;  XIMMEDIATE \ turn on the compiler
 : [          ( -- ) STATE OFF ;  XIMMEDIATE \ turn off the compiler
@@ -491,9 +495,16 @@ TARGET-COMPILING
 \ CAMEL Forth calls this ">COUNTED"
 : PLACE       ( src n dst -- ) 2DUP C! 1+ SWAP CMOVE ;
 
-\  /STRING is a CODE word in CAMEL99.
-\ Only 6 bytes in ASM vs 10 bytes in Forth and is 10x faster
-\ : /STRING   ( c-addr1 u1 n -- c-addr2 u2 ) ROT OVER + -ROT - ;
+\ : /STRING       ( c-addr1 u1 n -- c-addr2 u2 ) ROT OVER + -ROT - ;  \ ~ 290uS
+\ After seeing the VFX intel code for this I realized it's WAY better as a code word
+\ 6 bytes vs 10 bytes and 10X faster
+\ Speeds up WORD and PARSE for faster compiling
+CODE: /STRING ( c-addr1 u1 n -- c-addr2 u2 ) \ ~20uS!!       Clks
+              TOS *SP SUB,                                  \ 18
+              TOS 2 (SP) ADD,                               \ 22
+              TOS POP,                         \ refill TOS   22
+              NEXT,                            \ 8 bytes      62
+              END-CODE
 
 \ compile a stack string into memory with the count (Gforth)
 : S,         ( c-addr u -- ) HERE OVER 1+  ALLOT PLACE ALIGN ;
@@ -503,7 +514,7 @@ TARGET-COMPILING
 
 TARGET-COMPILING
 : NFA>LFA       ( nfa -- lfa)   3 - ;
-: NFA>CFA       ( nfa -- cfa )  COUNT 7F  AND + ALIGNED ;
+: NFA>CFA       ( nfa -- cfa )  COUNT 7F AND + ALIGNED ;
 
 \ smudge bit control in the Camel Forth
 : HIDE          ( -- )  LATEST @ ( nfa) DUP C@ 80 OR  SWAP C! ;
@@ -530,7 +541,7 @@ TARGET-COMPILING
               SOURCE >IN @ /STRING        \ -- c adr n
               OVER >R ROT SCAN
               OVER SWAP
-              IF 1+ THEN               \ skip trailing delim. if any
+              IF 1+ THEN                  \ skip trailing delim. if any
               ADR>IN                      \ advance >IN   -- adr"
               R> TUCK - ;
 
@@ -612,57 +623,36 @@ TARGET-COMPILING
 
 \ -----------------------------------------------------------------------
 \ Scrolling has been implemented in Forth to show how factoring out key
-\ routines ( VREAD, FILL, VWRITE, VFILL) in Assembler can deliver good speed
-\ without needing to write everything in Assembler.
+\ routines called VREAD & VWRITE, written in Assembler can deliver excellent
+\ speed without needing to write everything in Assembler.
 
-\ HUGE buffer Algorythm:
-\ 1. read the entire screen into a RAM buffer in unallocated HEAP memory
-\ 2. Write the buffer minus the lastline to top of VDP screen
-\ 3. place cursor on last line and erase the last line
-\ Advantage: It's Fast
-\ Disadvantage: we need a big buffer
-\                -1k bytes in 40 column mode
-\                -80cols needs 1920 bytes!
+[CC] C/L @ 2* [TC] CONSTANT: C/S              \ chars per scroll
 
-0 [IF]
-\ fast version
 : SCROLL      ( -- )
-              PAUSE
-              C/SCR @ DUP >R MALLOC ( -- n heap)  \ allocate heap for 1 full screen
-              VTOP @ OVER ( -- n heap VDPaddr heap)
-              2DUP         R@ VREAD              \ read screen to heap
-              SWAP C/L@ -  R@ VWRITE             \ write (buffer - c/l) to top of screen
-              DROP                               \ drop heap pointer
-              R> MFREE                           \ de-allocate heap memory
-              0 17 CLRLN ;                       \ clear last line
-
-[ELSE]
-\ 20% slower line by line scroll, only uses 1 line of HEAP 
-\ *** 6 BYTES BIGGER code ***
-\ but uses only 1 line of HEAP space and releases it when done.
-\ and is better for multi-tasking
-: SCROLL      ( -- )
-              C/L@ DUP MALLOC ( -- c/l heap) \ allocate heap for 1 line & remember amount
-              C/SCR @ C/L@                   \ loops from 2nd line, to end of screen
+              C/S DUP                         \ get char per scroll and duplicate
+              MALLOC ( -- c/s heap)           \ allocate chars per scroll in heap
+              C/SCR @  C/L@ VTOP @ +          \ loops from 2nd line, to end of screen
               DO
-                 I OVER       ( -- c/l heap VDPaddr heap)
-                 2DUP          C/L@  VREAD    \ read line to heap
+                 I  ( -- c/s heap scr-addr)
+                 OVER 2DUP    C/S VREAD      \ read chars/scroll to heap
                  PAUSE
-                 SWAP C/L@ -   C/L@  VWRITE   \ write HEAP to line above
-              C/L@ +LOOP                      \ advance loop to next line address
+                 SWAP C/L@ -  C/S VWRITE      \ write HEAP to line above
+              C/S +LOOP                       \ advance loop by chars per scroll
 
               0 17 CLRLN                      \ clear last line
               DROP                            \ drop heap pointer
               MFREE ;                         \ de-allocate heap memory
-[THEN]
+
 
 [cc] DECIMAL [tc]
 \ ========================================================================
 \ VDP text driver uses ASM words (CR) (EMIT) and VFILL
 
 : PAGE        ( -- )
-              VTOP @ C/SCR @ BL VFILL       \ fill VDP memory from address 0 with blanks
-              0 0 AT-XY ;                   \ home the cursor
+              VTOP @ 
+              DUP C/SCR @ OVER -            \ computer bytes in active screen.
+              BL VFILL                      \ fill VDP memory from address 0 with blanks
+              0 SWAP C/L@ / AT-XY ;         \ home the cursor to VTOP
 
 : CR          ( -- )                        \ Forth's "newline"
               (CR) ( -- ?)                  \ (CR) returns TRUE if we have to scroll
@@ -748,13 +738,32 @@ TARGET-COMPILING
 : UD/MOD ( ud1 u2 -- u3 ud4)
          >R 0 R@ UM/MOD -ROT R> UM/MOD ROT ;   \ 32/16->32 divide
 
-: HOLD   ( char -- )       -1 HP +!  HP @ C! ;               \ decr. HOLD pointer HP, Store char at the address contained in HP
+\ HOLD and >DIGIT are in the inner loop so ASM speed-up 
+\ makes a real difference in number printing speed
 
-\ : >DIGIT ( n -- c)          DUP 9 > 7 AND + t[CHAR] 0 + ;  \ REMOVED to save space. Put into #
+\ decr. HOLD pointer HP, Store char at the address contained in HP
+\ : HOLD   ( char -- )  -1 HP +!  HP @  C! ;
+ CODE: HOLD  ( char -- )  \ 2 BYTES bigger, 4X faster
+            HP @@   DEC,
+            HP @@ W MOV,
+            TOS     SWPB,
+            TOS  *W MOVB,
+            TOS     POP,
+            NEXT,
+            END-CODE
+
+\ : >DIGIT ( n -- c) DUP 9 > 7 AND + 30 + ; \ convert n to ascii digit c
+ CODE: >DIGIT  ( n -- c)   \ ASM is 8 bytes smaller 4X faster             
+            TOS 9 CMPI,
+            @@1 JLE,       \ if n<=9 jump to convert it
+            TOS  7 ADDI,   \ else number is not base 10, add 7
+ @@1:        TOS 30 ADDI,  \ add 30 to create ASCII value
+            NEXT,
+            END-CODE
 
 : <#     ( --)              PAD HP ! ;                      \ initialize Hold Pointer to end of the number buffer (#pad)
-: #      ( ud1 -- ud2) BASE @ UD/MOD ROT DUP 9 > 7 AND + t[CHAR] 0 +  HOLD  ;
-: #S     ( ud1 -- ud2) BEGIN # 2DUP OR  0= UNTIL ;          \ convert all digits in ud1. ud2 will be 0 (the remainder)
+: #      ( ud1 -- ud2)  BASE @ UD/MOD ROT  >DIGIT  HOLD  ;
+: #S     ( ud1 -- ud2)  BEGIN # 2DUP OR  0= UNTIL ;          \ convert all digits in ud1. ud2 will be 0 (the remainder)
 : #>     ( ud1 -- c-addr u) 2DROP HP @ PAD OVER - ;         \ return a stack string (address, length)  of the converted number
 : SIGN   ( n -- ) 0< IF T[CHAR] -  HOLD THEN ;              \ if 'n'<0  add '-' char  string created in #PAD
 : U.     ( u -- )         0  <#  #S  #>  TYPE SPACE ;       \ print 'u' as an un-signed integer (the '0' converts u to a double(32bit) int)
@@ -856,7 +865,7 @@ TARGET-COMPILING
 
 \ ========================================================================
 \ S T R I N G   L I T E R A L
-\ ISO Forth 94 version compiles literal string. 
+\ ISO Forth 94 version compiles literal string.
 \ *WARNING* when interpreting S" puts the string in PAD
 
 : S"           ( -- )
@@ -975,12 +984,6 @@ TARGET-COMPILING
              PAGE ;                        \ "CALL CLEAR" ;-)
 
 \ ========================================================================
-\ aliases for ANS/ISO compliance
-\ : CELLS   ( n -- n )  2* ;
-\ : CELL+   ( n -- n )  2+ ;
-\ : CHAR+   ( n -- n )  1+ ;
-
-\ ========================================================================
 \ D I C T I O N A R Y   C R E A T I O N
 \ Header creates a text string in memory that is linked back to the
 \ last word that was defined in the Forth dictionary.
@@ -1075,7 +1078,7 @@ TARGET-COMPILING
               2 KUNIT# C!       \ keyboard #2 is the BASIC keyboard
               3FFF ^PAB !       \ init pab pointer to TOP of VDP mem
 \ VDP start screen
-              TEXT BEEP T." CAMEL99 2.0.6"
+              TEXT BEEP T." CAMEL99 2.0.8"
               TIB 0 'SOURCE 2!   >IN OFF
               SOURCE-ID OFF
               TS" DSK1.START" INCLUDED

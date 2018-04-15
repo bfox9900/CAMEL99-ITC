@@ -31,7 +31,7 @@ END-CODE
 \ Create the VECTOR that we call with BLWP.
 \               workspace    compile program address
 \               ---------    -----------------------
-CREATE: DSKLNK   DSRWKSP T,  T' CALLDSR [CC] >BODY T, [TC]
+CREATE: DSKLNK  DSRWKSP T,   T' CALLDSR [CC] >BODY T, [TC]
 
 \ ========================================================
 
@@ -76,12 +76,4 @@ CREATE: DSKLNK   DSRWKSP T,  T' CALLDSR [CC] >BODY T, [TC]
            THEN CRU! 0SBO ;           \ then turn on the requested card
 
 : Disable  ( CRU -- )  CRU! 0SBZ ;
-
-\ hi level commands : REMOVED TO SAVE SPACE
-\ : DiskON  ( -- ) DSKCARD ( DUP 83D0 !) Enable ;  \ 99-4A needs CRU copied to 83D0. I do not!
-\ : DiskOFF ( -- ) DSKCARD  Disable ;
-
-
-
-
 
