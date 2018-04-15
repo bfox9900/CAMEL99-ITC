@@ -1,4 +1,9 @@
-# CAMEL99-V2
+# CAMEL99-V2.0.8
+
+### Apr 15 2018:
+Overall speed up by writing HERE ALLOT  >DIGIT and HOLD as code words. The improves compilation speeds and number printing is 50% faster.
+
+### Overview
 CAMEL99 V2 finally has TI file access.  The binary program is in folder DSK1 and is called CAMEL2.
 All of the loadable source files have a .F extension except the START file which is unique.
 
