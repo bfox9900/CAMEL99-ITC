@@ -1,7 +1,7 @@
 \ sprite control adapted from TI-Forth  20oct83 lct
 
 \ complete re-write for CAMEL99 Multi-Forth May 25,2017 BJF
-\ Oct 19, 2017 - MOVEALL, replaced with faster SP.MOVE
+\ Oct 19, 2017 - MOVEALL, replaced with faster SP.SHOW
 
 \ this implementation uses the same pattern descriptor table
 \ for characters and sprites. Starts at $800
@@ -91,17 +91,14 @@ CREATE STAB  SDT# ALLOT   \ sprite X,Y table in CPU RAM
 : SP.SHOW ( -- ) STAB SDT SPR# @ 4* VWRITE ;  \ VWRITE can handle 0 bytes in V1.92
 
 
-
 \ This word can be used in a TASK to create 'AUTOMOTION'
 : SP.MOVER  ( -- )    \ update all sprite positions and write to VDP
             0 ]MOTION  0 ]AUX  32 4*  MOVE    \ copy motion to aux table
             SPR# @ 0
             ?DO
-                  I ]AUX  DUP 1-!
-                  @ 0= IF I ]MOTION @ DUP / ( -- -1 | 1) THEN
+                I ]AUX  DUP 1-!
+                @ 0= IF I ]MOTION @ DUP / ( -- -1 | 1) THEN
             LOOP
-
-
             SP.SHOW ;
 
 \ change sprite and update screen immediatley
