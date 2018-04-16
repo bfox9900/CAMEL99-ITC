@@ -28,7 +28,7 @@ HEX
 : ?BYTE ( n -- ) FF00 AND  ABORT" Not a byte" ;
 
 : VBYTE ( -- )
-         BEGIN  [CHAR] , PARSE-NAME DUP
+         BEGIN  [CHAR] , PARSE-WORD DUP
          WHILE
             EVALUATE DUP ?BYTE
             VC,
