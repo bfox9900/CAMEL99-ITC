@@ -10,7 +10,7 @@ DECIMAL
 
 HEX
 : DIR  ( <DSK?.> )   \  needs the '.' ONLY shows file name
-          BL PARSE-NAME DUP ?FILE
+          BL PARSE-WORD DUP ?FILE
           RELATIVE 100 FIXED R/O BIN OPEN-FILE ?FILERR
           >R                            \ push handle onto Return stack
 
