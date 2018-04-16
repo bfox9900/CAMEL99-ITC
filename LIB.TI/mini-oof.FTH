@@ -1,6 +1,6 @@
 \ Mini-OOF   Bernd Paysan                            12apr98py
 
-\ INCLUDE INLIN99.FTH 
+INCLUDE DSK1.INLIN99.FTH 
 
 : COMPILE, ( n -- ) , ;  \ not in CAMEL99 Kernel
 
