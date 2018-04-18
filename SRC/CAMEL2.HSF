@@ -206,9 +206,6 @@ HEX
 [CC]
  T' EXIT   RESOLVES 'EXIT
     ENTR   RESOLVES 'DOCOL
-
-\ >BODY here has something to do with auto-incrementing W in NEXT.
-\ I only know that without auto-inc. on W I don't need >BODY. ???
  T' DOVAR  >BODY RESOLVES 'DOVAR
 
  T' LIT    RESOLVES 'LIT
@@ -514,7 +511,16 @@ CODE: /STRING ( c-addr1 u1 n -- c-addr2 u2 ) \ ~20uS!!       Clks
 
 TARGET-COMPILING
 : NFA>LFA       ( nfa -- lfa)   3 - ;
-: NFA>CFA       ( nfa -- cfa )  COUNT 7F AND + ALIGNED ;
+
+\ CODE: >CFA  ( addr n -- adr)
+\             TOS 7F ANDI,
+\            *SP+ TOS ADD,
+\             TOS INC,        
+\             TOS -2 ANDI,      \ align address
+\             NEXT,
+\             END-CODE
+
+: NFA>CFA       ( nfa -- cfa )  COUNT  7F AND + ALIGNED ;
 
 \ smudge bit control in the Camel Forth
 : HIDE          ( -- )  LATEST @ ( nfa) DUP C@ 80 OR  SWAP C! ;
@@ -553,7 +559,7 @@ TARGET-COMPILING
 : WORD        ( char -- c-addr)           \ word delim'd by char
               PARSE-WORD HERE PLACE
               HERE BL OVER COUNT + C! ;  \ append trailing blank
-              
+
 
 FORTH cr ." CAMEL FORTH Number conversion"
 \ ========================================================================
@@ -616,32 +622,30 @@ TARGET-COMPILING
 
 [cc] HEX [tc]
 
-\ : GETXY     ( -- col row ) VCOL 2@  ;   \ returns column & row
-: AT-XY       ( col row -- ) VCOL 2! ;    \ VCOL,VROW are adjacent in memory so we can 2!
+\ : GETXY   ( -- col row ) VCOL 2@  ;   \ returns column & row
+: AT-XY    ( col row -- ) VCOL 2! ;    \ VCOL,VROW are adjacent in memory so we can 2!
 
-: CLRLN   ( col row -- ) AT-XY  VPOS C/L@ BL VFILL ;  \ clear line on screen
+: CLRLN    ( col row -- ) AT-XY  VPOS C/L@ BL VFILL ;  \ clear line on screen
 
 \ -----------------------------------------------------------------------
 \ Scrolling has been implemented in Forth to show how factoring out key
 \ routines called VREAD & VWRITE, written in Assembler can deliver excellent
 \ speed without needing to write everything in Assembler.
 
-[CC] C/L @ 2* [TC] CONSTANT: C/S              \ chars per scroll
+: SCROLL   ( -- )
+            C/L@ 2* DUP                    \ get char per scroll and duplicate
+            MALLOC ( -- c/s heap)          \ allocate chars per scroll in heap
+            C/SCR @     C/L@  VTOP @ +     \ loops from 2nd line, to last line
+            DO
+               PAUSE
+               I  ( -- c/s heap scr-addr)
+               OVER 2DUP    C/L@ 2* VREAD  \ read chars/scroll to heap
+               SWAP C/L@ -  C/L@ 2* VWRITE \ write HEAP to line above
+            C/L@ 2* +LOOP                  \ advance loop by chars per scroll
 
-: SCROLL      ( -- )
-              C/S DUP                         \ get char per scroll and duplicate
-              MALLOC ( -- c/s heap)           \ allocate chars per scroll in heap
-              C/SCR @  C/L@ VTOP @ +          \ loops from 2nd line, to end of screen
-              DO
-                 I  ( -- c/s heap scr-addr)
-                 OVER 2DUP    C/S VREAD      \ read chars/scroll to heap
-                 PAUSE
-                 SWAP C/L@ -  C/S VWRITE      \ write HEAP to line above
-              C/S +LOOP                       \ advance loop by chars per scroll
-
-              0 17 CLRLN                      \ clear last line
-              DROP                            \ drop heap pointer
-              MFREE ;                         \ de-allocate heap memory
+           0 17 CLRLN                      \ clear last line
+           DROP                            \ drop heap pointer
+           MFREE ;                         \ de-allocate heap memory
 
 
 [cc] DECIMAL [tc]
@@ -753,7 +757,7 @@ TARGET-COMPILING
             END-CODE
 
 \ : >DIGIT ( n -- c) DUP 9 > 7 AND + 30 + ; \ convert n to ascii digit c
- CODE: >DIGIT  ( n -- c)   \ ASM is 8 bytes smaller 4X faster             
+ CODE: >DIGIT  ( n -- c)   \ ASM is 8 bytes smaller 4X faster
             TOS 9 CMPI,
             @@1 JLE,       \ if n<=9 jump to convert it
             TOS  7 ADDI,   \ else number is not base 10, add 7
@@ -1067,18 +1071,17 @@ CODE: INIT
 \ B O O T   U P   C O D E
 TARGET-COMPILING
 : COLD   \ COLD boot starts the system
-              80 83C2 C!       \ ISR disable flags: >80 All, >40 Motion, >20 Sound, >10 Quit key
+              80 83C2 C!        \ ISR disable flags: >80 All, >40 Motion, >20 Sound, >10 Quit key
               ORGDP @ DP !
               ORGLAST @ LATEST !
-              2000 H !         \ inits H (HEAP) to >2000
-\ allocate space for CPU RAM  include file buffer
+              2000 H !          \ inits H (HEAP) to >2000
               SP0 SP!  RP0 RP!  \ reset stacks
               HEX
-              TMR!
+              TMR!              \ set 9901 timer to count continously
               2 KUNIT# C!       \ keyboard #2 is the BASIC keyboard
               3FFF ^PAB !       \ init pab pointer to TOP of VDP mem
 \ VDP start screen
-              TEXT BEEP T." CAMEL99 2.0.8"
+              TEXT BEEP T." CAMEL99 2.0.9"
               TIB 0 'SOURCE 2!   >IN OFF
               SOURCE-ID OFF
               TS" DSK1.START" INCLUDED
