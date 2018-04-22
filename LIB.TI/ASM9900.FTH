@@ -88,7 +88,7 @@ CR .( jump instructions)
 : @@        020    ;  \ symbolic addressing
 : **        010 +  ;  \ indirect addressing
 : *+        030 +  ;  \ indirect addressing, auto-increment
-: ()        20     ;  \ indexed addressing
+: ()        20  +  ;  \ indexed addressing
 
 CR .( Define CAMEL99 special registers & addressing modes )
 
@@ -96,7 +96,6 @@ CR .( Define CAMEL99 special registers & addressing modes )
 : (TOS)     TOS () ;
 : *TOS      TOS ** ;
 : *TOS+     TOS *+ ;
-
 
 6 CONSTANT SP
 : (SP)      SP () ;
@@ -118,10 +117,8 @@ CR .( Define CAMEL99 special registers & addressing modes )
 : *IP       IP ** ;
 : *IP+      IP *+ ;
 
-
-: *R10       10 ** ;
-: *R11       11 ** ;
-
+: *R10       R10 ** ;
+: *R11       R11 ** ;
 
 CR .( Jump tokens) \ for use with CJMP
 HEX
@@ -147,9 +144,9 @@ HEX
       DUP GT IF  1501 , 0  ELSE
       DUP NO IF  1901 , 0  ELSE
       DUP OP IF  1C01 , 0  ELSE
-             DUP 0< OVER 10 > ABORT" Jump error" ( DUP)
-       THEN THEN THEN THEN
-       8 LSHIFT  1000 + , ; ( create and compile the instruction)
+             DUP 0< OVER 10 > ABORT" Jump error"
+      THEN THEN THEN THEN
+      8 LSHIFT  1000 + , ; ( create and compile the instruction)
 
 CR .( Structured branching and looping )
 \ *These words do compile time matching*
@@ -198,9 +195,10 @@ CR .( Structured branching and looping )
         POSTPONE IF,  CELL+ ; IMMEDIATE
 
 CR .( Pseudo instructions)
-: RT,     R11 ** B, ;
-: NOP,    2 JMP, ;
-: NEXT,     ( -- )  *R10 B, ;  \ CAMEL99 NEXT: B *R10
+: RT,      *R11 B, ;
+: NOP,      2 JMP, ;
+
+: NEXT,     ( -- )  *R10 B,  ;  \ CAMEL99 NEXT: B *R10
 
 \ PUSH & POP for both stacks
 : PUSH,         ( src -- )  SP DECT,  *SP   MOV, ;    \ 10+18 = 28  cycles
@@ -209,9 +207,9 @@ CR .( Pseudo instructions)
 : RPUSH,        ( src -- ) RP DECT,  *RP   MOV,  ;
 : RPOP,         ( dst -- ) *RP+      SWAP  MOV,  ;
 
-
 : CODE      ( -- )  HEADER  HERE >BODY , !CSP ;
 : ENDCODE   ( -- )  ?CSP  ;
+
 : ;CODE
             POSTPONE (;CODE)     \ compiles (;CODE) into definition
             ?CSP POSTPONE [      \ turns off the Forth compiler
@@ -219,8 +217,9 @@ CR .( Pseudo instructions)
 \           ASSEMBLER            \ expose assembler wordlist
             ; IMMEDIATE          \ this is an IMMEDIATE word
 
-
 CR CR .( Assembler loaded)
 CR HERE F400 - DECIMAL .  .( BYTES used)
 
 ( -- here) DP ! \ restore the dictionary pointer
+
+HEX
