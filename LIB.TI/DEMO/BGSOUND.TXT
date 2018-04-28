@@ -81,7 +81,7 @@ USIZE MALLOC CONSTANT TASK1
 : ?BYTE ( n -- ) FF00 AND  ABORT" Not a byte" ;
 
 : BYTE ( -- )   \ puts bytes in
-         BEGIN  [CHAR] , PARSE-NAME DUP
+         BEGIN  [CHAR] , PARSE-WORD DUP
          WHILE
             EVALUATE DUP ?BYTE
             C,
@@ -96,7 +96,7 @@ HEX 1000 VP !
 : VCREATE ( <text> -- ) VP @ CONSTANT ;
 
 : VBYTE ( -- )
-         BEGIN  [CHAR] , PARSE-NAME DUP
+         BEGIN  [CHAR] , PARSE-WORD DUP
          WHILE
             EVALUATE DUP ?BYTE
             VC,
