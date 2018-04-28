@@ -16,25 +16,5 @@
            
            
 100 ARRAY ]Q
-100 FARRAY ]W           
-
-         
-\ ALTERNATIVE Method: Create array operators
-\ : []    ( ndx  addr -- addr[n]) SWAP CELLS + ;
-\ : [@]   ( ndx addr -- n') [] @ ;
-\ : [!]   ( n ndx addr -- ) [] ! ;
-
-\ CREATE Q  400 ALLOT
-
-\ Usage examples
-\ 99 0  Q [!]
-\  Q [@]  .
-
-\ faster method, no swap required
-\ : ]Q ( n -- addr )  CELLS Q + ;
-
-\ Usage examples
-\ 99 6 ]Q !
-\ 6 ]Q @ .
-
+100 FARRAY ]W
 
