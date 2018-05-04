@@ -1,4 +1,4 @@
-# CAMEL99-V2.0.9
+# CAMEL99-V2.0.11
 
 ### Apr 15 2018:
 Overall speed up by writing HERE ALLOT  >DIGIT and HOLD as code words. The improves compilation speeds and number printing is 50% faster.
