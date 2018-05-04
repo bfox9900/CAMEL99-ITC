@@ -16,7 +16,7 @@ The system boots when you load the TI-99 binary program file called DSK1.CAMEL2 
 NOTE: Nested INCLUDE files are now working in V2.0.4
 
 ## Windows TI-99 Emulator
-You can run this code on CLASSIC99, and excellent emulator, that runs on Windows. CLASSIC99 is available here:
+You can run this code on CLASSIC99, an excellent emulator, that runs on Windows. CLASSIC99 is available here:
 
 http://www.harmlesslion.com/cgi-bin/onesoft.cgi?1
 
