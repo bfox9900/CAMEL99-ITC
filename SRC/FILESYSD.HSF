@@ -104,8 +104,8 @@ CODE: FNAME]  ( addr -- addr') TOS 9 ADDI, NEXT, END-CODE
 : EOF   ( -- ? )  FSTAT 3 AND ;   \ returns 1 for READ EOF , 2 for WRITE EOF
 
 : REFILL ( -- flag )  \ flag=true if there is more data
-            2 FileOp ?FILERR
-            EOF 0= ;  \  bit 1 is EOF while reading flag
+            2 FileOp ?FILERR               \ file read operation to VDP buffer
+            EOF 0= ;                       \ return End of file status
 
 \ primitive file words to bootstrap the system on startup
 : OPN    ( addr len -- ior )
