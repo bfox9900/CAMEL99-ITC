@@ -6,3 +6,5 @@ It means the data is text with a maximum line length of 80 bytes.
 
 These files were created with the editor that is part of the TI-99
 Editor/Assembler cartridge. Currently that is the only way to edit these files.
+
+Text versions of these files are in the LIB.TI folder.
