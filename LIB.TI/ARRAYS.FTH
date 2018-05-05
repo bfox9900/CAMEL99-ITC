@@ -10,9 +10,10 @@
 : ARRAY ( n -- )
          CREATE  CELLS ALLOT  DOES> ( n -- a ) SWAP CELLS + ;
          
-
+\ faster array uses INLINE.F to copy assembler code 
+\ from the kernel to run SWAP CELLS +  2X faster
 : FARRAY   CREATE CELLS ALLOT
-           ;CODE  INLINE[ SWAP CELLS + ]  NEXT, END-CODE
+           ;CODE  CODE[ SWAP CELLS + ]  NEXT, END-CODE
            
            
 100 ARRAY ]Q
