@@ -86,15 +86,15 @@ CODE: FNAME]  ( addr -- addr') TOS 9 ADDI, NEXT, END-CODE
 \ : REG#    ( workspace R# -- addr)  2* + ;       \ COMPUTE address of R# in workspace
 \ : >ENTRY  ( DSRlink -- entry_addr) 2+ @ ;       \ convert a LINK in ROM to code entry
 
-: NEWFILE ( $addr len -- FID )            \ returns FID. but does NOT set it!
+: NEWFILE ( $addr len --)   
          DSKCARD ENABLE
          ?CARDID                          \ abort if card is not 'AA'
          DSRFIND        ( -- realpab link)
-         DUP ?DEVERR                              \ ABORT if link=0
-         DUP 4 +        ( -- link $)              \ link+4=DSR$ ie: Name of the DSR in CARD ROM
-             C@ 8355 C!                           \ len(DSR$) -> hex8355
+         DUP ?DEVERR                         \ ABORT if link=0
+         DUP 4 +        ( -- link $)         \ link+4=DSR$ ie: Name of the DSR in CARD ROM
+             C@ 8355 C!                      \ len(DSR$) -> hex8355
                         ( -- link)
- ( >ENTRY) 2+ @ 83E0  9 ( REG#) 2* + !            \ DSR code entry into GPL.R9
+  2+ @ ( -- >ENTRY)  83E0 9 ( REG#) 2* + !   \ DSR code address -> GPL.R9
 ;
 
 \ ** HI LEVEL FUNCTIONS **
@@ -145,7 +145,7 @@ CODE: FNAME]  ( addr -- addr') TOS 9 ADDI, NEXT, END-CODE
            R> DSRNAM !                     \ restore old file ID
            R> >IN !
            2R> 'SOURCE 2!                  \ restore input
-           SOURCE-ID OFF                   \ SOURCE-ID is conole (0)
+           SOURCE-ID OFF                   \ SOURCE-ID is console (0)
 ;
 
 : ?FILE    ( c -- ) 0= TS" Filename" ?ABORT ;
