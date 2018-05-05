@@ -1,6 +1,7 @@
 \ expansion card utils
 
-: DSRLIST ( addr -- )
+\ print name of all routines in a Card ROM
+: DSRLIST ( addr -- ) 
           BEGIN
             DUP @
           WHILE
@@ -9,6 +10,8 @@
           REPEAT
           DROP ;
 
+\ look for a CARD between start and end addresses
+\ stops at first card found.
 : CARDSCAN ( start end -- adr | 0 )  \ usage: HEX 1000 2000 CARDSCAN
            SWAP
            0 -ROT    \ false flag under the args.
