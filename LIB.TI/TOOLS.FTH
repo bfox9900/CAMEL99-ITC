@@ -1,3 +1,4 @@
+
 CR .( TOOLS for Camel99 Forth V2)
 
 HEX
@@ -27,17 +28,22 @@ CR .( MARKER )
 
 
 .( ?BREAK )
-\ ABORT if control C key is pressed
+\ ABORT if function 4 is pressed
 : ?BREAK    ( -- )
-	    ?TERMINAL IF CR ." *BREAK*" ABORT THEN ;
+	    ?TERMINAL BEGIN PAUSE ?TERMINAL 0= UNTIL
+            IF CR ." *BREAK*" ABORT
+            THEN ;
 
 .( WORDS )
+
+: .ID       ( addr --) COUNT 1F AND TYPE ;
+
 : WORDS     ( -- )
              CR
              0         ( word counter on stack)
              LATEST @
              BEGIN
-                DUP   ( -- nfa) COUNT TYPE SPACE
+                DUP   ( -- nfa) .ID SPACE
                 SWAP 1+ SWAP        \ inc. the counter
                 NFA>LFA @ DUP
                 ?BREAK
@@ -80,10 +86,17 @@ HEX
                8 +LOOP
                CR
                R> BASE ! ;
+
 .( .FREE )
+: UNUSED   ( -- u) TIB HERE - ;   \ ANS Forth 94 word
+: VDPFREE  ( -- n) 8370 @  1000 - ;
+
 : .FREE      CR ." Free Mem"
-             3F20 H @  - CR ." Low Heap : " U.
-             FF00 HERE - CR ." Upper mem: " U.  ;
+             CR ." Low Heap :  " 3F20 H @  - U.
+             CR ." Upper mem: " UNUSED U. 
+             CR ." VDP mem  : " VDPFREE .  ;
 
 DECIMAL
+.FREE
+HEX
 
