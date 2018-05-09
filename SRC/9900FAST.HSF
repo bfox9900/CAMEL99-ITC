@@ -223,8 +223,7 @@ CODE: DOCON   ( -- n )                             \ Executor that executes a "C
               END-CODE
 
 CODE: DOVAR   ( -- addr)                           \ Executor that executes a "VARIABLE"
-              TOS TOS MOV,  \ don't know why I need something here. 
-              TOS PUSH,     \ <-- dovar  enters at this address ??
+              TOS PUSH,                            \ <-- dovar  enters at this address
               W   TOS MOV,                         \ put the parameter field address into TOS
               NEXT,
               END-CODE
@@ -467,6 +466,7 @@ CODE: ><      ( n -- n )            \ swap bytes in n
               NEXT,
               END-CODE
 
+\ these are very handy FUSE & SPLIT
 CODE: SPLIT  ( AABB --  BB AA )     \ used in \LIB\SOUND.FTH
               TOS W MOV,            \ make a copy
               TOS 8 SRL,            \ slide 'AA' to the right
@@ -475,7 +475,7 @@ CODE: SPLIT  ( AABB --  BB AA )     \ used in \LIB\SOUND.FTH
               NEXT,
               END-CODE
 
-CODE: FUSE   ( byte byte -- word ) \ FUSE 2 bytes into a 16 bit word
+CODE: FUSE   ( BB  AA -- AABB ) \ FUSE 2 bytes into a 16 bit word
               TOS SWPB,
              *SP+ TOS ADD,         \ same size as Forth, 3X faster
               NEXT,
@@ -944,7 +944,7 @@ CODE: SKIP  ( c-addr u char -- c-addr' u')    \ skip matching chars
              *SP+ R1 MOV,                     \ POP count into R1, char is already in TOS
              *SP  W  MOV,                     \ get address, but leave space on stack
               R1  R1 MOV,                     \ compares R1 to zero
-              @@3 JEQ,                        \ if true get out
+              @@3 JEQ,                        \ if r1=0 get out
 @@1:          TOS *W+ CMPB,                   \ does character match? &  auto-incr. address
               @@2 JNE,                        \ no, so we are done
               R1 DEC,                         \ decr loop counter
@@ -1099,16 +1099,16 @@ CR ." V D P  C H I P  I N T E R F A C E"
 \ We also added a new one V! and V@ that load and store 16 bit numbers to VDP.
 
 \ And I embraced the Forth paradigm so these routines are created as
-\ Forth words with stack based parameter passing. This gives us the freedom 
+\ Forth words with stack based parameter passing. This gives us the freedom
 \ to call these fast routines directly from Forth.
 \ With these fast primitives we can write most of the VDP driver
 \ in Forth and still get excellent performance.
 
 \ factored sub-routines. Set up VDP address for write or read modes
 l: WMODE      R0 4000  ORI,       \ set control bits to write mode (01)
-l: RMODE      83FE @@ W MOV,      \ TI O/S keeps a copy of VDPWA at 83FE, so use it
-              R0 SWPB,            \ R0= VDP-adr we are using. Set up 1st byte to send
+l: RMODE      W  8C02  LI,        \ use byte reversed address, needs 1 less SWPB
               0 LIMI,
+              R0 SWPB,            \ R0= VDP-adr we are using. Set up 1st byte to send
               R0 *W MOVB,         \ send low byte of vdp ram write address
               R0 SWPB,
               R0 *W MOVB,         \ send high byte of vdp ram write address
@@ -1181,9 +1181,17 @@ CODE: VFILL   ( VDP-addr count char-- )
               END-CODE
 
 \ VSBW in Forth style  pronounced "Vee-Cee-store"
+\ removed sub-routine call to speed up single byte writes
 CODE: VC!     ( char Vaddr  -- )       \ Video CHAR store
-              TOS R0 MOV,              \ need address in R0 to call WMODE
-              WMODE @@ BL,             \ branch to setup VDP write address
+              TOS R0 MOV,              \ need address in R0
+              R0 4000  ORI,            \ set control bits to write mode (01)
+              W  VDPWA  LI,
+              0 LIMI,
+              R0 SWPB,
+              R0 *W MOVB,
+              R0 SWPB,
+              R0 *W MOVB,
+              2 LIMI,
               TOS POP,                 \ get char into TOS register
               TOS SWPB,
               TOS VDPWD @@ MOVB,       \ write char to vdp data port

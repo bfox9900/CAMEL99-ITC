@@ -206,7 +206,7 @@ HEX
 [CC]
  T' EXIT   RESOLVES 'EXIT
     ENTR   RESOLVES 'DOCOL
- T' DOVAR  >BODY RESOLVES 'DOVAR
+ T' DOVAR >BODY RESOLVES 'DOVAR
 
  T' LIT    RESOLVES 'LIT
  T' DOCON  RESOLVES 'DOCON
@@ -413,15 +413,16 @@ CODE: HERE   ( -- addr) TOS PUSH,  DP @@ TOS MOV,  NEXT, END-CODE
 \ in TI-99 low memory
 
 \ Usage Examples
-\ copy a stack string to a new memory location
+\ RUNTIME  buffer createion
 \  : COPYSTRING  ( addr len -- addr)
-\                100 MALLOC DUP >R PLACE R>  ( -- addr)
-
+\                100 MALLOC DUP >R PLACE
+\                R@ ( rstack holds the memory pointer)
 \                < more code...>
 
+\                R> DROP
 \                100 MFREE ;
 
-\ create a 1K buffer at compile time
+\ COMPILE TIME buffer creation
 \ HEX 400 MALLOC CONSTANT MYBUFFER
 
 : MALLOC     ( n -- addr ) H @  SWAP H +! ;   \ allocate heap and return pointer
@@ -511,15 +512,6 @@ CODE: /STRING ( c-addr1 u1 n -- c-addr2 u2 ) \ ~20uS!!       Clks
 
 TARGET-COMPILING
 : NFA>LFA       ( nfa -- lfa)   3 - ;
-
-\ CODE: >CFA  ( addr n -- adr)
-\             TOS 7F ANDI,
-\            *SP+ TOS ADD,
-\             TOS INC,        
-\             TOS -2 ANDI,      \ align address
-\             NEXT,
-\             END-CODE
-
 : NFA>CFA       ( nfa -- cfa )  COUNT  7F AND + ALIGNED ;
 
 \ smudge bit control in the Camel Forth
@@ -668,10 +660,6 @@ TARGET-COMPILING
 
 : TYPE    ( adr cnt --) BOUNDS ?DO  I C@ EMIT  LOOP  ;
 
-\ This TYPE code from TI-Forth (1981) is faster than using BOUNDS etc...
-\ Because ... CAMEL99 keeps top of stack in a register.
-\ : TYPE   ( adr cnt --)  0 ?DO  DUP C@ EMIT 1+ LOOP DROP ;
-
 : SPACE       ( -- )   BL EMIT ;            \ EMIT a blank char (hex 20)
 : SPACES      ( n -- ) 0 MAX  0 ?DO SPACE LOOP ;
 
@@ -704,8 +692,8 @@ TARGET-COMPILING
                 KEY?
               UNTIL                          \ wait for key press
               KVAL C@                        \ fetch char from KSCAN buffer
-              BL VPUT                        \ erase cursor character
-              83D6 OFF ;                     \ clear screen timeout variable
+              BL VPUT ;                       \ erase cursor character
+\              83D6 OFF ;                     \ clear screen timeout variable
               
 
 : BS  ( n --)  VCOL @ SWAP -  0 MAX
@@ -767,7 +755,7 @@ TARGET-COMPILING
 
 : <#     ( --)              PAD HP ! ;                      \ initialize Hold Pointer to end of the number buffer (#pad)
 : #      ( ud1 -- ud2)  BASE @ UD/MOD ROT  >DIGIT  HOLD  ;
-: #S     ( ud1 -- ud2)  BEGIN # 2DUP OR  0= UNTIL ;          \ convert all digits in ud1. ud2 will be 0 (the remainder)
+: #S     ( ud1 -- ud2)  BEGIN # 2DUP OR  0= UNTIL ;         \ convert all digits in ud1. ud2 will be 0 (the remainder)
 : #>     ( ud1 -- c-addr u) 2DROP HP @ PAD OVER - ;         \ return a stack string (address, length)  of the converted number
 : SIGN   ( n -- ) 0< IF T[CHAR] -  HOLD THEN ;              \ if 'n'<0  add '-' char  string created in #PAD
 : U.     ( u -- )         0  <#  #S  #>  TYPE SPACE ;       \ print 'u' as an un-signed integer (the '0' converts u to a double(32bit) int)
@@ -812,7 +800,7 @@ TARGET-COMPILING
                AGAIN ;
 
 : EVALUATE     ( c-addr u -- j*x)                            \ interpret a stack string
-               SOURCE-ID ON                                  \ ANS standard says to set SOURCE-ID to true
+               SOURCE-ID ON                                  \ ANS standard says SOURCE-ID = true
                SOURCE 2>R  >IN @ >R                          \ save the source & >IN on the return stack
                INTERPRET                                     \ interpret the new string
                R> >IN !  2R> 'SOURCE 2!                      \ restore source & >IN
@@ -851,12 +839,12 @@ TARGET-COMPILING
 
    variable: lines                     \ track lines compiled in a file
 
-   : ?ABORT  ( f c-addr u --)
-              ROT IF  CR CR T." * " TYPE  T."  ? "
-                      SOURCE-ID @ 
-                      IF   T." Line " LINES @ .
-                      THEN ABORT
-              THEN 2DROP ;
+: ?ABORT  ( f c-addr u --)
+           ROT IF  CR CR T." * " TYPE  T."  ? "
+                   SOURCE-ID @
+                   IF   T." Line " LINES @ .
+                   THEN ABORT
+            THEN 2DROP ;
 
 : ?FIND       ( ? -- )       0=    HERE COUNT  ?ABORT ;
 : ?PAIRS      ( n1 n2 --)     -    TS" Unpaired"       ?ABORT ;
@@ -931,8 +919,7 @@ TARGET-COMPILING
 
 : .(      T[CHAR] ) PARSE TYPE ;     \ "talking" comment
 
-\ ========================================================================
-\ character compilers
+
 
 [CC] cr ." Interpreter/compiler loop"
 \ ========================================================================
@@ -980,9 +967,9 @@ TARGET-COMPILING
 
 : TEXT      ( -- )
              F0 DUP KTP C!                 \ TI KSCAN re-writes VReg1 with whatever is in this byte.
-       ( -- F0) 01 VWTR                    \ VDP register 1  bit3 = 1 sets the TEXT Mode
+       ( -- F0) 01 VWTR                    \ VDP register 1: bit3 = 1 sets the TEXT Mode
               0 06 VWTR                    \ no sprite descriptor table is set for TEXT mode
-             20 07 VWTR                    \ VDP register 7 = 2,0 med. green on transparent
+             20 07 VWTR                    \ VDP register 7. color: med. green on transparent screen
              2 VMODE !                     \ record the mode we are in
              28 C/L!                       \ Set 40 chars/line, which also re-calcs the screen variables
              PAGE ;                        \ "CALL CLEAR" ;-)
@@ -997,7 +984,7 @@ TARGET-COMPILING
             0 C,                           \ create the immediate field (1 BYTE)
             HERE LATEST !                  \ update the LATEST variable to this new definition's NFA
             BL PARSE-WORD S, ;             \ parse input and compile NAME string into dictionary
-            
+
 
 \ ========================================================================
 \ T A R G E T   S Y S T E M   D E F I N I N G   W O R D S
@@ -1007,11 +994,13 @@ TARGET-COMPILING
 \ -------------------------  --------------- -----------
 : CONSTANT  ( n --)  HEADER  COMPILE DOCON     , ; \ the comma compiles 'n' into the constant
 : USER      ( n --)  HEADER  COMPILE DOUSER    , ; \ n is the BYTE offset from workspace pointer
-: CREATE    ( -- )   HEADER  COMPILE DOVAR       ; \ create does not have a parameter by default
+
+\ something is weird with DOVAR, ?? but using literal address fixes it.
+: CREATE    ( -- )   HEADER  A06A ,              ; \ create does not have a parameter by default
 : VARIABLE  ( -- )   CREATE                  0 , ; \ variables are set to zero when created
 
+\ (:noname) came from studying gforth. It's a nice factor.
 \ had to use the literal address of ENTR ($839E) to make this work.
-\ This word came from studying gforth. It's a nice factor.
 : (:NONAME) ( -- )   839E ,  HIDE  ]  ;   \ common to ':' and ':NONAME'
 
 \ =======================================================================
@@ -1079,9 +1068,9 @@ TARGET-COMPILING
               HEX
               TMR!              \ set 9901 timer to count continously
               2 KUNIT# C!       \ keyboard #2 is the BASIC keyboard
-              3FFF ^PAB !       \ init pab pointer to TOP of VDP mem
+              8370 @ ^PAB !     \ GET end of VDP mem from O/S, 
 \ VDP start screen
-              TEXT BEEP T." CAMEL99 2.0.9"
+              TEXT BEEP TS" CAMEL99 2.0.13" TYPE
               TIB 0 'SOURCE 2!   >IN OFF
               SOURCE-ID OFF
               TS" DSK1.START" INCLUDED
