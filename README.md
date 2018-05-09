@@ -1,10 +1,13 @@
-# CAMEL99-V2.0.11
+ CAMEL99-V2.0.13
 
 ### Apr 15 2018:
 Overall speed up by writing HERE ALLOT  >DIGIT and HOLD as code words. The improves compilation speeds and number printing is 50% faster.
 
 ### Apr 17 2018
 Found a bug where the new faster scroll obliterated first two sprite records when scrolling. Repaired.
+
+### May 9 2018
+Committed change in 2.0.13 which fixes an old bug that caused difference entry address for DOVAR between cross-compiler varibles and TI-99 created variables. Homemade cross-compilers... what are you gonna do?
 
 ### Overview
 CAMEL99 V2 finally has TI file access.  The binary program is in folder DSK1 and is called CAMEL2.
