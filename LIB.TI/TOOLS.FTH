@@ -26,7 +26,6 @@ CR .( MARKER )
 \ : RDEPTH    ( -- n )   RP0 RP@ - 2/ ;
 \ : .RS       ( -- ) RP@ RP0  DO  I @ U.  -2 +LOOP ;
 
-
 .( ?BREAK )
 \ ABORT if function 4 is pressed
 : ?BREAK    ( -- )

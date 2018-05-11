@@ -1,12 +1,12 @@
 \ more.f   simple file viewer
 \ default is DV80 files but you can change it with TI-99 file commands
 
-\ DISPLAY  80 VARI SEQUENTIAL
-
 HEX
+: DV80    DISPLAY 50 VARI SEQUENTIAL ;  \ HEX 50 is 80 bytes/record
+
 : MORE    ( <filename>)
-          BL PARSE-NAME DUP ?FILE
-          R/O OPEN-FILE ?FILERR
+          BL PARSE-WORD DUP ?FILE
+          DV80 R/O OPEN-FILE ?FILERR
           >R                    \ push handle onto Return stack
           BEGIN
              PAD DUP 50 R@ READ-LINE ?FILERR
