@@ -206,7 +206,7 @@ HEX
 [CC]
  T' EXIT   RESOLVES 'EXIT
     ENTR   RESOLVES 'DOCOL
- T' DOVAR >BODY RESOLVES 'DOVAR
+ T' DOVAR  RESOLVES 'DOVAR
 
  T' LIT    RESOLVES 'LIT
  T' DOCON  RESOLVES 'DOCON
@@ -390,10 +390,9 @@ CODE: HERE   ( -- addr) TOS PUSH,  DP @@ TOS MOV,  NEXT, END-CODE
 : ALIGN     ( -- )     HERE ALIGNED DP ! ;
 : ,         ( n --)    HERE !   2 ALLOT ;
 : C,        ( c --)    HERE C!  1 ALLOT ;
-
-: PAD       ( -- addr) HERE 26 + ;
-
+: PAD       ( -- addr) HERE 26 + ; 
 : >BODY     ( cfa-addr -- pfa-addr) 2+ ;
+
 \ : COMPILE,  ( n --)  ,  ;                \ for ITC Forth this is the same as , (comma compiler)
 
 : COMPILE   ( -- )  R> DUP >BODY >R @ , ;     \ append inline execution token
@@ -996,7 +995,7 @@ TARGET-COMPILING
 : USER      ( n --)  HEADER  COMPILE DOUSER    , ; \ n is the BYTE offset from workspace pointer
 
 \ something is weird with DOVAR, ?? but using literal address fixes it.
-: CREATE    ( -- )   HEADER  A06A ,              ; \ create does not have a parameter by default
+: CREATE    ( -- )   HEADER  COMPILE DOVAR       ; \ create does not have a parameter by default
 : VARIABLE  ( -- )   CREATE                  0 , ; \ variables are set to zero when created
 
 \ (:noname) came from studying gforth. It's a nice factor.
@@ -1019,7 +1018,7 @@ TARGET-COMPILING
 \ ADD-ONS
 \ ** commment out everything to build the smallest kernel  **
  [CC] include CC9900\cclib\crusmall.hsf
- [CC] include CC9900\cclib\diskdsr4.hsf
+ [CC] include CC9900\cclib\diskdsr6.hsf
  [CC] include CC9900\cclib\filesysD.hsf
 
 \ =======================================================================
