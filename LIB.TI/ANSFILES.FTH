@@ -176,7 +176,7 @@ HEX
 : DELETE-FILE     ( caddr len -- ior ) R/W OPEN-FILE ?FILERR 7 FILEOP DROP ;
 
 \ ===================================
-8 FILES             \ set the #FILES now
+3 FILES             \ set the #FILES to default
 
 DECIMAL
 
