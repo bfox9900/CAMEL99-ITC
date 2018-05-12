@@ -29,8 +29,9 @@ CR .( MARKER )
 .( ?BREAK )
 \ ABORT if function 4 is pressed
 : ?BREAK    ( -- )
-	    ?TERMINAL BEGIN PAUSE ?TERMINAL 0= UNTIL
-            IF CR ." *BREAK*" ABORT
+	    ?TERMINAL 
+            IF BEGIN PAUSE ?TERMINAL 0= UNTIL
+               CR ." *BREAK*" ABORT
             THEN ;
 
 .( WORDS )

@@ -2,7 +2,13 @@
 
 \ you can put this word in any loop and stop it 
 \ by pressing FNCT 4 (BREAK)
-\ ?TERMINAL is in TI ROM so it's 6 times faster than KEY? 
+\ ?TERMINAL is in TI ROM and smaller code so it's faster than KEY?
 \ so Program runs quicker while scanning for the break key.
 
-: ?BREAK   ?TERMINAL ABORT" *BREAK*"  ;
+\ ABORT if function 4 is pressed
+: ?BREAK    ( -- )
+	    ?TERMINAL
+            IF 
+              BEGIN PAUSE ?TERMINAL 0= UNTIL
+              CR ." *BREAK*" ABORT
+            THEN ;
