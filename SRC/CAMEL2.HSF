@@ -371,7 +371,7 @@ variable: BOOT                   \ ADDRESS OF THE FIRST Forth word to run
 \ _TSTAT constant: 'TSTAT                    \ address of task status routine
 
         variable: L0    3 TCELLS TALLOT      \ LEAVE stack used to resolve nested LEAVEs (4 LEAVEs max)
-        variable: ^PAB
+        variable: ^PAB                       \ pointer to active "peripheral access block" in VDP RAM
 
 ?stk
 \ ==============================================
