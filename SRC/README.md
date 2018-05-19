@@ -1,4 +1,4 @@
-## CAMEL99 FORTH V2 Source files
+# CAMEL99 FORTH V2 Source files
 This files must be compiled with XFC99.EXE under DOS.
 
 See CAMEL99 V1.x /COMPILER for the program.
@@ -15,7 +15,7 @@ In the file CAMEL2.HSF find the section that looks like this:
 
  [CC] include CC9900\cclib\crusmall.hsf
  
- [CC] include CC9900\cclib\diskdsr4.hsf
+ [CC] include CC9900\cclib\diskdsr6.hsf
 
 [CC] include CC9900\cclib\filesysA.hsf
 
