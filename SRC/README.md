@@ -17,7 +17,7 @@ In the file CAMEL2.HSF find the section that looks like this:
  
  [CC] include CC9900\cclib\diskdsr6.hsf
 
-[CC] include CC9900\cclib\filesysA.hsf
+ [CC] include CC9900\cclib\filesysD.hsf
 
  You must either create the same folders in your DOSBOX or DOS system
  and copy the source code there.
