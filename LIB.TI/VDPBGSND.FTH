@@ -98,7 +98,7 @@ PLAYER FORK                   \ init the task
 
 \ ===============================================
 \ end user commands
-\ Usage:  MUNCHMAN
+\ Usage:  MUNCHMAN >SNDQ  PLAYQ
 : >SNDQ   ( list -- ) QDATA Q! ;
 : PLAYQ   ( list -- ) PLAYER RESTART ;
 : KILLQ   ( -- )      QTAIL @ QHEAD ! ;
@@ -117,5 +117,5 @@ PLAYER FORK                   \ init the task
          REPEAT
          2DROP ;
 .( ..)
-: /VEND   0 VC, 0 VC, ;  \ compile zero, force even memory boundary
+: /VEND   0 VC, 0 VC, ;  \ compile zero
 
