@@ -1,0 +1,64 @@
+
+HEX
+CREATE INCH-INTRO
+       BYTE 03,8E,12,90,32 
+       BYTE 02,8E,0F,30
+       BYTE 01,9F,02
+       BYTE 01,90,32
+       BYTE 02,80,0F,32  
+       BYTE 02,8D,11,32                              
+       BYTE 01,9F,32
+       BYTE 06,8E,12,90,AD,25,B0,32              
+       BYTE 04,8E,0F,AC,1F,30                       
+       BYTE 02,9F,BF,02
+       BYTE 02,90,B0,32
+       BYTE 04,80,0F,A0,1E,32                    
+       BYTE 04,8D,11,AB,23,32                       
+       BYTE 02,9F,BF,32
+       BYTE 06,8E,12,90,AD,25,B0,32               
+       BYTE 04,8E,0F,AC,1F,30
+       BYTE 04,86,0D,AC,1A,32                         
+       BYTE 04,82,0E,A5,1C,32                         
+       BYTE 04,80,0F,A0,1E,19                        
+       BYTE 02,9F,BF,19
+       BYTE 02,90,B0,32
+       BYTE 04,8E,0F,AC,1F,19                       
+       BYTE 02,9F,BF,19
+       BYTE 02,90,B0,17
+       BYTE 02,9F,BF,02
+       BYTE 02,90,B0,17
+       BYTE 02,9F,BF,02
+       BYTE 02,90,B0,19
+       BYTE 02,9F,BF,19
+       BYTE 02,90,B0,17
+       BYTE 02,9F,BF,02
+       BYTE 02,90,B0,17
+       BYTE 02,9F,BF,02
+       BYTE 02,90,B0,17
+       BYTE 02,9F,BF,02
+       BYTE 02,90,B0,17
+       BYTE 02,9F,BF,02
+       BYTE 02,90,B0,19
+       BYTE 02,9F,BF,19
+/END
+
+CREATE INCHWORM
+       BYTE 06,8E,12,92,CA,2F,D0,32               
+       BYTE 05,8E,0F,AC,1F,B0,19                  
+       BYTE 02,AE,12,17                             
+       BYTE 01,9F,02
+       BYTE 01,92,32
+       BYTE 06,80,0F,BF,C7,35,D0,32             
+       BYTE 05,8D,11,AB,23,B0,19                   
+       BYTE 02,A3,15,17                            
+       BYTE 01,9F,02
+       BYTE 06,8E,12,92,CA,2F,D0,32               
+       BYTE 05,8E,0F,AC,1F,B0,19                  
+       BYTE 02,AE,12,17                             
+       BYTE 01,9F,02
+       BYTE 01,92,32
+       BYTE 06,80,0F,BF,C7,35,D0,32             
+       BYTE 05,8D,11,AB,23,B0,19                   
+       BYTE 02,A3,15,17                            
+       BYTE 01,9F,02
+/END
