@@ -2,11 +2,14 @@
 ( ORIGINAL TI-FORTH ASSEMBLER modified slightly by Mark Wills, Turboforth)
 ( and more changes for CAMEL99 Forth by Brian Fox )
 
+INCLUDE DSK1.CASE.F
+
 CR .( TI-99 Assembler ...)
 
 HERE   \ save the dictionary pointer on stack
 
-HEX  F400 DP !   \ move DP to High RAM.
+HEX  F400 DP !  \ move DP to High RAM.
+
 CR .( Loading Assembler @>) DP @ U.
 
 ( VOCABULARY ASSEMBLER )
@@ -90,7 +93,7 @@ CR .( jump instructions)
 : *+        030 +  ;  \ indirect addressing, auto-increment
 : ()        20  +  ;  \ indexed addressing
 
-CR .( Define CAMEL99 special registers & addressing modes )
+CR .( CAMEL99 special registers & modes)
 
 4 CONSTANT TOS
 : (TOS)     TOS () ;
@@ -139,14 +142,13 @@ HEX
  F CONSTANT NO      \ jmp if no overflow
 10 CONSTANT OP      \ jmp if ODD parity
 
-: CJMP ( n -- )
-      DUP LT IF  1101 , 0  ELSE
-      DUP GT IF  1501 , 0  ELSE
-      DUP NO IF  1901 , 0  ELSE
-      DUP OP IF  1C01 , 0  ELSE
-             DUP 0< OVER 10 > ABORT" Jump error"
-      THEN THEN THEN THEN
-      8 LSHIFT  1000 + , ; ( create and compile the instruction)
+: CJMP CASE
+         LT OF 1101 , 0 ENDOF
+         GT OF 1501 , 0 ENDOF
+         NO OF 1901 , 0 ENDOF
+         OP OF 1C01 , 0 ENDOF
+         DUP 0< OVER 10 > IF TRUE ABORT" BAD jump token" THEN
+       ENDCASE >< 1000 + , ;
 
 CR .( Structured branching and looping )
 \ *These words do compile time matching*
@@ -185,7 +187,6 @@ CR .( Structured branching and looping )
         0 POSTPONE UNTIL, ; IMMEDIATE
 
 : REPEAT,
-
         ?EXEC
         >R >R    POSTPONE AGAIN,
         R> R> 2- POSTPONE ENDIF, ; IMMEDIATE
@@ -195,10 +196,9 @@ CR .( Structured branching and looping )
         POSTPONE IF,  CELL+ ; IMMEDIATE
 
 CR .( Pseudo instructions)
-: RT,      *R11 B, ;
-: NOP,      2 JMP, ;
-
-: NEXT,     ( -- )  *R10 B,  ;  \ CAMEL99 NEXT: B *R10
+: RT,     ( -- )  *R11 B, ;
+: NOP,    ( -- )  2 JMP, ;
+: NEXT,   ( -- )  *R10 B,  ;  \ CAMEL99 NEXT: B *R10
 
 \ PUSH & POP for both stacks
 : PUSH,         ( src -- )  SP DECT,  *SP   MOV, ;    \ 10+18 = 28  cycles
