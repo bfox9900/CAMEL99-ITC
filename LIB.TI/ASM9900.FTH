@@ -147,7 +147,7 @@ HEX
          GT OF 1501 , 0 ENDOF
          NO OF 1901 , 0 ENDOF
          OP OF 1C01 , 0 ENDOF
-         DUP 0< OVER 10 > IF TRUE ABORT" BAD jump token" THEN
+         DUP 0< OVER 10 > ABORT" IF, BAD jump token"
        ENDCASE >< 1000 + , ;
 
 CR .( Structured branching and looping )
