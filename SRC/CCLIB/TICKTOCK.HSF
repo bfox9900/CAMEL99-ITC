@@ -1,0 +1,56 @@
+\ TICKTOCK.HSF  TMS9901 hardware timer interface for Camel 99 Forth
+
+\ credit to: http://www.unige.ch/medecine/nouspikel/ti99/tms9901.htm#Timer
+
+\ timer resolution:  64 clock periods, thus 64*333 = 21.3 microseconds
+\ Max Duration    :  ($3FFF) 16383 *64*333 ns = 349.2 milliseconds
+
+CROSS-ASSEMBLING
+CODE: TMR!   (  -- )         \ load TMS9901 timer to max value 3FFF
+             W 3FFF LI,      \ load scratch register W with MAXIMUM timer value
+             R12 CLR,        \ CRU addr of TMS9901 = 0
+             0 LIMI,
+             0   SBO,        \ SET bit 0 to 1, Enter timer mode
+             R12 INCT,       \ CRU Address of bit 1 = 2 , I'm not kidding
+             W 0E LDCR,      \ Load 14 BITs from R1 into timer
+             R12  DECT,      \ go back to address 0
+             0    SBZ,       \ reset bit 0, Exits clock mode, starts decrementer
+             2 LIMI,
+             NEXT,           \ 16 bytes
+             END-CODE
+
+CODE: TMR@   ( -- n)         \ read the TMS9901 timer
+             TOS PUSH,
+             R12 CLR,
+             0 LIMI,
+             0 SBO,          \ SET bit 0 TO 1, ie: Enter timer mode
+             TOS 0F STCR,    \ READ TIMER (14 bits plus mode bit) into W
+             TOS  1 SRL,     \ Get rid of mode bit
+             0 SBZ,          \ SET bit 1 to zero
+             2 LIMI,
+             NEXT,
+             END-CODE
+
+CODE: |-| ( x y -- x n )    \ : |-|   OVER - ABS ;
+            *SP TOS SUB,
+             TOS    ABS,    \ get ABS of subtraction
+             NEXT,
+             END-CODE
+
+TARGET-COMPILING
+[CC] DECIMAL [TC]
+
+\ 1 JIFF = 1/60 second. (16.6666 mS)
+\ 650 is tested number using Classic99 emulator.
+\ Real IRON might need tweeking
+: JIFF     ( -- )   TMR@  BEGIN   PAUSE TMR@ |-| 650 > UNTIL  DROP ;
+
+\ Because JIFFS are 1/60 seconds, there is a lot of time while PAUSE 
+\ switches to all the tasks. So JIFFS are the preferred way to delay
+\ in a multi-tasking program.
+: JIFFS    ( n -- ) 0 ?DO JIFF LOOP ;
+
+: MS  ( n -- )  4 RSHIFT  JIFFS ;  \ MS/16= JIFFS
+
+
+[CC] HEX [TC]
