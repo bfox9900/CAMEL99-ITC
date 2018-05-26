@@ -67,9 +67,10 @@ CR .( MARKER )
                  0= IF DROP  '.'
                  THEN EMIT
               LOOP ;
+
 DECIMAL
 : ?80         ( -- 16 | 8)
-              VMODE @ 80 = IF 16 ELSE 8 THEN ;
+               VMODE @ 80 = IF 16 ELSE 8 THEN ;
 
 .( DUMP )
 HEX
@@ -83,18 +84,23 @@ HEX
                   I  ?80  BOUNDS DO  SPACE I @ .#### 2 +LOOP SPACE
                   I  ?80  .ASCII
                   ?BREAK
-               8 +LOOP
+               ?80 +LOOP
                CR
                R> BASE ! ;
 
 .( .FREE )
 : UNUSED   ( -- u) TIB HERE - ;   \ ANS Forth 94 word
-: VDPFREE  ( -- n) 8370 @  1000 - ;
 
-: .FREE      CR ." Free Mem"
+: .FREE      BASE @ >R
+             DECIMAL
+             CR ." Free Mem"
              CR ." Low Heap :  " 3F20 H @  - U.
-             CR ." Upper mem: " UNUSED U. 
-             CR ." VDP mem  : " VDPFREE .  ;
+             CR ." Upper mem: " UNUSED U.
+             CR ." VDP end  : " 8370 @ .
+             R> BASE ! ;
+
+\ lock the current dictionary
+: LOCK     DP @ ORGDP !   LATEST @ ORGLAST ! ; 
 
 DECIMAL
 .FREE
