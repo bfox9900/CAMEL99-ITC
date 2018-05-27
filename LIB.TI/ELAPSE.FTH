@@ -18,8 +18,8 @@ DECIMAL
           DECIMAL  ## [CHAR] : EMIT  ##  [CHAR] . EMIT ##
           R> BASE ! ;
 
-\ 1 TICK = .008333 mS
-: REALTIME ( -- n )  TICKER @  5 6 */ ;  \ ratio fixed by Lee Stewart
+\ 1 TICK = .008333 Seconds, scaled to 1 mS
+: REALTIME ( -- mS)  TICKER @  5 6 */ ;  \ ratio fixed by Lee Stewart
 
 : >TIME  ( n -- .hh secs mins  )  \ convert n to time
           6000 /MOD   ( -- rem mins) >R  \ push minutes
