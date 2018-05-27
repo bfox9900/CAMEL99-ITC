@@ -5,7 +5,7 @@
 \ Ported to CAMEL99 Nov 29 2017
 \ Good for 9 minutes maximum duration
 
-\ *** YOU CANNOT CALL KSCAN WHILE TIMING ***
+\ *** YOU CANNOT CALL KSCAN ( KEY? KEY ) WHILE TIMING ***
 
 HEX                                                                                                     
 83D6 CONSTANT TICKER   \ screen timeout counter increments by 2 /16mS
