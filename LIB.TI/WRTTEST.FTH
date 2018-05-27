@@ -1,4 +1,6 @@
-\ more utility is a file viewer
+\ Demo to generate a text file from CAMEL99
+\ load the more utility to view the file created by this program
+\ OR load it into the Editor.
 \ default is DV80 files
 
 HEX
@@ -10,7 +12,6 @@ CREATE CR$ ( -- $adr)  02 C,  0D C,  0A C,
 
 : CR/LF  ( -- )  CR$ COUNT HDL @ WRITE-LINE . ;
 : REC!   ( addr len -- )   HDL @ WRITE-LINE . CR/LF ;
-
 
 : WRITETEST  ( adr len -- )
           W/O CREATE-FILE ?FILERR  HDL !
