@@ -4,7 +4,7 @@
 --------------------
 CAMEL99 Forth has been built as an educational tool for those who are interested in how you could cross-compile Forth to a different CPU using an existing Forth system. Rather than starting from scratch it uses CAMEL Forth by Dr. Brad Rodriguez for the hi-level Forth code. This has been "tweeked" and dare I say improved a little to better fit the very slow TI-99 computer. (More things written in Assembler was the answer)
 
-### MADE Friendly for BASIC Programmers
+### Made Friendly for BASIC Programmers
 Users of TI BASIC who want to explore Forth might also find this system useful. With that in mind it has a string package that provides many of the features of BASIC including the use of a string stack and automated stack management. It also an INPUT statement for strings and numbers.  You will also find the TI BASIC graphics functions are emulated in the libary file called GRAFIX.F.  The instruction manual has been written to compare BASIC and Forth and there are numerous example programs where the BASIC code is side by side with Forth for faster understanding for those new to Forth.
 
 ### Changes from V1
