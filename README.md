@@ -1,4 +1,4 @@
-# CAMEL99-V2.0.13
+# CAMEL99-V2.0.15
 
 ### Apr 15 2018:
 Overall speed up by writing HERE ALLOT  >DIGIT and HOLD as code words. The improves compilation speeds and number printing is 50% faster.
@@ -8,6 +8,11 @@ Found a bug where the new faster scroll obliterated first two sprite records whe
 
 ### May 9 2018
 Committed change in 2.0.13 which fixes an old bug that caused difference entry address for DOVAR between cross-compiler varibles and TI-99 created variables. Homemade cross-compilers... what are you gonna do?
+
+### Jun 3 2018 V2.0.15
+SND! is now a code word. Speeds up writes to the sound chip by 75% for a 2 byte penalty.(more important with background players)
+?ABORT is smaller because it use SOURCE instead of HERE COUNT. (Didn't see that)  
+>BODY was a wrapper on 2+. Now it is a code word synonym for 2+.
 
 ### Overview
 CAMEL99 V2 finally has TI file access.  The binary program is in folder DSK1 and is called CAMEL2.
