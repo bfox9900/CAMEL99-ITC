@@ -1,20 +1,4 @@
-# CAMEL99-V2.0.15
-
-### Apr 15 2018:
-Overall speed up by writing HERE ALLOT  >DIGIT and HOLD as code words. The improves compilation speeds and number printing is 50% faster.
-
-### Apr 17 2018
-Found a bug where the new faster scroll obliterated first two sprite records when scrolling. Repaired.
-
-### May 9 2018
-Committed change in 2.0.13 which fixes an old bug that caused difference entry address for DOVAR between cross-compiler varibles and TI-99 created variables. Homemade cross-compilers... what are you gonna do?
-
-### Jun 3 2018 V2.0.15
-SND! is now a code word. Speeds up writes to the sound chip by 75% for a 2 byte penalty.(more important with background players)
-
-?ABORT is smaller because it use SOURCE instead of HERE COUNT. (totally missed that)
-
-">BODY" was a wrapper on 2+. Now it is a code word synonym for 2+.
+# CAMEL99 for TI-99 V2.0.15
 
 ### Overview
 CAMEL99 V2 finally has TI file access.  The binary program is in folder DSK1 and is called CAMEL2.
@@ -53,3 +37,22 @@ Source code will load/compile at the blazing speed of about 14 lines per second.
 
 ### Future Developments
 Now that we have file access the TI-99 file system a binary save/load mechanism is on the hot list of things to add. This would allow you to build a program from source code and then save it off as a Binary file and then load that "system snapshot" back into the system without re-compiling.
+
+
+###Latest Updates
+### Apr 15 2018:
+Overall speed up by writing HERE ALLOT  >DIGIT and HOLD as code words. The improves compilation speeds and number printing is 50% faster.
+
+### Apr 17 2018
+Found a bug where the new faster scroll obliterated first two sprite records when scrolling. Repaired.
+
+### May 9 2018
+Committed change in 2.0.13 which fixes an old bug that caused difference entry address for DOVAR between cross-compiler varibles and TI-99 created variables. Homemade cross-compilers... what are you gonna do?
+
+### Jun 3 2018 V2.0.15
+SND! is now a code word. Speeds up writes to the sound chip by 75% for a 2 byte penalty.(more important with background players)
+
+?ABORT is smaller because it use SOURCE instead of HERE COUNT. (totally missed that)
+
+">BODY" was a wrapper on 2+. Now it is a code word synonym for 2+.
+
