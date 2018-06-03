@@ -45,7 +45,7 @@
 \          Lessons from HSFORTH METACOMP program, by the late Jim Kalihan
 \          Lessons on dictionary structure and number conversion from Camel Forth,
 \          by Brad Rodriguez.
-\          Lessons from Mark Wills on the TI-99 internals
+\          Lessons from Mark Wills and Lee Stewart on the TI-99 internals
 \          Cross compiler by Brian Fox Canada
 
 \ ========================================================================
@@ -322,8 +322,8 @@ TARGET-COMPILING
 \      34 USER: 'TYPE            \ vector for block output
 \      36 USER: 'PAGE            \ vector for screen clear
       38 USER: LP                \ LEAVE stack pointer.
-      3A USER: SOURCE-ID         \ =true if EVALUATE is running, false otherwise
-      3C USER: 'SOURCE           \ WATCH OUT! This is 2variable, occupies 3C and 3E
+      3A USER: SOURCE-ID            \ =true if EVALUATE is running, false otherwise
+      3E USER: 'SOURCE        \ WATCH OUT! This is 2variable, occupies 3C and 3E
 \     3E USER: 'SOURCE2
 
 \      40 USER: CURRENT
@@ -350,8 +350,8 @@ variable: BOOT                   \ ADDRESS OF THE FIRST Forth word to run
   _VCOL constant: VCOL                      \ current VDP column (in fast RAM)
  _C/SCR constant: C/SCR                     \ chars per screen >300 or 3C0
 
-[CC] DECIMAL
-[TC] 0024 constant: L/SCR                   \ 24 lines per screen on a TI-99
+[CC] DECIMAL [TC]
+   0024 constant: L/SCR                   \ 24 lines per screen on a TI-99
 [CC] HEX [TC]
 
         variable: VMODE                     \ keeps track of the video mode we are in
@@ -391,7 +391,8 @@ CODE: HERE   ( -- addr) TOS PUSH,  DP @@ TOS MOV,  NEXT, END-CODE
 : ,         ( n --)    HERE !   2 ALLOT ;
 : C,        ( c --)    HERE C!  1 ALLOT ;
 : PAD       ( -- addr) HERE 26 + ; 
-: >BODY     ( cfa-addr -- pfa-addr) 2+ ;
+
+CODE: >BODY   T' 2+ CFA!  END-CODE         \ create a synonym
 
 \ : COMPILE,  ( n --)  ,  ;                \ for ITC Forth this is the same as , (comma compiler)
 
@@ -469,7 +470,7 @@ TARGET-COMPILING
 \ Substituted TMS9900 machine multiplication and division.
 \ You can load CAMEL Forth floored division above from the
 \ /cclib folder for compatability with ANS/ISO Forth as needed.
-\ I also replaced M* with UM* to save space in the standard build.
+\ I also replaced M* with UM* in the kernel to save space.
 \ This all improves the speed of the kernel but...
 
 \ *SOME CODE WILL NOT WORK PER ANS REQUIREMENTS*
@@ -526,7 +527,7 @@ TARGET-COMPILING
 
 : SOURCE      ( -- adr n) 'SOURCE 2@ ;    \ return current input buffer. Common factor, save space
 
- [CC] [PRIVATE] [TC]               ( we don't need this word outside of the parser )
+ [CC] [PRIVATE] [TC]  ( we don't need this word outside of the parser )
 : ADR>IN      ( c-addr' --  )             \ set >IN to offset to given adr
               SOURCE                      \ -- Cadr' adr n
               -ROT -                      \ -- n adr'-adr
@@ -713,8 +714,7 @@ TARGET-COMPILING
                 DUP EMIT
                 DUP 8 =                      \ test for back-space character
                 IF   DROP 1-  >R OVER R> UMAX  \ move the buffer pointer back
-                     2 BS  BL VPUT         \ BF mod: erase char on the Video screen
-
+                     2 BS  BL VPUT           \ BF mod: erase char on the Video screen
                 ELSE OVER C!  1+ OVER UMIN
                 THEN
               REPEAT
@@ -753,9 +753,10 @@ TARGET-COMPILING
 \ : >DIGIT ( n -- c) DUP 9 > 7 AND + 30 + ; \ convert n to ascii digit c
  CODE: >DIGIT  ( n -- c)   \ ASM is 8 bytes smaller 4X faster
             TOS 9 CMPI,
-            @@1 JLE,       \ if n<=9 jump to convert it
-            TOS  7 ADDI,   \ else number is not base 10, add 7
- @@1:       TOS 30 ADDI,   \ add 30 to create ASCII value
+            HI IF,          \ if n<9
+               TOS 7 ADDI,  \ number is not base 10, add 7
+            ENDIF,
+            TOS  TCHAR 0 ADDI,  \ add ASCII 0 to create char value
             NEXT,
             END-CODE
 
@@ -819,7 +820,14 @@ TARGET-COMPILING
 
 TARGET-COMPILING
 
-: SND!       ( c -- ) 8400 C!  ;            \ write a byte to address of TMS9919 chip
+\ : SND!       ( c -- ) 8400 C!  ;         \ write a byte to address of TMS9919 chip
+
+ CODE: SND!   ( c -- )                     \ 75% faster, 2 bytes bigger
+             TOS SWPB,
+             TOS 8400 @@ MOVB,
+             TOS POP,
+             NEXT,
+             END-CODE
 
 : BEEP       ( -- )
              80 SND! 5 SND!                 \ precalulated values for OSC1 1328Hz
@@ -843,16 +851,17 @@ TARGET-COMPILING
               SOURCE-ID OFF
               CR QUIT ;
 
-   variable: lines                     \ track lines compiled in a file
+  variable: lines                          \ track lines compiled in a file
 
 : ?ABORT  ( f c-addr u --)
            ROT IF  CR CR T." * " TYPE  T."  ? "
                    SOURCE-ID @ 0>
-                   IF   T." Line " LINES @ .
+                   IF  T." Line " LINES @ .
+                       CR SOURCE TYPE
                    THEN ABORT
             THEN 2DROP ;
 
-: ?FIND       ( ? -- )       0=    HERE COUNT  ?ABORT ;
+: ?FIND       ( ? -- )       0=    SOURCE  ?ABORT ;
 : ?PAIRS      ( n1 n2 --)     -    TS" Unpaired"       ?ABORT ;
 : ?COMP       ( -- ) STATE @ 0=    TS" Compile only"   ?ABORT ;
 : ?EXEC       ( -- ) STATE @       TS" Interpret only" ?ABORT ;
@@ -1076,7 +1085,7 @@ TARGET-COMPILING
               2 KUNIT# C!       \ keyboard #2 is the BASIC keyboard
               8370 @ ^PAB !     \ GET end of VDP mem from O/S, 
 \ VDP start screen
-              TEXT BEEP TS" CAMEL99 2.0.14" TYPE
+              TEXT BEEP TS" CAMEL99 2.0.15" TYPE
               TIB 0 'SOURCE 2!   >IN OFF
               SOURCE-ID OFF
               TS" DSK1.START" INCLUDED
