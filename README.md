@@ -14,7 +14,7 @@ SND! is now a code word. Speeds up writes to the sound chip by 75% for a 2 byte 
 
 ?ABORT is smaller because it use SOURCE instead of HERE COUNT. (totally missed that)
 
->BODY was a wrapper on 2+. Now it is a code word synonym for 2+.
+">BODY" was a wrapper on 2+. Now it is a code word synonym for 2+.
 
 ### Overview
 CAMEL99 V2 finally has TI file access.  The binary program is in folder DSK1 and is called CAMEL2.
