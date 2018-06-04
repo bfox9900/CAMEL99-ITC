@@ -2,7 +2,7 @@
 
 Although I wrote the cross-compiler to jump start this project, as with all accomplishments, I stood on the shoulders of others.
 
-### I would be remiss 
+### I would be remiss... 
 
 if I did not give a word of thanks to:
 The original authors of TI-Forth in the 1980s, who opened my eyes to the wonderous simplicity of the Forth language.
