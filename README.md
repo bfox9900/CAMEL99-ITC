@@ -5,12 +5,12 @@
 CAMEL99 Forth has been built as an educational tool for those who are interested in how you could cross-compile Forth to a different CPU using an existing Forth system. Rather than starting from scratch it uses CAMEL Forth by Dr. Brad Rodriguez for the hi-level Forth code. This has been "tweeked" and dare I say improved a little to better fit the very slow TI-99 computer. (More things written in Assembler was the answer)
 
 ### Made Friendly for BASIC Programmers
-Users of TI BASIC who want to explore Forth might also find this system useful. With that in mind it has a string package that provides many of the features of BASIC including the use of a string stack and automated stack management. It also an INPUT statement for strings and numbers.  You will also find the TI BASIC graphics functions are emulated in the libary file called GRAFIX.F.  The instruction manual has been written to compare BASIC and Forth and there are numerous example programs where the BASIC code is side by side with Forth for faster understanding for those new to Forth.
+Users of TI BASIC who want to explore Forth might also find this system useful. With that in mind it has a string package that provides many of the features of BASIC including the use of a string stack and automated stack management. It also has an INPUT statement for strings and numbers.  You will also find the TI BASIC graphics functions are emulated in the libary file called GRAFIX.F.  The instruction manual has been written to compare BASIC and Forth and there are example programs where the BASIC code is side by side with Forth for faster understanding for those new to Forth.
 
 ### Changes from V1
 CAMEL99 V2 finally has TI file access and numerous enhancements that improved the speed/size tradeoff. The binary program is in folder DSK1 and is called CAMEL2. All of the loadable source files have a .F extension except the START file which is unique.
 
-### How is was made
+### How it was made
 CAMEL99 begins with a TMS9900 Cross-Assembler written in Forth. With the assembler we define the primitive operations in the file 9900FAST.HSF. The Cross-compiler, also written in Forth, gives us the tools to create the Forth dictionary in the TARGET memory image that lets us give each primitive a "header" (name) in the dicationary.  The file CAMEL99.HSF uses the primitives to create the high level Forth words that let us build the TARGET COMPILER. As each piece is added to the TARGET system less of the Cross-compiler is used. It's truly an excerise in boot-strapping.
 
 ### For the Forth Tech
