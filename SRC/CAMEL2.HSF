@@ -14,7 +14,7 @@
 \
 
 \ Copyright (c) 2018 Brian Fox
-\ KOMOKA Ontario Canada
+\ KILWORTH Ontario Canada
 \ brian.fox@foxaudioresearch.ca
 \ This program is free software; you can redistribute it and/or modify
 \ it under the terms of the GNU General Public License as published by
@@ -308,7 +308,7 @@ TARGET-COMPILING
 \      1A USER: 'R13
 \      1C USER: 'R14
 \      1E USER: 'R15
-
+[CC] HEX [TC]
       20 USER: TFLAG             \ TASK flag awake/asleep status
       22 USER: JOB               \ Forth word that runs in a task
       24 USER: DP                \ dictionary pointer
@@ -380,8 +380,7 @@ variable: BOOT                   \ ADDRESS OF THE FIRST Forth word to run
 
 TARGET-COMPILING
 
-\ : ALLOT    ( n --)  DP +!  ;      \ allocate dictionary space
-CODE: ALLOT  ( n -- ) TOS DP @@ ADD,  TOS POP,  NEXT,  END-CODE
+: ALLOT    ( n --)  DP +!  ;      \ allocate dictionary space
 
 \ By making HERE faster the system goes faster because HERE is used a lot.
 \ : HERE   DP @ ;
@@ -390,20 +389,17 @@ CODE: HERE   ( -- addr) TOS PUSH,  DP @@ TOS MOV,  NEXT, END-CODE
 : ALIGN     ( -- )     HERE ALIGNED DP ! ;
 : ,         ( n --)    HERE !   2 ALLOT ;
 : C,        ( c --)    HERE C!  1 ALLOT ;
-: PAD       ( -- addr) HERE 26 + ; 
+: PAD       ( -- addr) HERE 26 + ;
 
-CODE: >BODY   T' 2+ CFA!  END-CODE         \ create a synonym
+\ : >BODY     2+ ;    \ removed from kernel to save 18 bytes. Loads at START up
+\ : COMPILE,  ( n --)  ,  ;     \ for ITC Forth this is the same as , (comma compiler)
 
-\ : COMPILE,  ( n --)  ,  ;                \ for ITC Forth this is the same as , (comma compiler)
+: COMPILE   ( -- )  R> DUP 2+ >R @ , ;  \ append inline execution token
+: IMMEDIATE ( --)  01 LATEST @ 1- ( -- imm-fld) C! ;  \ set the precedence BIT in the last word defined
+: LITERAL   ( n -- n|~)  STATE @ IF  COMPILE LIT ,  THEN ;  XIMMEDIATE
 
-: COMPILE   ( -- )  R> DUP >BODY >R @ , ;  \ append inline execution token
-
-: IMMEDIATE  ( --)  01 LATEST @ 1- ( -- imm-fld) C! ;  \ set the precedence BIT in the last word defined
-
-: LITERAL    ( n -- n|~)  STATE @ IF  COMPILE LIT ,  THEN ;  XIMMEDIATE
-
-: ]          ( -- ) STATE ON  ;  XIMMEDIATE \ turn on the compiler
-: [          ( -- ) STATE OFF ;  XIMMEDIATE \ turn off the compiler
+: ]         ( -- ) STATE ON  ;  XIMMEDIATE \ turn on the compiler
+: [         ( -- ) STATE OFF ;  XIMMEDIATE \ turn off the compiler
 
 \ ========================================================================
 \ MINIMALIST HEAP MEMORY MANAGER
@@ -819,15 +815,19 @@ TARGET-COMPILING
 [CC] include cc9900\cclib\ticktock.hsf     \ load the hardware milli-second timer
 
 TARGET-COMPILING
+0 [IF]
 
-\ : SND!       ( c -- ) 8400 C!  ;         \ write a byte to address of TMS9919 chip
+: SND!       ( c -- ) 8400 C!  ;         \ write a byte to address of TMS9919 chip
 
- CODE: SND!   ( c -- )                     \ 75% faster, 2 bytes bigger
+[ELSE]
+
+CODE: SND!   ( c -- )                     \ 75% faster, 2 bytes bigger
              TOS SWPB,
              TOS 8400 @@ MOVB,
              TOS POP,
              NEXT,
              END-CODE
+[THEN]              
 
 : BEEP       ( -- )
              80 SND! 5 SND!                 \ precalulated values for OSC1 1328Hz
@@ -856,12 +856,11 @@ TARGET-COMPILING
 : ?ABORT  ( f c-addr u --)
            ROT IF  CR CR T." * " TYPE  T."  ? "
                    SOURCE-ID @ 0>
-                   IF  T." Line " LINES @ .
-                       CR SOURCE TYPE
+                   IF  T." Line " LINES @ . T." :" SOURCE TYPE
                    THEN ABORT
-            THEN 2DROP ;
+           THEN 2DROP ;
 
-: ?FIND       ( ? -- )       0=    SOURCE  ?ABORT ;
+: ?FIND       ( ? -- )       0=    HERE COUNT ?ABORT ;
 : ?PAIRS      ( n1 n2 --)     -    TS" Unpaired"       ?ABORT ;
 : ?COMP       ( -- ) STATE @ 0=    TS" Compile only"   ?ABORT ;
 : ?EXEC       ( -- ) STATE @       TS" Interpret only" ?ABORT ;
@@ -932,7 +931,7 @@ TARGET-COMPILING
                 ELSE TYPE
                 THEN ; XIMMEDIATE
 
-: .(      T[CHAR] ) PARSE TYPE ;     \ "talking" comment
+: .(     T[CHAR] ) PARSE TYPE ;     \ "talking" comment
 
 
 
@@ -1083,9 +1082,9 @@ TARGET-COMPILING
               HEX
               TMR!              \ set 9901 timer to count continously
               2 KUNIT# C!       \ keyboard #2 is the BASIC keyboard
-              8370 @ ^PAB !     \ GET end of VDP mem from O/S, 
+              8370 @ ^PAB !     \ GET end of VDP mem from O/S,
 \ VDP start screen
-              TEXT BEEP TS" CAMEL99 2.0.15" TYPE
+              TEXT BEEP TS" CAMEL99 2.0.16" TYPE
               TIB 0 'SOURCE 2!   >IN OFF
               SOURCE-ID OFF
               TS" DSK1.START" INCLUDED
@@ -1144,7 +1143,7 @@ CROSS-COMPILING
 \ Update the filename, boot-address and BOOT word in the TARGET MEMORY IMAGE
 
          FILENAME: CAMEL2
-         T' INIT >BODY  BOOT-ADDRESS T!
+         T' INIT 2+  BOOT-ADDRESS T!
          T' COLD  BOOT T!
 
          END.
