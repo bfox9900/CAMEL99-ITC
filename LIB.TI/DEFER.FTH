@@ -6,10 +6,10 @@
 : DEFER@  ( 'deferred -- xt)  >BODY @ ;
 
 : IS      ( xt "<spaces>name" -- )
-           STATE @
+Â Â          STATE @
            IF    POSTPONE ['] POSTPONE DEFER!
            ELSE  ' ( -- XT) DEFER!
-           THEN ; IMMEDIATE
+Â Â          THEN ; IMMEDIATE
 
 \ CAMEL99 ABORTs if defered word is not defined using 'IS'
 : ?DEFER  ( -- ) TRUE ABORT" Undefined DEFER"  ; 
