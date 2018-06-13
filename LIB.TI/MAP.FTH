@@ -22,9 +22,9 @@ HEX
          F000 AND  0B RSHIFT 4000 +
          SWAP 00FF AND  DUP >< OR   \ Hi & lo bytes are now identical
          SWAP ( -- bank address)
-         1E00 CRU! SBO              \ enable SAMS card
+         1E00 CRU! 0SBO              \ enable SAMS card
          !                          \ store bank in SAMS register
-         SBZ ;                      \ disable SAMS card
+         0SBZ ;                      \ disable SAMS card
 
 \ test code writes 2 strings to each page.
 \ paging takes place in lower 4K of Low mem
