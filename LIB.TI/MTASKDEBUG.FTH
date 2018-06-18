@@ -8,18 +8,15 @@
 \             -RESTART command now POPs local Rstack. It was overflowing
 \             -with repeated RESTARTs.
 \ Apr 2018    Ported to V2 and used machine code. No need for assember
-\ May 17, 2018  fixed RESTART, BYE, COLD.
-\ Jun  8. 2018  replaced assembler with machine code to ease of use.
+\ May 17, 2019  fixed RESTART, BYE, COLD.
 
-\ INCLUDE DSK1.ASM9900.F
+INCLUDE DSK1.ASM9900.F
 INCLUDE DSK1.TOOLS.F
-
-' CODE  DROP   \ test if we have CODE ENDCODE
 
 \ Each task has a Process ID (PID)
 \ In this system we use the workspace address as the PID
 HEX
-CODE MYSELF  ( -- pid)
+CODE MYSELF  ( -- pid) 
              0646 , \    *SP DECT,  ( make room on stack)
              C584 , \ TOS *SP MOV,  ( push TOS reg.)
              02A4 , \    TOS STWP,  (fetch the cpu WP register to Forth TOS)
@@ -51,23 +48,23 @@ DECIMAL
 \ load the assembler
 \ use CREATE cuz we just need the address
 HEX
-CREATE 'YIELD \ *this is the entire context switcher
-      0380 ,         \ RTWP,                \ change tasks! :-)
-HERE  02A1 ,         \ R1 STWP,             \ HERE on stack for later
-      C021 , 20 ,    \ HEX 20 (R1) R0 MOV,  \ fetch TFLAG->R0
-      13FB ,         \ -8 $$+ JEQ,          \ if tflag=0 jmp to RTWP
-      NEXT,          \ run Forth
- ( -- addr) CONSTANT 'TSTAT  \ record tstat address as constant
+\ CREATE 'YIELD \ *this is the entire context switcher
+\      0380 ,         \ RTWP,                \ change tasks! :-)
+\ HERE  02A1 ,         \ R1 STWP,             \ HERE on stack for later
+\      C021 , 20 ,    \ HEX 20 (R1) R0 MOV,  \ fetch TFLAG->R0
+\      13FB ,         \ -8 $$+ JEQ,          \ if tflag=0 jmp to RTWP
+\      NEXT,          \ run Forth
+\ ( -- addr) CONSTANT 'TSTAT  \ record tstat address as constant
 
-\ CODE YIELD \ *this is the entire context switcher
-\    BEGIN,
-\      RTWP,                \ change tasks! :-)
-\ HERE  F000 !
-\      R1 STWP,             \ HERE on stack for later
-\      20 R1 () R0 MOV,   \ fetch TFLAG->R0
-\    NE UNTIL,           \ if tflag=0 jmp to RTWP
-\    NEXT,               \ run Forth
-\  F000 @ CONSTANT 'TSTAT  \ record tstat address as constant
+CODE YIELD \ *this is the entire context switcher
+    BEGIN,
+      RTWP,                \ change tasks! :-)
+HERE  F000 !
+      R1 STWP,             \ HERE on stack for later
+      20 R1 () R0 MOV,   \ fetch TFLAG->R0
+    NE UNTIL,           \ if tflag=0 jmp to RTWP
+    NEXT,               \ run Forth
+  F000 @ CONSTANT 'TSTAT  \ record tstat address as constant
 
  'R10 @ CONSTANT 'NEXT      \ R10 has the address of Forth NEXT
 
@@ -80,7 +77,7 @@ HERE  02A1 ,         \ R1 STWP,             \ HERE on stack for later
 
 \ turn multi-tasking on or off by changing the CODE address in PAUSE
 : SINGLE   ( -- ) 'NEXT  ['] PAUSE ! ;  \ disable multi-tasking
-: MULTI    ( -- ) 'YIELD ['] PAUSE ! ;  \ enable multi-tasking.
+: MULTI    ( -- ) ['] YIELD >BODY ['] PAUSE ! ;  \ enable multi-tasking.
 
 ( *** YOU  M U S T  use INIT-MULTI before multi-tasking ***)
 : INIT-MULTI ( -- )
@@ -89,7 +86,7 @@ HERE  02A1 ,         \ R1 STWP,             \ HERE on stack for later
                 MYSELF WAKE  ;    \ mark myself awake
 
 \ FORK:
-\ - copy the the calling task's USER area into a new workspace.
+\ - copy the root Forth USER area into a new workspace.
 \ - SET both stack addresses to the proper registers in the user area,
 \ - insert PID into the round-robin list
 \ - your program needs allot USIZE (176) bytes somewhere.
@@ -97,21 +94,24 @@ HERE  02A1 ,         \ R1 STWP,             \ HERE on stack for later
 
 \          *** THESE ARE VERY SMALL TASK BLOCKS ***
 \ 20 stack items is the theoretical minimum for a Forth process
-: FORK ( PID -- )
-       DUP >R                               \ copy PID to RSTACK
-      ( PID) USIZE 0 FILL                   \ erase new task block
-       MYSELF R@ USIZE CMOVE                \ copy myself to the new task
 
-       R@ USIZE +  ( addr )                 \ calc. end of task block
-       DUP R@ 'RP LOCAL !                   \ dup & store in local RP
-     ( RPaddr) 20 CELLS -                   \ calc. Pstack addr
-       R@ 'SP LOCAL !                       \ store in local SP register
+: FORK ( PID -- )                           \ needs 168 bytes
+       >R                                   \ copy taskaddr
+       R@ USIZE 0 FILL                      \ erase user area
+       USER0 R@ 60 CMOVE                    \ copy USER0 regs & vars to taskaddr
+                                            \ -this sets R14 to TSTAT routine (IF init-multi was run)
+                                            \  and it sets R10 to NEXT2
 
-\ insert this task into round-robin list of tasks
-       TLINK @                 ( -- link)   \ get round-robin link
-       R@ TLINK !                           \ replace with addr of new task
-       R@ TLINK LOCAL !                     \ store copy in new task's tlink
-       R> SLEEP ;                           \ mark this new task as asleep
+       R@ 100 +  R@ 'SP LOCAL !             \ set Rstack pointer to this user area
+       R@ 140 +  R@ 'RP LOCAL !             \ set Pstack pointer to this user area
+
+\ add this task to round-robin list of task s
+       TLINK @                 ( -- link)   \ get the current link round-robin link
+       R@ TLINK !                           \ replace it with addr of new task
+       R@ TLINK LOCAL !                     \ store the copy from above into new task's space
+
+       R> SLEEP  ;                          \ mark this new task as asleep
+
 
 .( ..)
 

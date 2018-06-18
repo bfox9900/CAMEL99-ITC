@@ -96,7 +96,7 @@ MXLEN 1+ CONSTANT SSW     \ width of string stack items
 \ STRING: creates a named string of n size in the HEAP (low mem)
 : STRING:  ( n -- )
            DUP ?$IZE
-           CREATE H @ DUP , 0 C!   \ record heap address and init length
+           CREATE H @ DUP , 0 C!   \ record heap address and init  length
                   1+ ALIGNED  H +! \ allot Heap memory to EVEN address
            DOES>  @  ;
 
