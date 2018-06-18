@@ -195,11 +195,12 @@ CODE: EXIT    ( -- )
               EXIT2 CFA!                      \ convert label address to fast RAM address store in CFA
               END-CODE
 
-CODE: DOCOL   ( a -- )                            \ Executor that executes a "colon" definition.
+
+CODE: DOCOL   ( a -- )                        \ Executor that executes a "colon" definition.
               ENTR CFA!
               END-CODE
 
-CODE: LIT     ( -- w )                              \ Execute a LITERAL number in the Forth program
+CODE: LIT     ( -- w )                        \ Execute a LITERAL number in the Forth program
              _LIT >HSRAM CFA!
 \              TOS PUSH,       \ 28
 \             *IP+ TOS MOV,    \ 22
@@ -207,32 +208,32 @@ CODE: LIT     ( -- w )                              \ Execute a LITERAL number i
               END-CODE
 
 \ CODE: DLIT
-\              TOS PUSH,                            \ save the TOS register
+\              TOS PUSH,                       \ save the TOS register
 \             *IP+ TOS MOV,
-\              IP++                                 \ move IP to next program cell
-\             *IP PUSH,                             \ move next XT onto 2nd stack item
-\              IP++                                 \ move IP to next program cell
+\              IP++                            \ move IP to next program cell
+\             *IP PUSH,                        \ move next XT onto 2nd stack item
+\              IP++                            \ move IP to next program cell
 \              NEXT,
 \              END-CODE
 
-
-CODE: DOCON   ( -- n )                             \ Executor that executes a "CONSTANT"
-              TOS PUSH,                            \ make room in TOS
-             *W TOS MOV,                           \ put contents of PFA (W+2) in TOS
+CODE: DOCON   ( -- n )                         \ Executor that executes a "CONSTANT"
+              TOS PUSH,                        \ make room in TOS
+             *W TOS MOV,                       \ put contents of PFA (W+2) in TOS
               NEXT,
               END-CODE
 
-CODE: DOVAR   ( -- addr)                           \ Executor that executes a "VARIABLE"
-              TOS PUSH,                            \ <-- dovar  enters at this address
-              W   TOS MOV,                         \ put the parameter field address into TOS
+CODE: DOVAR   ( -- addr)                        \ Executor that executes a "VARIABLE"
+              NOP,    \ ??? when I remove this do-user breaks ???
+              TOS PUSH,                         \ <-- dovar  enters at this address
+              W   TOS MOV,                      \ put the parameter field address into TOS
               NEXT,
               END-CODE
 
 \ In CAMEL99 the WP register doubles as USER pointer
 CODE: DOUSER ( -- addr)
-              TOS PUSH,                            \ Executor that executes a "USER VARIABLE" (local to each task)
-              TOS STWP,                            \ store workspace register WP in TOS
-             *W TOS ADD,                           \ add the offset stored in the USER variable's parameter field
+              TOS PUSH,                         \ Executor that executes a "USER VARIABLE" (local to each task)
+              TOS STWP,                         \ store workspace register WP in TOS
+             *W TOS ADD,                        \ add the offset stored in the USER variable's parameter field
               NEXT,
               END-CODE
 
@@ -242,8 +243,8 @@ CODE: DOUSER ( -- addr)
 \ defined word:  CFA: doescode
 \                PFA: parameter field
 \
-\ Note: in the TMS9900 implementation we use BL @DODOES. (branch and link to sub-routine)
-\ DODOES is entered with W=PFA.  ( parameter field address)
+\ Note: in the TMS9900 implementation we use B @DODOES. (branch to address)
+\ DODOES is entered with W=PFA (parameter field address)
 \ DODOES moves  W to the TOP of Stack (TOS)
 \ So the high-level Forth code begins with the address of the parameter
 \ field on top of stack. ( cached in R4 in this version)
@@ -257,7 +258,6 @@ CODE: DODOES  ( -- a-addr)
               IP 4 ADDI,      \ skip BL instruction+address to get to Forth code
               NEXT,
               END-CODE
-
 
 CODE: EXECUTE ( xt -- )
               TOS W MOV,      \ move the execution token in TOS into temp
@@ -278,7 +278,7 @@ CODE: BRANCH
 CR .( M E M O R Y  F E T C H  &  S T O R E)
 
 CODE: !      ( n addr -- )
-@@1:         *SP+ *TOS MOV,          \ 20
+              *SP+ *TOS MOV,          \ 20
               TOS POP,               \ 22
               NEXT,                  \ 42 vs 48 in Turbo Forth
               END-CODE
@@ -288,17 +288,17 @@ CODE: @      ( a -- w )
               NEXT,
               END-CODE
 
-CODE: 2!     ( d addr -- )
+CODE: 2!     ( d addr -- ) \ the top of stack is stored at the lower adrs
              *SP+ 2 (TOS) MOV,
-             *SP+ *TOS MOV,
+             *SP+ *TOS  MOV,
               TOS POP,
               NEXT,
               END-CODE
 
-CODE: 2@     ( addr -- d)
-             *TOS+ PUSH,             \ 32 fetch from addr to stack, auto-inc TOS by 2
-             *TOS TOS MOV,           \ 18 fetch from addr+2 to TOS register
-              NEXT,                  \ 40
+CODE: 2@     ( addr -- d) \ the lower address will appear on top of stack
+             *TOS+  PUSH,      \ 18 fetch from addr to TOS register
+             *TOS   TOS MOV,           \ 28
+              NEXT,                \  46
               END-CODE
 
 CODE: C!     ( c addr -- )
@@ -383,16 +383,15 @@ CODE: 2>R    ( d -- ) ( r-- n n)
 CODE: 2R>     ( -- d )
               TOS PUSH,             \ 28
               SP DECT,              \ 10
-             *RP+ *SP MOV,          \ 26
+             *SP  RPOP,             \ 26
               TOS RPOP,             \ 22
               NEXT,               \ = 88
               END-CODE
 
-CODE: 2R@     ( -- d )
-              RP -4 ADDI,           \ 14
-              TOS 2 (SP) MOV,       \ 22
-             *RP *SP MOV,           \ 22
-              2 (RP) TOS MOV,       \ 22
+CODE: 2R@     ( -- d )           \ fixed June 18 2019 V2.0.17
+              TOS PUSH,
+             *RP PUSH,
+             2 (RP) TOS MOV,
               NEXT,               \ = 80
               END-CODE
 [THEN]
@@ -422,11 +421,11 @@ CODE: NIP     ( n n' -- n')          \ 10
               NEXT,
               END-CODE
 
-CODE: ?DUP    ( x -- 0 | x x)        \ ?DUP interleaved with DUP to save space
-              TOS TOS MOV,           \ test for TOS<>0
-              @@1 JNE,               \ if TOS<>0 goto DUP
-              NEXT,                  \ else return to Forth
-+CODE: DUP    ( w -- w w )           \ create a Forth Header for DUP
+CODE: ?DUP    ( x -- 0 | x x)       \ ?DUP interleaved with DUP to save space
+              TOS TOS MOV,          \ test for TOS<>0
+              @@1 JNE,              \ if TOS<>0 goto DUP
+              NEXT,                 \ else return to Forth
++CODE: DUP    ( w -- w w )          \ create a Forth Header for DUP
 @@1:          TOS PUSH,
               NEXT,
               END-CODE
@@ -477,7 +476,7 @@ CODE: SPLIT  ( AABB --  BB AA )     \ used in \LIB\SOUND.FTH
 
 CODE: FUSE   ( BB  AA -- AABB ) \ FUSE 2 bytes into a 16 bit word
               TOS SWPB,
-             *SP+ TOS ADD,         \ same size as Forth, 3X faster
+             *SP+ TOS SOC,         \ same size as Forth, 3X faster
               NEXT,
               END-CODE
 
@@ -522,20 +521,6 @@ CODE: PICK   ( n -- n)   \ GForth ITC takes 10 intel instructions for PICK
              *W TOS MOV,   \ 18
               NEXT,       \  62
               END-CODE
-
-0 [IF] \ From Wil Baden's TOOLBELT  Thanks Wil. RIP
-CODE: 3RD  ( a b c d --  a b c d b)    \ 2X faster than 3 PICK
-              TOS PUSH,         \ 28
-              4 (SP) TOS MOV,   \ 22
-              NEXT,            \  50
-              END-CODE
-
-CODE: 4TH
-              TOS PUSH,
-              6 (SP) TOS MOV,
-              NEXT,
-              END-CODE
-[THEN]
 
 \ ===================================================================
 CR .( L O G I C A L   O P E R A T I O N S)
@@ -606,21 +591,23 @@ CODE: RSHIFT  ( n bits -- n')
               TOS R0  MOV,            \ 14 the shift bits MUST be in R0 to do this
              *SP+ TOS   MOV,          \ 22
               R0 R0 MOV,              \ ANS:  1 0 LSHIFT -> 1
-              @@1 JEQ,                \       so skip the shift if R0=1
-              TOS R0 SRL,
-@@1:          NEXT,
+              NE IF,                  \       so skip the shift if R0=1
+                 TOS R0 SRL,
+              ENDIF,
+              NEXT,
               END-CODE
 
 CODE: LSHIFT  ( n bits -- n')
               TOS R0  MOV,           \ the shift bits MUST be in R0 to do this
              *SP+ TOS MOV,
               R0 R0 MOV,
-              @@1 JEQ,
-              TOS R0  SLA,
-@@1:          NEXT,
+              NE IF,
+                 TOS R0  SLA,
+              ENDIF,
+              NEXT,
               END-CODE
 
-\ CODE: SRC     ( n bits -- n')        \ non ANS Forth. Circular shift. Nice!
+\ CODE: SRC     ( n bits -- n')     \ non ANS Forth. Circular shift. Nice!
 \              TOS R0 MOV,
 \             *SP+ TOS MOV,
 \              TOS R0 SRC,
@@ -628,13 +615,13 @@ CODE: LSHIFT  ( n bits -- n')
 \             END-CODE
 
 CODE: INVERT  ( u -- w)
-              TOS INV,       \ 10  vs  14 in stack memory
+              TOS INV,              \ 10  vs  14 in stack memory
               NEXT,
               END-CODE
 
 \ : +   ( u1 u2 -- u ) UM+ DROP ;  original Camel Forth code is bigger
 CODE: +       ( u1 u2 -- u )
-             *SP+ TOS ADD,     \ ADD 2nd item to TOS and incr stack pointer.
+             *SP+ TOS ADD,         \ ADD 2nd item to TOS and incr stack pointer.
               NEXT,
               END-CODE
 
@@ -645,25 +632,14 @@ CODE: -       ( u1 u2 -- u )
               NEXT,
               END-CODE
 
-CODE: M+      ( d n -- d )   \ add single to double
+CODE: M+      ( d n -- d )     \ add single to double signed output
               TOS  2 (SP) ADD,
-              @@1 JNC,
-             *SP INC,
-@@1:         *SP+  TOS  MOV,
+              OC IF,
+                 *SP INC,
+              ENDIF,
+             *SP+ TOS MOV,
               NEXT,
               END-CODE
-
-0 [if]  \ not needed in the kernel
-CODE: D+      ( lo hi lo' hi' -- d)    \ hi'is in TOS register      *TESTED*
-             *SP+ R1 MOV,              \ POP lo' -> R1     ( -- lo hi )     22
-             *SP+ R2 MOV,              \ pop hi into R2    ( -- lo )        22
-              R1 *SP ADD,              \ add LSW sum -> next item on stack  18
-              @@1 JNC,                 \                                    10
-              R4 INC,                  \ if carry=true inc TOS              10
-@@1:          R2 TOS ADD,              \ MSW sum to TOS                     14
-              NEXT,                    \                                    96
-              END-CODE                 \ 12 BYTES
-[then]
 
 CODE: ABS      ( n -- n )
               TOS ABS,
@@ -710,7 +686,7 @@ CODE: UM/MOD ( ud u1 -- u2 u3 ) \ numerator(32bits), divisor -- remainder,quotie
 0 [IF]
 CODE: *+     ( addr ndx size -- addr')  \ array address calculator
              *SP+ TOS MPY,              \ 60
-             *SP+ TOS MOV,               \ 22
+             *SP+ TOS MOV,              \ 22
               R5  TOS ADD,              \ 14
               NEXT,                    \  96
               END-CODE
@@ -791,30 +767,34 @@ END-CODE   \ for MIN
 CR .(  M O V E   C M O V E  C M O V E >   F I L L )
 
 CODE: CMOVE  ( src dst n -- )  \ forward character move
-@@8:         *SP+ R0 MOV,       \ pop DEST into R0                           22
-             *SP+ R1 MOV,       \ pop source into R1                         22
+             *SP+ R0 MOV,       \ pop DEST into R0                         22
+             *SP+ R1 MOV,       \ pop source into R1                       22
               TOS TOS MOV,
-              @@2 JEQ,          \ if n=0 get out
-@@1:         *R1+ *R0+ MOVB,    \ byte move, with auto increment by 1. cool  26
-              TOS DEC,          \ n is in TOS (R4)                           10
-              @@1 JNE,                                                \      10
-@@2:          TOS POP,                                                \      22
-              NEXT,                                                   \     112
+              NE IF,            \ if n<>0 do move
+                 BEGIN,
+                  *R1+ *R0+ MOVB, \ byte move, with auto increment by 1.   26
+                   TOS DEC,       \ n is in TOS (R4)                       10
+                 EQ UNTIL,
+              ENDIF,                                                  \    10
+              TOS POP,                                                \    22
+              NEXT,                                                   \   112
               END-CODE
 
 CODE: CMOVE>  ( src dst n -- )  \ move chars from end of string and go backwards
-@@9:         *SP+ R0 MOV,       \ pop DEST into R0
+             *SP+ R0 MOV,       \ pop DEST into R0
              *SP+ R1 MOV,       \ pop source into R1
               TOS TOS MOV,
-              @@2 JEQ,          \ if n=0 get out
-              TOS R0 ADD,       \ point to end of src
-              TOS R1 ADD,       \ point to end of dest
-@@1:         *R1 *R0 MOVB,
-              R1 DEC,           \ move the pointers back (NO auto decrement, damn)
-              R0 DEC,
-              TOS DEC,          \ decr the counter in TOS (R5)
-              @@1 JNE,
-@@2:          TOS POP,
+              NE IF,            \ if n<>0 do move
+                 TOS R0 ADD,    \ point to end of src
+                 TOS R1 ADD,    \ point to end of dest
+                 BEGIN,
+                   *R1 *R0 MOVB,
+                    R1 DEC,     \ move the pointers back (NO auto decrement, damn)
+                    R0 DEC,
+                    TOS DEC,    \ decr the counter in TOS (R5)
+                 EQ UNTIL,
+              ENDIF,
+              TOS POP,
               NEXT,
               END-CODE
 
@@ -822,9 +802,10 @@ CODE: FILL   ( addr cnt char -- )
              *SP+ R0 MOV,       \ pop cnt->R0                   22
              *SP+ R1 MOV,       \ pop addr->R1                  22
               TOS SWPB,         \                               10
-@@1:          TOS *R1+ MOVB,    \ char is in TOS                20
-              R0 DEC,           \ decr. count                   10
-              @@1 JNE,          \ jmp <> 0                      10
+              BEGIN,
+                TOS *R1+ MOVB,  \ char is in TOS                20
+                R0 DEC,         \ decr. count                   10
+              EQ UNTIL,         \ loop until r0=0               10
               TOS POP,          \ refill the TOS register       22
               NEXT,             \                             =116
               END-CODE
@@ -841,8 +822,6 @@ cr .( ANS Forth DO/LOOP )
 \ ; arithmetic overflow logic can detect crossing.  I learned this
 \ ; trick from Laxen & Perry F83.
 
-
-
 \ ====================================================================
 REGISTERS [IF]
 \ CAMEL Forth prefers to put loop index and limit in registers.
@@ -850,6 +829,7 @@ REGISTERS [IF]
 \ BUT it is NOT COMPATIBLE with the workspace based multi-tasker
 
   INCLUDE CC9900\CCLIB\DOFAST.HSF
+CR .( *** NOT MULTI-TASKER COMPATIBLE!! ***)
 
 [ELSE]
 
@@ -866,7 +846,7 @@ CODE: <?DO> ( limit ndx -- )
 
 +CODE: <DO> ( limit indx -- )
 @@1:          R0  8000 LI,      \ load "fudge factor" to LIMIT
-             *SP+  R0 SUB,      \ LIMIT, compute 8000h-limit "fudge factor"
+             *SP+  R0 SUB,      \ Pop limit, compute 8000h-limit "fudge factor"
               R0  TOS ADD,      \ loop ctr = index+fudge
               R0  RPUSH,        \ rpush limit
               TOS RPUSH,        \ rpush index
@@ -881,6 +861,9 @@ CODE: <LOOP>
               @@3 JMP,          \ JUMP to unloop
 @@1:         *IP IP ADD,        \ jump back  (NO SPEED UP BY BRANCHING TO hi-speed version)
               NEXT,
+\             *IP+ W  MOV,       \ INLINE NEXT: loop IS 4% faster
+\             *W+  R5 MOV,
+\             *R5  B,
 
 +CODE: <+LOOP>
               TOS *RP ADD,      \ saving space by jumping into <loop>
@@ -941,36 +924,34 @@ cr .( SKIP SCAN S= )
 
 CODE: SKIP  ( c-addr u char -- c-addr' u')    \ skip matching chars
               TOS SWPB,                       \ fix this silly byte order. It took me hrs to realize this !@#$!
+              2 (SP) W MOV,                   \ get address->w, leave space on stack
              *SP+ R1 MOV,                     \ POP count into R1, char is already in TOS
-             *SP  W  MOV,                     \ get address, but leave space on stack
-              R1  R1 MOV,                     \ compares R1 to zero
-              @@3 JEQ,                        \ if r1=0 get out
-@@1:          TOS *W+ CMPB,                   \ does character match? &  auto-incr. address
-              @@2 JNE,                        \ no, so we are done
-              R1 DEC,                         \ decr loop counter
-              @@1 JNE,                        \ try again
+              NE IF,                          \ if r1=0 get out
+                BEGIN,
+                  TOS *W+ CMPB,               \ does character match? &  auto-incr. address
+                  @@2 JNE,                    \ no, so we are done
+                  R1 DEC,                     \ decr loop counter
+                EQ UNTIL,                     \ try again
 @@2:          W DEC,                          \ correct result address after auto-inc.
-
-@@3:          W *SP  MOV,                     \ store updated address on stack
+              ENDIF,
+              W *SP  MOV,                     \ store updated address on stack
               R1 TOS MOV,                     \ updated count to TOS
               NEXT,
               END-CODE
 
 CODE: SCAN   ( adr len char -- adr' len' )    \ find matching char
               TOS SWPB,                       \ silly machine needs this to compare memory to register
+              2 (SP) W MOV,                   \ get address->w
              *SP+ R1 MOV,                     \ POP count into R1, char is already in TOS
-             *SP  W  MOV,                     \ get address, but leave space on stack
-              R1  R1 MOV,
-              @@3 JEQ,
-
-              BEGIN,
-                TOS *W CMPB,                    \ does character match?
-                @@2 JEQ,                        \ YES, so we are done
-                W INC,
-                R1 DEC,
-              EQ UNTIL,
-
-@@2: @@3:     W *SP  MOV,                     \ store updated address on stack
+              NE IF,                          \ R1<>0 ?
+                 BEGIN,
+                   TOS *W CMPB,               \ does character match?
+                   @@2 JEQ,                   \ YES, we are done, JUMP OUT
+                   W INC,                     \ next character
+                   R1 DEC,                    \ dec. loop counter
+                 EQ UNTIL,
+              ENDIF,
+@@2:          W *SP  MOV,                     \ store updated address on stack
               R1 TOS MOV,                     \ updated count to TOS
               NEXT,
               END-CODE
@@ -986,22 +967,20 @@ CODE: S=  ( C-addr1 C-addr2 cnt1+1 -- n )      \ compare counted strings (1st by
               R2 POP,                          \ adrs2 -> R2
               R1 POP,                          \ adrs1 -> R1
               TOS R0 MOV,                      \ cnt -> R0
-              TOS CLR,                         \ TOS is output, init to zero
-              R0  R0 MOV,                      \ compare loop counter to zero
-              @@6 JEQ,                         \ if count=0 jump back to Forth
+              NE IF,                           \ if count<>0 do search
+                 TOS CLR,                      \ TOS=0 means we have a match
+                 BEGIN,
+                   *R1+ *R2+ CMPB,             \ compare char by char with 2 register auto incrementing
+                    @@2 JNE,                   \ mismatch found, goto @@2
+                    R0 DEC,                    \ decr. loop counter
+                 EQ UNTIL,                     \ loop while R0 > 0
+                 NEXT,                         \ match! Return to Forth.
 
-@@1:         *R1+ *R2+ CMPB,                   \ compare char by char with 2 register auto incrementing
-              @@2 JNE,                         \ mismatch found, goto @@2
-              R0 DEC,                          \ decr. loop counter
-              @@1 JNE,                         \ loop while R0 > 0
-              NEXT,                            \ no mismatch found, Return to Forth.
-
-@@2:          @@5 JGT,                         \
-              TOS INC,                         \ R1>R2 set to -1
+@@2:          LT IF,   TOS INC,                \ R1<R2 set to 1
+                 ELSE, TOS DEC,                \ R1>R2 set to -1
+                 ENDIF,
+              ENDIF,
               NEXT,                            \ Return to Forth
-
-@@5:          TOS DEC,                         \ R1<R2 set to 1
-@@6:          NEXT,                            \ Return to Forth
               END-CODE                         \ 30 BYTES
 
 \ ========================================================================
@@ -1036,60 +1015,60 @@ CODE: S=  ( C-addr1 C-addr2 cnt1+1 -- n )      \ compare counted strings (1st by
 \          R1 = address of the 1st string to compare
 \          R2 = address of the second string to compare
 
-\ Outputs: R2 = address of found string -OR- address of search string
+\ Outputs: R2 = address of found string -OR- address of search string on stack
 \          R4 = Forth TOS register. Holds the true/false result flag
 
 
 CODE: (FIND) ( Caddr NFA -- XT ? )
-             TOS R3 MOV,                  \ R3 = NFA which is a counted string
-             *SP R8 MOV,                  \ R8 = caddr which is a counted string
-              TOS CLR,                    \ TOS is the output flag, init to zero
-
-\ get the length byte of Caddr
-             *R8 R5 MOVB,                 \ caddr C@ -> R5
-              R5 8 SRL,                   \ get the byte on the correct side right
-              @@7 JEQ,                    \ if count=0 jump back to Forth
-              R5 INC,                     \ 1+ to account for length byte
+          TOS R3 MOV,                 \ R3 = NFA which is a counted string
+          TOS CLR,                    \ TOS is the output flag, init to zero
+         *SP R8 MOV,                  \ R8 = caddr which is a counted string
+          NE IF,                      \ if count<>0 do the search
+            \ get the length byte of Caddr
+             *R8 R5 MOVB,             \ caddr C@ -> R5
+              R5 8 SRL,               \ get the byte on the correct side right
+              R5 INC,                 \ skip length byte
 \ OUTER loop
-             \ load char compare registers
-@@1:          R5 R0 MOV,                  \ load R0 with length of caddr string
-              R8 R1 MOV,                  \ load R1 with caddr string address
-              R3 R2 MOV,                  \ load R2 with the NFA to compare
+            \ load char compare registers
+              BEGIN,
+                 R5 R0 MOV,           \ load R0 with length of caddr string
+                 R8 R1 MOV,           \ load R1 with caddr string address
+                 R3 R2 MOV,           \ load R2 with the NFA to compare
 
-             \ inner character comparator loop
-@@3:         *R1+ *R2+ CMPB,              \ compare char by char including the length byte
-              @@5 JNE,                    \ ANY mismatch found, goto @@5
-              R0 DEC,                     \ decr. loop counter
-              @@3 JNE,                    \ loop while R0 > 0
-              @@6 JMP,                    \ WE FOUND IT!! exit the loop
+               \ inner character comparator loop
+                 BEGIN,
+                   *R1+ *R2+ CMPB,    \ compare char by char including the length byte
+                    @@5 JNE,          \ ANY mismatch found, goto @@5
+                    R0 DEC,           \ decr. loop counter
+                 EQ UNTIL,            \ loop while R0 > 0
+                 @@6 JMP,             \ WE FOUND IT!! exit the loop
 
-             \ traverse link list to next NFA
-@@5:          R3  -3 ADDI,                \ convert nfa>lfa
-             *R3  R3 MOV,                 \ do a fetch, R3 now has new NFA
-              @@1 JNE,                    \ if <> 0 let's try the next word in the dictionary!
-              NEXT,                       \ we got zero. End of the list! Go back to Forth
+               \ traverse link list to next NFA
+@@5:             R3  -3 ADDI,         \ convert nfa>lfa
+                *R3  R3 MOV,          \ do a fetch, R3 now has new NFA
+              EQ UNTIL,               \ try the next word in the dictionary!
+              NEXT,                   \ we got zero. End of the list! Go back to Forth
 \ end Outer loop
 
 \ convert NFA in R3 to CFA -> R2
-@@6:          R3 R2 MOV,                  \ if found R3 has a name field address (NFA), copy ro R2
-             *R3 R0 MOVB,                 \ get the length of the name to R0
-              R0 SWPB,                    \ fix the #$%!@$ byte order again
-              R0 R2 ADD,                  \ add length to R2, gets past the string to the CFA
-              R2 INCT,                    \ inc 1 for the count byte and 1 more for even address evaluation
-              R2 -2 ANDI,                 \ align R2 to even address boundary
+@@6:          R3 R2 MOV,              \ if found R3 has a name field address (NFA), copy to R2
+             *R3 R0 MOVB,             \ get the length of the name to R0
+              R0 SWPB,                \ fix the #$%!@$ byte order again
+              R0 R2 ADD,              \ add length to R2, gets past the string to the CFA
+              R2 INCT,                \ inc 1 for the count byte and 1 more for even address evaluation
+              R2 -2 ANDI,             \ align R2 to even address boundary
 
 \ test for immediate or normal word -> TOS
-              TOS SETO,                   \ we found a word so set TOS to true
-              R3 DEC,                     \ R3 still has the NFA. NFA-1 is the immediate field
-             *R3 R0 MOVB,                 \ read contents of the immediate field
-              @@9 JEQ,                    \ IF it's zero we're done
-              TOS NEG,                    \ else if non zero negate the TOS from -1 to 1
-                                          \ and head for home
-
-\ bug in my forward jumps, needs multiple labels (assembler *TODO list)
-@@7: @@9:     R2 *SP MOV,                 \ replace Caddr with the found XT in R2
-              NEXT,                       \ Return to Forth
-              END-CODE                    \ 42 BYTES
+              TOS SETO,               \ we found a word so set TOS to true
+              R3 DEC,                 \ R3 has the NFA. NFA-1 is the immediate field
+             *R3 R0 MOVB,             \ read contents of the immediate field
+              NE IF,
+                 TOS NEG,             \ if non zero negate the TOS from -1 to 1
+              ENDIF,                  \ and head for home
+          ENDIF,
+          R2 *SP MOV,                 \ replace Caddr with the found XT in R2
+          NEXT,                       \ Return to Forth
+          END-CODE                    \ 42 BYTES
 
 \ =======================================================================
 CR ." V D P  C H I P  I N T E R F A C E"
@@ -1142,9 +1121,10 @@ CODE: VREAD   ( VDP-adr RAM-addr cnt  -- )
               R0 POP,                   \ pop VDP addr. to R0
               R3 VDPRD LI,              \ put the VDP read port address in R3. 12.9% faster
               RMODE @@ BL,              \ call the RMODE control routine
-@@1:         *R3 *R1+ MOVB,             \ READ char from VDP RAM into CPU RAM and autoINC
-              TOS DEC,                  \ dec the counter
-              @@1 JNE,                  \ check if done
+              BEGIN,
+                *R3 *R1+ MOVB,          \ READ char from VDP RAM into CPU RAM and autoINC
+                 TOS DEC,               \ dec the counter
+              EQ UNTIL,                 \ check if done
               TOS POP,                  \ refill TOS
               NEXT,
               END-CODE
@@ -1157,14 +1137,16 @@ CODE: VWRITE  ( RAM-addr VDP-addr cnt -- )
               R0 POP,                  \ vaddr to R0
               R1 POP,                  \ cpu addr to R1
               TOS TOS MOV,
-              @@2 JEQ,                 \ protect from cnt=0 like CMOVE
-              WMODE @@ BL,             \ setup VDP write address
-              R3 VDPWD LI,             \ vdp addr. in a reg. makes this 12.9% faster
-@@1:         *R1+ *R3 MOVB,            \ write byte to vdp write port
-              TOS DEC,                 \ dec the byte counter
-              @@1 JNE,                 \ jump back if not done
+              NE IF,                   \ protect from cnt=0 like CMOVE
+                 WMODE @@ BL,          \ setup VDP write address
+                 R3 VDPWD LI,          \ vdp addr. in a reg. makes this 12.9% faster
+                 BEGIN,
+                   *R1+ *R3 MOVB,      \ write byte to vdp write port
+                    TOS DEC,           \ dec the byte counter
+                 EQ UNTIL,             \ jump back if not done
+              ENDIF,
               TOS POP,
-@@2:          NEXT,
+              NEXT,
               END-CODE
 
 CODE: VFILL   ( VDP-addr count char-- )
@@ -1173,9 +1155,10 @@ CODE: VFILL   ( VDP-addr count char-- )
               R0 POP,                  \ VDP-addr popped into R0
               WMODE @@ BL,             \ setup VDP write address IN R0
               R3 VDPWD LI,             \ vdp addr. in a reg. makes this 12.9% faster
-@@1:          TOS *R3 MOVB,            \ write byte to vdp ram
-              R2 DEC,                  \ dec the byte counter
-              @@1 JNE,                 \ jump back if not done
+              BEGIN,
+                TOS *R3 MOVB,          \ write byte to vdp ram
+                R2 DEC,                \ dec the byte counter
+              EQ UNTIL,                \ jump back if not done
               TOS POP,
               NEXT,
               END-CODE
@@ -1291,21 +1274,18 @@ CODE: C/L@   ( -- n )                  \ this is used 8 times in the KERNEL. Sav
              NEXT,
              END-CODE
 
-\ CODE: VROW@  ( -- n ) TOS PUSH,   _VROW @@ TOS MOV,   NEXT, END-CODE   \  8 bytes, too big
-\ CODE: VCOL@  ( -- n ) TOS PUSH,   _VCOL @@ TOS MOV,   NEXT, END-CODE   \  8 bytes
-
-
-\ make VCHAR go faster \ clip vertical value in VCHAR
+\ make VCHAR go faster. clip vertical address value in VCHAR
 CODE: VCLIP  ( lim char addr -- lim char addr)
-             TOS  2 (SP) CMP,
-             @@1 JLE,
-             2 (SP)  TOS SUB,
-@@1:         NEXT,
+             2 (SP) TOS CMP,
+             LO IF,
+                2 (SP) TOS SUB,
+             ENDIF,
+             NEXT,
              END-CODE
 
-\ high speed routine to support SPRITES
+\ high speed routine to support SPRITES (sum of squares)
 CROSS-ASSEMBLING
-CODE: DXY  ( x2 y2 x1 y1 --- x^2 y^2 )  \ use by SP.DIST
+CODE: DXY  ( x2 y2 x1 y1 --- distance^2 )  \ use by SP.DIST
             *SP+ R0 MOV,      \ pop x1->R0
             *SP+ TOS SUB,     \ pop y1-y2->tos
             *SP  R0 SUB,      \ x1-x2->R0, keep stack location
@@ -1320,20 +1300,20 @@ CODE: DXY  ( x2 y2 x1 y1 --- x^2 y^2 )  \ use by SP.DIST
 \ ===================================================================
 CR .( KEY?  and  ?TERMINAL)
 
-\ Camel99 interface to KSCAN. 
+\ Camel99 interface to KSCAN.
 \ We used the ROM routine to test if a KEY was pressed only.
-\ We read the character value from RAM with Forth code.
+\ We read the character value from RAM with Forth code. See: KEY
 
 CODE: KEY? ( -- ?)  \ *WARNING* it takes 1.15 mS for KEY? scan to run
              TOS PUSH,
-             TOS CLR,                   \ TOS will be our true/false flag
+             TOS CLR,            \ TOS will be our true/false flag
              0 LIMI,
-             83E0 LWPI,                 \ switch to GPL workspace
-             000E @@ BL,                \ call ROM keyboard scanning routine
-             8300 LWPI,                 \ return to Forth's workspace , interrupts are restored
-             837C @@ TOS MOVB,          \ read GPL status byte (=2000 if key pressed)
+             83E0 LWPI,          \ switch to GPL workspace
+             000E @@ BL,         \ call ROM keyboard scanning routine
+             8300 LWPI,          \ return to Forth's workspace , interrupts are restored
+             837C @@ TOS MOVB,   \ read GPL status byte (=2000 if key pressed)
              2 LIMI,
-             NEXT,                      \ return
+             NEXT,               \ return
              END-CODE
 
 \ *---------------------------------------------
@@ -1341,31 +1321,33 @@ CODE: KEY? ( -- ?)  \ *WARNING* it takes 1.15 mS for KEY? scan to run
 \   http://www.unige.ch/medecine/nouspikel/ti99/keyboard.htm
 \ *---------------------------------------------
 CODE: ?TERMINAL ( -- ?)    \ ~200uS, 16 bit ROM speed. Same name as TI-Forth
-            R12      RPUSH,       \ save CRU address makes life simpler
-            TOS      PUSH,
-            TOS      CLR,
-            0020 @@  BL,          \ Call ROM code, test FNCT 4 key press
-            @@1      JNE,         \ if not pressed get out
-            TOS      SETO,
-@@1:        R12      RPOP,        \ Restore CRU address used by CAMEL Forth
+            R12     RPUSH,       \ save CRU address makes life simpler
+            TOS     PUSH,
+            TOS     CLR,
+            0020 @@ BL,          \ Call ROM code, test FNCT 4 key press
+            EQ IF,               \ if KEY pressed TOS = -1
+               TOS SETO,
+            ENDIF,
+            R12     RPOP,        \ Restore CRU address used by CAMEL Forth
             NEXT,
             END-CODE
 
 
-l: _CURSR   DATA 005F                 \ holds the cursor character value default= '_'
+l: _CURSR   DATA 005F            \ holds the cursor character value default= '_'
 
 CODE: CURS@   ( -- char)   \ return cursor or space for flashing cursor
             TOS PUSH,
-           _CURSR @@ TOS MOV,         \ load the cursor char to TOS from memory
-            8379 @@ W MOVB,           \ read interrupt timer to control flash speed
-            W 1800 ANDI,              \ AND it with >18. This mask made a pleasant looking flash
-            @@1 JEQ,                  \ if = 0 then we return the cursor char
-            TOS BL LI,                \ otherwise return a blank (space)          \ 18 bytes
-@@1:        NEXT,
+           _CURSR @@ TOS MOV,    \ load the cursor char to TOS from memory
+            8379 @@ W MOVB,      \ read interrupt timer to control flash speed
+            W 1800 ANDI,         \ AND it with >18. This mask made a pleasant looking flash
+            NE IF,               \ if = 0 then we return the cursor char
+               TOS BL LI,        \ otherwise return a blank (space)  18 bytes
+            ENDIF,
+            NEXT,
             END-CODE
 
 CODE: BYE    ( -- )
-            0000 @@ BLWP,             \ ROM reset vector is at 0000
+            0000 @@ BLWP,        \ ROM reset vector is at 0000
             END-CODE
 
 \ CODE: LIMI0   0 LIMI, NEXT, END-CODE  \ disable interrupts
@@ -1373,8 +1355,8 @@ CODE: BYE    ( -- )
 
 \ ===================================================================
 \ multi-tasking support
-CODE: PAUSE   ( -- )                  \ MULTI-TASKER switcher needed by I/O words in Kernel
-            NEXT2 CFA!                \ patch CODE address with NEXT (replaced for multi-tasking)
+CODE: PAUSE   ( -- )             \ MULTI-TASKER switcher needed by I/O words in Kernel
+            NEXT2 CFA!           \ patch CODE address with NEXT (replaced for multi-tasking)
             END-CODE
 
 \ DSR Support
