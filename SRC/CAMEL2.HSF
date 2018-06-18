@@ -1084,7 +1084,7 @@ TARGET-COMPILING
               2 KUNIT# C!       \ keyboard #2 is the BASIC keyboard
               8370 @ ^PAB !     \ GET end of VDP mem from O/S,
 \ VDP start screen
-              TEXT BEEP TS" CAMEL99 2.0.16" TYPE
+              TEXT BEEP TS" CAMEL99 2.0.17" TYPE
               TIB 0 'SOURCE 2!   >IN OFF
               SOURCE-ID OFF
               TS" DSK1.START" INCLUDED
