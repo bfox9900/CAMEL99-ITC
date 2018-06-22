@@ -28,4 +28,4 @@ Change the paths to match the locations of the files in your system.
 To my knowledge this is the first time a program has interfaced to the rather strange Perripheral device  system in the TI-99 using Forth.
 In fact I think all other interfaces to the the DSR system have been done in Assembly language.
 
-See file DSKDSR4.HSF
+See file cclib\DSKDSR6.HSF
