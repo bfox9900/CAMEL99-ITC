@@ -1,4 +1,4 @@
-\ CHARSET restores TI-99 default characters from GROM
+ \ CHARSET restores TI-99 default characters from GROM
 
 \ Dependandcies: un-comment  ]PDT if GRAFIX is NOT compile in your system
 
@@ -21,12 +21,12 @@ HEX
 : ]PDT   ( char# -- 'pdt[n] )  8* 800 + ; \ VDP pattern Descriptor table
 : ]GFONT ( ascii -- grom_adr) BL -  7 * 6B4 + ; \ GROM array of TIFont data
 
-
+\ transfer directly from GROM to VDP
 : GVMOVE  ( grom_addr vdp_addr cnt -- )
           ROT GROM   BOUNDS DO  GC@+ I VC!  LOOP ;
 
 : CHARSET ( -- )
-        [CHAR] ~ 1+ BL                  \ all ASCII chars
+        [CHAR] ~ 1+  BL                \ all ASCII chars
         DO
            I ]GFONT                     \ get GROM address for char I
            I ]PDT                       \ get PDT address for char I
@@ -36,7 +36,7 @@ HEX
         LOOP ;
 
 \ BONUS WORD: loads the TITLE screen font from GROM
-: BIGCAPS  ( -- ) 4B4 900 200 GVMOVE  ;  \ TI title page fonts
+: BIGCAPS  ( -- ) 4B4 900 200 GVMOVE ;  \ TI title page fonts
 
 \ move data from GROM to CPU RAM
-\ : GCMOVE  ( grom addr cnt -- ) ROT GROM  BOUNDS DO  GC@+ I C!  LOOP ;
+\ : GCMOVE  ( grom addr cnt -- ) ROT GROM  BOUNDS DO  GC@+ I C!  LOOP  ;

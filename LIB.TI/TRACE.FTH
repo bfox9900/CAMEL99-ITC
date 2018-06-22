@@ -8,14 +8,14 @@ HEX
 \               This puts you at the precedence bit field. ( immediate flag)
 \               Then go FORWARD 1 byte to get to the NFA
 : CFA>NFA ( cfa -- nfa)
-                 2-               \ odd length names have 1 empty byte at the end
+                 2-     \ odd length names have 1 empty byte at the end
                  BEGIN
                    2- DUP C@
-                   0FE AND 0=     \ mask out immediate bit, check for zero
-                 UNTIL            \ we found the immediate field
-                 1+  ;            \ advance 1 byte to get to the NFA
+                   0FE AND 0=  \ mask out immediate bit, check for zero
+                 UNTIL         \ we found the immediate field
+                 1+  ;         \ advance 1 byte to get to the NFA
 
-: ID.   ( xt -- )  CFA>NFA COUNT 1F AND ?DUP IF TYPE SPACE THEN ;
+: ID.   ( xt -- ) CFA>NFA COUNT 1F AND ?DUP IF TYPE SPACE THEN ;
 
 VARIABLE TRACE    \ controls if trace runs or not
 
@@ -31,13 +31,13 @@ VARIABLE TRACE    \ controls if trace runs or not
 : :     ( -- ) !CSP  HEADER (:NONAME)  COMPILE (TRACE) ;
 
 \ TEST CODE
- VARIABLE X
- VARIABLE Q
- : WORD1  ." This is word 1" 1 2 3 DUP  X !  ;
- : WORD2  CR ." Word 2 does nothing around here!"  99 ;
- : WORD3  CR ." Don't listen to those other words!!!!"
-          DROP DROP DROP DROP   Q X ! ;
- : TEST  WORD1 WORD2 WORD3 ;
+\ VARIABLE X
+\ VARIABLE Q
+\ : WORD1  ." This is word 1" 1 2 3 DUP  X !  ;
+\ : WORD2  CR ." Word 2 does nothing around here!"  99 ;
+\ : WORD3  CR ." Don't listen to those other words!!!!"
+\          DROP DROP DROP DROP   Q X ! ;
+\ : TEST  WORD1 WORD2 WORD3 ;
 
 \ Usage:
 \ TRACE ON ( -OR- TRACE OFF)

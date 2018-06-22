@@ -1,4 +1,5 @@
 CR .( ANSFILES  for CAMEL99 V2 BJF 02APR2018)
+\ Jun 21 2018, Added EOF with file handle
 
 \ Requires CAMEL99 V2 with DISKDSR4 and FILESYSD
 
@@ -6,7 +7,7 @@ CR .( ANSFILES  for CAMEL99 V2 BJF 02APR2018)
 
 \ Dependancy:
 \ TI-99 file system is record oriented not byte oriented
-\ therefore READ-FILE and WRITE-FILE are NOT part of this lexicon.
+\ therefore READ-FILE and WRITE-FILE are part of this lexicon.
 
 \ ANS/ISO Forth Definitions used in this code:
 \         fid -  file identifier (a file handle)
@@ -24,21 +25,25 @@ CR .( ANSFILES  for CAMEL99 V2 BJF 02APR2018)
 \ : DELETE  ( -- ior)  7 FILEOP ;
 \ : SCRATCH ( -- ior)  8 FILEOP ;
 
+INCLUDE DSK1.TOOLS.F   \ for debugging
+
 CR .( ..)
 \ File handle server
 HEX
 VARIABLE #FILES
 
+8370 CONSTANT VDPEND     \ TI o/s variable, points to last usable VDP address
+
 CREATE PABS ( -- addr)   \ table for 8 potential PABs
              0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,
 
-\ PTAB exposes PABS as an array
+\ ]PTAB exposes PABS as an array
 : ]PTAB   ( n -- addr )  2* PABS + ;
 
 \ compute the VDP address for any PAB(n)
-: PAB[N]  ( n -- VDPadr) 120 * 3FFF SWAP - ;
+: PAB[N]  ( n -- VDPadr) 120 * VDPEND @ SWAP - ;
 
-: ?FILES  ( n -- )  #FILES @ > ABORT" No more files" ;
+: ?FILES  ( n -- )  #FILES @ > ABORT" no more handles" ;
 
 : NEWHNDL ( -- hndl) \ returns first free handle
          0           \ start at handle=0
@@ -51,21 +56,18 @@ CREATE PABS ( -- addr)   \ table for 8 potential PABs
 \ the file handle selects the active PAB
 : SELECT  ( hndl -- )
            DUP ?FILES
-           ]PTAB @ DUP 0= ABORT" Null handle"
+           ]PTAB @ DUP 0= ABORT" Cannot select"
            ^PAB ! ;
 
-: ASSIGN  ( hndl -- ) \ assign a new handle and SELECT it.
-          DUP  
-          DUP PAB[N] SWAP ]PTAB !
+: NEWPAB  ( hndl -- ) \ assign a new PAB and SELECT it.
+          DUP DUP PAB[N] SWAP ]PTAB !
           SELECT ;
 
-: RELEASE ( hndl -- ) 
-          ]PTAB OFF  
-          3FFF ^PAB ! ; \ INCLUDE assumes ^PAB starts at 3FFF.
+: RELEASE ( hndl -- ) ]PTAB OFF ;
 
 \ user level command.
 : FILES   ( n -- )
-          DUP 8 > ABORT" too many files"
+          DUP 3 > ABORT" too many files"
           #FILES ! ;
 .( ..)
 \ ===================================
@@ -92,7 +94,7 @@ VARIABLE B/REC    \ bytes per record
  : VARI  ( size -- fam) B/REC ! 00010000 FAM  OR! ;
  : FIXED ( size -- fam) B/REC ! 11101111 FAM AND! ;
 
-\ set fam on stack to default file format 
+\ set fam on stack to default file format
 \ (in case the op forgets to set it up)
 .( ..)
  HEX
@@ -104,29 +106,23 @@ VARIABLE B/REC    \ bytes per record
 \ ANS Forth word replaces INTERNAL
  : BIN   ( fam -- fam') 8 OR ;  \ modify FAM on stack
 
-\ needed to test for file args on stack
-: DEPTH   ( -- n ) SP0 SP@ 2+ - 2/ ;
-
-\ : ?EXISTS  ( -- )
-\             FSTAT 8 AND
-\             IF DISKOFF TRUE ABORT" No such file"
-\             THEN ;
-
+: DV80   ( -- ) INPUT UPDATE DISPLAY SEQUENTIAL 50 VARI ;
 .( ..)
 HEX
 \ build the PAB from all the pieces, error checking
 : OPEN-FILE ( $addr len fam -- fid ior)
-             DEPTH 3 < ABORT" file args"
-             NEWHNDL DUP >R ASSIGN    \ copy handle & assign PAB
-             [PAB PSIZE 0 VFILL        \ erase the VDP PAB to be safe.
+             SP0 SP@ 2+ - 2/          \ calulate stack DEPTH manually
+             3 < ABORT" OPEN-FILE args"
+             NEWHNDL DUP >R NEWPAB    \ copy handle & assign PAB
+             [PAB BL 0 VFILL          \ BL= >20 erase the VDP PAB
 
              ?DUP 0=                  \ is FAM 0
-             IF    14
-             THEN  [PAB FLG] VC!       \ write file access mode
+             IF     DV80 FAM @
+             THEN  [PAB FLG] VC!      \ write file access mode
 
              B/REC @ ?DUP 0=          \ test for new record length
              IF  50                   \ if not default to 80 bytes (>50)
-             THEN [PAB RECLEN] VC!     \ store reclen in PAB
+             THEN [PAB RECLEN] VC!    \ store reclen in PAB
                   B/REC OFF           \ reset the B/REC variable
 
              2DUP MAKEPAB             \
@@ -137,10 +133,12 @@ HEX
              ELSE R> SWAP
              THEN ;
 
-: CLOSE-FILE  ( fid -- ?)
-               DUP SELECT
-               1 FILEOP
-               SWAP RELEASE ;
+: CLOSE-FILE  ( fid -- ?) 
+              DUP SELECT  1 FILEOP SWAP  RELEASE ;
+
+: (EOF)     ( -- ? ) FSTAT 3 AND ;       \ EOF of current OPEN file
+
+: EOF       ( fid -- ? ) SELECT (EOF) ;  \ EOF of selected file
 
 : READ-LINE ( c-addr u1 fid -- u2 flag ior )
             SELECT
@@ -149,11 +147,11 @@ HEX
                0 FSTAT R>                 \ fatal error, don't read data
             ELSE
                ( -- adr u1)
-               [PAB CHARS] VC@             \ get no. chars read
-               MIN  >R                    \ MIN(u1,chars)= u2, rpush
-               [PAB FBUFF] V@ SWAP R@  VREAD   \ move VDP fbuff to c-addr
+               [PAB CHARS] VC@             \ get no. chars actually read
+               MIN  >R                     \ MIN(u1,chars)= u2, rpush
+               [PAB FBUFF] V@ SWAP R@ VREAD   \ move VDP fbuff to c-addr
                R>                         \ get u2 (chars actually read)
-               EOF 0=                     \ test  EOF = 0
+               (EOF) 0=                   \ TRUE if EOF = 0
                R>                         \ bring back error#
             THEN ;
 
@@ -166,17 +164,17 @@ HEX
 ;
 .( ..)
 : CREATE-FILE ( caddr len fam -- fid ior )
-\ OUTPUT mode forces new file creation in TI-99 O/S
-               2 OR                     \ modify 'fam' bits to OUTPUT mode
+\ update mode forces new file creation in TI-99 O/S
+               F9 AND        \ force 'fam' bits to UPDATE mode
                OPEN-FILE ;
 
-: FILE-POSITION   ( fid -- n)   SELECT  [PAB REC#] V@ ;
-: REPOSITION-FILE ( fid -- ior) SELECT  [PAB REC#] V!  4 FILEOP ;
+: FILE-POSITION   ( fid -- rec# ior) SELECT  [PAB REC#] V@ ERR@ ;
+: REPOSITION-FILE ( fid -- ior)      SELECT  [PAB REC#] V! 4 FILEOP ;
 
-: DELETE-FILE     ( caddr len -- ior ) R/W OPEN-FILE ?FILERR 7 FILEOP DROP ;
+: DELETE-FILE     ( caddr len -- ior ) R/W OPEN-FILE ?FILERR 7 FILEOP  ;
 
 \ ===================================
-3 FILES             \ set the #FILES to default
+3 FILES             \ set the #FILES now
 
 DECIMAL
 

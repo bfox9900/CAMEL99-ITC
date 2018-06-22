@@ -41,7 +41,7 @@
     LOOP DROP                 ( )
     R>  DUP IF  0> 1 OR  THEN   \  2's complement arith.
     ;
-    
+
 : A$ S" NOW IS THE TIME"  ;
 : B$ S" THIS IS THE TIME" ;
 : C$ S" now is the time" ; 

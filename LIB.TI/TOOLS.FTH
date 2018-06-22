@@ -96,7 +96,7 @@ HEX
              CR ." Free Mem"
              CR ." Low Heap :  " 3F20 H @  - U.
              CR ." Upper mem: " UNUSED U.
-             CR ." VDP end  : " 8370 @ .
+             CR ." VDP mem  : " 8370 @ 1000 - .
              R> BASE ! ;
 
 \ lock the current dictionary

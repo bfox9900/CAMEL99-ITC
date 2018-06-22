@@ -106,7 +106,7 @@ MXLEN 1+ CONSTANT SSW     \ width of string stack items
 : PRINT$   ( $ -- )     COUNT TYPE ;
 
 \ high level string print, collapses stringstack
-: PRINT    ( $ -- )  PRINT$ COLLAPSE ;
+: PRINT    ( $ -- )  CR PRINT$ COLLAPSE ;
 
 : (")      ( -- ) R> DUP COUNT + ALIGNED >R ;
 
