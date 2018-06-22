@@ -106,7 +106,6 @@ VARIABLE SPEED
              SPEED++ ;
 
 : CLEAR-AHEAD? ( -- ?) NEXT-POS READ-CHAR  BL = ;
-
 : FOOD?        ( -- ?) NEXT-POS READ-CHAR  FOOD = ;
 
 : ALPHA-THINK  ( -- )
@@ -129,7 +128,7 @@ DECIMAL
            .BORDER  .WALLS  PLANTS
            HAPPY SHOW-MAN
            CHANGE-DIR
-           5 SPEED!
+           150 SPEED!     \ 150 is slow, longest delay
            BEGIN
               FOOD? IF BEEP EAT THEN
               CLEAR-AHEAD?

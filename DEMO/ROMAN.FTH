@@ -25,11 +25,8 @@ CREATE VALUES ( -- addr) 0 , 1 , 5 , 10 , 50 , 100 , 500 , 1000 ,
                          DUP 7 > ABORT" Invalid Roman numeral" ;
 
 : REMEMBER ( ndx -- ndx ) CURNDX @ OLDNDX !  DUP CURNDX !  ;
-
 : ]VALUE@  ( ndx -- n )   REMEMBER VALUES [] @ ;
-
 : >VALUE ( char -- n )   >INDEX ]VALUE@ ;
-
 : ?ILLEGAL ( ndx --  )   CURNDX @ OLDNDX @ =  NEGFLAG @ AND ABORT" Illegal format" ;
 
 \ LOGIC

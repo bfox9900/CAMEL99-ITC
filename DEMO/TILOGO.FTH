@@ -28,7 +28,7 @@ DP !
 
 PAGE TI.LOGO
 
-CR ." No CPU memory was used in the makeing of the this program" \ :-)
+CR ." No CPU memory was used in the making of the this program" \ :-)
 
 
 
