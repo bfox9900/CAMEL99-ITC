@@ -322,9 +322,9 @@ TARGET-COMPILING
 \      34 USER: 'TYPE            \ vector for block output
 \      36 USER: 'PAGE            \ vector for screen clear
       38 USER: LP                \ LEAVE stack pointer.
-      3A USER: SOURCE-ID            \ =true if EVALUATE is running, false otherwise
-      3E USER: 'SOURCE        \ WATCH OUT! This is 2variable, occupies 3C and 3E
-\     3E USER: 'SOURCE2
+      3A USER: SOURCE-ID         \ =true if EVALUATE is running, false otherwise
+      3C USER: 'SOURCE           \ WATCH OUT! This is 2variable, occupies 3C and 3E
+\     3E USER: -------
 
 \      40 USER: CURRENT
 \      42 USER: CONTEXT
@@ -620,21 +620,20 @@ TARGET-COMPILING
 \ routines called VREAD & VWRITE, written in Assembler can deliver excellent
 \ speed without needing to write everything in Assembler.
 
-\ CODE: C/S  ( -- n )   \ "chars per scroll" = 2 lines at current C/L
-\           CODE[ C/L@ 2* ]  \ just inline 2 primitives
-\           NEXT,
-\           END-CODE
+\ CODE: C/S  ( -- n ) CODE[ C/L@ 2* ] NEXT, END-CODE  \ 6 bytes bigger
+
+: C/S      ( -- n ) C/L@ 2* ;  \ "chars per scroll" = 2 lines at current C/L
 
 : SCROLL   ( -- )
-            C/L@ 2* DUP                    \ get char per scroll and duplicate
+            C/S DUP                        \ get char per scroll and duplicate
             MALLOC ( -- c/s heap)          \ allocate chars per scroll in heap
             C/SCR @     C/L@  VTOP @ +     \ loops from 2nd line, to last line
             DO
                PAUSE
                I  ( -- c/s heap scr-addr)
-               OVER 2DUP    C/L@ 2* VREAD  \ read chars/scroll to heap
-               SWAP C/L@ -  C/L@ 2* VWRITE \ write HEAP to line above
-            C/L@ 2* +LOOP                  \ advance loop by chars per scroll
+               OVER 2DUP   C/S VREAD       \ read chars/scroll to heap
+               SWAP C/L@ - C/S VWRITE      \ write HEAP to line above
+            C/S +LOOP                      \ advance loop by chars per scroll
 
            0 17 CLRLN                      \ clear last line
            DROP                            \ drop heap pointer
@@ -856,7 +855,8 @@ CODE: SND!   ( c -- )                     \ 75% faster, 2 bytes bigger
 : ?ABORT  ( f c-addr u --)
            ROT IF  CR CR T." * " TYPE  T."  ? "
                    SOURCE-ID @ 0>
-                   IF  T." Line " LINES @ . T." :" SOURCE TYPE
+                   IF  T."  Line " LINES @ U.
+                       CR CR SOURCE TYPE
                    THEN ABORT
            THEN 2DROP ;
 
@@ -941,6 +941,8 @@ TARGET-COMPILING
 
 TARGET-COMPILING
 
+\ : ?UNIQUE     FIND NIP IF SOURCE TYPE T." isn't unique" THEN ;
+
 : <INTERPRET>  ( i*x c-addr u -- j*x )    \ ; ref. dpANS-6, 3.4 The Forth Text Interpreter
                'SOURCE 2!  >IN OFF
                BEGIN
@@ -949,8 +951,8 @@ TARGET-COMPILING
                   FIND                                \ -- xt 0/1/-1
                   ?DUP IF ( it's a word)              \ -- xt 1/-1
                        1+ STATE @ 0= OR               \ test for IMMEDIATE or interpreting
-                       IF EXECUTE                     \ execute it
-                       ELSE    ,                      \ otherwise compile it
+                       IF   EXECUTE                   \ execute it
+                       ELSE  ,                        \ otherwise compile it
                        THEN         
 
                   ELSE  ( it's a number)              \ -- textadr
@@ -1054,7 +1056,7 @@ include cc9900\cclib\targloop.hsf  \ these compile code on the TARGET system
 
 CROSS-ASSEMBLING
 
-CODE: INIT  
+CODE: INIT
               WRKSP0 LWPI,
               R0 HSprims LI,
               R1 HSstart LI,
@@ -1083,12 +1085,13 @@ TARGET-COMPILING
               TMR!              \ set 9901 timer to count continously
               2 KUNIT# C!       \ keyboard #2 is the BASIC keyboard
               8370 @ ^PAB !     \ GET end of VDP mem from O/S,
-\ VDP start screen
-              TEXT BEEP TS" CAMEL99 2.0.17" TYPE
+
+            \ VDP start screen
+              TEXT BEEP TS" CAMEL99 2.0.18" TYPE
               TIB 0 'SOURCE 2!   >IN OFF
-              SOURCE-ID OFF
-              TS" DSK1.START" INCLUDED
-              CR  QUIT ;
+              SOURCE-ID OFF             \ source-id=0 is console input
+              TS" DSK1.START" INCLUDED  \ load the start file
+              CR QUIT ;
 
 \ ======================================================================
 \ define comment words
@@ -1126,11 +1129,11 @@ cr ." Forth Kernel compiled completely"
 
 \ Set the target system's LATEST variable to the last WORD compiled
 \ AND copy it into ORGLAST, which is used during COLD re-starts.
-CROSS-COMPILING
+[cc]
          XLATEST @ DUP LATEST T!
                        ORGLAST T!
 
-CROSS-COMPILING
+[cc]
 \ set TARGET Forth's DP variable to the same address as the cross-compiler (THERE)
 \ also copy it into the ORGDP variable used for cold re-starts
 
