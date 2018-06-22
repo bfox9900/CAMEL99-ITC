@@ -1,4 +1,4 @@
-# CAMEL99 for TI-99 V2.0.16
+# CAMEL99 for TI-99 V2.0.18
 
 ### ABOUT CAMEL99 V2
 --------------------
@@ -76,4 +76,11 @@ SND! is now a code word. Speeds up writes to the sound chip by 75% for a 2 byte 
 Oops, Making a faster >BODY broke the multi-tasker. Somehow changing R14 ?? Removed >BODY from KERNEL.
 It now loads in the DSK.START file as a library file: TOBODY.F
 
-
+### Jun 21, 2018 V2.0.18
+Re-wrote looping primitives in Structured Assembler. Found some wasted instructions and speedups.
+Found size savings in FILESYSD.F
+Kernel now 40 bytes smaller.
+Change to EOF to now take a file handle. 
+Re-wrote demo programs
+Fixed bug in file handle server and RELEASE handle routine
+New manual version 0.99 needs final edit review.
