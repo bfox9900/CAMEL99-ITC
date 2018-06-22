@@ -1,33 +1,47 @@
 \ filesys is a minimal single PAB file mechanism  BJF 17MAR2018
 \ It is used only by INCLUDE to bootstrap the system.
 
+
 \  *** NEEDS DISKDSR4.HSF
 
 \ Apr 2, 2018  -re-factored for smaller size and small speed-up.
 \              -better use of stack for LD/Interpret loop.
+\ June 21, 2018 - REMOVED EOF to save space, MOVED to ANSFILES
+
+
 \ ============================
 [CC] HEX  [TC]
+\ Define some LITERAL numbers in the cross-compiler to help explain things.
+\ By using the cross-compiling ':' the numbers just go onto the Forth stack
+\ and the cross-compiler converts them to TARGET system literals
+\ This saves TARGET dictionary space for numbers used less than 4 times or so.
 
-   20 CONSTANT: PSIZE     \ size of a PAB in CAMEL99 Forth 32 bytes
- 8356 CONSTANT: DSRNAM    \ OS system variable that enables a device
+CROSS-COMPILING
+\ 83E0 EQU: GPL.WKSP ( -- addr)       \ GPL (TI O/S) workspace (CPU Registers)
+\ 83F2 EQU: GPL.R9   ( -- addr)       \ address of GPL Register 9
+\ 8355 EQU: LEN(DSRNAM)
 
-\ VARIABLE: ^PAB          \ *moved to CAMEL2.HSF
+TARGET-COMPILING
+\ 0020 CONSTANT: PSIZE      \ used the constant BL to save space
+8356 CONSTANT: DSRNAM       \ OS system variable that enables a device
+
+\ VARIABLE: ^PAB            \ *moved to CAMEL2.HSF
 
 \ fast fetch of pab base pointer. (*This is also the OPCODE field)
+TARGET-COMPILING
 CODE: [PAB   ( -- adr) TOS PUSH,  ^PAB @@ TOS MOV,  NEXT, END-CODE
 
 \ PAB field words calculate offset from PAB base
 \ square bracket trailing to indicate they are used with [PAB
 \ Example:  [PAB FBUFF] V@
 
-CODE: FLG]    ( addr -- addr') TOS INC,    NEXT, END-CODE
-CODE: FBUFF]  ( addr -- addr') TOS INCT,   NEXT, END-CODE
+: FLG]        ( addr -- addr') 1+ ;
+: FBUFF]      ( addr -- addr') 2+ ;
 CODE: RECLEN] ( addr -- addr') *TOS+ *TOS+ MOV,  NEXT, END-CODE \ inc. by 4 trick
 CODE: CHARS]  ( addr -- addr') TOS 5 ADDI, NEXT, END-CODE
 CODE: REC#]   ( addr -- addr') TOS 6 ADDI, NEXT, END-CODE
 CODE: STAT]   ( addr -- addr') TOS 8 ADDI, NEXT, END-CODE
 CODE: FNAME]  ( addr -- addr') TOS 9 ADDI, NEXT, END-CODE
-
 
 [CC] HEX [TC]
 \ TI-99 File error Code Meaninq
@@ -56,7 +70,6 @@ CODE: FNAME]  ( addr -- addr') TOS 9 ADDI, NEXT, END-CODE
           DSKLNK BLWP ERR@
           DSKCARD DISABLE ;
 
-
 \ Error handlers
 : ?CARDID  ( -- ) 'ID C@ AA <> TS" CARD not found" ?ABORT ;
 
@@ -77,7 +90,7 @@ CODE: FNAME]  ( addr -- addr') TOS 9 ADDI, NEXT, END-CODE
 : VPLACE   ( $addr len Vaddr -- ) 2DUP VC! 1+ SWAP VWRITE ;
 
 : MAKEPAB  ( addr len -- )
-           [PAB PSIZE +  [PAB FBUFF] V!   \ set FBUFF 32 bytes past PAB
+           [PAB BL +  [PAB FBUFF] V!   \ set FBUFF 32 bytes past PAB
            2DUP [PAB FNAME] VPLACE        \ dup & write string to PAB
            /DOT NIP 1+ ( -- n)            \ compute offset upto '.' in string
            [PAB FNAME] +  DSRNAM ! ;      \ offset + PAB_FNAME -> DSRNAM
@@ -86,31 +99,32 @@ CODE: FNAME]  ( addr -- addr') TOS 9 ADDI, NEXT, END-CODE
 \ : REG#    ( workspace R# -- addr)  2* + ;       \ COMPUTE address of R# in workspace
 \ : >ENTRY  ( DSRlink -- entry_addr) 2+ @ ;       \ convert a LINK in ROM to code entry
 
-: NEWFILE ( $addr len --)   
+TARGET-COMPILING
+: NEWFILE ( $addr len -- FID )            \ returns FID. but does NOT set it!
          DSKCARD ENABLE
          ?CARDID                          \ abort if card is not 'AA'
-         DSRFIND        ( -- realpab link)
-         DUP ?DEVERR                         \ ABORT if link=0
-         DUP 4 +        ( -- link $)         \ link+4=DSR$ ie: Name of the DSR in CARD ROM
-             C@ 8355 C!                      \ len(DSR$) -> hex8355
+         'DSRLIST DSRFIND ( -- realpab link)
+         DUP ?DEVERR                      \ ABORT if link=0
+         DUP 4 +        ( -- link $)      \ link+4=DSR$ ie: Name of the DSR in CARD ROM
+             C@ 8355 C!                   \ lenght byte of DSRNAM -> 8355
                         ( -- link)
-  2+ @ ( -- >ENTRY)  83E0 9 ( REG#) 2* + !   \ DSR code address -> GPL.R9
+ ( >ENTRY) 2+ @ 83F2 !                    \ DSR code entry ADDR -> GPL.R9
 ;
 
 \ ** HI LEVEL FUNCTIONS **
 : FSTAT ( -- c) 9 FILEOP DROP [PAB STAT] VC@ ; \ see E/A Manual page 298 for meaning
 
-\ works on the SELECTed file (no handle needed)
-: EOF   ( -- ? )  FSTAT 3 AND ;   \ returns 1 for READ EOF , 2 for WRITE EOF
+\ move to ANSFILES.F
+\ : EOF   ( -- ? ) FSTAT 3 AND ;
 
 : REFILL ( -- flag )  \ flag=true if there is more data
-            2 FileOp ?FILERR               \ file read operation to VDP buffer
-            EOF 0= ;                       \ return End of file status
+            2 FileOp ?FILERR
+            FSTAT 3 AND 0= ;  \ read file status test if EOF bits=0
 
 \ primitive file words to bootstrap the system on startup
 : OPN    ( addr len -- ior )
            -120 ^PAB +!                    \ get a new PAB on PAB stack
-            [PAB PSIZE 0 VFILL             \ erase the VDP PAB to be safe.
+            [PAB BL 0 VFILL                \ erase the VDP PAB to be safe.
             2DUP MAKEPAB ( -- $addr len)
             14   [PAB FLG]    VC!          \ default to: DISPLAY,VARIABLE
             50   [PAB RECLEN] VC!          \ 80 bytes/record
@@ -122,6 +136,7 @@ CODE: FNAME]  ( addr -- addr') TOS 9 ADDI, NEXT, END-CODE
 
 \ Include file primitive.
 : INCLD     ( addr len -- ior)
+           SOURCE-ID @ >R                  \ save source-ID
            SOURCE 2>R                      \ save interpreter input source
            >IN @ >R                        \ save input string pointer
            DSRNAM @ >R                     \ save current DSR name
@@ -129,32 +144,34 @@ CODE: FNAME]  ( addr -- addr') TOS 9 ADDI, NEXT, END-CODE
            OPN  ?FILERR                    \ open new file (sets new DSRNAM)
            1 SOURCE-ID !                   \ source ID is file (1)
 
-           50 MALLOC >R                    \ get a buffer pointer & RPUSH
+           50 DUP MALLOC >R                \ get a buffer pointer & RPUSH
            BEGIN
              REFILL
            WHILE
-             [PAB CHARS] VC@  DUP           \ get the #chars read by refill & DUP
-             [PAB FBUFF] V@  R@ ROT  VREAD  \ transfer VDP fbuff to malloc buffer
-             R@  SWAP INTERPRET            \ interpret the new string
-             1 LINES +!
+             [PAB CHARS] VC@ DUP            \ get the #chars read by refill & DUP
+             [PAB FBUFF] V@  R@ ROT VREAD   \ transfer VDP fbuff to malloc buffer
+             R@  SWAP ( addr #chars) INTERPRET  \ interpret the new string
+             1 LINES +!                     \ count the line
            REPEAT
-           50 MFREE R> DROP                \ release the buffer, drop from rstack
+           R> DROP                          \ drop buffer address from rstack
+         ( 50) MFREE                        \ release the buffer
 
            1 FILEOP ?FILERR                \ close currently open file
            120 ^PAB +!                     \ pop back 1 pab on the pabstack
            R> DSRNAM !                     \ restore old file ID
-           R> >IN !
-           2R> 'SOURCE 2!                  \ restore input
-           SOURCE-ID OFF                   \ SOURCE-ID is console (0)
+           R> >IN !                        \ restore >IN
+           2R> 'SOURCE 2!                  \ restore interpreter SOURCE
+           R> SOURCE-ID !                  \ restore SOURCE-ID
 ;
 
-: ?FILE    ( c -- ) 0= TS" Filename" ?ABORT ;
+: ?FILE    ( n -- ) 0= TS" Filename" ?ABORT ;
 
 \ This word bootstraps the system on startup.
+\ FILESYS8 is nestable. Allocates a new PAB and LDBUFF
+\ Typically: TS" DSK1.START" FLOAD
 : INCLUDED  ( caddr len -- )
            DUP ?FILE
            CR T." Loading: " 2DUP TYPE
            LINES OFF
-           INCLD \ SPACE .LOC
+           INCLD
            HEX ;
-

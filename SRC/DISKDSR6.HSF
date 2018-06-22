@@ -48,7 +48,7 @@ CREATE: DSKLNK  DSRWKSP T,   CALLDSR T,
 : /DOT    ( caddr len -- caddr len')  \ cut string at the dot
            2DUP T[CHAR] . SCAN NIP -  ;
 
-\ : >DSR$   ( link -- $) 4 +  ;      \ add 4 to the link gets to the DSR$
+\ : >DSR$   ( link -- $) 4 +  ;       \ add 4 to the link gets to the DSR$
 
 : =$ ( $1 $2 -- flag) OVER C@ 1+ S= 0= ; \ compare 2 counted strings
 
