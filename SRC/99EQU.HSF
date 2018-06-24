@@ -12,7 +12,7 @@ hex
 8800 equ vdprd               \ vdp ram read data
 8802 equ vdpsts              \ vdp status
 8C00 equ vdpwd               \ vdp ram write data
-8C02 equ vdpwa               \ vdp ram read/write address
+8C02 equ VDPWA               \ vdp ram read/write address
 83D4 equ vr1cpy              \ copy of vdp register 1 - see e/a manual pg. 248
 \ 8400 equ _sndport            \ moved to TMS9919.hsf
 
@@ -53,15 +53,16 @@ HEX
 837D equ inbuff                 \ VDP character input buffer
 
 
-\ CAMEL99 screen control variables steals 
-\ GPL floating point argument space for speed
-835C equ _VCOL
-835E equ _VROW
-8360 equ _C/L
-8362 equ _C/SCR
-8364 equ _spr#                  \ sprite count for automotion.
+\ CAMEL99 screen control variables steals GPL floating point argument space
+\ These are user variable locations in V2
+\ We must define them here so the 9900FAST.HSF file needs these addresses
+8348 equ _OUT                   \
+834A equ _VCOL
+834C equ _VROW
+834E equ _C/L
+8350 equ _C/SCR
+836E equ _spr#                  \ sprite count for automotion.
                                 \ basic use byte:837A, too slow in Forth
-837E equ _OUT                   \ Steal BASIC's ROW,COL to count chars output
 
 83D6 equ SCRTO                  \ screen time out timer
 83A0 equ GSTK                   \ steal the GPL stack for Forth?
