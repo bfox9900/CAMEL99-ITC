@@ -2,7 +2,7 @@
 \ Exploring Forth programming from a BASIC perspective
 \ adding READ and RESTORE to Forth for demonstration
 
-\ NOTE: * SOME OF THE WORDS DEFINED HERE ARE IN THE GRAFIC2.FTH
+\ NOTE: * SOME OF THE WORDS DEFINED HERE ARE IN THE GRAFIX.F
 \         FILE. THE ARE DEFINED HERE FOR EDUCATIONAL PURPOSES
 
 \ a ladies face. data source: http://briantw.com/ti-99/4a/LIST.TXT
