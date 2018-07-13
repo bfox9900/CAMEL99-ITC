@@ -39,9 +39,12 @@ MXLEN 1+ CONSTANT SSW     \ width of string stack items
 : TOP$     ( -- $) SSP @ H @ + ; \ string stack in free HEAP memory
 
 \ From Wil Baden's Tool Belt [R.I.P. Wil] ====
-\ : C+!         ( n addr -- )   DUP >R  C@ +  R> C! ; \ now a code word
-: APPEND      ( addr n $ -- ) 2DUP 2>R  COUNT +  SWAP CMOVE 2R> C+! ;
-\ : PLACE     ( addr n dst$ -- ) 2DUP C! 1+ SWAP CMOVE ; \ in Kernel
+\ : C+!        ( n addr -- )   DUP >R  C@ +  R> C! ; \ now a code word
+
+\ changed APPEND to +PLACE to avoid name conflict with FILE SYSTEM WORD
+: +PLACE      ( addr n $ -- ) 2DUP 2>R  COUNT +  SWAP CMOVE 2R> C+! ;
+
+\ : PLACE      ( addr n dst$ -- ) 2DUP C! 1+ SWAP CMOVE ; \ in Kernel
 
 .( ..)
 \ string stack helpers ====
@@ -58,7 +61,7 @@ MXLEN 1+ CONSTANT SSW     \ width of string stack items
 : ASC      ( $ -- c)   1+ C@ ;
 .( .)
 : &        ( $1 $2 -- top$)   \ concatenate operator
-           SWAP COUNT SPUSH >R COUNT R@ APPEND R>  ;
+           SWAP COUNT SPUSH >R COUNT R@ +PLACE R>  ;
 
 : POS$    ( $1 $2 -- n )       \ return "position" of $1 in $2
            DUP -ROT            \ copy $2 under the inputs
