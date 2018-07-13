@@ -31,7 +31,7 @@ MYSELF CONSTANT USER0      \ USER0 is the main Forth task workspace (>8300)
 \ calc. size of task memory block (152 bytes)
 DECIMAL                                                        
      16 CELLS              \ register space
-     32 CELLS +            \ 32 USER VARIABLE spaces
+     40 CELLS +            \ 40 USER VARIABLE spaces
      20 CELLS +            \ 20 cells for parameter stack
      20 CELLS +            \ 20 cells return stack
      CONSTANT USIZE        \ "user area" size
@@ -59,16 +59,6 @@ HERE  02A1 ,         \ R1 STWP,             \ HERE on stack for later
       NEXT,          \ run Forth
  ( -- addr) CONSTANT 'TSTAT  \ record tstat address as constant
 
-\ CODE YIELD \ *this is the entire context switcher
-\    BEGIN,
-\      RTWP,                \ change tasks! :-)
-\ HERE  F000 !
-\      R1 STWP,             \ HERE on stack for later
-\      20 R1 () R0 MOV,   \ fetch TFLAG->R0
-\    NE UNTIL,           \ if tflag=0 jmp to RTWP
-\    NEXT,               \ run Forth
-\  F000 @ CONSTANT 'TSTAT  \ record tstat address as constant
-
  'R10 @ CONSTANT 'NEXT      \ R10 has the address of Forth NEXT
 
 .( ..)
@@ -88,7 +78,7 @@ HERE  02A1 ,         \ R1 STWP,             \ HERE on stack for later
                 'TSTAT TPC !      \ set my task PC reg. to TSTAT
                 MYSELF WAKE  ;    \ mark myself awake
 
-\ FORK:
+\ FORK
 \ - copy the the calling task's USER area into a new workspace.
 \ - SET both stack addresses to the proper registers in the user area,
 \ - insert PID into the round-robin list
