@@ -9,6 +9,6 @@
 : ?BREAK    ( -- )
 	    ?TERMINAL
             IF 
-              BEGIN PAUSE ?TERMINAL 0= UNTIL
+              BEGIN PAUSE ?TERMINAL 0= UNTIL \ wait key release
               CR ." *BREAK*" ABORT
             THEN ;
