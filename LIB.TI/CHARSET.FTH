@@ -1,12 +1,12 @@
  \ CHARSET restores TI-99 default characters from GROM
 
-\ Dependandcies: un-comment  ]PDT if GRAFIX is NOT compile in your system
+\ Dependandcies: un-comment  ]PDT if GRAFIX is NOT compiled in your program
 
-\ GROM Character Sets                      Address   ASCII Codes   Bytes/Char
-\ ---------------------------------------  -------   -----------   ----------
-\ Standard large caps                       04B4h     32 – 95        8
-\ Small Capitals (capitals used by Basic)   06B4h     32 – 95        7
-\ Lowercase (actually, small caps)          087Bh     96 – 126       7
+\ GROM Character SetsÂ  Â  Â  Â  Â  Â  Â  Â  Â  Â   Â Address Â  ASCII Codes Â  Bytes/Char
+\ --------------------------------------- Â ------- Â  ----------- Â  ----------
+\ Standard large caps                   Â Â  Â 04B4h Â  Â  32 â€“ 95 Â  Â  Â  Â 8
+\ Small Capitals (capitals used by Basic)  Â 06B4h Â  Â  32 â€“ 95 Â  Â  Â  Â 7
+\ Lowercase (actually, small caps)  Â  Â  Â Â  Â 087Bh Â  Â  96 â€“ 126 Â  Â  Â  7
 
 HEX
 \ 9800 CONSTANT GRMRD ( GROM base)   \ GROM read byte
