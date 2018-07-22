@@ -1,6 +1,7 @@
  \ CHARSET restores TI-99 default characters from GROM
 
-\ Dependandcies: un-comment  ]PDT if GRAFIX is NOT compiled in your program
+\ Dependandcies: Assumes GRAFIX is not loaded.
+\ comment out ]PDT if GRAFIX is compiled in your program
 
 \ GROM Character Sets                      Address   ASCII Codes   Bytes/Char
 \ ---------------------------------------  -------   -----------   ----------
@@ -16,7 +17,7 @@ HEX
 \ 9C02 CONSTANT GRMWA                \ GROM set write address
 
 : GROM  ( addr -- ) SPLIT 9C02 C! 9C02 C! ; \ set the GROM address
-: GC@+   ( -- c)    9800 C@ ;        \ read & auto-increment address
+: GC@+   ( -- c)    9800 C@ ;        \ read GROM, auto-increment address
 
 : ]PDT   ( char# -- 'pdt[n] )  8* 800 + ; \ VDP pattern Descriptor table
 : ]GFONT ( ascii -- grom_adr) BL -  7 * 6B4 + ; \ GROM array of TIFont data
