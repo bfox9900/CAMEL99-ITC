@@ -27,7 +27,7 @@ HEX
           ROT GROM   BOUNDS DO  GC@+ I VC!  LOOP ;
 
 : CHARSET ( -- )
-        [CHAR] ~ 1+  BL                \ all ASCII chars
+        [CHAR] ~ 1+  BL    \ loop from '~' to SPACE char
         DO
            I ]GFONT                     \ get GROM address for char I
            I ]PDT                       \ get PDT address for char I
