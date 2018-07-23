@@ -8,7 +8,7 @@ CAMEL99 Forth has been built as an educational tool for those who are interested
 Users of TI BASIC who want to explore Forth might also find this system useful. With that in mind it has a string package that provides many of the features of BASIC including the use of a string stack and automated stack management. It also has an INPUT statement for strings and numbers.  You will also find the TI BASIC graphics functions are emulated in the libary file called GRAFIX.F.  The instruction manual has been written to compare BASIC and Forth and there are example programs where the BASIC code is side by side with Forth for faster understanding for those new to Forth.
 
 ### Changes from V1
-CAMEL99 V2 finally has TI file access and numerous enhancements that improved the speed/size tradeoff. The binary program is in folder DSK1 and is called CAMEL2. All of the loadable source files have a .F extension except the START file which is unique.
+CAMEL99 V2 finally has TI file access and numerous enhancements that improved the speed/size tradeoff. The binary program is in folder DSK1 and is called CAMEL99. All of the loadable source files have a .F extension except the START file which is unique.
 
 ### How it was made
 CAMEL99 begins with a TMS9900 Cross-Assembler written in Forth. With the assembler we define the primitive operations in the file 9900FAST.HSF. The Cross-compiler, also written in Forth, gives us the tools to create the Forth dictionary in the TARGET memory image that lets us give each primitive a "header" (name) in the dicationary.  The file CAMEL99.HSF uses the primitives to create the high level Forth words that let us build the TARGET COMPILER. As each piece is added to the TARGET system less of the Cross-compiler is used. It's truly an excerise in boot-strapping.
@@ -30,7 +30,7 @@ Other emulators are available but have not been tested by the author.
 
 ### Starting CAMEL99 Forth
 Start the TI-99 computer with the Editor/Assembler cartridge.  The folder DSK1 must be present on DSK1 of your computer or emulator.
-Select the run program file option from the menu and enter "DSK1.CAMEL2" 
+Select the run program file option from the menu and enter "DSK1.CAMEL99" 
 
 ## Loading Source Code Files
 At the console type: INCLUDE DSK1.TOOLS.F  -or- S" DSK1.TOOLS.F" INCLUDED
