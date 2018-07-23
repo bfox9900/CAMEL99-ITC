@@ -16,8 +16,8 @@ CAMEL99 begins with a TMS9900 Cross-Assembler written in Forth. With the assembl
 ### For the Forth Tech
 CAMEL99 is an indirect threaded Forth with the top of stack cached in Register 4 of the CPU. This has shown to give similar performance to the TI-99 system Turbo Forth, which is the benchmark system for speed on TI-99 but CAMEL99 uses less assembler code in the overall system. In comparison to legacy implementations like Fig-Forth CAMEL99 is about 20% faster in high-level Forth operations.
 
-The system boots when you load the TI-99 binary program file called DSK1.CAMEL2 with the Editor/Assembler cartridge. When CAMEL2 starts, it looks for a file called DSK1.START. If found it loads that file as source code.  You can put any new Forth definitions in the START file that you want. Currently START "INCLUDES" the following Forth words into the dictionary:
-     INCLUDE, CELLS, CELL+, CHAR+, CHAR , [CHAR]
+The system boots when you load the TI-99 binary program file called DSK1.CAMEL99 with the Editor/Assembler cartridge. When CAMEL99 starts, it looks for a file called DSK1.START. If found it loads that file as source code.  You can put any new Forth definitions in the START file that you want. Currently START "INCLUDES" the following Forth words into the dictionary:
+     INCLUDE, CELLS , CELL+ , CHAR+ , CHAR , [CHAR]
 
 NOTE: Nested INCLUDE files are now working in V2.0.4
 
