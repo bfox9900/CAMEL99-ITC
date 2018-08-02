@@ -18,7 +18,7 @@ You can load all the "training wheels" with one command: INCLUDE DSK1.BASICHLP.F
 (Future: Include a more TI-BASIC-like file control wordset. ANS Forth file wordset is too complicated)
 
 ### Changes from V1
-CAMEL99 V2 finally has TI file access and numerous enhancements that improved the speed/size tradeoff. The binary program is in folder DSK1 and is called CAMEL99. All of the loadable source files have a .F extension except the START file which is unique.
+CAMEL99 V2 finally has TI file access and numerous enhancements that improved the speed/size tradeoff. The binary program is in folder DSK1 and is called CAMEL99. All of the loadable source files have a .F extension except the START file which has no file extension.
 
 ### How it was made
 - CAMEL99 begins with a TMS9900 Cross-Assembler written in HsForth, an MS DOS Forth system written in the 1990s.
