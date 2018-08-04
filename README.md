@@ -1,4 +1,4 @@
-# CAMEL99 for TI-99 V2.0.18
+# CAMEL99 for TI-99 V2.0.20
 
 ### ABOUT CAMEL99 V2
 --------------------
@@ -105,3 +105,18 @@ Change to EOF to now take a file handle.
 Re-wrote demo programs
 Fixed bug in file handle server and RELEASE handle routine
 New manual version 0.99 needs final edit review.
+
+### Jul 10, 2018 V2.0.19 
+Internal test version
+
+### Aug 4, 2018 V2.0.20
+Kernel is 16 bytes smaller
+Removed word INCLD from kernel and put code in body of INCLUDED
+Change INIT code to use structured assembler loop
+Comment improvements
+Move DATA stack reset in COLD word to just before QUIT. This fixed the first error bug. 
+
+(First bad word entered at console gave "empty stack" error)
+Removed SPRITE support word DXY from KERNEL, moved to DIRSPRIT (direct sprite control) as a machine code word. 
+Added SEE.F to DSK1 which is a Forth decompiler.
+
