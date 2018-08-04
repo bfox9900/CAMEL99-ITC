@@ -9,7 +9,9 @@ it under the terms of the GNU General Public License as published by
 the Free Software Foundation; either version 3 of the License, or
 (at your option) any later version.
 
-You can find a copy of the GNU General Public License here <http://www.gnu.org/licenses/>.
+You can find a copy of the GNU General Public License here:
+
+http://www.gnu.org/licenses/gpl.html
 
 The parts of the work derived from CAMEL Forth (CAMEL2.HSF) is under the GNU General Public License.
 CamelForth (c) 2009 Bradford J. Rodriguez.
