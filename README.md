@@ -78,7 +78,7 @@ Source code will load/compile at the blazing speed of about 14 lines per second.
 Now that we have file access the TI-99 file system, a binary save/load mechanism is on the hot list of things to add. This would allow you to build a program from source code and then save it off as a Binary file and then load that "system snapshot" back into the system without re-compiling.
 
 
-###Latest Updates
+## Change History
 ### Apr 15 2018:
 - Overall speed up by writing HERE ALLOT  >DIGIT and HOLD as code words. This improves compilation speeds and number printing is 50% faster.
 
