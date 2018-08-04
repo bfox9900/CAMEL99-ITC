@@ -1,13 +1,11 @@
 \ filesys is a minimal single PAB file mechanism  BJF 17MAR2018
 \ It is used only by INCLUDE to bootstrap the system.
 
-
 \  *** NEEDS DISKDSR4.HSF
 
 \ Apr 2, 2018  -re-factored for smaller size and small speed-up.
 \              -better use of stack for LD/Interpret loop.
 \ June 21, 2018 - REMOVED EOF to save space, MOVED to ANSFILES
-
 
 \ ============================
 [CC] HEX  [TC]
@@ -23,7 +21,7 @@ CROSS-COMPILING
 
 TARGET-COMPILING
 \ 0020 CONSTANT: PSIZE      \ used the constant BL to save space
-8356 CONSTANT: DSRNAM       \ OS system variable that enables a device
+  8356 CONSTANT: DSRNAM     \ protected address in TI-99 O/S
 
 \ VARIABLE: ^PAB            \ *moved to CAMEL2.HSF
 
@@ -35,8 +33,8 @@ CODE: [PAB   ( -- adr) TOS PUSH,  ^PAB @@ TOS MOV,  NEXT, END-CODE
 \ square bracket trailing to indicate they are used with [PAB
 \ Example:  [PAB FBUFF] V@
 
-: FLG]        ( addr -- addr') 1+ ;
-: FBUFF]      ( addr -- addr') 2+ ;
+CODE: FLG]    ( addr -- addr') TOS INC,  NEXT, END-CODE
+CODE: FBUFF]  ( addr -- addr') TOS INCT, NEXT, END-CODE
 CODE: RECLEN] ( addr -- addr') *TOS+ *TOS+ MOV,  NEXT, END-CODE \ inc. by 4 trick
 CODE: CHARS]  ( addr -- addr') TOS 5 ADDI, NEXT, END-CODE
 CODE: REC#]   ( addr -- addr') TOS 6 ADDI, NEXT, END-CODE
@@ -100,13 +98,13 @@ CODE: FNAME]  ( addr -- addr') TOS 9 ADDI, NEXT, END-CODE
 \ : >ENTRY  ( DSRlink -- entry_addr) 2+ @ ;       \ convert a LINK in ROM to code entry
 
 TARGET-COMPILING
-: NEWFILE ( $addr len -- FID )            \ returns FID. but does NOT set it!
+: NEWFILE ( $addr len -- )         
          DSKCARD ENABLE
          ?CARDID                          \ abort if card is not 'AA'
-         'DSRLIST DSRFIND ( -- realpab link)
+         'DSRLIST DSRFIND ( -- link)
          DUP ?DEVERR                      \ ABORT if link=0
          DUP 4 +        ( -- link $)      \ link+4=DSR$ ie: Name of the DSR in CARD ROM
-             C@ 8355 C!                   \ lenght byte of DSRNAM -> 8355
+             C@ 8355 C!                   \ length byte of DSRNAM -> 8355
                         ( -- link)
  ( >ENTRY) 2+ @ 83F2 !                    \ DSR code entry ADDR -> GPL.R9
 ;
@@ -114,55 +112,26 @@ TARGET-COMPILING
 \ ** HI LEVEL FUNCTIONS **
 : FSTAT ( -- c) 9 FILEOP DROP [PAB STAT] VC@ ; \ see E/A Manual page 298 for meaning
 
-\ move to ANSFILES.F
+\ move to ANSFILES.F  to save Kernel space
 \ : EOF   ( -- ? ) FSTAT 3 AND ;
 
-: REFILL ( -- flag )  \ flag=true if there is more data
-            2 FileOp ?FILERR
-            FSTAT 3 AND 0= ;  \ read file status test if EOF bits=0
+\ : REFILL ( -- flag )  
+\            2 FileOp ?FILERR
+\            FSTAT 3 AND 0= ;  \ read file status test if EOF bits=0
 
 \ primitive file words to bootstrap the system on startup
 : OPN    ( addr len -- ior )
            -120 ^PAB +!                    \ get a new PAB on PAB stack
             [PAB BL 0 VFILL                \ erase the VDP PAB to be safe.
             2DUP MAKEPAB ( -- $addr len)
-            14   [PAB FLG]    VC!          \ default to: DISPLAY,VARIABLE
+            14   [PAB FLG]    VC!          \ MODE: INPUT,DISPLAY,VARIABLE
             50   [PAB RECLEN] VC!          \ 80 bytes/record
             NEWFILE
             0 FILEOP ;                     \ perform OPEN opcode
 
-
 \ VARIABLE: LINES \ moved to CAMEL2.HSF
 
 \ Include file primitive.
-: INCLD     ( addr len -- ior)
-           SOURCE-ID @ >R                  \ save source-ID
-           SOURCE 2>R                      \ save interpreter input source
-           >IN @ >R                        \ save input string pointer
-           DSRNAM @ >R                     \ save current DSR name
-
-           OPN  ?FILERR                    \ open new file (sets new DSRNAM)
-           1 SOURCE-ID !                   \ source ID is file (1)
-
-           50 DUP MALLOC >R                \ get a buffer pointer & RPUSH
-           BEGIN
-             REFILL
-           WHILE
-             [PAB CHARS] VC@ DUP            \ get the #chars read by refill & DUP
-             [PAB FBUFF] V@  R@ ROT VREAD   \ transfer VDP fbuff to malloc buffer
-             R@  SWAP ( addr #chars) INTERPRET  \ interpret the new string
-             1 LINES +!                     \ count the line
-           REPEAT
-           R> DROP                          \ drop buffer address from rstack
-         ( 50) MFREE                        \ release the buffer
-
-           1 FILEOP ?FILERR                \ close currently open file
-           120 ^PAB +!                     \ pop back 1 pab on the pabstack
-           R> DSRNAM !                     \ restore old file ID
-           R> >IN !                        \ restore >IN
-           2R> 'SOURCE 2!                  \ restore interpreter SOURCE
-           R> SOURCE-ID !                  \ restore SOURCE-ID
-;
 
 : ?FILE    ( n -- ) 0= TS" Filename" ?ABORT ;
 
@@ -173,5 +142,32 @@ TARGET-COMPILING
            DUP ?FILE
            CR T." Loading: " 2DUP TYPE
            LINES OFF
-           INCLD
+           SOURCE-ID @ >R                  \ save source-ID
+           SOURCE 2>R                      \ save interpreter input source
+           >IN @ >R                        \ save input string pointer
+           DSRNAM @ >R                     \ save current DSR name
+
+           OPN  ?FILERR                    \ open new file (sets new DSRNAM)
+           1 SOURCE-ID !                   \ source ID is file (1)
+
+           50 DUP MALLOC >R                \ get a buffer pointer & RPUSH
+           BEGIN
+             2 FileOp ?FILERR
+             FSTAT 3 AND 0=                \ read file status test if EOF bits=0
+           WHILE
+             [PAB CHARS] VC@ DUP           \ get the #chars read by refill & DUP
+             [PAB FBUFF] V@  R@ ROT VREAD  \ transfer VDP fbuff to malloc buffer
+             R@  SWAP ( addr #chars)       \ this is a stack string
+             INTERPRET                     \ interpret the string
+             1 LINES +!                    \ count the line
+           REPEAT
+           R> DROP                         \ drop buffer address from rstack
+         ( 50) MFREE                       \ release the buffer
+
+           1 FILEOP ?FILERR                \ close currently open file
+           120 ^PAB +!                     \ pop back 1 pab on the pabstack
+           R> DSRNAM !                     \ restore old file ID
+           R> >IN !                        \ restore >IN
+           2R> 'SOURCE 2!                  \ restore interpreter SOURCE
+           R> SOURCE-ID !                  \ restore SOURCE-ID
            HEX ;

@@ -1,5 +1,7 @@
 \ DISK only DSRLINK   VERSION 2                BJF MAR 20 2018
 
+\ Aug 2018 replaced literal $20 with CONSTANT BL to save space
+
 \ Overview:
 \ This file provides a way to CALL code in the DSR ROM.
 \ R9 of the GPL workspace is loaded directly with the entry address
@@ -56,7 +58,7 @@ CREATE: DSKLNK  DSRWKSP T,   CALLDSR T,
 \ It returns the link-address. (Link-address+2 = runnable code address)
 : DSRFIND ( addr len ROMLIST -- link_addr)
            -ROT                        \ save the ROM list for later
-           20 MALLOC >R                \ get a temp$ buffer address
+     ( $20) BL MALLOC >R               \ get a temp$ buffer >20 bytes
            /DOT  R@ PLACE              \ cut filename at dot, place in temp$
            BEGIN
               @                        \ fetch the next link
@@ -64,7 +66,7 @@ CREATE: DSKLNK  DSRWKSP T,   CALLDSR T,
               SWAP  R@ OVER 4 +  =$    \ match TEMP$ to $ in ROM
               ROT OR                   \ if either is true we're done.
            UNTIL
-           20 MFREE
+           BL MFREE                    \ release 20 bytes to heap
            R> DROP ;                   \ free the heap
 
 \ card control lexicon
