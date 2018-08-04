@@ -18,7 +18,9 @@ You can load all the "training wheels" with one command: INCLUDE DSK1.BASICHLP.F
 (Future: Include a more TI-BASIC-like file control wordset. ANS Forth file wordset is too complicated)
 
 ### Changes from V1
-CAMEL99 V2 finally has TI file access and numerous enhancements that improved the speed/size tradeoff. The binary program is in folder DSK1 and is called CAMEL99. All of the loadable source files have a .F extension except the START file which has no file extension.
+- CAMEL99 V2 finally has TI file access and numerous enhancements that improved the speed/size tradeoff. 
+- The binary program is in folder DSK1 and is called CAMEL99. 
+- All of the loadable source files have a .F extension except the START file which has no file extension.
 
 ### How it was made
 - CAMEL99 begins with a TMS9900 Cross-Assembler written in HsForth, an MS DOS Forth system written in the 1990s.
@@ -78,23 +80,21 @@ Now that we have file access the TI-99 file system, a binary save/load mechanism
 
 ###Latest Updates
 ### Apr 15 2018:
-Overall speed up by writing HERE ALLOT  >DIGIT and HOLD as code words. The improves compilation speeds and number printing is 50% faster.
+- Overall speed up by writing HERE ALLOT  >DIGIT and HOLD as code words. This improves compilation speeds and number printing is 50% faster.
 
 ### Apr 17 2018
-Found a bug where the new faster scroll obliterated first two sprite records when scrolling. Repaired.
+- Found a bug where the new faster scroll obliterated first two sprite records when scrolling. Repaired.
 
 ### May 9 2018
-Committed change in 2.0.13 which fixes an old bug that caused difference entry address for DOVAR between cross-compiler varibles and TI-99 created variables. Homemade cross-compilers... what are you gonna do?
+- Committed change in 2.0.13 which fixes an old bug that caused difference entry address for DOVAR between cross-compiler varibles and TI-99 created variables. Homemade cross-compilers... what are you gonna do?
 
 ### Jun 3 2018 V2.0.15
-SND! is now a code word. Speeds up writes to the sound chip by 75% for a 2 byte penalty.(more important with background players)
-
-?ABORT is smaller because it use SOURCE instead of HERE COUNT. (totally missed that)
-
-">BODY" was a wrapper on 2+. Now it is a code word synonym for 2+.
+- SND! is now a code word. Speeds up writes to the sound chip by 75% for a 2 byte penalty.(more important with background players)
+- ?ABORT is smaller because it use SOURCE instead of HERE COUNT. (totally missed that)
+- ">BODY" was a wrapper on 2+. Now it is a code word synonym for 2+.
 
 ### Jun 8 2018 V2.0.16
-Oops, Making a faster >BODY broke the multi-tasker. Somehow changing R14 ?? Removed >BODY from KERNEL.
+- Oops, Making a faster >BODY broke the multi-tasker. Somehow changing R14 ?? Removed >BODY from KERNEL.
 It now loads in the DSK.START file as a library file: TOBODY.F
 
 ### Jun 21, 2018 V2.0.18
@@ -107,7 +107,7 @@ It now loads in the DSK.START file as a library file: TOBODY.F
 - New manual version 0.99 needs final edit review.
 
 ### Jul 10, 2018 V2.0.19 
-Internal test version
+- Internal test version
 
 ### Aug 4, 2018 V2.0.20
 - Kernel is 16 bytes smaller
