@@ -329,7 +329,7 @@ TARGET-COMPILING
 \      40 USER: -------          \ used by 'SOURCE
 \      42 USER: CURRENT
 \      44 USER: CONTEXT
-\      46 USER: LH               \ local HEAP pointer for tasks
+\      46 USER: LH               \ local TASK HEAP pointer if needed
       48 USER: OUT               \ counts chars since last CR (newline)
       4A USER: VCOL              \ current VDP column (in fast RAM)
       4C USER: VROW              \ current VDP row (in fast RAM)
@@ -352,7 +352,7 @@ TARGET-COMPILING
 \      6A USER:                   \ Free user variable
 \      6C USER:                   \ Free user variable
 \      6E USER:                   \ Free user variable
-
+\ ** total of 39 user variables are available in workspace 8300. 
 
 \ Other HIgh speed RAM locations
 \ *these constants define memory locations so they are actually VARIABLES :-)
@@ -518,7 +518,7 @@ TARGET-COMPILING
 : HIDE          ( -- )  LATEST @ ( nfa) DUP C@ 80 OR  SWAP C! ;
 : REVEAL        ( -- )  LATEST @ ( nfa) DUP C@ 7F AND SWAP C! ;
 
-FORTH cr ." Parsing..."
+[CC] cr .( Parsing...)
 \ ========================================================================
 \ P A R S E   W O R D
 
@@ -552,7 +552,7 @@ TARGET-COMPILING
               PARSE-WORD HERE PLACE
               HERE BL OVER COUNT + C! ;  \ append trailing blank
 
-FORTH cr ." CAMEL FORTH Number conversion"
+[CC] cr .( CAMEL FORTH Number conversion)
 \ ========================================================================
 \ S T R I N G  T O  N U M B E R   C O N V E R S I O N
 
@@ -562,7 +562,7 @@ TARGET-COMPILING
 : DIGIT?     ( char -- n -1)                \ if char is a valid digit
 \            (      -- x  0 )               \ if char is not valid
               DUP 39 > 100 AND +            \ silly looking
-              DUP 140 > 107 AND -  
+              DUP 140 > 107 AND -
               T[CHAR] 0 -                   \ but it works!
               DUP BASE @ U< ;               \ 36 bytes
 
@@ -598,7 +598,7 @@ TARGET-COMPILING
 
 \ ========================================================================
 \ V D P  S C R E E N   D R I V E R
-FORTH cr .( Console output)
+[CC] cr .( Console output)
 
 \ Most of the video driver is in Forth to demonstrate how it can be done.
 \ In a flat our race it's not as fast as Assembler, but it is simpler
@@ -712,7 +712,7 @@ TARGET-COMPILING
               REPEAT
               DROP NIP SWAP -  ;
 
-[cc] cr ." Number printing"
+[cc] cr .( Number printing)
 \ ======================================================================
 \ N U M B E R   T O   S T R I N G   C O N V E R S I O N
 
@@ -847,7 +847,8 @@ CODE: SND!   ( c -- )                     \ 75% faster, 2 bytes bigger
 \ E R R O R   H A N D L I N G
 \
 : ABORT       ( -- ) 
-              HONK SP0 SP! 
+              HONK  
+              SP0 SP! 
               SOURCE-ID OFF
               CR QUIT ;
 
@@ -935,7 +936,6 @@ TARGET-COMPILING
 : .(     T[CHAR] ) PARSE TYPE ;     \ "talking" comment
 
 
-
 [CC] cr ." Interpreter/compiler loop"
 \ ========================================================================
 \ I N T E R P R E T E R  /  C O M P I L E R
@@ -949,20 +949,20 @@ TARGET-COMPILING
                BEGIN
                   BL WORD DUP C@
                WHILE            \ -- caddr
-                  FIND                                \ -- xt 0/1/-1
-                  ?DUP IF ( it's a word)              \ -- xt 1/-1
-                       1+ STATE @ 0= OR               \ test for IMMEDIATE or interpreting
-                       IF   EXECUTE                   \ execute it
-                       ELSE  ,                        \ otherwise compile it
-                       THEN         
+                  FIND                           \ -- xt 0/1/-1
+                  ?DUP IF ( it's a word)         \ -- xt 1/-1
+                       1+ STATE @ 0= OR          \ test for IMMEDIATE or interpreting
+                       IF   EXECUTE              \ execute it
+                       ELSE  ,                   \ otherwise compile it
+                       THEN
 
-                  ELSE  ( it's a number)              \ -- textadr
+                  ELSE  ( it's a number)         \ -- textadr
                        ?NUMBER
-                       IF  t[COMPILE] LITERAL         \ converted ok so compile as a literal
-                       ELSE COUNT ?ABORT              \ ERROR: print the bad word & ABORT
+                       IF  t[COMPILE] LITERAL    \ converted ok so compile as a literal
+                       ELSE COUNT ?ABORT         \ ERROR: print the bad word & ABORT
                        THEN
                   THEN
-                  ?STACK                              \ test for stack underflow
+                  ?STACK                         \ test for stack underflow
                REPEAT
                DROP ;
 
@@ -983,13 +983,13 @@ CROSS-COMPILING
 TARGET-COMPILING
 
 : TEXT      ( -- )
-             F0 DUP KTP C!                 \ TI KSCAN re-writes VReg1 with whatever is in this byte.
-       ( -- F0) 01 VWTR                    \ VDP register 1: bit3 = 1 sets the TEXT Mode
-              0 06 VWTR                    \ no sprite descriptor table is set for TEXT mode
-             20 07 VWTR                    \ VDP register 7. color: med. green on transparent screen
-             2 VMODE !                     \ record the mode we are in
-             28 C/L!                       \ Set 40 chars/line, which also re-calcs the screen variables
-             PAGE ;                        \ "CALL CLEAR" ;-)
+             F0 DUP KTP C!        \ TI KSCAN re-writes VReg1 with whatever is in this byte.
+       ( -- F0) 01 VWTR           \ VDP register 1: bit3 = 1 sets the TEXT Mode
+              0 06 VWTR           \ no sprite descriptor table is set for TEXT mode
+             20 07 VWTR           \ VDP register 7. color: med. green on transparent screen
+             2 VMODE !            \ record the mode we are in
+             28 C/L!              \ Set 40 chars/line, which also re-calcs the screen variables
+             PAGE ;               \ "CALL CLEAR" ;-)
 
 \ ========================================================================
 \ D I C T I O N A R Y   C R E A T I O N
@@ -997,10 +997,10 @@ TARGET-COMPILING
 \ last word that was defined in the Forth dictionary.
 
 : HEADER
-            LATEST @ ,                     \ record the LATEST NFA as the LINK in this new word
-            0 C,                           \ create the immediate field (1 BYTE)
-            HERE LATEST !                  \ update the LATEST variable to this new definition's NFA
-            BL PARSE-WORD S, ;             \ parse input and compile NAME string into dictionary
+            LATEST @ ,            \ record the LATEST NFA as the LINK in this new word
+            0 C,                  \ create the immediate field (1 BYTE)
+            HERE LATEST !         \ update the LATEST variable to this new definition's NFA
+            BL PARSE-WORD S, ;    \ parse input and compile NAME string into dictionary
 
 
 \ ========================================================================
@@ -1030,7 +1030,7 @@ TARGET-COMPILING
 : DOES>  ( -- )                    \ change action of latest def'n
         COMPILE (;CODE)
         0460 , T['] DODOES ,       \ compiles machine code for:  B @DODOES
-        ; XIMMEDIATE
+       ; XIMMEDIATE
 
 \ =======================================================================
 \ ADD-ONS
@@ -1060,30 +1060,31 @@ TARGET-COMPILING
 CROSS-ASSEMBLING
 
 CODE: INIT
-              WRKSP0 LWPI,
-              R0 HSprims LI,
-              R1 HSstart LI,
-@@1:         *R0+ *R1+ MOV,
-              R1 HSend CMPI,
-              @@1 JNE,
+              WRKSP0 LWPI,      \ set Forth workspace (>8300)
+              R0 HSprims LI,    \ R0 is beginning of fast primitives
+              R1 HSstart LI,    \ R1 is where we move them to
+              BEGIN,
+               *R0+ *R1+ MOV,   \ move cells
+                R1 HSend CMPI,  \ compare dest. to the HSend address
+              EQ UNTIL,         \ until the two are equal
 
-              SP  SP0   LI,
-              RP  RP0   LI,
-              R10 NEXT2 LI,
-              IP  BOOT  LI,
-             *R10 B,
+              SP  3EFE  LI,     \ set data stack address
+              RP  3FFE  LI,     \ set return stack address
+              R10 NEXT2 LI,     \ set Forth interpreter into R10
+              IP  BOOT  LI,     \ set Forth instruction pointer to BOOT
+             *R10 B,            \ run NEXT, ie enter Forth
               END-CODE
 
 [CC] HEX
 \ ======================================================================
 \ B O O T   U P   C O D E
 TARGET-COMPILING
-: COLD       ( -- )  \  boot the system
-              80 83C2 C!        \ ISR disable flags: >80 All, >40 Motion, >20 Sound, >10 Quit key
+: COLD       ( -- )
+              80 83C2 C!   \ ISR disable flags: >80 All, >40 Motion, >20 Sound, >10 Quit key
               ORGDP @ DP !
               ORGLAST @ LATEST !
               2000 H !                       \ inits HEAP to >2000
-              SP0 SP!  RP0 RP!               \ reset stacks
+              RP0 RP!                        \ reset return stack
               TMR!                           \ set 9901 timer to count continously
               2 KUNIT# C!                    \ keyboard #2 is the BASIC keyboard
               8370 @ ^PAB !                  \ GET end of VDP mem from O/S, set PAB pointer
@@ -1093,9 +1094,10 @@ TARGET-COMPILING
               HEX                            \ set the RADIX to hex
 
             \ VDP start screen
-              TEXT BEEP TS" CAMEL99 2.0.19" TYPE
-              TS" DSK1.START" INCLUDED  \ load the start file
-              CR QUIT ;                 \ start the interpreter
+              TEXT BEEP TS" CAMEL99 2.0.20" TYPE
+              TS" DSK1.START" INCLUDED       \ load the start file
+              SP0 SP!                        \ reset the data stack pointer
+              CR QUIT ;                      \ start the interpreter
 
 \ ======================================================================
 \ define comment words
@@ -1118,9 +1120,9 @@ TARGET-COMPILING
 TARGET-COMPILING
  X: :         !CSP  HEADER (:NONAME)  ;X
 
- X: :NONAME    HERE  !CSP  (:NONAME)  ;X
+ X: :NONAME   HERE  !CSP   (:NONAME)  ;X
 
- X: ;          [  REVEAL COMPILE EXIT ?CSP ;X  XIMMEDIATE
+ X: ;        [  REVEAL COMPILE EXIT ?CSP ;X  XIMMEDIATE
 
 [CC]
 \           F O R T H   S Y S T E M   C O D E   E N D S
@@ -1133,17 +1135,17 @@ cr ." Forth Kernel compiled completely"
 
 \ Set the target system's LATEST variable to the last WORD compiled
 \ AND copy it into ORGLAST, which is used during COLD re-starts.
-[cc]
+[CC]
          XLATEST @ DUP LATEST T!
                        ORGLAST T!
 
-[cc]
+[CC]
 \ set TARGET Forth's DP variable to the same address as the cross-compiler (THERE)
 \ also copy it into the ORGDP variable used for cold re-starts
 
          THERE DUP DP T!
                    ORGDP T!
-[cc]
+[CC]
 \ ======================================================================
 \ P A T C H   T A R G E T   I M A G E
 
@@ -1154,7 +1156,7 @@ cr ." Forth Kernel compiled completely"
          T' COLD  BOOT T!
 
          END.
-[cc]
+[CC]
 \ ======================================================================
 \ S A V E   B I N A R Y  I M A G E   F I L E
 
