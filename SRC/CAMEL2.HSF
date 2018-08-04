@@ -815,7 +815,7 @@ TARGET-COMPILING
 [CC] include cc9900\cclib\ticktock.hsf     \ load the hardware milli-second timer
 
 TARGET-COMPILING
--1 [IF]
+0 [IF]
 
 : SND!       ( c -- ) 8400 C!  ;         \ write a byte to address of TMS9919 chip
 
