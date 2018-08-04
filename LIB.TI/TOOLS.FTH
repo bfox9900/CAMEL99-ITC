@@ -69,7 +69,7 @@ CR .( MARKER )
               LOOP ;
 
 DECIMAL
-: ?80         ( -- 16 | 8)
+: ?80         ( -- 16 | 8)  \ test for 80 or 40 column mode
                VMODE @ 80 = IF 16 ELSE 8 THEN ;
 
 .( DUMP )

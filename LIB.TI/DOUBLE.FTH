@@ -11,18 +11,20 @@
       C084 ,   \  TOS R2 MOV,   \ hi'->r2
       C076 ,   \ *SP+ R1 MOV,   \ lo'->R1
       C136 ,   \ *SP+ TOS MOV,  \ hi ->tos
-      A581 ,   \  R1 *SP A,
-      1701 ,   \  OC IF,
-      0584 ,   \    TOS INC,
+      A581 ,   \  R1 *SP A,     \ add low in place on data stack
+      1701 ,   \  OC IF,        \ carry flag set?
+      0584 ,   \    TOS INC,    \ incr hi
                \  ENDIF,
-      A102 ,   \  R2 TOS A,
+      A102 ,   \  R2 TOS A,     \ add hi' to hi
       NEXT,
 ENDCODE
 
 
-: 2LITERAL  ( d -- ) ?COMP  SWAP POSTPONE LITERAL  POSTPONE LITERAL ; IMMEDIATE
+: 2LITERAL  ( d -- ) 
+            ?COMP  
+            SWAP POSTPONE LITERAL  POSTPONE LITERAL ; IMMEDIATE
 
-: 2CONSTANT  ( d -- <text>) CREATE , ,  DOES> 2@ ;
+: 2CONSTANT  ( d -- <text>) CREATE  ,  ,  DOES> 2@ ;
 : 2VARIABLE  ( d -- <text>) CREATE 0 , 0 , ;
 
 : D0<  ( d -- ? )  NIP 0< ;
@@ -41,7 +43,7 @@ ENDCODE
 : D=   ( d d -- ?) ROT = -ROT = AND ;
 : D>S  ( d -- n)   DROP ;
 
-: 2OVER  ( d d2 -- d d2 d)     2>R 2DUP  2R> 2SWAP ;
+: 2OVER  ( d d2 -- d d2 d)  3 PICK 3 PICK ;   \  2>R 2DUP  2R> 2SWAP ;
 : 2ROT   ( d d2 d3 -- d2 d3 d) 2>R 2SWAP 2R> 2SWAP ;
 
 : 4DUP  ( d d -- d d d d ) 2OVER 2OVER ;
@@ -62,12 +64,13 @@ ENDCODE
 
 : D.R  ( d n --)
        >R TUCK DABS <# #S ROT SIGN #> R> OVER - SPACES TYPE #> ;
+
 : D.   (  n -- ) 0 D.R ;
 
 : >DOUBLE ( addr len -- )   0 0 2SWAP >NUMBER 2DROP ;
 
 DECIMAL
-: 1.       S" 1" >DOUBLE ;
-: 123456.  S" 123456" >DOUBLE ;
+: 1.      ( -- d) S" 1" >DOUBLE ;
+: 123456. ( -- d) S" 123456" >DOUBLE ;
 
 
