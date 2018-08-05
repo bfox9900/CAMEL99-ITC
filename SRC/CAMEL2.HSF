@@ -377,7 +377,7 @@ variable: BOOT                    \ ADDRESS OF THE FIRST Forth word to run
 variable: VMODE                   \ keeps track of the video mode we are in
 variable: VTOP                    \ top of video screen memory. defaults to 0
 variable: L0    3 TCELLS TALLOT   \ LEAVE stack used to resolve nested LEAVEs (4 LEAVEs max)
-variable: ^PAB
+variable: ^PAB                    \ POINTER to active peripheral access block (PAB)
 
 ?stk
 \ ==============================================
