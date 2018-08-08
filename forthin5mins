@@ -306,10 +306,13 @@ MYNUMBERS 1 CELLS + ?    \ 9001 ok
 \ PAGE
 
 \ Loading Forth files into the system:
-\ INCLUDE MYFILE.FTH  (NOT yet implemented in verison 1.9)
+\ INCLUDE DSK1.MYFILE.F  ( You must specify the DSK#)
 
-\ TOOLS.FTH is loaded in the system so you can list every word that's in Forth's 
-\ dictionary.  You can stop the listing by pressing FNCT 4 (CLEAR) on the TI-99.
+\ Source code files in TI-99 format end with .F by convention.
+
+ INCLUDE DSK1.TOOLS.F 
+\ so you can list every word that's in Forth's dictionary.  
+\ You can stop the listing by pressing FNCT 4 (CLEAR) on the TI-99.
 \ WORDS
 
 \ SEE the /LIB folder for extensions to the CAMEL99 Forth like STRINGS, BUFFERs, SPRITES and more.
