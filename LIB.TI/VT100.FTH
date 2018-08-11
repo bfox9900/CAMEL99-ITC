@@ -5,13 +5,11 @@ DECIMAL
 : .PARM ( n -- )
         BASE @ SWAP DECIMAL U. BASE ! ;  \ send n as DECIMAL text
 
-: \ESC  ( -- )   27 EMIT ." [" ;           \ start control sequence
-: \P    ( n -- ) \ESC .PARM ;              \ escape, send parm as text
+: \ESC  ( -- )   27 EMIT ." [" ;   \ start control sequence
+: \P    ( n -- ) \ESC .PARM ;      \ escape, send parm as text
 
-: <XY> ( row col -- )                      \ cursor position
-        SWAP \ESC
-        ( row) .PARM  ." ;"
-        ( col) .PARM  ." H" ;
+: <XY> ( row col -- )              \ cursor position
+        SWAP \ESC .PARM ." ;" .PARM ." H" ;
 
 : <UP>    ( row --) \P   ." A" ;  \ cursor up
 : <DOWN>  ( row --) \P   ." B" ;  \ cursor down

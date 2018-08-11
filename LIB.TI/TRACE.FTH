@@ -1,8 +1,13 @@
 \ TRACE colon definitions Forth Dimensions III/2 P.58 26OCT82 LCT
 \ Part of original TI-Forth
 \ Modified for ANS Forth/CAMEL99               Jan 7 2018 B J Fox
-HEX
 
+\ Aug 9 2018 Improved on screen look 
+\            *SEE TRACE.FTH for test code
+
+INCLUDE DSK1.TOOLS.F
+
+HEX
 \ Camel Forth dictionary needs help to get from an XT (CFA) back to the NFA
 \ Algorythm:    look backwards until you see a '0' or '01'
 \               This puts you at the precedence bit field. ( immediate flag)
@@ -15,29 +20,58 @@ HEX
                  UNTIL         \ we found the immediate field
                  1+  ;         \ advance 1 byte to get to the NFA
 
-: ID.   ( xt -- ) CFA>NFA COUNT 1F AND ?DUP IF TYPE SPACE THEN ;
+: ID.     ( xt -- ) CFA>NFA COUNT 1F AND ?DUP IF TYPE SPACE THEN ;
+
+: ?FREEZE  ( -- )
+           KEY? 
+           IF 80 MS
+              BEGIN  KEY?  UNTIL
+           THEN ;
 
 VARIABLE TRACE    \ controls if trace runs or not
 
 : (TRACE) ( -- )
-          TRACE @ IF
-             CR  ." Next : " R@ ID.
-             CR  ." Stack| " .S
-             KEY? IF 80 MS BEGIN KEY? UNTIL 
-             THEN CR
-          THEN ;
+          ?BREAK
+          TRACE @
+          IF
+             CR ." >" R@ ID.  SPACE  .S  ." <-"
+           THEN
+          ?FREEZE ;
 
 \ re-define COLON to compile (TRACE) routine into every definition
 : :     ( -- ) !CSP  HEADER (:NONAME)  COMPILE (TRACE) ;
 
+\ Now anything that's defined/re-defined with ':' will be traceable
+
 \ TEST CODE
-\ VARIABLE X
-\ VARIABLE Q
-\ : WORD1  ." This is word 1" 1 2 3 DUP  X !  ;
-\ : WORD2  CR ." Word 2 does nothing around here!"  99 ;
-\ : WORD3  CR ." Don't listen to those other words!!!!"
-\          DROP DROP DROP DROP   Q X ! ;
-\ : TEST  WORD1 WORD2 WORD3 ;
+ VARIABLE X   
+ VARIABLE Q
+
+ : X    X ;
+ : Q    Q ;
+
+ : DROP   DROP ;
+ : !      !    ;
+ : @      @    ;
+ : +!     +!   ;
+ : DUP    DUP  ;
+ : 1    1 ;
+ : 2    2 ;
+ : 3    3 ;
+ : U.   U. ;
+
+ : WORD1  ." This is word 1" 1 2 3 DUP  X !  ;
+
+ : WORD2  CR ." Word 2 does nothing around here!"  99 ;
+
+ : WORD3  CR ." Don't listen to those other words!!!!"
+          DROP DROP DROP DROP   X @ Q +!
+          Q @ U. ;
+ : TEST
+         Q OFF
+         20 0 DO
+           WORD1 WORD2 WORD3
+         LOOP ;
 
 \ Usage:
 \ TRACE ON ( -OR- TRACE OFF)

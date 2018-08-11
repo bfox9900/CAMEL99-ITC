@@ -1,5 +1,7 @@
 \ The optional Double-Number word set
 
+INCLUDE DSK1.TOOLS.F  \ for debugging
+
 \    D2/   D2*   DU<  D0=   D0<  D.  D<   D>S  M+ 2ROT
 \    2CONSTANT  2LITERAL    2VARIABLE
 \    DABS D.R  D=    DMAX   DMIN   D-   DNEGATE
@@ -19,10 +21,17 @@
       NEXT,
 ENDCODE
 
+\ CODE: 2R@  ( -- d )           \ fixed June 18 2019 V2.0.17
+\             TOS PUSH,
+\             2 (RP) TOS MOV,
+\            *RP PUSH,
+\             NEXT,               \ = 80
+\             END-CODE
 
-: 2LITERAL  ( d -- ) 
-            ?COMP  
-            SWAP POSTPONE LITERAL  POSTPONE LITERAL ; IMMEDIATE
+: 2LITERAL  ( d -- )
+            ?COMP SWAP 
+            POSTPONE LITERAL
+            POSTPONE LITERAL ; IMMEDIATE
 
 : 2CONSTANT  ( d -- <text>) CREATE  ,  ,  DOES> 2@ ;
 : 2VARIABLE  ( d -- <text>) CREATE 0 , 0 , ;
@@ -43,19 +52,23 @@ ENDCODE
 : D=   ( d d -- ?) ROT = -ROT = AND ;
 : D>S  ( d -- n)   DROP ;
 
-: 2OVER  ( d d2 -- d d2 d)  3 PICK 3 PICK ;   \  2>R 2DUP  2R> 2SWAP ;
+
+\ : 2OVER  2>R 2DUP  2R> 2SWAP ;   \ slow
+: 2OVER  ( d d2 -- d d2 d)  3 PICK 3 PICK ; \ 20% faster
+\ : 2OVER  4TH 4TH ;             \ 60% faster!
+
 : 2ROT   ( d d2 d3 -- d2 d3 d) 2>R 2SWAP 2R> 2SWAP ;
 
-: 4DUP  ( d d -- d d d d ) 2OVER 2OVER ;
-: 2NIP  ( d d' -- d') 2>R 2DROP 2R> ;
-: DMAX  ( d d -- d)  4DUP D< IF 2DROP ELSE 2NIP THEN ;
-: DMIN  ( d d -- d)  4DUP D< IF 2NIP ELSE 2DROP THEN ;
+: 4DUP   ( d d -- d d d d ) 2OVER 2OVER ;
+: 2NIP   ( d d' -- d')      2SWAP 2DROP  ;
+: DMAX   ( d d -- d)  4DUP D< IF 2DROP ELSE 2NIP THEN ;
+: DMIN   ( d d -- d)  4DUP D< IF 2NIP ELSE 2DROP THEN ;
 
 \ m*/ ( d n1 n2 -- d*n1/n2 )
 
 : ?NEGATE    ( n1 n2 -- n3) 0< IF NEGATE THEN ;
 : DNEGATE    ( d1 -- d2 )   SWAP INVERT SWAP INVERT 1 M+ ;
-: D-        ( d d -- d) DNEGATE D+ ;
+: D-         ( d d -- d) DNEGATE D+ ;
 : ?DNEGATE   ( d1 n -- d2)  0< IF DNEGATE THEN ;
 : DABS       ( d -- d)      DUP ?NEGATE ;
 
@@ -65,12 +78,12 @@ ENDCODE
 : D.R  ( d n --)
        >R TUCK DABS <# #S ROT SIGN #> R> OVER - SPACES TYPE #> ;
 
-: D.   (  n -- ) 0 D.R ;
+: D.   (  n -- ) 0 0  D.R ;
 
-: >DOUBLE ( addr len -- )   0 0 2SWAP >NUMBER 2DROP ;
+: ?DNUMBER ( addr len -- d ? ) 0 0 2SWAP >NUMBER NIP 0= ;
 
 DECIMAL
-: 1.      ( -- d) S" 1" >DOUBLE ;
-: 123456. ( -- d) S" 123456" >DOUBLE ;
+: 1.    ( -- d)  S" 1" DNUMBER ;
+: PI    ( -- d)  S" 3.141262" DNUMBER ;
 
 

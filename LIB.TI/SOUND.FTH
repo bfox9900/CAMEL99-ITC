@@ -3,7 +3,7 @@
 INCLUDE DSK1.TOOLS.F
 \ INCLUDE DSK1.ASM9900.F
 
- INCLUDE DSK1.CODE.F
+
 
 \ TMS9919 is a memory mapped device on the TI-99 @ >8400
 \ SND! is in the CAMEL99 Kernel as  : SND!     8400 C! ;
@@ -40,6 +40,15 @@ HEX
              D108 , \  W TOS MOVB,  \ 0CAB
             NEXT,   \ 8 BYTES, 28 uS :-)
             ENDCODE
+
+CODE SPLIT  ( AABB --  BB AA )     \ used in DIRSPRIT.f
+              C204 ,      \ TOS W MOV,   \ make a copy
+              0984 ,      \ TOS 8 SRL,   \ slide 'AA' to the right
+              0248 , FF , \ W FF ANDI,          \ mask out AA from the copy
+              0646 , 
+              C588 ,      \ W PUSH,
+              NEXT,
+              ENDCODE
 
 \ we set the "ACTIVE CHANNEL" with these variables
  VARIABLE OSC               \ holds the active OSC value

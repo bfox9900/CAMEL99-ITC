@@ -87,8 +87,8 @@ CHAR " CONSTANT '"'
             NIP ;             \ remove old address
 
 \ test for word type
-: ?CODE  ( cfa -- ) DUP @ 2- = ;
-: ?COLON ( cfa -- ) @  ['] DOCOL @ OVER = ;
+: ?CODE  ( cfa -- ?) DUP @ 2- = ;
+: ?COLON ( cfa -- ?) @  ['] DOCOL @ OVER = ;
 
 : .CODEWORD ( NFA CFA -- ) \ tms9900 specific
             CR ." CODE "  OVER .ID
@@ -145,10 +145,8 @@ CHAR " CONSTANT '"'
 : SEE       (  -- <string> )
             IMMFLAG OFF
             LOOKUP DUP CFA>NFA SWAP  ( -- nfa cfa)
-            DUP ?CODE \ alternate:  ABORT" Can't decompile code word" 
-            IF
-               .CODEWORD DROP EXIT
-            THEN  
+            DUP ?CODE \ alternate:  ABORT" Can't decompile code word"
+                     IF  .CODEWORD DROP EXIT THEN
             OVER IMMED?  IMMFLAG !  \ set flag if the word is immediate
             DATA-DECODER
             DECOMPILE

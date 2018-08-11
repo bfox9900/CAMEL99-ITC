@@ -63,10 +63,10 @@ HEX
 
 : PATTERN: ( u u u u  -- )       \ character pattern, compatible with CHARDEF
 \ USAGE:  HEX 0000 FF00 AABB CCDD PATTERN: SHAPE1
-           CREATE     2>R  >R    \ Rpush 3 values so we can reverse order
+           CREATE     >R >R >R   \ Rpush 3 values so we can reverse order
            ,  R> , R> , R> , ;   \ compile 4 ints in VDP useable order
 
-: GCHAR ( row col -- char) AT-XY VPOS VC@ ;
+: GCHAR ( col row -- char) AT-XY VPOS VC@ ;
 
 \ NOTES:
 \ 1. Unlike BASIC HCHAR & VCHAR must have the cnt parameter
