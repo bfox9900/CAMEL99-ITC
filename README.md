@@ -10,7 +10,7 @@ The low level primitives are written in Forth Assembler. The file 9900FAST.HSF a
 In CAMEL99 Version 2 we squeezed enough disk support into the 8K kernel to have the word INCLUDED in the system.  This let's the system compile Forth code from disk which means it can extend itself.
 
 ### Made Friendly for BASIC Programmers
-Users of TI BASIC who want to explore Forth might also find this system useful. With that in mind it has a string package that provides many of the features of BASIC including the use of a string stack and automated stack management. It also has an INPUT statement for strings and numbers.  You will also find the TI BASIC graphics functions are emulated in the libary file called GRAFIX.F.  The instruction manual has been written to compare BASIC and Forth and there are example programs where the BASIC code is side by side with Forth for faster understanding for those new to Forth.  
+Users of TI BASIC who want to explore Forth might also find this system useful. With that in mind it has a string package that provides many of the features of BASIC including the use of a string stack and automated stack management. It also has an INPUT statement for strings and numbers.  You will also find the TI BASIC graphics functions are emulated in the library file called GRAFIX.F.  The instruction manual has been written to compare BASIC and Forth and there are example programs where the BASIC code is side by side with Forth for faster understanding for those new to Forth.  
 
 You can load all the "training wheels" with one command: INCLUDE DSK1.BASICHLP.F
 ... and the files compile into the system. This gives the BASIC programmer most of TI BASIC'S features, but it still requires learning Forth's way of thinking to use it.  
