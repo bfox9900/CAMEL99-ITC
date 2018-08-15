@@ -92,11 +92,14 @@ DECIMAL
 : RANDOM-X ( -- n ) C/L@  2-  RND 1+ ;
 : RANDOM-Y ( -- n ) L/SCR 2-  RND 1+ ;
 
-\ create snake coordiinate arrays
+\ create snake coordinate arrays
 : ]SNAKE-X ( index -- address )  CELLS SNAKE-X-HEAD + ;
 : ]SNAKE-Y ( index -- address )  CELLS SNAKE-Y-HEAD + ;
 
-\ text macros make drawing faster.
+\ Using >VPOS and VC! CODE words for speed
+\ >VPOS ( to video position) converts X & Y to a VDP RAM address
+\ VC!  (video char store) writes a byte to VDP RAM address
+\ We are writing directly to VDP Screen memory
 : DRAW-WHITE ( x y -- ) >VPOS  BL   SWAP VC! ;
 : DRAW-SNAKE ( X Y -- ) >VPOS SNAKE SWAP VC! ;
 
