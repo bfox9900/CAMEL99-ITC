@@ -37,6 +37,12 @@ HEX
               SWAP BITMASK INVERT >R  \ invert and save mask
               DUP @                   \ -- addr bits
               R> AND SWAP ! ;         \ mask out bits, store back in addr
+              
+: BTOGGLE    ( bit# addr[] -- )
+              BITFLD                  \ -- bit# addr
+              SWAP BITMASK >R         \ invert and save mask
+              DUP @                   \ -- addr bits
+              R> XOR SWAP ! ;         \ toggle 1 bit, store back in addr
 
 \ Usage Example
 \ DECIMAL
