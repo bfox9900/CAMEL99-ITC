@@ -1,2 +1,2 @@
-This folder contains video captures of various code demostrations.
+This folder contains video captures of various code demonstrations.
 
