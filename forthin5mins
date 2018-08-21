@@ -132,8 +132,16 @@ FALSE .    \ 0 ok
 12 53 =    \ 0 ok
 
 \ `IF` is a compile-only word that does stuff if top of stack is TRUE
-\ Syntax: `IF` <stuff to do when TOS is true> `THEN` <rest of program>.
+\ Forth's IF/THEN will confuse you if you think it's the same as other languages.
+
+\ It is best understood if we consider the sentence:
+
+\  Looks like rain?   IF so,   Get your umbrella   THEN go outside.
+
+\ Syntax: `IF` <stuff to do when TOS is true> `THEN` <do the rest of program>.
+
 : ?>64 ( n -- n ) DUP 64 > IF ." Greater than 64!" THEN ; \ ok
+
 100 ?>64     \ Greater than 64! ok
 
 \ 'ELSE'
