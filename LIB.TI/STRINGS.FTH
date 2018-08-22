@@ -1,50 +1,28 @@
 ( RE-ENTRANT STRING LEXICON                    OCT 8 1987 Brian Fox)
 \ Re-write for CAMEL99                         AUG 28 2017
 
-\ Written orginally to provide TI-BASIC string functions for TI-Forth.
-\ I have re-written it many times; for HsForth GForth, MPE Power Forth,
-\ Mark COMPLETELY re-wrote it for Turbo Forth and now I have re-written 
-\ it for CAMEL99.
-
-\ New Concept:
-\ Input strings are manipulated by adjusting addr & len on the data stack.
-\ This method is MUCH faster than copying sub-strings.
-\ Functions that output a string copy their result onto a string stack.
-\ The address of the output string is on the Forth Parameter stack.
-\ This allows string functions to feed into another string function.
-
-\                --THE SECRET SAUCE --
-\ Two functions, PUT and PRINT, collapse the string stack automatically.
-\ This cleans up the intermediate strings that are created as you use the
-\ string functions after you either store or print the final result.
-\ No garbage collection required.
-
 \ original version used run-time size checking.
 \ It's removed here for more speed so be careful
 
+\ Aug 17 2018
+\   - STRING stack lives in free dictionary
+\   - DIM creates static string in dictionary
+\   - HDIM uses MALLOC to create static string in HEAP
+\ Aug 21 2018 - fixed bug in POS$
 
+HERE
 DECIMAL
 \ === string stack ====
          VARIABLE SSP     \ the string stack pointer
      255 CONSTANT MXLEN   \ 255 bytes is longest string
 MXLEN 1+ CONSTANT SSW     \ width of string stack items
-
 : NEW:     ( -- ) SSW SSP +! ;  \ bump string stack pointer by 256
 : COLLAPSE ( -- ) SSP OFF  ;    \ reset string stack pointer to zero
 
-\ * You have a choice where to place the string stack *
-
-\ : TOP$     ( -- $) SSP @ PAD + ; \ string stack in dictionary
-
-: TOP$     ( -- $) SSP @ H @ + ; \ string stack in free HEAP memory
-
-\ From Wil Baden's Tool Belt [R.I.P. Wil] ====
-\ : C+!        ( n addr -- )   DUP >R  C@ +  R> C! ; \ now a code word
+: TOP$     ( -- $) SSP @ PAD + ; \ string stack in dictionary
 
 \ changed APPEND to +PLACE to avoid name conflict with FILE SYSTEM WORD
 : +PLACE      ( addr n $ -- ) 2DUP 2>R  COUNT +  SWAP CMOVE 2R> C+! ;
-
-\ : PLACE      ( addr n dst$ -- ) 2DUP C! 1+ SWAP CMOVE ; \ in Kernel
 
 .( ..)
 \ string stack helpers ====
@@ -59,18 +37,22 @@ MXLEN 1+ CONSTANT SSW     \ width of string stack items
 : VAL$     ( adr$ - # )  ?NUMBER 0= ABORT" VAL$ err"  ;
 : CHR$     ( ascii# -- top$ ) NEW: TOP$ 1 OVER C! SWAP OVER 1+ C! ;
 : ASC      ( $ -- c)   1+ C@ ;
+
 .( .)
 : &        ( $1 $2 -- top$)   \ concatenate operator
            SWAP COUNT SPUSH >R COUNT R@ +PLACE R>  ;
 
-: POS$    ( $1 $2 -- n )       \ return "position" of $1 in $2
-           DUP -ROT            \ copy $2 under the inputs
-           COUNT OVER + SWAP   \ step $2 char by char
+: POS$  ( $1 $2 -- n )  \ return "position" $1 in $2
+           DUP -ROT DUP -ROT
+           COUNT BOUNDS         \ step $2 char by char
            DO
-             I OVER COUNT S=   \ S= part of CAMEL Forth.
-             0= IF I LEAVE THEN  \ match! push loop index & leave
+             I OVER COUNT S=
+             0= IF
+                  NIP I SWAP
+                  LEAVE
+             THEN
            LOOP
-           NIP SWAP -  ;       \ subtract addresses to get position
+           DROP - ABS ;
 
 \ much faster find position of char in $
 : CPOS     ( $ char -- n) >R COUNT 2DUP R> SCAN NIP - NIP ;
@@ -90,18 +72,16 @@ MXLEN 1+ CONSTANT SSW     \ width of string stack items
 : ="       ( $addr -- <text> ) ?EXEC [CHAR] " PARSE ROT PLACE ;
 : =""      ( $addr -- ) ?EXEC  0 SWAP C! ;   \ sets string length to zero
 
-: ?$IZE    ( n -- ) MXLEN > ABORT" $ too big!" ;
+: ?$IZE    ( n -- ) MXLEN > ABORT" $>255 bytes" ;
+
 \ DIM creates a named string of n size in the Dictionary
 : DIM      ( n -- )
            DUP ?$IZE
-           CREATE 0 C, ALLOT ;
+           1+ ALIGNED
+           CREATE  ALLOT ;
 
-\ STRING: creates a named string of n size in the HEAP (low mem)
-: STRING:  ( n -- )
-           DUP ?$IZE
-           CREATE H @ DUP , 0 C!   \ record heap address and init  length
-                  1+ ALIGNED  H +! \ allot Heap memory to EVEN address
-           DOES>  @  ;
+\ HDIM  creates a static named string in the HEAP (low mem)
+: HDIM    ( n -- ) DUP ?$IZE  1+ ALIGNED MALLOC CONSTANT ;
 
 : PUT      ( $1 $2 -- ) COPY$ COLLAPSE ;
 .( ...)
@@ -122,4 +102,6 @@ MXLEN 1+ CONSTANT SSW     \ width of string stack items
 
 COLLAPSE  \ initialize the string stack
 
-( 700+ BYTES)
+HERE SWAP - DECIMAL .  .( Bytes)
+
+
