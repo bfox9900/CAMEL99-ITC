@@ -26,7 +26,7 @@
             SWAP COUNT ROT
             0 ?DO
                 2DUP TOP$ LEN OVER + SSW > ABORT" RPT$>255"
-                TOP$ APPEND
+                TOP$ +PLACE
             LOOP
             2DROP
             TOP$ ;

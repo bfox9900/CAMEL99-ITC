@@ -5,7 +5,6 @@
 
 \ this version uses some machine code words for a more speed
 \ July 2018  Removed DXY from Kernel and put machine code here
-\ Aug 2018   Removed SPLIT,FUSE from Kernel and put here.
 
 \ INCLUDE DSK1.TOOLS.F   \ for debugging
 \ INCLUDE DSK1.ASM9900.F
@@ -59,23 +58,6 @@ CR .( .)
           1 6 VWTR              \ vdp reg 6 = 1, puts ]PDT @ $800
           SDT SDTsize BL VFILL  \ init the sprite desc. table with blanks
           SPR# OFF ;            \ #sprites=0
-
-
- CODE SPLIT  ( AABB --  BB AA )     \ used in \LIB\SOUND.FTH
-              C204 ,      \ TOS W MOV,   \ make a copy
-              0984 ,      \ TOS 8 SRL,   \ slide 'AA' to the right
-              0248 , FF , \ W FF ANDI,          \ mask out AA from the copy
-              0646 , 
-              C588 ,      \ W PUSH,
-              NEXT,
-              ENDCODE
-
- CODE FUSE   ( BB  AA -- AABB )    \ FUSE 2 bytes into a 16 bit word
-              06C4 ,     \ TOS SWPB,
-              A136 ,     \ *SP+  TOS ADD,
-              NEXT,
-              ENDCODE
-
 
 \ The following words are named like Extended BASIC
 \ (remove ?NDX if you need more speed, but you loose protection)
