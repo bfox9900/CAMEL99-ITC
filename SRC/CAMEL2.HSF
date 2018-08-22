@@ -66,7 +66,6 @@
 \ C A M E L   F O R T H   H E A D E R    S T R U C T U R E
 \ by Brad Rodriguez  Ph.D.
 
-
 \     D7           D0
 \     +---------------+
 \     |               |   byte 1      \ LINK FLD contains NFA of previous word
