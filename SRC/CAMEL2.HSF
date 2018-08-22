@@ -465,8 +465,6 @@ CODE: HERE   ( -- addr) TOS PUSH,  DP @@ TOS MOV,  NEXT, END-CODE
               NEXT,              \ = 88
               END-CODE
 
-[THEN]
-
 [then]
 
 \ : 2OVER  ( d1 d2 - d1 d2 d1)  2>R 2DUP  2R> 2SWAP ; \ 1.5x bigger in ASSEMBLER
