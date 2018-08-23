@@ -21,4 +21,3 @@ CODE 4TH  ( a b c d e--  a b c d e a) \ ANS: 2 PICK
           NEXT,                             \ =50
           ENDCODE
 
-
