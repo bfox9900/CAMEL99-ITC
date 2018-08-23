@@ -119,8 +119,9 @@ It now loads in the DSK.START file as a library file: TOBODY.F
 - Removed SPRITE support word DXY from KERNEL, moved to DIRSPRIT (direct sprite control) as a machine code word. 
 - Added SEE.F to DSK1 which is a Forth decompiler.
 ### Aug 23, 2018 V2.0.21
-- Moved @ and DROP into 16 bit RAM
+- Moved @ and DROP primitives into 16 bit RAM for small speed improvement.
 - Put MOVE in the kernel which is used by PLACE. This makes PLACE a little slower but means it can be used in more dynamic memory environments (PLaying with lists)
 - Fixed silly bug with FUSE
 - changes to MOTION.F, a simple sprite motion control wordset (not automotion)
 - Uploaded DEMO/ELIZA/ELIZA2.FTH a preliminary verion of the classic lisp psychotherapist (bugs)
+- fixed bug in POS$ (STRINGS.FTH)
