@@ -6,15 +6,19 @@
     BOUNDS ?DO                ( a1)
         COUNT  I C@  - ( a1 diff)
         DUP IF
-            NIP  0< 1 OR      ( -1|1)
-            UNLOOP
-            R> DROP
-            EXIT THEN         ( a1 diff)
+              NIP  0< 1 OR      ( -1|1)
+              UNLOOP
+              R> DROP
+              EXIT
+            THEN         ( a1 diff)
         DROP                  ( a1)
     LOOP DROP                 ( )
     R>  DUP IF  0> 1 OR  THEN   \  2's complement arith.
     ;
+    
+: COMPARES  ( a1 n1 a2 n2 -- -1|0|1 )
+             DROP SWAP S= ;
 
-: A$ S" NOW IS THE TIME"  ;
-: B$ S" THIS IS THE TIME" ;
-: C$ S" now is the time" ; 
+: A$    S" NOW IS THE TIME"  ;
+: B$    S" THIS IS THE TIME" ;
+: C$    S" now is the time" ;

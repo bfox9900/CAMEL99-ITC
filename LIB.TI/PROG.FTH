@@ -4,19 +4,14 @@
 \ Just use the name in a Forth program and it uses it's own register set
 \ and then returns to Forth.
 
-\ Interface to Forth is through the QREGS workspace.
-\ The base address of QREGS workspace is used just like a forth variable.
-\ The external registers are just memory so use @ ! C@ C! etc.
-
-\ QREGS           = R0
-\ QREGS CELLS+    = R1
-\ QREGS 2 CELLS + = R2
-\ etc...
-\ R13,R14 & R15 must not be used. The contain the return vector back to Forth.
+\ Interface to Forth is through the a workspace that you create.
+\ The addresses of your workspace are just like a forth variable.
+\ so use @ ! C@ C! etc.
 
 \ ALTERNATIVE INTERFACE:
-\ Use the [TOS] macro to reference the Forth TOS register.
-                                                       
+\ Use this [TOS] macro to reference the Forth TOS register in your code
+: [TOS]  8 R13 () ;      \ macro for Forth's TOS register
+
 : PROG: ( wksp -- )
        CREATE
          ( wksp) ,  HERE CELL+ ,
@@ -27,13 +22,32 @@
 
 : ;PROG  ( -- ) ?CSP  ;  \ check stack position for junk left on it.
 
-: [TOS]  8 R13 () ;      \ macro for Forth's TOS register
 
 \ Usage Example:
-\ QREGS PROG: INIT-QREGS   \ code that initializes wksp
-\     \ R0            \ can be an input/output buffer
-\       R8 Q LI,      \ R8 holds the Q data buffer address
-\     	R9   CLR,     \ R9 is the input pointer
-\     	R10  CLR,     \ R10 is the output pointer
+\
+\  CREATE WKSP2 16 CELLS ALLOT  \ for 16 registers
+
+\  WKSP2        CONSTANT XR0  \ name the "external registers" as needed
+\  XR0   CELL+  CONSTANT XR1
+\  XR1   CELL+  CONSTANT XR2
+\  XR2   CELL+  CONSTANT XR3
+
+\ load external registers with input parameters like normal variables
+\     7 XR0 !
+\    -1 XR1 !
+\  9999 XR2 !
+\ MYVAR XR3 !
+
+\ WKSP2 PROG: APROGRAM
+\     \ R0            \ r0 contains the 7
+\       R1 Q LI,      \ R1 holds -1
+\     	R2   CLR,     \ R2 holds 9999
+\     	R3   CLR,     \ R3 has the address of MYVAR
+
+\     < your code goes here>
+
 \     	RTWP,
 \      ;PROG
+
+\ Read the results from the external registers
+\ : RESULTS    XR1 @ IF ." GOOD"  ELSE  ." BAD!"  THEN ;
