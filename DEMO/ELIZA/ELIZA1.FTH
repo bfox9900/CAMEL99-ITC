@@ -1,15 +1,14 @@
 \ ELIZA in CAMEL99 Forth
 
 \ This implementation uses the Forth dictionary as a big case statement
-\ Eliza's KEYWORD phrases are converted to Forth words by removing the spaces.
+\ Eliza's KEYWORD phrases are converted to Forth words by removing the spaces
+\ and puncutation.
 
 \ Example:
-\ "I CAN'T" becomes ICANT.  ICANT is a valid FORTH word so all
-\ we need is a word in the dictionary called ICANT to make something
-\ happen.
+\ "I CAN'T" becomes ICANT.  ICANT is a FORTH word so all we need is a word 
+\ in the dictionary called ICANT to make something happen.
 
-INCLUDE DSK1.TOOLS.F   \ for debugging
-\ INCLUDE DSK1.80COL.F
+\ INCLUDE DSK1.TOOLS.F   \ for debugging
 
 \ ======[ punctuation characters ]======
 DECIMAL
@@ -19,7 +18,6 @@ CHAR . CONSTANT '.'
 
 \ working memory for string processing
 CREATE INPUT$  81 ALLOT  \ holds the "clean" reply from the patient
-CREATE OLDIN$  81 ALLOT  \ holds previous input to catch repetition
 
 \ === string stack in HEAP ====
          VARIABLE SSP     \ the string stack pointer
@@ -80,12 +78,11 @@ SSW 10 * MALLOC CONSTANT $STAK  \ ten strings deep  (2.5 Kbytes!)
 \ text color definitions
 HEX
 : WHT/BLK ( -- ) F1 7 VWTR ;
-: RED/BLK ( -- ) 91 7 VWTR ;
 DECIMAL
 
 \ ---[ string support ]---
-: MEMBER? ( addr len char -- ? ) 
-          SCAN NIP ;        \  is char in string addr len
+: MEMBER? ( addr len char -- ? )
+          SCAN NIP ;        \  is char in stack string addr,len
 
 : APPEND-CHAR ( char $ -- )
               DUP >R        \ copy string address
@@ -94,7 +91,7 @@ DECIMAL
               + C! ;        \ put char at end of string
 
 \ --------[ STRIP$ ]--------
-\ passed to STRIP$. 1st char is " ". Rest is punctutation
+\ passed to STRIP$. 1st char is blank. Rest is punctutation
 : "NOISE" ( -- addr len) S"  ,.?!'@#$[]%^&*()_+-{}:<>" ;
 
 : STRIP$ ( $ addr len -- $)  \ Use: C" TEST 1 2 3" "BL" STRIP$
@@ -181,7 +178,7 @@ CREATE {NIL}   0 ,                      \ nil list
           DROP
           R> 1- ;
 
-: {LIST} ( list -- )  \ for view
+: {PRINT} ( list -- )  \ for viewing a list when debugging
           CR
           0 >R
           BEGIN
@@ -197,7 +194,6 @@ CREATE {NIL}   0 ,                      \ nil list
 
 VARIABLE MFLAG     \ simpler that stack juggling :-)
 VARIABLE POSITION  \ ALSO record the position keyword in $
-VARIABLE LEADBL    \ true if char before the match is a space
 
 : {MEMBER}  ( $ {list} -- -1 | ndx )  \ is ANY member of {list} in $
           MFLAG ON                   \ -1 flag means not found
@@ -258,27 +254,27 @@ CREATE PHRASES
       " YOUR"      \ 12
       " IS"        \ 13
       " MY"
-      " I "
+      " I"
       " YOU"
      }
 
-CREATE CONJUGATIONS
-    { " YOU ARE"    \ 0
-      " YOU'VE"     \ 1
-      " YOU'VE"     \ 2
-      " YOU'RE"     \ 4
-      " YOU'LL"     \ 5
-      " YOU WOULD"  \ 6
-      " YOU WILL"   \ 7
-      " YOURS"      \ 8
-      " AM"         \ 9
-      " WAS"        \ 9
-      " YOU"        \ 11
-      " MY"         \ 12
-      " BEING"      \ 13
-      " YOUR"
-      " YOU"
-      " I"
+CREATE CONJUGATIONS  \ trailing space needed for correct printing
+    { " YOU ARE "    \ 0
+      " YOU'VE "     \ 1
+      " YOU'VE "     \ 2
+      " YOU'RE "     \ 4
+      " YOU'LL "     \ 5
+      " YOU WOULD "  \ 6
+      " YOU WILL "   \ 7
+      " YOURS "      \ 8
+      " AM "         \ 9
+      " WAS "        \ 9
+      " YOU "        \ 11
+      " MY "         \ 12
+      " BEING "      \ 13
+      " YOUR "
+      " YOU "
+      " I "
      }
 
 CONJUGATIONS {LEN} CONSTANT #CONJUGATES
@@ -311,8 +307,8 @@ CREATE KEYWORDS   \ original Eliza keywords
               KEYWORDS SWAP {NTH} {$}
            THEN ;
 
-\ convert keyword# into a FORTH word by removing spaces and NOISE
-\ output is a stack string for EVALUATE to use
+\ convert keyword# into a FORTH word by removing spaces and NOISE.
+\ Output is a stack string for EVALUATE to use
 : >ACTION  ( n -- addr len )
             DUP 0< ABORT" >ACTION ndx err"
             ]KEYWORD "NOISE" STRIP$ COUNT ;
@@ -320,15 +316,13 @@ CREATE KEYWORDS   \ original Eliza keywords
 \ ==============================================
 \        --- REPLIES SUPPORT CODE ---
 
-: LIST  ( -- list) HERE ;    \ mark beginning of a reply list
-
 : REPLY: ( list -- )
-         DUP {LEN}        \ count the strings in the list minus 1
+         DUP {LEN}        \ count the strings in the list
           1-              \ 1 less is the last string in the list
           0               \ 0 is the first string to use
           ROT             \ put the list address on top
          CREATE           \ create a Forth name for the list
-             ,            \ complile list addres
+             ,            \ compile list addres
              ,            \ compile the string to use as reply
              ,   ;        \ compile the list length
 
@@ -360,7 +354,8 @@ VARIABLE ROGERIAN        \ set if Rogerian answer is needed
                       ROGERIAN ON
                       LEAVE
                   THEN EMIT
-              LOOP SPACE  ;
+              LOOP
+              SPACE ;
 
 \ dot reply prints the reply to "USE" and advances the '->USE#' or resets it to 1
 : .REPLY  ( reply_addr -- )
@@ -634,7 +629,7 @@ VARIABLE ROGERIAN        \ set if Rogerian answer is needed
            DUP 0> ( len>0 ?)
          WHILE
             BL /WORD 2SWAP SPUSH            \ cut each word->string stack
-            CONJUGATE$ COUNT BL SKIP LOWER.TYPE
+            CONJUGATE$ COUNT LOWER.TYPE
             COLLAPSE  ( string stack)
          REPEAT
          2DROP ;
@@ -642,7 +637,7 @@ VARIABLE ROGERIAN        \ set if Rogerian answer is needed
 DECIMAL
 \ keywords are found by {MEMBER} which scans $ for any MEMBER of the list
 : ANALYZE   ( $ -- 0 | ndx)
-            KEYWORDS {MEMBER} ;   
+            KEYWORDS {MEMBER} ;
 
 : REPLY   ( n -- )  \ n= keyword index
            DUP -1 =
