@@ -10,14 +10,14 @@ CREATE {NIL}   0 ,                      \ nil list
       [CHAR] " WORD DUP C@ 1+ ALLOT ALIGN
       HERE SWAP 2- ! DROP ;  \ fill in the link
 
-\ : CAR  ( list -- next)  @ ;
-\ : CDR  ( list -- addr) CELL+ ;
+: CAR  ( list -- next)  @ ;
+: CDR  ( list -- addr) CELL+ @ ;
 
-: {NEXT}  ( list -- list' ) @ ;  \ get next string in a list
-: {$}     ( link -- $)  CELL+ ;
+\ : {NEXT}  ( list -- list' ) @ ;  \ get next string in a list
+\ : {$}     ( link -- $)  CELL+ ;
 
 : {NTH}    ( list n -- $addr )    \ the nth string in a list
-             0  ?DO  {NEXT}  LOOP ;
+             0  ?DO  CAR  LOOP ;
 
 : {PRINT} ( link -- ) {$} COUNT CR TYPE ;
 

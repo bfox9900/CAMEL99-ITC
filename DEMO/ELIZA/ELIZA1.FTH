@@ -409,9 +409,8 @@ VARIABLE ROGERIAN        \ set if Rogerian answer is needed
    " Have you dreamt about this before?"
  } REPLY: IDREAMT
 
-'{
-      " In reality, how do you feel about~"
-     } REPLY: DREAMABOUT
+'{ " In reality, how do you feel about~"
+ } REPLY: DREAMABOUT
 
 '{ " What does this dream suggest to you?"
    " Do you dream often?"
@@ -429,173 +428,146 @@ VARIABLE ROGERIAN        \ set if Rogerian answer is needed
  } REPLY: MYFATHER
 
 
-'{
-      " What would it mean if you got~"
-      " Why do you want~"
-      " Suppose you soon got~"
-      " What if you never got~"
-     } REPLY: IWANT
+'{ " What would it mean if you got~"
+   " Why do you want~"
+   " Suppose you soon got~"
+   " What if you never got~"
+ } REPLY: IWANT
 
-'{
-      " How have I helped you to be~"
-      " What makes you happy just now?"
-      " Can you explain why you are suddenly~"
-      } REPLY: IAMGLAD
+'{ " How have I helped you to be~"
+   " What makes you happy just now?"
+   " Can you explain why you are suddenly~"
+ } REPLY: IAMGLAD
 
-'{
-       " I am sorry to hear you are depressed"
-       " I'm sure its not pleasant to be saD"
-     } REPLY: IAMSAD
+'{ " I am sorry to hear you are depressed"
+   " I'm sure its not pleasant to be saD"
+ } REPLY: IAMSAD
      
 \ (((?* ?x) are like (?* ?y))   NEED TO ADD THIS CAPABILITY
 
-'{
-      " What resemblance do you see between them?"
-     } REPLY: ARELIKE 
+'{ " What resemblance do you see between them?" } REPLY: ARELIKE
 
 \ (((?* ?x) is like (?* ?y))   NEED TO ADD THIS CAPABILITY
 
-'{
-      " In what way is it that the two are alike?"
-      " What resemblance do you see?"
-      " Could there really be some connection?" 
-      " How?"
-     } REPLY: ISLIKE
+'{ " In what way is it that the two are alike?"
+   " What resemblance do you see?"
+   " Could there really be some connection?"
+   " How?"
+ } REPLY: ISLIKE
 
-LIST   { " In what way?"
-         " What simililarities do you see?"
-         " How?"
-       } REPLY: ALIKE
+'{ " In what way?"
+   " What simililarities do you see?"
+   " How?"
+ } REPLY: ALIKE
        
-'{
-      " Were you really?"
-      " Perhaps I already knew you were~"
-      " Why are you telling you were~"
-     } REPLY: IWAS
+'{ " Were you really?"
+   " Perhaps I already knew you were~"
+   " Why are you telling you were~"
+ } REPLY: IWAS
 
-'{
-      " What if you were~"
-      " Do you think you were~"
-      " What would it mean if you were~"
-     } REPLY: WASI
+'{ " What if you were~"
+   " Do you think you were~"
+   " What would it mean if you were~"
+ } REPLY: WASI
 
-'{
-      " In what way are you~"
-      " Do you want to be~"
-     } REPLY: IAM
+'{ " In what way are you~"
+   " Do you want to be~"
+ } REPLY: IAM
 
 '{ " Do you believe you are~"
-       " Would you want to be~"
-       " You wish I would tell you you are~"
-       " What would it mean if you were~"
-     } REPLY: AMI
-    
-'{
-      " Why do you say 'AM?'"
-      " I don't understand that."
-     } REPLY: AM
+   " Would you want to be~"
+   " You wish I would tell you you are~"
+   " What would it mean if you were~"
+ } REPLY: AMI
+
+'{ " Why do you say 'AM?'"
+   " I don't understand that."
+ } REPLY: AM
 
 '{ " Why are you interested in whether or not i am~"
-       " Would you prefer if i were not~"
-       " Perhaps in your fantasies i am~"
-     } REPLY: AREYOU
+   " Would you prefer if i were not~"
+   " Perhaps in your fantasies i am~"
+ } REPLY: AREYOU
 
-'{ 
-      " What makes you think i am~"
-     } REPLY: YOUARE
+'{ " What makes you think i am~" } REPLY: YOUARE
 
 '{ " Is that the real reason?"
-       " Do any other reasons come to mind?"
-       " Does that reason explain anything else?"
-     } REPLY: BECAUSE
+   " Do any other reasons come to mind?"
+   " Does that reason explain anything else?"
+ } REPLY: BECAUSE
 
-'{
-      " Perhaps I was~"
-      " What do you think?"
-      " What if I had been~"
-     } REPLY: WEREYOU
+'{ " Perhaps I was~"
+   " What do you think?"
+   " What if I had been~"
+ } REPLY: WEREYOU
 
 '{ " Maybe NOW you could~"
-       " What if you could~"
-     } REPLY: ICANT
+   " What if you could~"
+ } REPLY: ICANT
 
-'{ 
-       " How often do you feel~"
-       " Do you enjoy feeling~"
-     } REPLY: IFEEL
+'{ " How often do you feel~"
+   " Do you enjoy feeling~"
+ } REPLY: IFEEL
 
-'{
-      " What other feelings do you have?"
-     } REPLY: IFELT
+'{ " What other feelings do you have?" } REPLY: IFELT
 
-\    (((?* ?x) I (?* ?y) you (?* ?z))    COOL ONE! Need to figure out how
+\    (((?* ?x) I (?* ?y) you (?* ?z))    COOL ONE! Need to do this
 \    (Perhaps in your fantasy we ?y each other))
 
-'{
-     " Why don't you~"
-     } REPLY: WHYDONTYOU
-     
-LIST   { " You seem quite positive."
-         " Are you sure?"
-         " I understand."
-       } REPLY: YES
+'{ " Why don't you~" } REPLY: WHYDONTYOU
 
-LIST  {
-       " Are you saying 'NO' just to be negative?"
-       " You are being a bit negative."
-       " Why not?"
-      } REPLY: NO
-      
-LIST  {
-       " Can you be more specific?"
-      } REPLY: SOMEONE
+'{ " You seem quite positive."
+   " Are you sure?"
+   " I understand."
+ } REPLY: YES
 
-LIST  {
-       " Surely not everyone"
-       " Can you think of anyone in particular?"
-       " Who for example?"
-       " Are youe thinking of a special person"
-      } REPLY: EVERYONE
+'{ " Are you saying 'NO' just to be negative?"
+   " You are being a bit negative."
+   " Why not?"
+ } REPLY: NO
 
-LIST  {
-       " Can you think of a specific example"
-       " When?"
-       " What incident are you thinking of?"
-       " Really-- always?"
-      } REPLY: ALWAYS
+'{ " Can you be more specific?" } REPLY: SOMEONE
 
-'{
-       " Why do you ask?"
-       " Does that question interest you?"
-       " What is it you really want to know?"
-       " What do you think?"
-       " What else comes to mind when you ask that?"
-     } REPLY: WHAT
+'{ " Surely not everyone"
+   " Can you think of anyone in particular?"
+   " Who for example?"
+   " Are youe thinking of a special person"
+ } REPLY: EVERYONE
 
-'{
-      " You do not seem quite certain"
-     } REPLY: PERHAPS
-     
-'{
-      " Did you think they might not be~"
-      " Possibly they are~"
-     } REPLY: ARE
+'{ " Can you think of a specific example"
+   " When?"
+   " What incident are you thinking of?"
+   " Really-- always?"
+ } REPLY: ALWAYS
+
+'{ " Why do you ask?"
+   " Does that question interest you?"
+   " What is it you really want to know?"
+   " What do you think?"
+   " What else comes to mind when you ask that?"
+ } REPLY: WHAT
+
+'{ " You do not seem quite certain" } REPLY: PERHAPS
+
+'{ " Did you think they might not be~"
+   " Possibly they are~"
+ } REPLY: ARE
 
 : END_SESSION  TEXT  QUIT ;  \  can change this to BYE
-     
+
 : BYE    CR ." OK. Thanks for chatting."
          CR ." Bye bye!"  700 MS
          1500 MS
          END_SESSION ;
 
-LIST   { " What does that suggest to you?"
-         " I see."
-         " I'm not sure I understand you fully."
-         " Can we get back to the topic of your mental health?"
-         " Can you expand on that a bit?"
-         " That is quite interesting. Tell me more. "
-         " Are you being honest?"
-       } REPLY: TAPDANCE
+'{ " What does that suggest to you?"
+   " I see."
+   " I'm not sure I understand you fully."
+   " Can we get back to the topic of your mental health?"
+   " Can you expand on that a bit?"
+   " That is quite interesting. Tell me more. "
+   " Are you being honest?"
+ } REPLY: TAPDANCE
 
 : CONSOLE   CR
             CR ." Exiting program..."
@@ -618,9 +590,8 @@ LIST   { " What does that suggest to you?"
 
 : $ACCEPT ( $addr -- ) DUP  1+ 80 ACCEPT  SWAP C!  ;
 
-\ **returns a stack string **
-: READLINE ( $ -- addr len  )
-           CR BEEP ." >"   $ACCEPT ;
+: READLINE ( $ -- addr len  )   \ **returns a stack string **
+           CR BEEP ." >" $ACCEPT ;
 
 : LISTEN   ( -- $ )
            BEGIN
@@ -630,7 +601,7 @@ LIST   { " What does that suggest to you?"
            PAD COUNT  TRIM TOUPPER  BL +CHAR INPUT$ PLACE
            INPUT$ ;
 
-\ cut "tail end" of INPUT$, 
+\ "cut tail" of INPUT$
 \ return everything after the keyword phrase as stack string
  : /TAIL  ( keyword input$ -- adr len)   \ "cut tail"
            2DUP POS$ >R     \ -- key input
@@ -647,16 +618,14 @@ LIST   { " What does that suggest to you?"
         SPLIT 1+            ( add one to include the trailing space)
         2SWAP 1 /STRING  ;
 
-: EVEN#  ( n -- ?) DUP ALIGNED = ;
-
 : CONJUGATE$ ( $ -- $ | $') \ check for PHRASES membership
-         DUP PHRASES {MEMBER} DUP  \ DUP CR ." conj:" .
-         0<  ( -- $ n)
-         IF                    \ if not a member
-             DROP              \ drop ndx, keep $
+         DUP PHRASES {MEMBER} 
+         DUP 0<                \ ( -- $ ndx ?)
+         IF                    \ not a member
+             DROP              \ drop ndx, keep original $
          ELSE
-             NIP                \ remove $  ( -- n)
-             ]CONJUGATE         \ replaced with conjugate
+             NIP               \ remove original $, keep ndx
+             ]CONJUGATE        \ replaced with conjugate
         THEN ;
 
 : /CONJUGATE  ( addr len -- )
@@ -671,9 +640,9 @@ LIST   { " What does that suggest to you?"
          2DROP ;
 
 DECIMAL
-\ everthing is handled by {MEMBER} which scans $ for any MEMBER of the list
+\ keywords are found by {MEMBER} which scans $ for any MEMBER of the list
 : ANALYZE   ( $ -- 0 | ndx)
-            KEYWORDS {MEMBER} ;   \  DUP CR ." NDX=" . ;
+            KEYWORDS {MEMBER} ;   
 
 : REPLY   ( n -- )  \ n= keyword index
            DUP -1 =
@@ -692,7 +661,7 @@ DECIMAL
 DECIMAL
 : ELIZA    ( -- )
         TEXT WHT/BLK
-        COLLAPSE  ( the string stack)
+        COLLAPSE  ( reset string stack)
         S" Eliza" BIG.TYPE CR
         GREETING
         BEGIN
