@@ -3,10 +3,10 @@
 \  A M A Z I N G  !!!!!!!!!!!
 
 DECIMAL
-CREATE FUKINGMEMORY   8000 ALLOT
+CREATE BFMEMORY   8000 ALLOT
 VARIABLE ^P   \ the fukingmemory pointer
 
-: RESET ( -- ) FUKINGMEMORY DUP 8000 0 FILL  ^P ! ;
+: RESET ( -- ) BFMEMORY DUP 8000 0 FILL  ^P ! ;
 : PEEK  ( -- ) ^P @ C@ ;
 : POKE  ( -- ) ^P @ C! ;
 : >     ( -- ) ^P @ 1+ ^P ! ;           \ increment the ^P
@@ -22,7 +22,7 @@ VARIABLE ^P   \ the fukingmemory pointer
 \ jump backward to the matching [ unless the byte at the ^P is zero
 : ]     ( -- ) POSTPONE REPEAT ; IMMEDIATE
 
-: HOLYFUK ( hello world in BrainF__k )
+: HELLO ( hello world in BrainF__k )
     RESET
     + + + + + + + + [ > + + + + [ > + + > + + + > + + + > + < < < < - ] > +
     > + > - > > + [ < ] < - ] > > . > - - - . + + + + + + + . . + + + . > >
