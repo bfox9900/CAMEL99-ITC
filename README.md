@@ -1,4 +1,4 @@
-# CAMEL99 for TI-99 V2.0.21
+# CAMEL99 for TI-99 V2.0.22
 
 ### ABOUT CAMEL99 V2
 --------------------
@@ -125,3 +125,10 @@ It now loads in the DSK.START file as a library file: TOBODY.F
 - changes to MOTION.F, a simple sprite motion control wordset (not automotion)
 - Uploaded DEMO/ELIZA/ELIZA2.FTH a preliminary verion of the classic lisp psychotherapist (bugs)
 - fixed bug in POS$ (STRINGS.FTH)
+
+### Sept 1, 2018 V2.0.22
+- V2.0.22 now can print text and numbers to VDP screen from any task
+- Changes to Video i/o primitives so they are multi-tasking friendly. ASM code now uses USER variable indexed addressing so that variables VROW VCOL C/L and OUT are unique for every task.
+- HOLD reverted back to Forth version for multi-tasking
+- Added TPAD USER VARIABLE which hold the offset of PAD from HERE. By setting TPAD to bigger number for other tasks, each task gets a pad and HOLD buffer in unallocated dictionary memory.
+
