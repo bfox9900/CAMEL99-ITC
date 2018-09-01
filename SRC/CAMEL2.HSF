@@ -43,7 +43,13 @@
 \              - Re-introduced >VPOS Code word to calculate V-addr from col,row
 \              - Fixed 2@ and @! to be compliant with ANS Forth
 \                This meant numerous system tweaks to make everything work
-\              - Removed FUSE and SPLIT to DIRSPRIT.FTH where they belong
+\ Aug 22, 2018
+\              - Added MOVE to kernel for ANS compliance with PLACE
+\              - EMIT reads VROW VCOL user variables. Now task-friendly. 
+\ Sept 1, 2018
+\              - changed (CR) (EMIT) C/L@ to use proper USER var addressess
+\              - added TPAD user variable to provide offsets for PAD in tasks
+\              - Changed HOLD back to Forth for proper multi-task no. printing
 
 \ Requirements: XFC99.EXE, Cross-Compiler/Assembler  by Brian Fox
 
@@ -65,6 +71,7 @@
 \ ========================================================================
 \ C A M E L   F O R T H   H E A D E R    S T R U C T U R E
 \ by Brad Rodriguez  Ph.D.
+
 
 \     D7           D0
 \     +---------------+
@@ -346,7 +353,7 @@ TARGET-COMPILING
 \      56 USER: ---  DSRNAM       \ O/S use *PROTECTED IN ROOT TASK, Free for other tasks
 \      58 USER: ---               \ O/S use *PROTECTED IN ROOT TASK, Free for other tasks
 
-\      5A USER:                   \ Free user variable
+       5A USER: TPAD              \ offset used so each task has a separate PAD
 \      5C USER:                   \ Free user variable
 \      5E USER:                   \ Free user variable
 \      60 USER:                   \ Free user variable
@@ -357,7 +364,7 @@ TARGET-COMPILING
 \      6A USER:                   \ Free user variable
 \      6C USER:                   \ Free user variable
 \      6E USER:                   \ Free user variable
-\ ** total of 39 user variables are available in workspace 8300. 
+\ ** total of 39 user variables are available in workspace 8300.
 
 \ Other HIgh speed RAM locations
 \ *these constants define memory locations so they are actually VARIABLES :-)
@@ -382,7 +389,8 @@ variable: BOOT                    \ ADDRESS OF THE FIRST Forth word to run
 variable: VMODE                   \ keeps track of the video mode we are in
 variable: VTOP                    \ top of video screen memory. defaults to 0
 variable: L0    3 TCELLS TALLOT   \ LEAVE stack used to resolve nested LEAVEs (4 LEAVEs max)
-variable: ^PAB
+variable: ^PAB                    \ pointer to current open file PAB
+variable: LINES                   \ track lines compiled in a file
 
 ?stk
 \ ==============================================
@@ -400,7 +408,7 @@ CODE: HERE   ( -- addr) TOS PUSH,  DP @@ TOS MOV,  NEXT, END-CODE
 : ALIGN     ( -- )     HERE ALIGNED DP ! ;
 : ,         ( n --)    HERE !   2 ALLOT ;
 : C,        ( c --)    HERE C!  1 ALLOT ;
-: PAD       ( -- addr) HERE 26 + ;
+: PAD       ( -- addr) HERE TPAD @ + ;   \ MULT-TASK friendly using TPAD
 
 \ : >BODY     2+ ;            \ removed from kernel to save 18 bytes. Loads at START up
 \ : COMPILE,  ( n --)  ,  ;   \ for ITC Forth this is the same as , (comma compiler)
@@ -467,8 +475,6 @@ CODE: HERE   ( -- addr) TOS PUSH,  DP @@ TOS MOV,  NEXT, END-CODE
 
 [then]
 
-\ : 2OVER  ( d1 d2 - d1 d2 d1)  2>R 2DUP  2R> 2SWAP ; \ 1.5x bigger in ASSEMBLER
-\ : 2OVER% ( d1 d2 - d1 d2 d1)  3 PICK 3 PICK ; \ this is much faster in 9900 code
 \ ========================================================================
 \ C O M P A R I S O N   O P E R A T O R S
 
@@ -520,19 +526,17 @@ TARGET-COMPILING
 \ S T R I N G   T H I N G S
 
 TARGET-COMPILING
-
-\ CAMEL Forth calls this ">COUNTED"
-
-: MOVE    ( src dst n -- )
+: MOVE    ( src dst n -- )  \ determines if we are over-writing memory
           >R  2DUP SWAP DUP R@ +  \ -- src dst dst src src+n
           WITHIN
           IF    R> CMOVE>         \ src <= dst < src+n
-          ELSE  R> CMOVE  
-          THEN ;  
+          ELSE  R> CMOVE
+          THEN ;
 
+\ CAMEL Forth calls this ">COUNTED"
 : PLACE       ( src n dst -- ) 2DUP C! 1+ SWAP MOVE ;
 
-\ After seeing the VFX intel code for /STRING i realized it's WAY better 
+\ After seeing the VFX intel code for /STRING i realized it's WAY better
 \ as a code word.  6 bytes vs 10 bytes and 10X faster
 \ Speeds up WORD and PARSE for faster compiling
 \ : /STRING   ( c-addr1 u1 n -- c-addr2 u2 ) ROT OVER + -ROT - ; \ ~ 290uS
@@ -545,7 +549,7 @@ CODE: /STRING ( c-addr1 u1 n -- c-addr2 u2 ) \ ~20uS!!       Clks
               END-CODE
 
 \ compile a stack string into memory with the count (Gforth)
-: S,         ( c-addr u -- ) HERE OVER 1+  ALLOT PLACE ALIGN ;
+: S,         ( c-addr u -- ) HERE OVER 1+ ALLOT PLACE  ALIGN ;
 
 \ ========================================================================
 \ H E A D E R   N A V I G A T I O N
@@ -653,7 +657,7 @@ TARGET-COMPILING
 [cc] HEX [tc]
 
 \ : GETXY   ( -- col row ) VROW 2@  ;   \ returns column & row
-: AT-XY   ( col row -- ) VROW 2! ;    \ VCOL,VROW are adjacent in memory so we can 2!
+: AT-XY   ( col row -- ) VROW 2! ;      \ VCOL,VROW are adjacent in memory so we can 2!
 : VPOS    ( -- vaddr)    VROW 2@ >VPOS ;
 : CLRLN   ( col row -- ) 2DUP AT-XY >VPOS C/L@ BL VFILL ;  \ clear line on screen
 
@@ -665,14 +669,15 @@ TARGET-COMPILING
 : SCROLL   ( -- )
             C/L@ 2* DUP                    \ calc. char per scroll and duplicate
             MALLOC ( -- c/s heap)          \ allocate chars per scroll in heap
+
             C/SCR @     C/L@  VTOP @ +     \ loops from 2nd line, to last line
             DO
                PAUSE
                I  ( -- c/s heap scr-addr)
-               OVER 2DUP   C/L@ 2* VREAD   \ read chars/scroll to heap
-               SWAP C/L@ - C/L@ 2* VWRITE  \ write HEAP to line above
-            C/L@ 2* +LOOP                  \ advance loop by chars per scroll
-
+               OVER 2DUP     C/L@ 2* VREAD   \ read chars/scroll to heap
+               SWAP C/L@ -   C/L@ 2* VWRITE  \ write HEAP to line above
+               C/L@ 2*
+            +LOOP                          \ advance loop by chars per scroll
            0 17 CLRLN                      \ clear last line
            DROP                            \ drop heap pointer
            MFREE ;                         \ de-allocate heap memory
@@ -775,23 +780,16 @@ TARGET-COMPILING
 \ AND we save 6 bytes using ASM
 
 \ decr. HOLD pointer HP, Store char at the address contained in HP
-\ : HOLD   ( char -- )  -1 HP +!  HP @  C! ;
- CODE: HOLD  ( char -- )  \ 2 BYTES bigger, 4X faster
-            HP @@   DEC,
-            HP @@ W MOV,
-            TOS     SWPB,
-            TOS  *W MOVB,
-            TOS     POP,
-            NEXT,
-            END-CODE
+: HOLD   ( char -- )  
+         -1 HP +!  HP @  C! ;
 
 \ : >DIGIT ( n -- c) DUP 9 > 7 AND + 30 + ; \ convert n to ascii digit c
- CODE: >DIGIT  ( n -- c)        \ ASM is 8 bytes smaller 4X faster
+ CODE: >DIGIT  ( n -- c)        \ ASM is 9 bytes smaller 4X faster
             TOS 9 CMPI,
-            HI IF,              \ if n<9
+            HI IF,              \ if n>9
                TOS 7 ADDI,      \ number is not base 10, add 7
             ENDIF,
-            TOS  TCHAR 0 ADDI,  \ add ASCII 0 to create char value
+            TOS  TCHAR 0 ADDI,  \ add ASCII 0 to TOS create char value
             NEXT,
             END-CODE
 
@@ -846,9 +844,9 @@ TARGET-COMPILING
 
 : EVALUATE     ( c-addr u -- j*x)          \ interpret a stack string
                SOURCE-ID ON                \ ANS standard says SOURCE-ID = true
-               SOURCE >R >R  >IN @ >R        \ save the source & >IN on the return stack
+               SOURCE >R >R  >IN @ >R      \ save the source & >IN on the return stack
                INTERPRET                   \ interpret the new string
-               R> >IN !  R> R> 'SOURCE 2!    \ restore source & >IN
+               R> >IN !  R> R> 'SOURCE 2!  \ restore source & >IN
                SOURCE-ID OFF ;
 
 \ ========================================================================
@@ -857,19 +855,8 @@ TARGET-COMPILING
 [CC] include cc9900\cclib\ticktock.hsf     \ load the hardware milli-second timer
 
 TARGET-COMPILING
--1 [IF]
 
-: SND!       ( c -- ) 8400 C!  ;         \ write a byte to address of TMS9919 chip
-
-[ELSE]
-
-CODE: SND!   ( c -- )                     \ 75% faster, 2 bytes BIGGER
-             TOS SWPB,
-             TOS 8400 @@ MOVB,
-             TOS POP,
-             NEXT,
-             END-CODE
-[THEN]
+: SND!       ( c -- ) 8400 C!  ;  \ write a byte to address of TMS9919 chip
 
 : BEEP       ( -- )
              80 SND! 5 SND!                 \ precalulated values for OSC1 1328Hz
@@ -879,11 +866,10 @@ CODE: SND!   ( c -- )                     \ 75% faster, 2 bytes BIGGER
 
 \ We use the HONK sound for ABORT like TI-BASIC does on errors
 : HONK       ( -- )
-             81 SND! 20 SND!                \ precalulated values for OSC1 218Hz
+             81 SND! 20 SND!                \ precalculated values for OSC1 218Hz
              90 SND!                        \ turn on OSC1 at 0 dB level
              AA MS                          \ Delay ~ 170 mS
              9F SND! ;                      \ turn off OSC1
-
 
 \ ========================================================================
 \ E R R O R   H A N D L I N G
@@ -894,7 +880,6 @@ CODE: SND!   ( c -- )                     \ 75% faster, 2 bytes BIGGER
               SOURCE-ID OFF
               CR QUIT ;
 
-  variable: lines                          \ track lines compiled in a file
 
 : ?ABORT  ( f c-addr u --)
            ROT IF  CR CR T." * " TYPE  T."  ? "
@@ -1126,6 +1111,7 @@ TARGET-COMPILING
               ORGDP @ DP !
               ORGLAST @ LATEST !
               2000 H !                       \ inits HEAP to >2000
+              26 TPAD !                      \ PAD=HERE+>26, room for HOLD buffer
               TMR!                           \ set 9901 timer to count continously
               2 KUNIT# C!                    \ keyboard #2 is the BASIC keyboard
               8370 @ ^PAB !                  \ GET end of VDP mem from O/S, set PAB pointer
@@ -1136,7 +1122,7 @@ TARGET-COMPILING
 
             \ VDP start screen
               TEXT  BEEP
-              TS" CAMEL99 2.0.21" TYPE
+              TS" CAMEL99 2.0.22" TYPE
               TS" DSK1.START" INCLUDED       \ load the start file
               RP0 RP!                        \ reset return stack pointer
               SP0 SP!                        \ reset the data stack pointer
