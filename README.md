@@ -1,7 +1,7 @@
 # CAMEL99 for TI-99 V2.0.22
 
 ### ABOUT CAMEL99 V2
---------------------
+---------------------
 CAMEL99 Forth has been built as an educational tool for those who are interested in how you could cross-compile Forth to a different CPU using an existing Forth system. Rather than starting from scratch it uses CAMEL Forth by Dr. Brad Rodriguez for the hi-level Forth code. 
 This has been "tweeked" and dare I say improved a little to better fit the very slow TI-99 computer. (More things written in Assembler was the answer)
 
@@ -101,7 +101,7 @@ It now loads in the DSK.START file as a library file: TOBODY.F
 - Re-wrote looping primitives in Structured Assembler. Found some wasted instructions and speedups.
 - Found size savings in FILESYSD.F
 - Kernel now 40 bytes smaller.
-- Change to EOF to now take a file handle. 
+- Change to EOF to now take a file handle.
 - Re-wrote demo programs
 - Fixed bug in file handle server and RELEASE handle routine
 - New manual version 0.99 needs final edit review.
