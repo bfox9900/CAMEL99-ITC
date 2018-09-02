@@ -735,11 +735,12 @@ TARGET-COMPILING
 
 : KEY        ( -- char)                      \ simple non-repeating KEY
               BEGIN
-                PAUSE                        \ multi-tasking switch
                 CURS@ VPUT                   \ show the flashing cursor
-                KEY?
+                PAUSE                        \ multi-tasking switch
+                KEY?                         \ 1mS run-time. Very slow
               UNTIL                          \ wait for key press
               KVAL C@                        \ fetch char from KSCAN buffer
+              PAUSE                          \ reduce KEY overhead
               BL VPUT ;                      \ erase cursor character
 
 : BS  ( n --)  VCOL @ SWAP -  0 MAX
