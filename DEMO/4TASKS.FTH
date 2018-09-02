@@ -22,19 +22,24 @@ DECIMAL
 : COUNTER1
             DECIMAL
             132 TPAD !
-            BEGIN
-              1000 0
-              ?DO
-                 0 0 AT-XY  I 5 U.R
-              LOOP
-            AGAIN ;
+            65000 0
+            ?DO
+              0 0 AT-XY
+              PAUSE
+              I 6 U.R
+            LOOP
+            MYSELF SLEEP
+            PAUSE  ;
+            
 HEX
 : COUNTER2
             164 TPAD !
             HEX
             FFFF 0 SWAP
-            ?DO                                                                           
-              9 0 AT-XY  I 5 U.R
+            ?DO
+              9 0 AT-XY  
+              PAUSE
+              I 5 U.R
            -1 +LOOP
             MYSELF SLEEP
             PAUSE  ;
@@ -46,16 +51,19 @@ DECIMAL
             BEGIN
               256 0
               ?DO
-                 20 0 AT-XY  I 9 U.R
+                 20 0 AT-XY PAUSE 
+                 I 9 U.R
               LOOP
             AGAIN ;
-
 : PULSER
             220 TPAD !
             DECIMAL
             BEGIN
-              30 0 AT-XY  .PULSE
-              250 MS
+              30 0 AT-XY
+              PAUSE .PULSE
+              100 MS
+              [ HEX ] 83D6 OFF  \ kill screen time-out
+              [ DECIMAL ]
             AGAIN ;
 
 ' COUNTER1 TASK1 ASSIGN
@@ -63,6 +71,19 @@ DECIMAL
 ' COUNTER3 TASK3 ASSIGN
 ' PULSER TASK4 ASSIGN
 
-0  C/L@ BL VFILL \ erase top line of screen
-C/L @ VTOP !     \ set top of screen to 2nd line
+: RUN
+     0  C/L@ BL VFILL \ erase top line of screen
+     C/L @ VTOP !     \ set top of screen to 2nd line
+     PAGE 
+     CR ." 3 counter tasks in BASE 10,16 and 2"
+     CR
+     CR   ." 1 pulse task, shows round robin"
+     CR   ." time in micro-seconds"
+     CR
+     CR   ." Console is active ie: 5 tasks live"
+     MULTI
+     TASK4 WAKE
+     TASK1 WAKE
+     TASK2 WAKE
+     TASK3 WAKE ;  
 
