@@ -167,8 +167,6 @@ CREATE {NIL}   0 ,                      \ nil list
 : {NTH}    ( list n -- $addr )  \ the nth string in a list
              0  ?DO  {NEXT}  LOOP ;
 
-: {PRINT} ( link -- ) {$} COUNT CR TYPE ;
-
 : {LEN}   ( list -- n )  \ count the no. of items in a list
           0 >R
           BEGIN
@@ -625,7 +623,7 @@ VARIABLE ROGERIAN        \ set if Rogerian answer is needed
 
 : /CONJUGATE  ( addr len -- )
          TRIM
-         BEGIN
+         BEGIN                                                                    
            DUP 0> ( len>0 ?)
          WHILE
             BL /WORD 2SWAP SPUSH            \ cut each word->string stack
