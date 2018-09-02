@@ -31,26 +31,29 @@ CODE: TMR@   ( -- n)         \ read the TMS9901 timer
              NEXT,
              END-CODE
 
-CODE: |-| ( x y -- x n )    \ : |-|   OVER - ABS ;
+TARGET-COMPILING
+[CC] DECIMAL [TC]
+
+ CODE: |-| ( x y -- x n )    \ : |-|   OVER - ABS ;
             *SP TOS SUB,
              TOS    ABS,    \ get ABS of subtraction
              NEXT,
              END-CODE
 
-TARGET-COMPILING
-[CC] DECIMAL [TC]
+\ Because JIFFS are 1/60 seconds, there is a lot of time while PAUSE
+\ switches to all the tasks.
+\ JIFFS give finest resolution for delays
+: JIFFS    ( n -- )
+           0 ?DO
+                 TMR@
+                 BEGIN
+                   PAUSE TMR@ |-| 650 >
+                 UNTIL
+                 DROP
+           LOOP ;
 
-\ 1 JIFF = 1/60 second. (16.6666 mS)
-\ 650 is tested number using Classic99 emulator.
-\ Real IRON might need tweeking
-: JIFF     ( -- )   TMR@  BEGIN   PAUSE TMR@ |-| 650 > UNTIL  DROP ;
-
-\ Because JIFFS are 1/60 seconds, there is a lot of time while PAUSE 
-\ switches to all the tasks. So JIFFS are the preferred way to delay
-\ in a multi-tasking program.
-: JIFFS    ( n -- ) 0 ?DO JIFF LOOP ;
-
-: MS  ( n -- )  4 RSHIFT  JIFFS ;  \ MS/16= JIFFS
+\ MS resolution limited to 1/60 second and minimum is 1/60 sec.
+: MS  ( n -- )  4 RSHIFT  PAUSE JIFFS ;  \ MS/16 = JIFFS
 
 
 [CC] HEX [TC]
