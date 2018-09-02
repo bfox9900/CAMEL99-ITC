@@ -294,7 +294,7 @@ CODE: @      ( a -- w )
               END-CODE
 
 \ Aug 4 2018: fixed order of data to be ANS compliant
-CODE: 2!     ( d addr -- ) 
+CODE: 2!     ( d addr -- )
              *SP+ *TOS  MOV,    \ the top # of D is stored at the lower adrs
              *SP+ 2 (TOS) MOV,  \ next # stored 1 cell higher (addr+2)
               TOS POP,
@@ -408,7 +408,7 @@ CODE: ?DUP    ( x -- 0 | x x)       \ ?DUP interleaved with DUP to save space
 +CODE: DUP    ( w -- w w )          \ create a Forth Header for DUP
 @@1:          TOS PUSH,
               NEXT,
-              END-CODE  
+              END-CODE
 
 CODE: SWAP    ( w1 w2 -- w2 w1 )
               TOS   W MOV,          \ 14
@@ -456,7 +456,7 @@ CODE: 2DROP   ( n n -- )
  CODE: 2DUP   ( n1 n2 -- n1 n2 n1 n2 )
              *SP W MOV,            \ 18 copy n1
               TOS PUSH,            \ 28 copy n2 onto stack
-              W PUSH,              \ 28 push onto Stack     
+              W PUSH,              \ 28 push onto Stack
               NEXT,                \
               END-CODE             \ 74,  5 instructions, 10 bytes
 
@@ -709,7 +709,7 @@ CODE: 0=     ( n -- ?)
              *SP+ TOS CMP,
               @@9 JNE,
               @@8 JMP,
-[THEN]              
+[THEN]
               END-CODE
 
 
@@ -1070,7 +1070,6 @@ CODE: V@     ( VDPadr -- n)             \ video fetch 16bit int
               TOS R0 MOV,               \ VDP address into R0
               RMODE @@ BL,              \ set address in read mode
               R3 VDPRD LI,              \ put the VDP read port address in R3. 12.9% faster
-\              TOS CLR,
              *R3  TOS MOVB,             \ READ char from VDP RAM into TOS
               TOS SWPB,                 \ move byte to other side
              *R3  TOS MOVB,             \ READ 2nd char from VDP RAM into TOS
@@ -1302,9 +1301,6 @@ CODE: BYE    ( -- )
             0000 @@ BLWP,        \ ROM reset vector is at 0000
             END-CODE
 
-\ CODE: LIMI0   0 LIMI, NEXT, END-CODE  \ disable interrupts
-\ CODE: LIMI2   2 LIMI, NEXT, END-CODE  \ enable interrupts
-
 \ ===================================================================
 cr .( CAMEL99 custom primitives)
 
@@ -1313,12 +1309,7 @@ CODE: PAUSE   ( -- )             \ MULTI-TASKER switcher needed by I/O words in 
             NEXT2 CFA!           \ patch CODE address with NEXT (replaced for multi-tasking)
             END-CODE
 
-\
 \ BLWP used for DSR Support
-\ Usage:
-\ CREATE WKSP2    16 CELLS ALLOT ( this is for registers)
-\ CREATE MYVCTR   WKSP2 ,  ' PROGRAM >BODY ,
-\ MYWKSP BLWP
 CODE: BLWP  ( vector -- )  \ "BULLWHIP" takes a 2VARIABLE as input arg.
            *TOS BLWP,      \ BLWP loads the workspace and program counter into CPU
             TOS POP,       \ refill Forth TOS when we get back from our journey
