@@ -1047,14 +1047,14 @@ CR ." V D P  C H I P  I N T E R F A C E"
 \ in Forth and still get excellent performance.
 
 \ factored sub-routines. Set up VDP address for write or read modes
-l: WMODE      R0 4000  ORI,       \ set control bits to write mode (01)
-l: RMODE      W  8C02  LI,        \ use byte reversed address, needs 1 less SWPB
-              0 LIMI,
+l: WMODE      R0 4000  ORI,       \ set control bits to write mode
+l: RMODE      W  8C02  LI,        \ VDP port address into working register
+              0 LIMI,             \ enter a critical section
               R0 SWPB,            \ R0= VDP-adr we are using. Set up 1st byte to send
               R0 *W MOVB,         \ send low byte of vdp ram write address
               R0 SWPB,
               R0 *W MOVB,         \ send high byte of vdp ram write address
-              2 LIMI,
+              2 LIMI,             \ leave the critical section
               RT,
 
 \ VSBR Forth style, on the stack
@@ -1259,12 +1259,12 @@ CR .( KEY?  and  ?TERMINAL)
 CODE: KEY? ( -- ?)  \ *WARNING* it takes 1.15 mS for KEY? scan to run
              TOS PUSH,
              TOS CLR,            \ TOS will be our true/false flag
-             0 LIMI,
              83E0 LWPI,          \ switch to GPL workspace
+             R11 RPUSH,
              000E @@ BL,         \ call ROM keyboard scanning routine
+             R11 RPOP,
              8300 LWPI,          \ return to Forth's workspace , interrupts are restored
              837C @@ TOS MOVB,   \ read GPL status byte (=2000 if key pressed)
-             2 LIMI,
              NEXT,               \ return
              END-CODE
 
