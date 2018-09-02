@@ -20,8 +20,8 @@ DECIMAL
 176 CONSTANT FOOD
 
 \ define chars
- REDBRICK  BRICK CHARDEF   BRICK  SET#  7 15 COLOR
- PLANT    FOOD CHARDEF   FOOD SET# 13 1 COLOR
+ REDBRICK  BRICK CHARDEF   BRICK SET#  7 15 COLOR
+ PLANT     FOOD  CHARDEF   FOOD  SET# 13  1 COLOR
 
 : CLIP       ROT MIN MAX ;
 
@@ -56,26 +56,32 @@ CREATE MY-XY  RNDY , RNDX ,    \ independant cursor for alpha guy
 : NON-0        ( -- n) BEGIN RNDV DUP 0 <> UNTIL ;
 
 : NEW-VECTORS  ( -- X Y)      \ we need to prevent a (0,0) vector condition
-               RNDV DUP 0=    \ If 1st # is 0
-               IF    NON-0    \ wait for a non-zero 2nd #
-               ELSE  RNDV
-               THEN ;
+               RNDV RNDV ;
 
 : CHANGE-DIR   ( -- )  NEW-VECTORS VECTOR 2! ;
 : VECTOR@      ( --  dx dy)  VECTOR 2@ ;
 : VECT+        ( x y dx dy -- x' y' ) ROT +  -ROT + SWAP ;
 
 \ direct memory screen control
-: >VPOS        ( Y X -- vaddr)  C/L@ * + ;
+\ : >VPOS        ( Y X -- vaddr)  C/L@ * + ; \ moved to kernel
 : GETXY        ( -- x y) MY-XY 2@ ;
 : PUT-CHAR     ( c -- ) GETXY >VPOS VC! ;
 : ERASE-MAN    ( -- )   BL PUT-CHAR ;
-: SHOW-MAN     ( -- )   ALPHA-GUY PUT-CHAR ;
-
 : READ-CHAR    ( Y X -- c) >VPOS VC@ ;  \ read char without moving cursor
+
+: FIND-SPACE  ( -- Y X )
+               0 0 CLRLN ." Placing Alpha-guy..."
+               BEGIN
+                  RNDY RNDX 2DUP >VPOS VC@ BL <>
+               WHILE
+                  2DROP
+               REPEAT ;
+
 : NEXT-POS     ( -- Y X ) GETXY VECTOR@ VECT+  ;
 
-: MOVE-MAN     ( -- ) ERASE-MAN   NEXT-POS MY-XY 2!  SHOW-MAN ;
+: MOVE-MAN     ( -- ) 
+               ERASE-MAN  NEXT-POS MY-XY 2!
+               ALPHA-GUY PUT-CHAR ;
 
 DECIMAL
 VARIABLE TRYS
@@ -90,16 +96,16 @@ VARIABLE SPEED
      SPACE ." Trys " TRYS @ 2 .R
      SPACE ." Energy " SPEED @ 150 - ABS 3 .R ;
 
-: SAD         ALPHA-GUY  SADFACE   OVER CHARDEF    SET#  9 1 COLOR  ;
-: HAPPY       ALPHA-GUY  HAPPYFACE OVER CHARDEF    SET# 12 1 COLOR  ;
+: SAD         ALPHA-GUY  SADFACE   OVER CHARDEF    SET#  9 1 COLOR ;
+: HAPPY       ALPHA-GUY  HAPPYFACE OVER CHARDEF    SET# 12 1 COLOR ;
 
 : .PLANT      176 RNDY RNDX >VPOS  VC! ;
 
-: PLANTS      RNDY 0 DO  .PLANT LOOP ;
+: PLANTS      40 RND 10 +   0 DO  .PLANT LOOP ;
 
-: SPEED!     ( n -- ) 5 150 CLIP  SPEED ! ;
-: SPEED++    ( -- ) SPEED @ 35 - SPEED! ;   \ speed is inverse
-: SPEED--    ( -- ) SPEED @ 1+  SPEED! ;
+: SPEED!     ( n -- ) 5 150 CLIP SPEED ! ;
+: SPEED++    ( -- ) SPEED @ 10 - SPEED! ;   \ speed is inverse
+: SPEED--    ( -- ) SPEED @ 1+   SPEED! ;
 
 : EAT        ( -- )
              BL NEXT-POS >VPOS VC!
@@ -117,7 +123,7 @@ VARIABLE SPEED
                .BRAIN 50 MS
                CLEAR-AHEAD?
             UNTIL
-            HAPPY   ;
+            HAPPY ;
 
 DECIMAL
 : RUN      ( -- )
@@ -126,14 +132,16 @@ DECIMAL
            PAGE
            16 SCREEN
            .BORDER  .WALLS  PLANTS
-           HAPPY SHOW-MAN
+           HAPPY 
+           FIND-SPACE MY-XY 2!
+           ALPHA-GUY PUT-CHAR
            CHANGE-DIR
            150 SPEED!     \ 150 is slow, longest delay
            BEGIN
               FOOD? IF BEEP EAT THEN
               CLEAR-AHEAD?
-              IF   MOVE-MAN   \ if true
-              ELSE ALPHA-THINK             \ otherwise
+              IF   MOVE-MAN     \ if true
+              ELSE ALPHA-THINK  \ otherwise
               THEN SPEED @ MS
               KEY?
            UNTIL
