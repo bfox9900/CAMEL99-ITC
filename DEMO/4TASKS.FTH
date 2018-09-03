@@ -51,7 +51,7 @@ DECIMAL
             BEGIN
               256 0
               ?DO
-                 20 0 AT-XY PAUSE 
+                 20 0 AT-XY PAUSE
                  I 9 U.R
               LOOP
             AGAIN ;
@@ -61,7 +61,7 @@ DECIMAL
             BEGIN
               30 0 AT-XY
               PAUSE .PULSE
-              100 MS
+              500 MS
               [ HEX ] 83D6 OFF  \ kill screen time-out
               [ DECIMAL ]
             AGAIN ;
@@ -72,7 +72,7 @@ DECIMAL
 ' PULSER TASK4 ASSIGN
 
 : RUN
-     0  C/L@ BL VFILL \ erase top line of screen
+     0  C/L@ BL VFILL \ erase top line of screen                    
      C/L @ VTOP !     \ set top of screen to 2nd line
      PAGE 
      CR ." 3 counter tasks in BASE 10,16 and 2"

@@ -64,10 +64,10 @@ CREATE MY-XY  RNDY , RNDX ,    \ independant cursor for alpha guy
 
 \ direct memory screen control
 \ : >VPOS        ( Y X -- vaddr)  C/L@ * + ; \ moved to kernel
-: GETXY        ( -- x y) MY-XY 2@ ;
-: PUT-CHAR     ( c -- ) GETXY >VPOS VC! ;
-: ERASE-MAN    ( -- )   BL PUT-CHAR ;
-: READ-CHAR    ( Y X -- c) >VPOS VC@ ;  \ read char without moving cursor
+: GETXY        ( -- y x) MY-XY 2@ ;
+: PUT-CHAR     ( c  -- ) GETXY >VPOS VC! ;
+: ERASE-MAN    ( -- )   BL GETXY PUT-CHAR ;
+: READ-CHAR    ( y x -- c) >VPOS VC@ ;  \ read char without moving cursor
 
 : FIND-SPACE  ( -- Y X )
                0 0 CLRLN ." Placing Alpha-guy..."
@@ -79,9 +79,11 @@ CREATE MY-XY  RNDY , RNDX ,    \ independant cursor for alpha guy
 
 : NEXT-POS     ( -- Y X ) GETXY VECTOR@ VECT+  ;
 
-: MOVE-MAN     ( -- ) 
-               ERASE-MAN  NEXT-POS MY-XY 2!
-               ALPHA-GUY PUT-CHAR ;
+: MOVE-MAN     ( -- )
+               GETXY                     \ current position
+               NEXT-POS MY-XY 2!         \ store the next pos.
+               ALPHA-GUY PUT-CHAR
+               BL -ROT >VPOS VC! ;       \ ERASE where he was
 
 DECIMAL
 VARIABLE TRYS
@@ -94,7 +96,7 @@ VARIABLE SPEED
      0 0 CLRLN
      ." Vector"  VECTOR 2@  2 .R ." ," 2 .R
      SPACE ." Trys " TRYS @ 2 .R
-     SPACE ." Energy " SPEED @ 150 - ABS 3 .R ;
+     SPACE ." Energy" SPEED @ 150 - ABS 3 .R ;
 
 : SAD         ALPHA-GUY  SADFACE   OVER CHARDEF    SET#  9 1 COLOR ;
 : HAPPY       ALPHA-GUY  HAPPYFACE OVER CHARDEF    SET# 12 1 COLOR ;
