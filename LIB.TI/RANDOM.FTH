@@ -8,16 +8,7 @@
 \ With SEED=$1234, RNDW does not repeat for ~20,000 numbers
 
 HEX
-83C0 CONSTANT SEED   \ RAM where TI has a number incrementing in main menu
-
-\ CODE SRC    ( n bits -- n')
-\            C004 ,  \  TOS R0  MOV,
-\            C136 ,  \ *SP+ TOS MOV,
-\            0B04 ,  \  TOS R0  SRC,
-\            NEXT,
-\            ENDCODE
-
-\ : RNDW   ( -- n) SEED @ 6FE5 * 7AB9 +  5 SRC DUP SEED ! ; \ 28 bytes + SRC
+83C0 CONSTANT SEED   \ TI incrementing number in main menu
 
  CODE RNDW    ( -- n)
              0646 ,        \ TOS PUSH,
