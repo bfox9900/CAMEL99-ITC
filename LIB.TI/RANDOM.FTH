@@ -11,14 +11,13 @@ HEX
 83C0 CONSTANT SEED   \ TI incrementing number in main menu
 
  CODE RNDW    ( -- n)
-             0646 ,        \ TOS PUSH,
-             C584 ,
-             C0E0 , 83C0 , \ SEED @@ R3 MOV,
+             0646 , C584 , \ TOS PUSH,
+             C0E0 , SEED , \ SEED @@ R3 MOV,
              0202 , 6FE5 , \ R2 6FE5  LI,
              38C2 ,        \ R2  R3   MPY,
              0224 , 7AB9 , \ TOS 7AB9 AI,
              0B54 ,        \ TOS 5 SRC,
-             C804 , 83C0 , \ TOS SEED @@ MOV,
+             C804 , SEED , \ TOS SEED @@ MOV,
              NEXT,
              ENDCODE   \ 24 bytes
 
