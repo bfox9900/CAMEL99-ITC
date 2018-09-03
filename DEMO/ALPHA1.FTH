@@ -25,15 +25,16 @@ DECIMAL
 
 : CLIP       ROT MIN MAX ;
 
-: RNDX   ( -- x)  23 RND 2 22 CLIP ;
-: RNDY   ( -- y)  33 RND 2 30 CLIP ;
+: RNDX   ( -- x)  24 RND  2 22 CLIP ;
+: RNDY   ( -- y)  32 RND  2 30 CLIP ;
 
 : .BORDER   ( -- )
           \ col row
              0   1 BRICK 32 HCHAR
              0  23 BRICK 32 HCHAR
              0   1 BRICK 23 VCHAR
-            31   1 BRICK 23 VCHAR ;
+            31   1 BRICK 23 VCHAR
+            0 0 CLRLN ;
 
 : .WALLS
             RNDY  RNDX BRICK 10 VCHAR
@@ -52,20 +53,13 @@ CREATE VECTOR 0 , 0 ,
 CREATE MY-XY  RNDY , RNDX ,    \ independant cursor for alpha guy
 
 : RNDV   ( -- -1 0 1 )  3 RND 1- ;
+: CHANGE-DIR   ( -- )  RNDV RNDV VECTOR 2! ;
 
-: NON-0        ( -- n) BEGIN RNDV DUP 0 <> UNTIL ;
-
-: NEW-VECTORS  ( -- X Y)      \ we need to prevent a (0,0) vector condition
-               RNDV RNDV ;
-
-: CHANGE-DIR   ( -- )  NEW-VECTORS VECTOR 2! ;
-: VECTOR@      ( --  dx dy)  VECTOR 2@ ;
 : VECT+        ( x y dx dy -- x' y' ) ROT +  -ROT + SWAP ;
 
 \ direct memory screen control
-\ : >VPOS        ( Y X -- vaddr)  C/L@ * + ; \ moved to kernel
 : GETXY        ( -- y x) MY-XY 2@ ;
-: PUT-CHAR     ( c  -- ) GETXY >VPOS VC! ;
+: PUT-CHAR     ( c  -- ) MY-XY 2@ >VPOS VC! ;
 : ERASE-MAN    ( -- )   BL GETXY PUT-CHAR ;
 : READ-CHAR    ( y x -- c) >VPOS VC@ ;  \ read char without moving cursor
 
@@ -77,10 +71,10 @@ CREATE MY-XY  RNDY , RNDX ,    \ independant cursor for alpha guy
                   2DROP
                REPEAT ;
 
-: NEXT-POS     ( -- Y X ) GETXY VECTOR@ VECT+  ;
+: NEXT-POS     ( -- Y X ) MY-XY 2@ VECTOR 2@ VECT+  ;
 
 : MOVE-MAN     ( -- )
-               GETXY                     \ current position
+               MY-XY 2@                  \ current position
                NEXT-POS MY-XY 2!         \ store the next pos.
                ALPHA-GUY PUT-CHAR
                BL -ROT >VPOS VC! ;       \ ERASE where he was
@@ -90,13 +84,13 @@ VARIABLE TRYS
 VARIABLE SPEED
 
 \ print right justified n spaces
-: .R   ( n n -- )  >R DUP ABS 0 <# #S ROT SIGN #>  R> OVER - SPACES TYPE ;
+: .R   ( n n -- )  
+       >R DUP ABS 0 <# #S ROT SIGN #>  R> OVER - SPACES TYPE ;
 
 : .BRAIN     ( -- )
-     0 0 CLRLN
-     ." Vector"  VECTOR 2@  2 .R ." ," 2 .R
-     SPACE ." Trys " TRYS @ 2 .R
-     SPACE ." Energy" SPEED @ 150 - ABS 3 .R ;
+       0 0 AT-XY  ." Vector"  VECTOR 2@  2 .R ." ," 2 .R
+       SPACE      ." Trys" TRYS @ 2 .R
+       3 SPACES   ." Energy" SPEED @ 150 - ABS 3 .R ;
 
 : SAD         ALPHA-GUY  SADFACE   OVER CHARDEF    SET#  9 1 COLOR ;
 : HAPPY       ALPHA-GUY  HAPPYFACE OVER CHARDEF    SET# 12 1 COLOR ;
@@ -105,24 +99,29 @@ VARIABLE SPEED
 
 : PLANTS      40 RND 10 +   0 DO  .PLANT LOOP ;
 
-: SPEED!     ( n -- ) 5 150 CLIP SPEED ! ;
-: SPEED++    ( -- ) SPEED @ 10 - SPEED! ;   \ speed is inverse
+: SPEED!     ( n -- ) 5 140 CLIP SPEED ! ;
+: SPEED++    ( -- ) SPEED @ 15 - SPEED! ;   \ speed is inverse
 : SPEED--    ( -- ) SPEED @ 1+   SPEED! ;
 
 : EAT        ( -- )
              BL NEXT-POS >VPOS VC!
              SPEED++ ;
 
-: CLEAR-AHEAD? ( -- ?) NEXT-POS READ-CHAR  BL = ;
+: CLEAR-AHEAD? ( -- ?) NEXT-POS READ-CHAR  BL =  ;
 : FOOD?        ( -- ?) NEXT-POS READ-CHAR  FOOD = ;
 
+
 : ALPHA-THINK  ( -- )
-            SAD SPEED--                \ change face & color while thinking
+            SAD                       \ SAD face while thinking
+            SPEED--                
             TRYS OFF                   \ reset the trys counter
             BEGIN
                1 TRYS +!               \ count the try
-               CHANGE-DIR              \ get new direction
-               .BRAIN 50 MS
+               .BRAIN 30 MS
+               FOOD?                   \ is the obstacle food?
+               IF BEEP EAT                  \ yes! eat it
+               ELSE CHANGE-DIR         \ get new direction
+               THEN
                CLEAR-AHEAD?
             UNTIL
             HAPPY ;
@@ -130,17 +129,18 @@ VARIABLE SPEED
 DECIMAL
 : RUN      ( -- )
        BEGIN
+           16 SCREEN
            PAGE 4 10 AT-XY ." Alpha Intelligence Demo" 1000 MS
            PAGE
-           16 SCREEN
-           .BORDER  .WALLS  PLANTS
+           .BORDER  .WALLS  
+           .BRAIN
+           PLANTS
            HAPPY 
            FIND-SPACE MY-XY 2!
            ALPHA-GUY PUT-CHAR
            CHANGE-DIR
            150 SPEED!     \ 150 is slow, longest delay
            BEGIN
-              FOOD? IF BEEP EAT THEN
               CLEAR-AHEAD?
               IF   MOVE-MAN     \ if true
               ELSE ALPHA-THINK  \ otherwise
