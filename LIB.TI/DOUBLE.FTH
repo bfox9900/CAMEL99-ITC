@@ -52,7 +52,6 @@ ENDCODE
 : D=   ( d d -- ?) ROT = -ROT = AND ;
 : D>S  ( d -- n)   DROP ;
 
-
 \ : 2OVER  2>R 2DUP  2R> 2SWAP ;   \ slow
 : 2OVER  ( d d2 -- d d2 d)  3 PICK 3 PICK ; \ 20% faster
 \ : 2OVER  4TH 4TH ;             \ 60% faster!
