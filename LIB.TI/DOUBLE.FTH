@@ -76,14 +76,15 @@ ENDCODE
 : DU.  ( u -- ) <#  #S  #>  TYPE SPACE ;
 
 : D.R  ( d n --)
-       >R TUCK DABS <# #S ROT SIGN #> R> OVER - SPACES TYPE #> ;
+       >R TUCK DABS <# #S ROT SIGN #> R> OVER - SPACES TYPE ;
 
-: D.   (  n -- ) 0 0  D.R ;
+: D.   (  n -- ) 0 D.R SPACE ;
 
-: ?DNUMBER ( addr len -- d ? ) 0 0 2SWAP >NUMBER NIP 0= ;
+: ?DNUMBER ( addr len -- d ? )  \ flag is true on good conversion
+           0 0 2SWAP >NUMBER NIP 0= ;
 
-DECIMAL
-: 1.    ( -- d)  S" 1" DNUMBER ;
-: PI    ( -- d)  S" 3.141262" DNUMBER ;
+\ DECIMAL
+\ : 1.    ( -- d ?)  S" 1" ?DNUMBER ;
+\ : PI    ( -- d ?)  S" 3141262" ?DNUMBER ;
 
 
