@@ -1,16 +1,11 @@
 \ byte queue using Workspace as replacment for variables
 
 \ Concept here is to replace variables that manage circular pointers
-\ with registers in a workspace. The requires less code because registers
-\ do not need to loaded if the workspace is initialized first.
-\ It also runs faster because the data is always in registers.
+\ with registers in a workspace. This should need less code because registers
+\ do not need to be loaded if the workspace is initialized first.
+\ It should also run faster because the data is always in registers.
 
-\ Interface to Forth is through R0 of the QREGS workspace.
-\ The base address of QREGS workspace is used just like a forth variable
-\ since it is just an address like a Forth variable.
-
-\ Use C! to write a byte into QREGS(R0) puts the byte in the correct side of the register.
-\ Use @ to fetch the value from QREGS(R0) to get the error flag.
+\ Interface to Forth is via the Forth TOS register with the [TOS] macro.
 
 INCLUDE DSK1.TOOLS.F
 INCLUDE DSK1.ASM9900.F
@@ -40,7 +35,6 @@ QSIZE MALLOC CONSTANT Q      \ points to Q's data
 : [TOS]  8 R13 () ;      \ macro for Forth's TOS register
 
 QREGS PROG: INIT-QREGS        \ code that initializes wksp
-      \ R0 is character input buffer
         R8 Q LI,      \ R8 holds the Q data buffer address
     	R9   CLR,     \ R9 is the input pointer
     	R10  CLR,     \ R10 is the output pointer
@@ -94,12 +88,10 @@ QREGS PROG: QSTAT ( 0 -- ?) \ true means data waiting
       ;PROG
 
 \ Hi-level Forth API to the sub-programs
-: QDATA?  ( -- ?) 0 QSTAT ;
+: QDATA? ( -- ?) 0 QSTAT ;
 
-: QC!   ( c -- ) ENQ ABORT" Q full" ;
-
-: QC@   ( -- c |-1) 0 DEQ DUP TRUE = ABORT" Q empty" ;
-
+: QC!    ( c -- ) ENQ ABORT" Q full" ;
+: QC@    ( -- c |-1) 0 DEQ DUP TRUE = ABORT" Q empty" ;
 : Q$! ( addr len -- ) BOUNDS DO  I C@ QC! LOOP ;
 
 : QEMIT  ( -- )
