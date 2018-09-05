@@ -1,26 +1,16 @@
-\ CAMEL99 psuedo random number generator (PRNG)
-\ Taken from TI Forth, converted to machine code.
+\ GForth Random number method, modified for CAMEL Forth BJF Sept 5 2018
 
-\ *TI-99 has a counter running when it starts at >83C0 (SEED)
-\  The counter stops when you enter the Editor/Assembler menu
-\  This gives you a random number in SEED every time you start.
+HEX 83C0 CONSTANT RND#  \ TI incrementing number in main menuHEX
 
-\ With SEED=$1234, RNDW does not repeat for ~20,000 numbers
+DECIMAL 28649 ( 6FE5) CONSTANT GENERATOR  ( PRIME number)
+
+: SEED      ( n -- )        RND# ! ;
+: RNDW      ( -- n )        GENERATOR  RND# @  UM* DROP 1+ DUP SEED ;
+: RND       ( n -- 0..n-1 ) RNDW UM* NIP ;
 
 HEX
-83C0 CONSTANT SEED   \ TI incrementing number in main menu
+: RANDOMIZE  ( -- )  8379 C@  83D7 C@ FUSE SEED ;
 
- CODE RNDW    ( -- n)
-             0646 , C584 , \ TOS PUSH,
-             C0E0 , SEED , \ SEED @@ R3 MOV,
-             0202 , 6FE5 , \ R2 6FE5  LI,
-             38C2 ,        \ R2  R3   MPY,
-             0224 , 7AB9 , \ TOS 7AB9 AI,
-             0B54 ,        \ TOS 5 SRC,
-             C804 , SEED , \ TOS SEED @@ MOV,
-             NEXT,
-             ENDCODE   \ 24 bytes
+ 1235 SEED  ( COMMENT OUT IF YOU WANT RND# FROM MAIN MENU)
 
-: RANDOMIZE ( n -- )   SEED ! ;
-: RND       ( n -- n') RNDW ABS SWAP MOD ;
 
