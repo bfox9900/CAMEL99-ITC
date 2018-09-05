@@ -120,7 +120,7 @@ VARIABLE SPEED
                .BRAIN 30 MS
                FOOD?                   \ is the obstacle food?
                IF BEEP EAT                  \ yes! eat it
-               ELSE CHANGE-DIR         \ get new direction
+               ELSE CHANGE-DIR         \ get new direction                   
                THEN
                CLEAR-AHEAD?
             UNTIL
