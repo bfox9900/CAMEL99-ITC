@@ -16,6 +16,7 @@ HEX
              C804 , RND# , \ TOS SEED @@ MOV,
              NEXT,
              ENDCODE   \ 24 bytes
+ 
 
 : RND    ( n -- n') RNDW ABS SWAP MOD ;
 : SEED   ( n -- )  RND# ! ;
