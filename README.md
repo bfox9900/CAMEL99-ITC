@@ -132,7 +132,7 @@ It now loads in the DSK.START file as a library file: TOBODY.F
 - HOLD reverted back to Forth version for multi-tasking
 - Added TPAD USER VARIABLE which hold the offset of PAD from HERE. By setting TPAD to bigger number for other tasks, each task gets a pad and HOLD buffer in unallocated dictionary memory.
 
-Sept 7, 2018
+### Sept 7, 2018
 - V2.0.23 uses a new filesys file call FILESYSE.HSF 
   This file replaces word NEWFILE with OPENDEV.
   OPENDEV takes the CRU address of the DISKCARD as a parameter.
