@@ -26,7 +26,7 @@ CR .( ANSFILES  for CAMEL99 V2 BJF 02APR2018)
 \ : DELETE  ( -- ior)  7 FILEOP ;
 \ : SCRATCH ( -- ior)  8 FILEOP ;
 
- INCLUDE DSK1.TOOLS.F   \ for debugging
+\ INCLUDE DSK1.TOOLS.F   \ for debugging
 
 CR .( ..)
 \ File handle server
@@ -164,6 +164,7 @@ HEX
              3 FILEOP ( -- ior)         \ call write operation
             \ (EOF) FUSE                \ fuse EOF and general file errors
 ;
+
 .( ..)
 : CREATE-FILE ( caddr len fam -- fid ior )
 \ update mode forces new file creation in TI-99 O/S
