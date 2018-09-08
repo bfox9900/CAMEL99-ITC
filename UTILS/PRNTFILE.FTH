@@ -1,4 +1,5 @@
 \ Print the contents of a DV80 file
+
 INCLUDE DSK1.TOOLS.F
 INCLUDE DSK1.ANSFILES.F
 INCLUDE DSK1.LINPUT.F
@@ -13,7 +14,7 @@ VARIABLE A$ 80 ALLOT        \ variable with 80 bytes of space
         BEGIN
           A$ #1 @ LINPUT 
           A$ COUNT CR TYPE
-	  EOF
+	  #1 @ EOF
         UNTIL
         #1 @ CLOSE-FILE ?FILERR
 ;

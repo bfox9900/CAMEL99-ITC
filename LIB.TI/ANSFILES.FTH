@@ -1,6 +1,7 @@
 CR .( ANSFILES  for CAMEL99 V2 BJF 02APR2018)
-\ Jun 21 2018, Added EOF with file handle
 
+\ Jun 21 2018, Added EOF with file handle
+\ July 3, 2018 Added update to INPUT, OUTPUT to clear the respective fields
 \ Requires CAMEL99 V2 with DISKDSR4 and FILESYSD
 
 \ A subset of ANS Forth files wordset with TI-99 specific file control words
@@ -14,7 +15,7 @@ CR .( ANSFILES  for CAMEL99 V2 BJF 02APR2018)
 \         ior -  input/output response (the error number)
 \         fam -  file access mode. see code for details
 
-\ primitive file sys. commands for reference
+\ O/S file system commands for reference (removed to save space)
 \ : OPEN    ( -- ior)  0 FILEOP ;
 \ : CLOSE   ( -- ior)  1 FILEOP ;
 \ : READ    ( -- ior)  2 FILEOP ;
@@ -25,14 +26,14 @@ CR .( ANSFILES  for CAMEL99 V2 BJF 02APR2018)
 \ : DELETE  ( -- ior)  7 FILEOP ;
 \ : SCRATCH ( -- ior)  8 FILEOP ;
 
-INCLUDE DSK1.TOOLS.F   \ for debugging
+ INCLUDE DSK1.TOOLS.F   \ for debugging
 
 CR .( ..)
 \ File handle server
 HEX
 VARIABLE #FILES
 
-8370 CONSTANT VDPEND     \ TI o/s variable, points to last usable VDP address
+8370 CONSTANT VDPEND     \ TI O/S variable, points to last usable VDP address
 
 CREATE PABS ( -- addr)   \ table for 8 potential PABs
              0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,
@@ -41,9 +42,9 @@ CREATE PABS ( -- addr)   \ table for 8 potential PABs
 : ]PTAB   ( n -- addr )  2* PABS + ;
 
 \ compute the VDP address for any PAB(n)
-: PAB[N]  ( n -- VDPadr) 120 * VDPEND @ SWAP - ;
+: PAB[n]  ( n -- VDPadr) 120 * VDPEND @ SWAP - ;
 
-: ?FILES  ( n -- )  #FILES @ > ABORT" no more handles" ;
+: ?FILES  ( n -- ) #FILES @ > ABORT" no more handles" ;
 
 : NEWHNDL ( -- hndl) \ returns first free handle
          0           \ start at handle=0
@@ -56,12 +57,12 @@ CREATE PABS ( -- addr)   \ table for 8 potential PABs
 \ the file handle selects the active PAB
 : SELECT  ( hndl -- )
            DUP ?FILES
-           ]PTAB @ DUP 0= ABORT" Cannot select"
-           ^PAB ! ;
+           ]PTAB @ DUP 0= ABORT" Cannot select hndl 0"
+           ^PAB !        \ set the pab pointer to PTAB(hndl)
+           [PAB DSRNAM] V@  DSRNAM !  ;
 
 : NEWPAB  ( hndl -- ) \ assign a new PAB and SELECT it.
-          DUP DUP PAB[N] SWAP ]PTAB !
-          SELECT ;
+          DUP DUP PAB[n] SWAP ]PTAB !  ( hndl) SELECT ;
 
 : RELEASE ( hndl -- ) ]PTAB OFF ;
 
@@ -85,10 +86,10 @@ VARIABLE FAM  \ we build the file access mode in a variable
  : SEQUENTIAL ( -- ) 11111110 FAM AND! ;
  : RELATIVE   ( -- ) 00000001 FAM OR! ;
 
- : UPDATE     ( -- ) 11111001 FAM AND! ;
- : INPUT      ( -- ) 00000100 FAM OR! ;
- : OUTPUT     ( -- ) 00000010 FAM OR! ;
- : APPEND     ( -- ) 00000110 FAM OR! ;
+ : UPDATE     ( -- )        11111001 FAM AND! ;
+ : INPUT      ( -- ) UPDATE 00000100 FAM OR! ;
+ : OUTPUT     ( -- ) UPDATE 00000010 FAM OR! ;
+ : APPEND     ( -- )        00000110 FAM OR! ;
 
 VARIABLE B/REC    \ bytes per record
  : VARI  ( size -- fam) B/REC ! 00010000 FAM  OR! ;
@@ -104,12 +105,12 @@ VARIABLE B/REC    \ bytes per record
  : W/O   ( -- fam)  OUTPUT  FAM @ ;
 
 \ ANS Forth word replaces INTERNAL
- : BIN   ( fam -- fam') 8 OR ;  \ modify FAM on stack
+ : BIN   ( fam -- fam') 8 OR ;  \ modify FAM to set INTERNAL flag
 
-: DV80   ( -- ) INPUT UPDATE DISPLAY SEQUENTIAL 50 VARI ;
+: DV80   ( -- ) UPDATE DISPLAY SEQUENTIAL 50 VARI ;
 .( ..)
 HEX
-\ build the PAB from all the pieces, error checking
+\ build the PAB from all the pieces, with error checking
 : OPEN-FILE ( $addr len fam -- fid ior)
              SP0 SP@ 2+ - 2/          \ calulate stack DEPTH manually
              3 < ABORT" OPEN-FILE args"
@@ -125,26 +126,27 @@ HEX
              THEN [PAB RECLEN] VC!    \ store reclen in PAB
                   B/REC OFF           \ reset the B/REC variable
 
-             2DUP MAKEPAB             \
-             NEWFILE                  \ setup new file
+             2DUP  MAKEPAB ( --  $adr len )
+             DSKCARD OPENDEV          \ open device DSR on card
              0 FILEOP ( -- err#)      \ call O/S OPEN
              DUP                      \ test for error
              IF   R> RELEASE 0 SWAP   \ release hndl. return 0
-             ELSE R> SWAP
+             ELSE R> SWAP             \ return handle, 0
              THEN ;
 
-: CLOSE-FILE  ( fid -- ?) 
-              DUP SELECT  1 FILEOP SWAP  RELEASE ;
+: CLOSE-FILE ( fid -- ?)
+             DUP SELECT  1 FILEOP SWAP  RELEASE ;
 
-: (EOF)     ( -- ? ) FSTAT 3 AND ;       \ EOF of current OPEN file
+\ (EOF) is a bit faster
+: (EOF)     ( -- ? ) FSTAT 3 AND ;       \ EOF of currently OPEN file
 
-: EOF       ( fid -- ? ) SELECT (EOF) ;  \ EOF of selected file
+: EOF       ( fid -- ? ) SELECT (EOF) ;  \ EOF of fid file
 
 : READ-LINE ( c-addr u1 fid -- u2 flag ior )
             SELECT
             2 FILEOP DUP >R               \ read operation, rpush error#
             IF                            \ if err#<>0
-               0 FSTAT R>                 \ fatal error, don't read data
+               0 FSTAT  R>                \ fatal error, don't read data
             ELSE
                ( -- adr u1)
                [PAB CHARS] VC@             \ get no. chars actually read
@@ -157,10 +159,10 @@ HEX
 
 : WRITE-LINE ( c-addr u fileid -- ior )
              SELECT
-             DUP [PAB CHARS] VC!         \ # chars to write ->PAB
-             [PAB FBUFF] V@ SWAP VWRITE  \ write CPU RAM to VDP file buffer
-             3 FILEOP                   \ call write operation
-             FSTAT 2 AND FUSE           \ fuse EOF and general file errors
+             DUP [PAB CHARS] VC!        \ # chars to write ->PAB
+             [PAB FBUFF] V@ SWAP VWRITE \ write CPU RAM to VDP file buffer
+             3 FILEOP ( -- ior)         \ call write operation
+            \ (EOF) FUSE                \ fuse EOF and general file errors
 ;
 .( ..)
 : CREATE-FILE ( caddr len fam -- fid ior )
@@ -169,7 +171,7 @@ HEX
                OPEN-FILE ;
 
 : FILE-POSITION   ( fid -- rec# ior) SELECT  [PAB REC#] V@ ERR@ ;
-: REPOSITION-FILE ( fid -- ior)      SELECT  [PAB REC#] V! 4 FILEOP ;
+: REPOSITION-FILE ( rec# fid -- ior) SELECT  [PAB REC#] V! 4 FILEOP ;
 
 : DELETE-FILE     ( caddr len -- ior ) R/W OPEN-FILE ?FILERR 7 FILEOP  ;
 
