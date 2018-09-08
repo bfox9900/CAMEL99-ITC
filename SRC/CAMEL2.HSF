@@ -51,6 +51,8 @@
 \              - added TPAD user variable to provide offsets for PAD in tasks
 \              - Changed HOLD back to Forth for proper multi-task no. printing
 
+\ Sept 7, 2018 - Changed to use FILESYSE.HSF. Adds DSRNAM field to file PAB
+
 \ Requirements: XFC99.EXE, Cross-Compiler/Assembler  by Brian Fox
 
 \ Credit where it's due:
@@ -737,10 +739,10 @@ TARGET-COMPILING
               BEGIN
                 CURS@ VPUT                   \ show the flashing cursor
                 PAUSE                        \ multi-tasking switch
-                KEY?                         \ 1mS run-time. Very slow
+                KEY?
               UNTIL                          \ wait for key press
               KVAL C@                        \ fetch char from KSCAN buffer
-              PAUSE                          \ reduce KEY overhead
+              PAUSE                          \ multi-tasking switch
               BL VPUT ;                      \ erase cursor character
 
 : BS  ( n --)  VCOL @ SWAP -  0 MAX
@@ -1046,7 +1048,7 @@ TARGET-COMPILING
 
 \ (:noname) came from studying gforth. It's a nice factor.
 \ had to use the literal address of ENTR ($839E) to make this work.
-: (:NONAME) ( -- )   839E ,  HIDE  ]  ;   \ common to ':' and ':NONAME'
+: (:NONAME) ( -- )  839E ,  HIDE  ]  ;   \ common to ':' and ':NONAME'
 
 \ =======================================================================
 \ D O E S   S U P P O R T
@@ -1065,7 +1067,7 @@ TARGET-COMPILING
 \ ** commment out everything to build the smallest kernel  **
  [CC] include CC9900\cclib\crusmall.hsf
  [CC] include CC9900\cclib\diskdsr6.hsf
- [CC] include CC9900\cclib\filesysD.hsf
+ [CC] include CC9900\cclib\filesysE.hsf
 
 \ =======================================================================
 \ T E S T   C O D E   G O E S   H E R E
@@ -1123,7 +1125,7 @@ TARGET-COMPILING
 
             \ VDP start screen
               TEXT  BEEP
-              TS" CAMEL99 2.0.22" TYPE
+              TS" CAMEL99 2.0.23" TYPE
               TS" DSK1.START" INCLUDED       \ load the start file
               RP0 RP!                        \ reset return stack pointer
               SP0 SP!                        \ reset the data stack pointer
