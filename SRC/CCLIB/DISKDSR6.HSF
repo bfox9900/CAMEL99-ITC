@@ -9,35 +9,34 @@
 \ USAGE:   DSKLNK BLWP  **notice DSK LNK not  DSR LNK**
 
 
-\ This 32 byte workspace is only needed to give us
-\ a way to return to Forth.  Sad :-(
-
 TARGET-COMPILING
-\ take 32 bytes of the data stack and use for DSRWSP
+\ Steal top address of the data stack and use for DSRWSP.
+\ We in fact only use 6 bytes.
+\ This workspace is only needed to isolate the Forth 
+\ workspace from the DSR workspace.
 [CC] SP0 100 - [TC] VALUE: DSRWKSP
 
 \ ========================================================
                [CC] [PUBLIC] [TC]
 
-\ May 12, 2018 simplified this with CREATE:
-\ This is the code used to CALL the DSR ROM code
-CREATE: CALLDSR ( -- )       \ makes a label for this code
-             83E0 LWPI,      \ change to GPL workspace
-            *R9 BL,          \ GPL R9 already has the entry address
-             NOP,            \ This normally has DATA 8 in it. :-)
-             DSRWKSP LWPI,   \ back to the dummy workspace
-             RTWP,           \ Return to Forth
-             NEXT,
+\ Sept 7, 2018 simplified this by incorporating vector with code
+\ This is the ONLY code used to CALL the DSR ROM code
 
 \ Create the VECTOR that we call with BLWP.
 \               workspace    compile program address
 \               ---------    -----------------------
-CREATE: DSKLNK  DSRWKSP T,   CALLDSR T,
+CREATE: DSKLNK  DSRWKSP T,  [cc] THERE TCELL + T, [tc]
+             83E0 LWPI,      \ change to GPL workspace
+            *R9 BL,          \ GPL R9 already has the entry address
+             NOP,            \ This normally has DATA 8 in it. :-)
+             DSRWKSP LWPI,   \ back to the dummy workspace
+             RTWP,           \ Return to Forth Workspace
+             NEXT,           \ Return to Forth interpreter
 
 \ ========================================================
 
 \                 [CC] [PRIVATE] [TC]
- \ Define PAB constants
+\ Define PAB constants
 [CC] HEX [TC]
  1100 CONSTANT: DSKCARD   \ No need to scan for the Floppy DISK CARD. It's here
  4000 CONSTANT: 'ID       \ DSR ROM header addresses
