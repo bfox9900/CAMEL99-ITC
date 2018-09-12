@@ -141,4 +141,4 @@ It now loads in the DSK.START file as a library file: TOBODY.F
   This new field is used to store the DSRNAM in the PAB itself 
   after the fname string field. SELECT in ANSFILES.F uses contents
   of [PAB DSRNAM] to change the contents of O/S address >8356 (DSRNAM)
-  which controls which DSR is current in use.
+  which controls which DSR is currently in use.
