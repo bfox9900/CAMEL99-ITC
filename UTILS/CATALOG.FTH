@@ -6,12 +6,13 @@ HEX
 \ len,name,  8,float, 8,float  8,float
 
 CR .( Requires ANSFILES.F, CASE.F)
-' OPEN-FILE DROP
-' ENDOF     DROP 
 
 \ INCLUDE DSK1.TOOLS.F   \ for debugging
  INCLUDE DSK1.ANSFILES.F
  INCLUDE DSK1.CASE.F
+
+' OPEN-FILE DROP
+' ENDOF     DROP
 
 \ print unsigned int, right justified
 : U.R  ( u n --) >R 0 <# #S #> ( adr len) R> OVER - SPACES TYPE ;
@@ -46,6 +47,12 @@ DECIMAL
              ." ????"
           ENDCASE ;
 
+: HEAD.REC ( addr -- )
+          DUP  7 $.LEFT SPACE COUNT ( addr len)
+          NEXT$
+          ."  Size" NEXT$ F>INT 5 U.R   ."  Used" NEXT$ F>INT 5 U.R
+          2DROP  ;
+
 : DIR.REC ( addr -- )
           DUP  11 $.LEFT SPACE COUNT ( addr len)
           NEXT$ DIR.TYPE
@@ -54,8 +61,8 @@ DECIMAL
           2DROP  ;
 
 : PAGEBRK ( -- )
-          LINES @ L/SCR 2- MOD 0=  \ bottom of page?
-          IF  
+          LINES @ L/SCR 3 - MOD 0=  \ bottom of page?
+          IF
             CR ." Press any key..." KEY DROP
           THEN ;
 
@@ -66,7 +73,8 @@ DECIMAL
           >R                        \ store file handle
 
           PAD 80 R@ READ-LINE ?FILERR 2DROP
-          CR PAD $.  6 SPACES ." -type-  -sect- -b/rec-"
+          CR PAD HEAD.REC
+          CR 13 SPACES  ." -type-  -sect- -b/rec-"
 
           LINES OFF
           BEGIN

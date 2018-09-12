@@ -1,9 +1,7 @@
 \ TMS9919 SOUND CHIP DRIVER and CONTROL LEXICON     Jan 2017 BJF
 
-INCLUDE DSK1.TOOLS.F
+\ INCLUDE DSK1.TOOLS.F
 \ INCLUDE DSK1.ASM9900.F
-
-
 
 \ TMS9919 is a memory mapped device on the TI-99 @ >8400
 \ SND! is in the CAMEL99 Kernel as  : SND!     8400 C! ;
@@ -18,20 +16,19 @@ HEX
     90 CONSTANT ATT1         B0 CONSTANT ATT2
     D0 CONSTANT ATT3         F0 CONSTANT ATT4  ( OSC4 volume adjust)
 
-\ There are no 32 bit numbers in the CAMEL99 compiler
-\ so we create a constant manually, as 2 literal numbers.
-\ Compute 111,760 as 32bit int:  11176 10 UM* ( -- 46324 1)
+\ f(clk) for sound chip is 111,760.8 Hz.
+\ we round it up to 111,761 Hz. Seems to work ok.
+\ To compute the value of a 32bit integer we can use:
+\   0 0 S" 111761" >NUMBER 2DROP
 DECIMAL
- : f(clk) ( -- d)  46224 1  ;   \ this is 111,760 as 32 bit int.
+ : f(clk) ( -- d)  46225 1  ;   \ this is 111,761 as 32 bit int.
 
 \ >FCODE re-arranges freq. value nibbles (4bits) for the TMS9919
 HEX
-\ : >FCODE ( 0abc -- 0cab)
-\           4 LSHIFT  ( -- abc0 )
-\           SPLIT     ( -- ab c0)
-\           SWAP
-\           4 LSHIFT  ( -- ab  c)
-\           +     ;   ( -- 0cab)  \ 18 BYTES 400 uS
+\ : >FCODE   ( 0abc -- 0cab)    \ ASM would make this much faster
+\           DUP 4 RSHIFT       ( -- 000c 00ab)
+\           SWAP 0F AND        ( -- 00ab 000c)
+\           FUSE ;
 
  CODE >FCODE ( 0abc -- 0cab) \ version by Farmer Potato Atariage
              0B44 , \ TOS 4 SRC,    \ C0AB

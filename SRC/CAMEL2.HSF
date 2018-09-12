@@ -626,8 +626,7 @@ TARGET-COMPILING
               BEGIN  DUP
               WHILE
                   OVER C@ DIGIT? 0=
-                  IF   DROP EXIT
-                  THEN
+                  IF   DROP EXIT THEN
                   >R 2SWAP BASE @ UD*
                   R> M+ 2SWAP 1 /STRING
               REPEAT ;
@@ -661,7 +660,7 @@ TARGET-COMPILING
 \ : GETXY   ( -- col row ) VROW 2@  ;   \ returns column & row
 : AT-XY   ( col row -- ) VROW 2! ;      \ VCOL,VROW are adjacent in memory so we can 2!
 : VPOS    ( -- vaddr)    VROW 2@ >VPOS ;
-: CLRLN   ( col row -- ) 2DUP AT-XY >VPOS C/L@ BL VFILL ;  \ clear line on screen
+: CLRLN   ( col row -- ) >VPOS C/L@ BL VFILL ;  \ clear line on screen
 
 \ -----------------------------------------------------------------------
 \ Scrolling has been implemented in Forth to show how factoring out key

@@ -18,6 +18,7 @@ INCLUDE DSK1.RANDOM.F
 INCLUDE DSK1.SOUND.F
 INCLUDE DSK1.CHARSET.F
 INCLUDE DSK1.GRAFIX.F
+
 DECIMAL
 : SET-COLORS ( -- )
      19 4 DO   I I I COLOR   LOOP ;  \ Forth has different color sets
@@ -26,8 +27,8 @@ DECIMAL
 \ that calculate the numbers we need and leave them on the stack
 : Y   ( -- n ) 1000 RND 110 + ;  \ does not calc. musical notes.
 : CHR ( -- n )   80 RND 32 + ;
-: ROW ( -- n )   23 RND  ;
-: COL ( -- n )   31 RND  ;
+: ROW ( -- n )   24 RND  ;
+: COL ( -- n )   32 RND  ;
 
 \ We create a SOUND word from the primitives: HZ DB MS MUTE
 : SOUND  ( dur freq att --) DB  HZ  MS MUTE ;
@@ -37,8 +38,9 @@ DECIMAL
       CLEAR
       SET-COLORS
       BEGIN
-         GEN1 50 Y -2 SOUND \ Select sound Generator #1
-	 COL ROW CHR 1 HCHAR
+ \        CHR COL ROW >VPOS VC!
+ 	 COL ROW CHR 1 HCHAR
+         GEN1 250 Y -2 SOUND \ Select sound Generator #1
 	 ?TERMINAL     \ check for the break key
       UNTIL
       8 SCREEN        \ restore things like BASIC
