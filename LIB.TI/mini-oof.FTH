@@ -1,18 +1,16 @@
 \ Mini-OOF   Bernd Paysan                            12apr98py
 
-INCLUDE DSK1.INLIN99.F
-
 : COMPILE, ( n -- ) , ;  \ not in CAMEL99 Kernel
 
 : NOOP ; 
 
 : METHOD ( m v "name" -- m' v )
          CREATE  OVER , SWAP CELL+ SWAP
-         DOES> ( ... O -- ... ) INLINE[ @ OVER @ + @ ] EXECUTE ;
+         DOES> ( ... O -- ... ) @ OVER @ + @  EXECUTE ;
 
 : VAR    ( m v size "name" -- m v' )
          CREATE  OVER , +
-         DOES> ( O -- ADDR ) INLINE[ @ + ]  ;
+         DOES> ( O -- ADDR ) @ +  ;
 
 : CLASS  ( class -- class methods vars ) DUP 2@ ;
 
