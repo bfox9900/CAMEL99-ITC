@@ -84,16 +84,16 @@ DECIMAL
      CR ."   MULTI-TASKING VDP I/O DEMONSTRATION"
      CR ." ---------------------------------------"
      CR ." 3 counter tasks in BASE 10,16 and 2"
-     CR   ." 1 pulse task, shows round robin"
-     CR   ." time in micro-seconds"
+     CR ." 1 pulse task, shows round robin"
+     CR ." time in micro-seconds"
      CR
-     CR   ." Shows how tasks can write to screen"
-     CR   ." using standard screen words."
+     CR ." Shows how tasks can write to screen"
+     CR ." using standard screen words."
      CR
-     CR   ." Console is active."
+     CR ." Console is active."
      CR
-     CR   ." When counters stop use RESTART to"
-     CR   ." run them again. WAKE will crash!"
+     CR ." When counters stop use RESTART to"
+     CR ." run them again. WAKE will crash!"
 
      MULTI
      TASK4 WAKE
