@@ -112,7 +112,7 @@ VARIABLE SPEED
 
 
 : ALPHA-THINK  ( -- )
-            SAD                       \ SAD face while thinking
+            SAD                   \ SAD face while thinking
             SPEED--                
             TRYS OFF                   \ reset the trys counter
             BEGIN

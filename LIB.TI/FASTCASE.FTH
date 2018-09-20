@@ -3,7 +3,7 @@
 \ no speed difference versus  CASE OF ENDOF  etc.. for 2 items
 \ improves greatly with long list of cases.
 
-: CASE:  ( -- -7)   CREATE   ;
+: CASE:  ( -- <name>)   CREATE   ;
 
 : |      ( <name> )  '  ,  ;
 

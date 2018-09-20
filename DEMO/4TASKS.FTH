@@ -15,51 +15,57 @@ USIZE TASK: TASK3
 USIZE TASK: TASK4
 
 DECIMAL
-\ show the round-robin task time in uS
-: .PULSE   TMR@ PAUSE TMR@ - ABS  213 10 */  6 U.R  ." uS" ;
+\ show the round-robin task time in uS. (TMR is 21.3 uS/tick)
+: .PULSE   TMR@ PAUSE TMR@ - ABS  213 10   */  6 U.R  ." uS" ;
 
-\ fill and clear data stack so it can be seen in debugger
-: COUNTER1
-            DECIMAL
-            132 TPAD !
-            65000 0
+\ single command to stop a task and goto next task
+: STOP    ( -- ) MYSELF SLEEP PAUSE ;
+
+\ re-entrant up counter
+: UPCOUNTER ( col row end start -- )
             ?DO
-              0 0 AT-XY
+              2DUP AT-XY
+              I 8 U.R
               PAUSE
-              I 6 U.R
             LOOP
-            MYSELF SLEEP
-            PAUSE  ;
-            
-HEX
-: COUNTER2
+            2DROP ;
+
+\ re-entrant up counter
+: DNCOUNTER ( col row end start -- )
+            SWAP
+            ?DO
+              2DUP AT-XY
+              I 8 U.R
+              PAUSE
+            -1 +LOOP
+            2DROP ;
+
+: COUNTER1              \ decimal counter
+            DECIMAL
+            132 TPAD !  \ set task's PAD offset from HERE
+            0 0 1000 0 UPCOUNTER
+            STOP  ;
+
+
+: COUNTER2              \ hex counter
             164 TPAD !
             HEX
-            FFFF 0 SWAP
-            ?DO
-              9 0 AT-XY  
-              PAUSE
-              I 5 U.R
-           -1 +LOOP
-            MYSELF SLEEP
-            PAUSE  ;
+            9 0 [ HEX ] 1FF 0 DNCOUNTER
+            STOP ;
 
 DECIMAL
-: COUNTER3
+: COUNTER3              \ perpetual binary counter
             196 TPAD !
             2 BASE !
             BEGIN
-              256 0
-              ?DO
-                 20 0 AT-XY PAUSE
-                 I 9 U.R
-              LOOP
+              20 0 256 0 UPCOUNTER
             AGAIN ;
-: PULSER
+
+: PULSER                \ show round robin time
             220 TPAD !
             DECIMAL
             BEGIN
-              30 0 AT-XY
+              31 0 AT-XY
               PAUSE .PULSE
               500 MS
               [ HEX ] 83D6 OFF  \ kill screen time-out
@@ -69,18 +75,26 @@ DECIMAL
 ' COUNTER1 TASK1 ASSIGN
 ' COUNTER2 TASK2 ASSIGN
 ' COUNTER3 TASK3 ASSIGN
-' PULSER TASK4 ASSIGN
+' PULSER   TASK4 ASSIGN
 
 : RUN
-     0  C/L@ BL VFILL \ erase top line of screen                    
-     C/L @ VTOP !     \ set top of screen to 2nd line
+     0  C/L@ BL VFILL \ erase top line of screen
+     C/L@ VTOP !     \ set top of screen to 2nd line
      PAGE 
+     CR ."   MULTI-TASKING VDP I/O DEMONSTRATION"
+     CR ." ---------------------------------------"
      CR ." 3 counter tasks in BASE 10,16 and 2"
-     CR
      CR   ." 1 pulse task, shows round robin"
      CR   ." time in micro-seconds"
      CR
-     CR   ." Console is active ie: 5 tasks live"
+     CR   ." Shows how tasks can write to screen"
+     CR   ." using standard screen words."
+     CR
+     CR   ." Console is active."
+     CR
+     CR   ." When counters stop use RESTART to"
+     CR   ." run them again. WAKE will crash!"
+
      MULTI
      TASK4 WAKE
      TASK1 WAKE
