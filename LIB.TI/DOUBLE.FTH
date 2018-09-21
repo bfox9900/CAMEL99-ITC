@@ -1,6 +1,6 @@
 \ The optional Double-Number word set
 
-INCLUDE DSK1.TOOLS.F  \ for debugging
+\ INCLUDE DSK1.TOOLS.F  \ for debugging
 
 \    D2/   D2*   DU<  D0=   D0<  D.  D<   D>S  M+ 2ROT
 \    2CONSTANT  2LITERAL    2VARIABLE
@@ -52,6 +52,7 @@ ENDCODE
 : D=   ( d d -- ?) ROT = -ROT = AND ;
 : D>S  ( d -- n)   DROP ;
 
+
 \ : 2OVER  2>R 2DUP  2R> 2SWAP ;   \ slow
 : 2OVER  ( d d2 -- d d2 d)  3 PICK 3 PICK ; \ 20% faster
 \ : 2OVER  4TH 4TH ;             \ 60% faster!
@@ -77,13 +78,12 @@ ENDCODE
 : D.R  ( d n --)
        >R TUCK DABS <# #S ROT SIGN #> R> OVER - SPACES TYPE ;
 
-: D.   (  n -- ) 0 D.R SPACE ;
+: D.   ( d  -- ) 0 D.R ;
 
-: ?DNUMBER ( addr len -- d ? )  \ flag is true on good conversion
-           0 0 2SWAP >NUMBER NIP 0= ;
+: ?DNUMBER ( addr len -- d ? ) 0 0 2SWAP >NUMBER NIP 0 <> ABORT" bad number"  ;
 
-\ DECIMAL
-\ : 1.    ( -- d ?)  S" 1" ?DNUMBER ;
-\ : PI    ( -- d ?)  S" 3141262" ?DNUMBER ;
+DECIMAL
+: 1.    ( -- d)  S" 1" ?DNUMBER  ;
+: PI    ( -- d)  S" 3141262" ?DNUMBER ;
 
 

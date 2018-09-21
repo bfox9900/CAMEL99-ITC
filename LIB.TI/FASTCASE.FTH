@@ -1,14 +1,31 @@
-
 \ FAST vector table from HsForth, Jim Kalihan (RIP)
 \ no speed difference versus  CASE OF ENDOF  etc.. for 2 items
 \ improves greatly with long list of cases.
 
-: CASE:  ( -- <name>)   CREATE   ;
+INCLUDE DSK1.ASM9900.F
+INCLUDE DSK1.INLINE.F
+
+CODE VECTR  INLINE[ OVER + + ] NEXT, ENDCODE
+
+CODE PERFORM ( addr -- )
+             *TOS TOS MOV,    \ fetch the XT
+              TOS W MOV,      \ move the execution token in TOS into temp
+              TOS POP,        \ refill TOS
+             *W+ R5 MOV,      \ move contents of the XT (the address of the doer routine) to R5
+              R5 ** B,        \ branch to the address of the DOER routine
+              ENDCODE
+
+
+: CASE:  ( -- -7)   CREATE   ;
 
 : |      ( <name> )  '  ,  ;
 
 \ !! no runtime error checking !!
-: ;CASE   ( n -- )  DOES>  OVER + + @ EXECUTE ;
+\ : ;CASE   ( n -- )  DOES>  OVER + + @ EXECUTE ;
+
+: ;CASE   ( n -- )  DOES>  VECTR PERFORM ;
+
+
 
 \ example code:
 \ : FOO   ." FOO" ;

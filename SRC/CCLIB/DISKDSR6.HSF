@@ -47,7 +47,7 @@ CREATE: DSKLNK  DSRWKSP T,  [cc] THERE TCELL + T, [tc]
                 [CC] [PUBLIC] [TC]
 
 : /DOT    ( caddr len -- caddr len')  \ cut string at the dot
-           2DUP T[CHAR] . SCAN NIP -  ;
+           2DUP T[CHAR] . SCAN  NIP -  ;
 
 \ : >DSR$   ( link -- $) 4 +  ;       \ add 4 to the link gets to the DSR$
 

@@ -1,13 +1,13 @@
 \ 5x faster type to screen with x,y placement
 \ **WARNING** it does not scroll
 
-\ Usage:  S" VDPTYPE is very fast."  0 10 VDPTYPE
+\ Usage:  S" VDPTYPE is very fast."  0 10 VDPWRITE
 
-\ : >VPOS    C/L@ * + ; ( this was so handy I put it in the KERNEL)
+\ : >VPOS    C/L@ * + ;  ( V2.024 is CODE word)
 
-: OFFSCR? ( len x y -- )
-          2DUP >VPOS 3 PICK >R
-          + C/SCR @ > ABORT" Off screen" ;
+: ?OFFSCR ( len x y -- )
+          2DUP >VPOS 3 PICK + C/SCR @ > 
+          ABORT" Off screen" ;
 
 : VDPTYPE ( adr len x y )
-          OFFSCR?  AT-XY VPOS SWAP VWRITE ;
+          ?OFFSCR  >VPOS SWAP VWRITE ;

@@ -297,7 +297,7 @@ TARGET-COMPILING
         1 constant: 1
         2 constant: 2
         3 constant: 3
-       -1 constant: -1
+\       -1 constant: -1
        20 constant: BL             \ blank character
 
 \ ========================================================================
@@ -405,19 +405,21 @@ TARGET-COMPILING
 
 \ By making HERE faster the system goes faster because HERE is used a lot.
 \ : HERE   DP @ ;
-CODE: HERE   ( -- addr) TOS PUSH,  DP @@ TOS MOV,  NEXT, END-CODE
+ CODE: HERE   ( -- addr) TOS PUSH,  DP @@ TOS MOV,  NEXT, END-CODE
 
 : ALIGN     ( -- )     HERE ALIGNED DP ! ;
 : ,         ( n --)    HERE !   2 ALLOT ;
 : C,        ( c --)    HERE C!  1 ALLOT ;
-: PAD       ( -- addr) HERE TPAD @ + ;   \ MULT-TASK friendly using TPAD
+: PAD       ( -- addr) HERE TPAD @ + ;  \ MULT-TASK friendly using TPAD
 
-\ : >BODY     2+ ;            \ removed from kernel to save 18 bytes. Loads at START up
-\ : COMPILE,  ( n --)  ,  ;   \ for ITC Forth this is the same as , (comma compiler)
+\ : >BODY     2+ ;  \ removed from kernel, saves 18 bytes. Loads at START up
+\ : COMPILE,  ( n --)  ,  ;  \ for ITC Forth this is the same as , (comma compiler)
 
 : COMPILE   ( -- )  R> DUP 2+ >R @ , ;  \ append inline execution token
-: IMMEDIATE ( --)  01 LATEST @ 1- ( -- imm-fld) C! ;  \ set the precedence BIT in the last word defined
-: LITERAL   ( n -- n|~) STATE @ IF  COMPILE LIT ,  THEN ;  XIMMEDIATE
+
+\ set the precedence BIT in the last word defined
+: IMMEDIATE ( --)  01 LATEST @ 1- ( -- imm-fld) C! ;
+: LITERAL   ( n -- n|~) STATE @ IF  COMPILE LIT ,  THEN ; XIMMEDIATE
 
 : ]         ( -- ) STATE ON  ;  XIMMEDIATE \ turn on the compiler
 : [         ( -- ) STATE OFF ;  XIMMEDIATE \ turn off the compiler
@@ -451,14 +453,14 @@ CODE: HERE   ( -- addr) TOS PUSH,  DP @@ TOS MOV,  NEXT, END-CODE
 
 : TUCK  ( w1 w2 --  w2 w1 w2 ) SWAP OVER ;
 
-0 [if] \ this does not work for reasons I don't understand...
+0 [if] \ these don't work ???
 
      : 2>R ( w w --)  >R >R ;
      : 2R> ( -- w w)  R> R> ;
 
  [else]
 
- \ these make the KERNEL 14 bytes bigger but work well
+ \ these make compiling 1% faster but are 14 bytes bigger
  CODE: 2>R    ( d -- ) ( r-- n n)
               RP -4 ADDI,          \ 14
               TOS 2 (RP) MOV,      \ 22
@@ -474,7 +476,6 @@ CODE: HERE   ( -- addr) TOS PUSH,  DP @@ TOS MOV,  NEXT, END-CODE
               TOS RPOP,            \ 22
               NEXT,              \ = 88
               END-CODE
-
 [then]
 
 \ ========================================================================
@@ -517,10 +518,10 @@ TARGET-COMPILING
 \                      *****
 : */MOD       ( n1 n2 n3 -- n4 n5)  >R UM* R> UM/MOD ;   \ n1*n2/n3, rem&quot
 : /MOD        ( n1 n2 -- n3 n4)  0 SWAP UM/MOD ;        \  divide/remainder
-: /           ( n n -- n)   /MOD NIP  ;    \ these are smaller than CODE words. (4 bytes each)
+: /           ( n n -- n)   /MOD NIP  ; \ these are smaller than CODE words. (4 bytes each)
 : MOD         ( n n -- n)   /MOD DROP ;
 : */          ( n n n -- n) */MOD NIP ;
-\ : *  ( n n -- n)  UM* DROP ;             \ same size in ASM, 2x faster
+\ : *  ( n n -- n)  UM* DROP ;          \ same size in ASM, 2x faster
 
 [then]
 
@@ -626,7 +627,8 @@ TARGET-COMPILING
               BEGIN  DUP
               WHILE
                   OVER C@ DIGIT? 0=
-                  IF   DROP EXIT THEN
+                  IF   DROP EXIT
+                  THEN
                   >R 2SWAP BASE @ UD*
                   R> M+ 2SWAP 1 /STRING
               REPEAT ;
@@ -660,15 +662,17 @@ TARGET-COMPILING
 \ : GETXY   ( -- col row ) VROW 2@  ;   \ returns column & row
 : AT-XY   ( col row -- ) VROW 2! ;      \ VCOL,VROW are adjacent in memory so we can 2!
 : VPOS    ( -- vaddr)    VROW 2@ >VPOS ;
-: CLRLN   ( col row -- ) >VPOS C/L@ BL VFILL ;  \ clear line on screen
+: CLRLN   ( col row -- ) AT-XY VPOS C/L@ BL VFILL ;  \ clear line on screen
 
 \ -----------------------------------------------------------------------
 \ Scrolling has been implemented in Forth to show how factoring out key
 \ routines called VREAD & VWRITE, written in Assembler can deliver excellent
 \ speed without needing to write everything in Assembler.
 
+\ : C/CUT   ( -- n)  C/L@ 4* ;              \ Chars per cut buffer
+
 : SCROLL   ( -- )
-            C/L@ 2* DUP                    \ calc. char per scroll and duplicate
+            C/L@ 2* DUP                    \ get chars per cut buffer and dup
             MALLOC ( -- c/s heap)          \ allocate chars per scroll in heap
 
             C/SCR @     C/L@  VTOP @ +     \ loops from 2nd line, to last line
@@ -679,7 +683,7 @@ TARGET-COMPILING
                SWAP C/L@ -   C/L@ 2* VWRITE  \ write HEAP to line above
                C/L@ 2*
             +LOOP                          \ advance loop by chars per scroll
-           0 17 CLRLN                      \ clear last line
+           0 17  CLRLN                     \ clear last line
            DROP                            \ drop heap pointer
            MFREE ;                         \ de-allocate heap memory
 
@@ -689,12 +693,12 @@ TARGET-COMPILING
 
 : PAGE       ( -- )
               VTOP @
-              DUP C/SCR @ OVER -            \ computer bytes in active screen.
-              BL VFILL                      \ fill VDP memory from address 0 with blanks
-              0 SWAP C/L@ / AT-XY ;         \ home the cursor to VTOP
+              DUP C/SCR @ OVER -           \ computer bytes in active screen.
+              BL VFILL                     \ fill VDP memory from address 0 with blanks
+              0 SWAP C/L@ / AT-XY ;        \ home the cursor to VTOP
 
-: CR         ( -- )                         \ Forth's "newline"
-              (CR) ( -- ?)                  \ (CR) returns TRUE if we have to scroll
+: CR         ( -- )                        \ Forth's "newline"
+              (CR) ( -- ?)                 \ (CR) returns TRUE if we have to scroll
               IF  SCROLL  THEN ;
 
 \ new version works properly in multi-tasking
@@ -704,7 +708,6 @@ TARGET-COMPILING
              IF CR THEN PAUSE ;
 
 : TYPE       ( adr cnt --) BOUNDS ?DO  I C@ EMIT  LOOP  ;
-
 : SPACE      ( -- )   BL EMIT ;            \ EMIT a blank char (hex 20)
 : SPACES     ( n -- ) 0 MAX  0 ?DO SPACE LOOP ;
 
@@ -744,8 +747,8 @@ TARGET-COMPILING
               PAUSE                          \ multi-tasking switch
               BL VPUT ;                      \ erase cursor character
 
-: BS  ( n --)  VCOL @ SWAP -  0 MAX
-               DUP VCOL !  OUT ! ;           \ do 'n' backspaces.
+: BS  ( n --) VCOL @ SWAP -  0 MAX
+              DUP VCOL !  OUT ! ;            \ do 'n' backspaces.
 
 \ High level: input/output                     (c) 31mar95 bjr
 : ACCEPT      ( c-addr +n -- +n')            \ get line from terminal
@@ -773,17 +776,31 @@ TARGET-COMPILING
 \ Numeric conversion is done least significant digit first, so
 \ the output buffer is built backwards in memory from PAD.
 
+
 TARGET-COMPILING
 : UD/MOD ( ud1 u2 -- u3 ud4)
          >R 0 R@ UM/MOD -ROT R> UM/MOD ROT ;   \ 32/16->32 divide
 
-\ HOLD and >DIGIT are in the inner loop so ASM speed-up
-\ makes a real difference in number printing speed
-\ AND we save 6 bytes using ASM
 
-\ decr. HOLD pointer HP, Store char at the address contained in HP
-: HOLD   ( char -- )  
-         -1 HP +!  HP @  C! ;
+\ ====================================================
+\ Build 25 Sept 21 2018, added 1-! for faster HOLD
+
+TRUE [if]
+
+CODE: 1-!  ( addr -- ) *TOS DEC,  TOS POP,  NEXT, END-CODE
+
+( only about 1% faster in numeric output speed)
+  : HOLD   ( char -- ) HP 1-!  HP @ C! ;   \ decr. HP, Store char at the address contained in HP
+
+[else]
+
+  : HOLD   ( char -- ) -1 HP +! HP @ C! ;
+
+[then]
+
+\ HOLD and >DIGIT are in the inner loop so ASM speed-ups
+\ makes a real difference in number printing speed
+\ AND we save 6 bytes using ASM >DIGIT
 
 \ : >DIGIT ( n -- c) DUP 9 > 7 AND + 30 + ; \ convert n to ascii digit c
  CODE: >DIGIT  ( n -- c)        \ ASM is 9 bytes smaller 4X faster
@@ -846,9 +863,11 @@ TARGET-COMPILING
 
 : EVALUATE     ( c-addr u -- j*x)          \ interpret a stack string
                SOURCE-ID ON                \ ANS standard says SOURCE-ID = true
-               SOURCE >R >R  >IN @ >R      \ save the source & >IN on the return stack
+               SOURCE 2>R                  \ save the source
+               >IN @ >R                    \ save >IN on the return stack
                INTERPRET                   \ interpret the new string
-               R> >IN !  R> R> 'SOURCE 2!  \ restore source & >IN
+               R> >IN !                    \ restore >IN
+               2R> 'SOURCE 2!              \ restore source 
                SOURCE-ID OFF ;
 
 \ ========================================================================
@@ -1124,7 +1143,7 @@ TARGET-COMPILING
 
             \ VDP start screen
               TEXT  BEEP
-              TS" CAMEL99 2.0.23" TYPE
+              TS" CAMEL99 2.0.25" TYPE
               TS" DSK1.START" INCLUDED       \ load the start file
               RP0 RP!                        \ reset return stack pointer
               SP0 SP!                        \ reset the data stack pointer
@@ -1184,7 +1203,7 @@ cr ." Forth Kernel compiled completely"
 
          FILENAME: CAMEL99
          T' INIT 2+  BOOT-ADDRESS T!
-         T' COLD  BOOT T!
+         T' COLD     BOOT T!
 
          END.
 [CC]

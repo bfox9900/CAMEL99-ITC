@@ -20,7 +20,6 @@
           DROP
           R> BASE ! ;
 
-
 : SHAPE: ( addr len -- addr)  \ S" FFFFFFFFFFFFFFFF" SHAPE: ASQUARE
 \ COMPILE TIME behavioue         
          CREATE               \ create a name in dictionary
@@ -29,11 +28,10 @@
          >UINT32 , ,          \ convert & compile 2nd 2 integers
 
 \ RUNTIME behavior
-         DOES> ( char DataAddr -- )   \ CHAR X ASQUARE changes X to a square
+         DOES> ( char DataAddr -- ) \ CHAR X ASQUARE changes X to a square
             SWAP ]PDT 8 VWRITE ;  \ compute PDT address of char
                                   \ write 8 bytes to VDP
 
-            
 : CALLCHAR ( addr len char-- addr )
           ]PDT >R             \ rpush pat. desc. table address
           8 CHOP              \ chop string in half

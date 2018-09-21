@@ -138,7 +138,7 @@ CHAR " CONSTANT '"'
             CASE
               'DOVAR  OF  .VARIABLE     ENDOF
               'DOCON  OF  .CONSTANT     ENDOF
-              'DOUSER OF  .USER         ENDOF
+              'DOUSER OF  .USER         ENDOF                           
             ENDCASE ;
 
 .( ..)

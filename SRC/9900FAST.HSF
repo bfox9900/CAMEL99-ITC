@@ -167,6 +167,8 @@ l: _@        *TOS TOS MOV,
 l: _DROP      TOS POP,
               @@9 JMP,
 
+\ l: _DUP       TOS PUSH,
+\               @@9 JMP,
 l: _HSend                     \ this label tells the compiler where the high speed code ends.
 
 
@@ -192,7 +194,7 @@ CR .( F O R T H  P R I M I T I V E S  B E G I N)
 \ The following words have been called "DOERS" by many in the past. I don't like the name.
 \ I have chosen to to call them "EXECUTORS".  The words are the EXECUTION CODE that runs
 \ for the various types of words in a Forth sytstem.
-
+TALIGN
 CODE: EXIT    ( -- )                   \ compiled when ';' is executed
               EXIT2 CFA!               \ convert label address to fast RAM address store in CFA
               END-CODE
@@ -324,7 +326,7 @@ l: _C@       *TOS TOS MOVB,          \ put C@ inline to save space   18
               NEXT,                                            \ C@= 46 vs 72
               END-CODE
 
-CODE: C@      _C@  CFA! END-CODE     \ give _C@ a dictionary header
+CODE: C@     _C@  CFA! END-CODE      \ give _C@ a dictionary header
 
 CODE: +!     ( n addr --)
              *SP+ *TOS ADD,          \ 14+8+4 = 26 cycles

@@ -2,7 +2,7 @@
 
 INCLUDE DSK1.TOOLS.F
 INCLUDE DSK1.MTASK99.F
-INCLUDE DSK1.UDOTR.F    \ RIGHT justified number printing
+INCLUDE DSK1.UDOTR.F    \ Right justified number printing
 
 INIT-MULTI
 
@@ -30,7 +30,7 @@ DECIMAL
             LOOP
             2DROP ;
 
-\ re-entrant up counter
+\ re-entrant down counter
 : DNCOUNTER ( col row end start -- )
             SWAP
             ?DO

@@ -11,7 +11,7 @@
 \ Sept 7, 2018 filesyeE.hsf
 \ - NEWFILE changed to OPENDEV
 \ - OPENDEV takes 3 params now: (-- filename len card-CRU-address)
-\ - added 1 CELL field after filename field to PAB 
+\ - added 1 CELL field after filename field to PAB
 \   - holds the calulated "REALPAB" that goes into DSRNAM
 
 \ ============================
@@ -101,7 +101,7 @@ CODE: DSRNAM] ( vaddr -- vaddr') TOS 20 ADDI,     NEXT, END-CODE
          2DUP [PAB FNAME] VPLACE     \ dup & write string to PAB
          /DOT NIP 1+ ( -- n)         \ compute offset upto '.' in string
          [PAB FNAME] +               \ offset + PAB_FNAME = "REALPAB"
-         DUP [PAB DSRNAM] V!         \ store in new PAB field
+         DUP [PAB DSRNAM] V!         \ store REALPAB to new PAB field
          DSRNAM ! ;                  \ also write to OS field
 
 : OPENDEV ( $addr len card -- )      \ turn card on, set DSR
@@ -124,46 +124,49 @@ CODE: DSRNAM] ( vaddr -- vaddr') TOS 20 ADDI,     NEXT, END-CODE
             2DUP MAKEPAB ( -- $addr len)
             14   [PAB FLG]    VC!          \ MODE: INPUT,DISPLAY,VARIABLE
             50   [PAB RECLEN] VC!          \ 80 bytes/record
-            ( -- $addr len) DSKCARD OPENDEV
+ ( -- $addr len) DSKCARD OPENDEV
             0 FILEOP ;                     \ perform OPEN opcode
 
 \ VARIABLE: LINES \ moved to CAMEL2.HSF
 
 : ?FILE    ( n -- ) 0= TS" Filename" ?ABORT ;
 
+CODE: 1+!  ( addr -- ) *TOS INC, TOS POP, NEXT, END-CODE
+
 \ This word bootstraps the system on startup.
-\ FILESYS8 is nestable. Allocates a new PAB and LDBUFF
-\ Typically: TS" DSK1.START" FLOAD
+\ FILESYS8..E are nestable. Allocates a new PAB and RAM buffer
+\ Usage:   TS" DSK1.START" INCLUDED
 : INCLUDED  ( caddr len -- )
            DUP ?FILE
            CR T." Loading: " 2DUP TYPE
            LINES OFF
            SOURCE-ID @ >R                  \ save source-ID
-           SOURCE >R >R                    \ save interpreter input source
+           SOURCE 2>R                      \ save interpreter input source
            >IN @ >R                        \ save input string pointer
            DSRNAM @ >R                     \ save current DSR name
 
            OPN  ?FILERR                    \ open new file (sets new DSRNAM)
-           1 SOURCE-ID +!                   \ source ID is file (1)
+           SOURCE-ID 1+!                   \ incr. source ID (1st file is 1 etc.)
 
-           50 DUP MALLOC >R                \ get a buffer pointer & RPUSH
+           52 DUP MALLOC >R                \ get a buffer pointer & RPUSH
+          
            BEGIN
-             2 FileOp ?FILERR
-             FSTAT 3 AND 0=                \ read file status test if EOF bits=0
+             FSTAT 3 AND 0=                \ test EOF=0, (uses low level words)
            WHILE
-             [PAB CHARS] VC@ DUP           \ get the #chars read by refill & DUP
+             2 FileOp ?FILERR              \ read record into VDP RAM, test for error
+             [PAB CHARS] VC@ DUP           \ get the #chars read
              [PAB FBUFF] V@  R@ ROT VREAD  \ transfer VDP fbuff to malloc buffer
-             R@  SWAP ( addr #chars)       \ this is a stack string
+             R@  SWAP ( addr #chars)       \ this makes a stack string
              INTERPRET                     \ interpret the string
-             1 LINES +!                    \ count the line
+             LINES 1+!                     \ count the line
            REPEAT
            R> DROP                         \ drop buffer address from rstack
-         ( 50) MFREE                       \ release the buffer
+         ( 52 ) MFREE                       \ release the buffer memory
 
            1 FILEOP ?FILERR                \ close currently open file
            120 ^PAB +!                     \ pop back 1 pab on the pabstack
            R> DSRNAM !                     \ restore old file ID
            R> >IN !                        \ restore >IN
-           R> R> 'SOURCE 2!                  \ restore interpreter SOURCE
+           2R> 'SOURCE 2!                  \ restore interpreter SOURCE
            R> SOURCE-ID !                  \ restore SOURCE-ID
            HEX ;
