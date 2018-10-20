@@ -53,13 +53,18 @@
 
 \ Sept 7, 2018 - Changed to use FILESYSE.HSF. Adds DSRNAM field to file PAB
 
+\ Sep 24, 2018 - v2.1
+\              - uses cross-compiler to create aliases for CHAR+ CELL+ CELLS
+\              - adds 1+! 1-! to kernel for compiler speedup
+\              - START file now loads NEEDS/FROM conditional compiling words
+
 \ Requirements: XFC99.EXE, Cross-Compiler/Assembler  by Brian Fox
 
 \ Credit where it's due:
 \          Lessons from HSFORTH METACOMP program, by the late Jim Kalihan
 \          Lessons on dictionary structure and number conversion from Camel Forth,
 \          by Brad Rodriguez.
-\          Lessons from Mark Wills and Lee Stewart on the TI-99 internals
+\          Many lessons from Mark Wills and Lee Stewart on the TI-99 internals
 \          Cross compiler by Brian Fox Canada
 
 \ ========================================================================
@@ -205,8 +210,9 @@ HEX
 
 \ ========================================================================
 \ C O D E   P R I M I T I V E S
+\ [CC] is short form for CROSS-COMPILING. (disables TARGET-COMPILING [TC] )
 
-[cc] cr .( Compile Forth Assembler primitives ...)  \ This is a talking comment.
+[CC] cr .( Compile Forth Assembler primitives ...)  \ This is a talking comment.
                                                     \ It reports what's happending
                                                     \ during compilation
  INCLUDE CC9900\9900FAST.HSF
@@ -221,7 +227,6 @@ HEX
  T' EXIT   RESOLVES 'EXIT
       ENTR RESOLVES 'DOCOL
  T' DOVAR  RESOLVES 'DOVAR
-
  T' LIT    RESOLVES 'LIT
  T' DOCON  RESOLVES 'DOCON
  T' DOUSER RESOLVES 'DOUSER
@@ -250,7 +255,6 @@ TARGET-COMPILING
                          \ Now when we use XSTATE we will be toggling the value of STATE in the target memory
                          \ Why? When I did this I didn't know how best to make a cross-compiler
 
-
 \ ========================================================================
 \ C R O S S   C O M P I L E R   B O O T - S T R A P P I N G
 
@@ -278,7 +282,6 @@ CROSS-COMPILING HEX
 cr .( Constants and Variables...)
 
 TARGET-COMPILING
-
 \ Memory constants for CAMEL99
 
 \ ASM/Equate       Forth Name
@@ -297,7 +300,6 @@ TARGET-COMPILING
         1 constant: 1
         2 constant: 2
         3 constant: 3
-\       -1 constant: -1
        20 constant: BL             \ blank character
 
 \ ========================================================================
@@ -331,31 +333,31 @@ TARGET-COMPILING
       28 USER: CSP
       2A USER: BASE
       2C USER: >IN
-\      2E USER: 'EMIT            \ vector for char. output routine
-\      30 USER: 'CR              \ vector for carriage return
-\      32 USER: 'KEY             \ vector for wait-for-key 
-\      34 USER: 'KEY?            \ vector for key pressed test
-\      36 USER: 'TYPE            \ vector for block output
-\      38 USER: 'PAGE            \ vector for screen clear
+      2E USER: C/L               \ Chars per line (32 or 40 depending on VDP mode)
+      30 USER: OUT               \ counts chars since last CR (newline)
+      32 USER: VROW              \ current VDP column (in fast RAM)
+      34 USER: VCOL              \ current VDP row (in fast RAM)
+\     36 USER: CURRENT
+\     38 USER: CONTEXT
       3A USER: LP                \ LEAVE stack pointer.
       3C USER: SOURCE-ID         \ 0 for console,  -1 for EVALUATE, 1 for include
       3E USER: 'SOURCE           \ WATCH OUT! This is 2variable, occupies 3E and 40
 \      40 USER: -------          \ used by 'SOURCE
-\      42 USER: CURRENT
-\      44 USER: CONTEXT
+
 \      46 USER: LH               \ local TASK HEAP pointer if needed
-      48 USER: OUT               \ counts chars since last CR (newline)
-      4A USER: VROW              \ current VDP column (in fast RAM)
-      4C USER: VCOL              \ current VDP row (in fast RAM)
-      4E USER: C/L               \ Chars per line (32 or 40 depending on VDP mode)
-      50 USER: C/SCR             \ chars per screen >300 or 3C0
-      52 USER: 'INTERPRET        \ Vector for the interpreter
+\      2E USER: 'EMIT            \ vector for char. output routine
+\      30 USER: 'CR              \ vector for carriage return
+\      32 USER: 'KEY             \ vector for wait-for-key
+\      34 USER: 'KEY?            \ vector for key pressed test
+\      36 USER: 'TYPE            \ vector for block output
+\      38 USER: 'PAGE            \ vector for screen clear
+
 
 \      54 USER: ---  1+ DSRSIZ    \ O/S use *PROTECTED IN ROOT TASK, Free for other tasks
 \      56 USER: ---  DSRNAM       \ O/S use *PROTECTED IN ROOT TASK, Free for other tasks
 \      58 USER: ---               \ O/S use *PROTECTED IN ROOT TASK, Free for other tasks
 
-       5A USER: TPAD              \ offset used so each task has a separate PAD
+\       5A USER: TPAD              \ offset used so each task has a separate PAD
 \      5C USER:                   \ Free user variable
 \      5E USER:                   \ Free user variable
 \      60 USER:                   \ Free user variable
@@ -368,10 +370,10 @@ TARGET-COMPILING
 \      6E USER:                   \ Free user variable
 \ ** total of 39 user variables are available in workspace 8300.
 
-\ Other HIgh speed RAM locations
+\ Other High speed RAM locations
 \ *these constants define memory locations so they are actually VARIABLES :-)
  _CURSR constant: CURS            \ holds CURSOR character for KEY
-   8346 constant: H               \ MASTER HEAP POINTER can also be a user variable
+  variable: H               \ MASTER HEAP POINTER can also be a user variable
    8375 constant: KVAL            \ GPL KSCAN outputs ascii value here. >FF if no key pressed
    83D4 constant: KTP             \ copy of VDP R1. TI-99 system stores the keyboard type here
    83C6 constant: KUNIT#          \ keyboard unit# (CAMEL99 uses MODE 5, BASIC MODE)
@@ -383,6 +385,7 @@ variable: LATEST                  \ LATEST returns the NFA of last word defined
 variable: ORGDP                   \ restore DP to this on COLD boot
 variable: ORGLAST                 \ restore LATEST to this on COLD boot
 variable: BOOT                    \ ADDRESS OF THE FIRST Forth word to run
+variable: TPAD  
 
 [CC] DECIMAL [TC]
    0024 constant: L/SCR           \ 24 lines per screen on a TI-99
@@ -393,18 +396,20 @@ variable: VTOP                    \ top of video screen memory. defaults to 0
 variable: L0    3 TCELLS TALLOT   \ LEAVE stack used to resolve nested LEAVEs (4 LEAVEs max)
 variable: ^PAB                    \ pointer to current open file PAB
 variable: LINES                   \ track lines compiled in a file
+variable: C/SCR                   \ chars per screen >300 or 3C0
+variable: 'INTERPRET              \ Vector for the interpreter
 
 ?stk
 \ ==============================================
 \ F O R T H   M E M O R Y   A L L O C A T I O N
-[cc] cr .( Hi-level FORTH Primitives...)
+[CC] cr .( Hi-level FORTH Primitives...)
 
 TARGET-COMPILING
 
 : ALLOT    ( n --)  DP +!  ;      \ allocate dictionary space
 
-\ By making HERE faster the system goes faster because HERE is used a lot.
 \ : HERE   DP @ ;
+\ By making HERE faster the system goes faster because HERE is used a lot
  CODE: HERE   ( -- addr) TOS PUSH,  DP @@ TOS MOV,  NEXT, END-CODE
 
 : ALIGN     ( -- )     HERE ALIGNED DP ! ;
@@ -412,7 +417,6 @@ TARGET-COMPILING
 : C,        ( c --)    HERE C!  1 ALLOT ;
 : PAD       ( -- addr) HERE TPAD @ + ;  \ MULT-TASK friendly using TPAD
 
-\ : >BODY     2+ ;  \ removed from kernel, saves 18 bytes. Loads at START up
 \ : COMPILE,  ( n --)  ,  ;  \ for ITC Forth this is the same as , (comma compiler)
 
 : COMPILE   ( -- )  R> DUP 2+ >R @ , ;  \ append inline execution token
@@ -446,7 +450,7 @@ TARGET-COMPILING
 : MALLOC     ( n -- addr ) H @  SWAP H +! ;   \ allocate heap and return pointer
 : MFREE      ( n -- ) NEGATE H +! ;           \ free n bytes of heap memory
 
-[cc] cr .( Stack primitives ...)  [tc]
+[CC] cr .( Stack primitives ...)  [tc]
 \ ========================================================================
 \ S T A C K   P R I M I T I V E S
 \ most stack primitives have been implemented in ASSEMBLER for speed
@@ -901,7 +905,6 @@ TARGET-COMPILING
               SOURCE-ID OFF
               CR QUIT ;
 
-
 : ?ABORT  ( f c-addr u --)
            ROT IF  CR CR T." * " TYPE  T."  ? "
                    SOURCE-ID @ 0>
@@ -949,7 +952,6 @@ TARGET-COMPILING
 \                     xt -1  if "normal"
                       LATEST @ (FIND) ; \ start search with the last word defined
 
-
 \ ========================================================================
 \ D I C T I O N A R Y   S E A R C H
 
@@ -965,7 +967,6 @@ TARGET-COMPILING
                 BL WORD FIND DUP ?FIND    \ abort if not found in dictionary
                 0< IF   COMPILE COMPILE   \ 0< means non-immediate word. need COMPILE
                    THEN  , ; XIMMEDIATE   \ compile the CFA into the definition
-
 
 \ ========================================================================
 \ I / O   R E - D I R E C T I O N
@@ -1050,7 +1051,6 @@ TARGET-COMPILING
             HERE LATEST !         \ update the LATEST variable to this new definition's NFA
             BL PARSE-WORD S, ;    \ parse input and compile NAME string into dictionary
 
-
 \ ========================================================================
 \ T A R G E T   S Y S T E M   D E F I N I N G   W O R D S
 \ Believe it or not this is now all it takes to make Forth data types
@@ -1083,9 +1083,9 @@ TARGET-COMPILING
 \ =======================================================================
 \ ADD-ONS
 \ ** commment out everything to build the smallest kernel  **
- [CC] include CC9900\cclib\crusmall.hsf
- [CC] include CC9900\cclib\diskdsr6.hsf
- [CC] include CC9900\cclib\filesysE.hsf
+\ [CC] include cc9900\cclib\crusmall.hsf
+ [CC] include CC9900\cclib\dsrlink5.hsf
+ [CC] include CC9900\cclib\filesysT.hsf
 
 \ =======================================================================
 \ T E S T   C O D E   G O E S   H E R E
@@ -1095,9 +1095,9 @@ TARGET-COMPILING
 
 \ =======================================================================
 \ LOOPS AND BRANCH COMPILERS FOR THE TI-99 SYSTEM
- [CC] CR .( TARGET forth BRANCHING and LOOPING ...)
+\ [CC] CR .( TARGET forth BRANCHING and LOOPING ...)
 
-      include cc9900\cclib\targloop.hsf  \ these compile code on the TARGET system
+ [CC]  include cc9900\cclib\targloop.hsf  \ these compile code on the TARGET system
 
 \ =======================================================================
 \ Init functions
@@ -1135,15 +1135,15 @@ TARGET-COMPILING
               26 TPAD !                      \ PAD=HERE+>26, room for HOLD buffer
               TMR!                           \ set 9901 timer to count continously
               2 KUNIT# C!                    \ keyboard #2 is the BASIC keyboard
-              8370 @ ^PAB !                  \ GET end of VDP mem from O/S, set PAB pointer
+              RSTPAB                         \ GET end of VDP mem from O/S, set PAB pointer
               T['] <INTERPRET> 'INTERPRET !  \ set the interpreter vector
               SOURCE-ID OFF                  \ source-id=0 is console input
               TIB 0 'SOURCE 2!  >IN OFF      \ init interpret to TIB
               HEX                            \ set the RADIX to hex
 
             \ VDP start screen
-              TEXT  BEEP
-              TS" CAMEL99 2.0.25" TYPE
+              TEXT BEEP
+              TS" CAMEL99 2.1.D" TYPE
               TS" DSK1.START" INCLUDED       \ load the start file
               RP0 RP!                        \ reset return stack pointer
               SP0 SP!                        \ reset the data stack pointer
@@ -1178,7 +1178,6 @@ TARGET-COMPILING
 \           F O R T H   S Y S T E M   C O D E   E N D S
 \ /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 cr ." Forth Kernel compiled completely"
-
 
 \ ======================================================================
 \  P A T C H   T H E   T A R G E T  S Y S T E M   V A R I A B L E S

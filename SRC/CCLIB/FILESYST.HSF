@@ -1,0 +1,102 @@
+\ FilesysT.hsf
+
+[CC] HEX 
+
+TARGET-COMPILING
+
+\ VARIABLE: ^PAB            \ *moved to CAMEL2.HSF
+
+\ To save kernel space we are reading/writing VDP directly.
+\ There is NO PAB duplicate in CPU RAM.
+
+\ fast fetch of pab base pointer. (*This is also the OPCODE field)
+CODE: [PAB   ( -- adr) TOS PUSH,  ^PAB @@ TOS MOV,  NEXT, END-CODE
+
+\ PAB field words calculate offset from PAB base
+\ square bracket trailing to indicate they are used with [PAB
+\ Example:  [PAB FBUFF] V@
+
+CODE: FLG]    ( vaddr -- vaddr') TOS INC,         NEXT, END-CODE
+CODE: FBUFF]  ( vaddr -- vaddr') TOS INCT,        NEXT, END-CODE
+CODE: RECLEN] ( vaddr -- vaddr') *TOS+ *TOS+ MOV, NEXT, END-CODE \ inc. by 4 trick
+CODE: CHARS]  ( vaddr -- vaddr') TOS  5 ADDI,     NEXT, END-CODE
+CODE: REC#]   ( vaddr -- vaddr') TOS  6 ADDI,     NEXT, END-CODE
+CODE: STAT]   ( vaddr -- vaddr') TOS  8 ADDI,     NEXT, END-CODE
+CODE: FNAME]  ( vaddr -- vaddr') TOS  9 ADDI,     NEXT, END-CODE
+
+: RSTPAB  ( -- ) 8370 @ 2+ ^PAB ! ;  \ Reset base PAB address
+
+\ generic file error handler
+: ?FILERR  ( ior -- )
+           ?DUP 
+           IF CR T." * File Err "  .
+              RSTPAB  ABORT
+           THEN ;
+
+: VPLACE   ( $addr len Vaddr -- )  \ like PLACE, but for VDP RAM
+           2DUP VC! 1+ SWAP VWRITE ;
+
+\ MAKEPAB needs ^PAB set to a VDP address
+\ it inits the pab to DV80 file format
+\ puts file name on stack into PAB
+\ record length is set by the O/S to 80 bytes
+: MAKEPAB  ( addr len -- )
+           14 [PAB FLG]    VC!    \ SET MODE: INPUT,DISPLAY,VARIABLE
+          [PAB FNAME] DUP         \ -- addr len vadr vadr
+           BL + [PAB FBUFF] V!    \ set FBUFF 32 bytes past fname
+           VPLACE                 \ write string to [PAB FNAME]
+;
+
+\ === HI LEVEL FUNCTIONS ====
+: FILEOP  ( opcode -- err)                   \ TI99 O/S call
+          [PAB VC!                           \ write opcode byte to VDP PAB
+          [PAB FLG] DUP VC@ 1F AND SWAP VC!  \ clear err code bits
+          [PAB FNAME]  8356 !                \ select the PAB
+          DSRLNK ( err)                      \ call DSR code
+;
+
+\ VARIABLE: LINES                           \ moved to CAMEL2.HSF
+
+: ?FILE    ( n -- ) 
+           0= TS" Filename" ?ABORT ;  \ tests string length only
+
+CODE: 1+!  ( addr -- ) 
+          *TOS INC,
+           TOS POP,
+           NEXT,
+           END-CODE
+
+\ This word bootstraps the system on startup.
+\ FILESYS8..E are nestable. Allocates a new PAB and RAM buffer
+\ Usage:   TS" DSK1.START" INCLUDED
+: INCLUDED  ( caddr len -- )
+           DUP ?FILE
+           CR T." Loading: " 2DUP TYPE
+           LINES OFF
+           SOURCE-ID @ >R                  \ save source-ID
+           SOURCE 2>R                      \ save interpreter input source
+           >IN @ >R                        \ save input string pointer
+           8356 @ >R                       \ save current file ID
+          -120 ^PAB +!  MAKEPAB            \ make new PAB on PAB stack
+           0 FILEOP ?FILERR                \ open new file (sets new DSRNAM)
+           SOURCE-ID 1+!                   \ incr. source ID (1st file is 1)
+
+           52 DUP MALLOC >R                \ get a buffer pointer & RPUSH
+
+           BEGIN
+           \ *if we read past end of file, FILEOP closes the file automatically
+             2 FILEOP 0=                   \ read a record
+           WHILE                           \ while err=0
+             [PAB CHARS] VC@ DUP           \ get the #chars read
+             [PAB FBUFF] V@  R@ ROT VREAD  \ transfer VDP fbuff to malloc buffer
+             R@  SWAP  INTERPRET           \ interpret addr,len on stack
+             LINES 1+!                     \ count the line
+           REPEAT
+           R> DROP                         \ drop buffer address from rstack
+         ( 52 ) MFREE                      \ release the buffer memory
+           120 ^PAB +!                     \ pop back 1 pab on the pabstack
+           R> 8356 !                       \ restore old file ID
+           R> >IN !                        \ restore >IN
+           2R> 'SOURCE 2!                  \ restore interpreter SOURCE
+           R> SOURCE-ID !                  \ restore SOURCE-ID
+           HEX ;
