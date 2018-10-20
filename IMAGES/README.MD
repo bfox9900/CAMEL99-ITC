@@ -1,0 +1,1 @@
+These files are binary images of disk drives that can be used with the CLASSIC99 Emulator
