@@ -1,8 +1,10 @@
-# CAMEL99 for TI-99 V2.0.23
+# CAMEL99 for TI-99 V2.1.D
+
+## Tested on Real TI-99 Hardware with disk drive access
 
 ### ABOUT CAMEL99 V2
 ---------------------
-CAMEL99 Forth has been built as an educational tool for those who are interested in how you could cross-compile Forth to a different CPU using an existing Forth system. Rather than starting from scratch it uses CAMEL Forth by Dr. Brad Rodriguez for the hi-level Forth code. 
+CAMEL99 Forth has been built as an educational tool for those who are interested in how you could cross-compile Forth to a different CPU using an existing Forth system. Rather than starting from scratch it uses CAMEL Forth by Dr. Brad Rodriguez for the hi-level Forth code.
 This has been "tweeked" and dare I say improved a little to better fit the very slow TI-99 computer. (More things written in Assembler was the answer)
 
 The low level primitives are written in Forth Assembler. The file 9900FAST.HSF also contains the low level drivers for TI-99 Keyboard and Video display I/O. The final console interfaces are written in Forth including the screen scrolling code, just to demonstrate how it can be done in hi-level Forth. 
@@ -142,3 +144,9 @@ It now loads in the DSK.START file as a library file: TOBODY.F
   after the fname string field. SELECT in ANSFILES.F uses contents
   of [PAB DSRNAM] to change the contents of O/S address >8356 (DSRNAM)
   which controls which DSR is currently in use.
+  
+### Oct 20, 2018  V2.1.D
+- Interim Version.
+- This version has been tested on TI-99 hardware and seems to work as expected.
+- It uses a new DSR Link program written in Assembler.
+- It BREAKS the current ANSFILES code so files and Utilities (MORE, DIR, CAT) will be fixed in Revision E
