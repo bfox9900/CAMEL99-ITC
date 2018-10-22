@@ -1143,7 +1143,7 @@ TARGET-COMPILING
 
             \ VDP start screen
               TEXT BEEP
-              TS" CAMEL99 2.1.D" TYPE
+              TS" CAMEL99 2.1.E" TYPE
               TS" DSK1.START" INCLUDED       \ load the start file
               RP0 RP!                        \ reset return stack pointer
               SP0 SP!                        \ reset the data stack pointer

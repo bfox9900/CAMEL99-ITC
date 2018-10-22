@@ -6,13 +6,12 @@ HEX
 \ len,name,  8,float, 8,float  8,float
 
 CR .( Requires ANSFILES.F, CASE.F)
-
-\ INCLUDE DSK1.TOOLS.F   \ for debugging
- INCLUDE DSK1.ANSFILES.F
- INCLUDE DSK1.CASE.F
-
 ' OPEN-FILE DROP
 ' ENDOF     DROP
+
+ INCLUDE DSK1.TOOLS.F   \ for debugging
+ INCLUDE DSK1.ANSFILES.F
+ INCLUDE DSK1.CASE.F
 
 \ print unsigned int, right justified
 : U.R  ( u n --) >R 0 <# #S #> ( adr len) R> OVER - SPACES TYPE ;
@@ -49,7 +48,7 @@ DECIMAL
 
 : HEAD.REC ( addr -- )
           DUP  7 $.LEFT SPACE COUNT ( addr len)
-          NEXT$
+          NEXT$ 
           ."  Size" NEXT$ F>INT 5 U.R   ."  Used" NEXT$ F>INT 5 U.R
           2DROP  ;
 

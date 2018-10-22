@@ -1,10 +1,9 @@
 \ GRAPHIX.FTH for CAMEL99 V2
 
-\ DEFINE VDP TABLES AS ARRAYS
-
+\ define vdp tables as arrays
 HEX
- 0380 CONSTANT CTAB      \ COLOUR TABLE
- 0800 CONSTANT PDT       \ "PATTERN DESCRIPTOR TABLE"
+ 0380 CONSTANT CTAB      \ colour table
+ 0800 CONSTANT PDT       \ "pattern descriptor table"
 
 \ access VDP tables like arrays. Usage:  9 ]CTAB returns VDP addr
  : ]CTAB  ( set# -- 'ctab[n])   CTAB + ;    \ 1 byte fields
@@ -26,8 +25,7 @@ HEX
 
 
 \ ascii value SET# returns the character set no. 
-
-: SET#  ( ascii -- set#) 3 RSHIFT ;     ( usage:  CHAR A SET# 2 8 COLOR)
+: SET#  ( ascii -- set#) 3 RSHIFT ;  
 
 ( *NEW*  change contiguous character sets at once)
 : COLORS  ( set1 set2 fg bg  -- )
@@ -36,51 +34,52 @@ HEX
           SWAP ]CTAB SWAP ]CTAB OVER - R> VFILL ;
 
 : SCREEN ( color -- )
-         1 ?MODE                \ check for MODE 1
-         1- ?COLOR              \ TI-BASIC color to VDP color and test
- ( -- n) 7 VWTR  ;              \ set screen colour in Video register 7
+         1 ?MODE             \ check for MODE 1
+         1- ?COLOR ( -- n)   \ TI-BASIC color to VDP color and test
+         7 VWTR  ;           \ set screen colour in Video register 7
 
-( Changes to familiar TI-BASIC CYAN screen)
+( Like TI-BASIC )
 : GRAPHICS  ( -- )
-             1 VMODE !          \ call this video mode 1
-             0 380  0 VFILL     \ erase the entire 40 col. screen space
-             E0 DUP KTP C!      \ KSCAN re-writes VDP Reg1 with this byte
-      ( -- E0) 1 VWTR           \ VDP register 1  bit3 = 0 = Graphics Mode
-             1 6 VWTR           \ set sprite descriptor table to 1x$800=$800
-             CTAB 10 10 VFILL   \ char color table: black on transparent [1,0]
-             8 SCREEN           \ cyan SCREEN
-             20 C/L!            \ 32 chars/line
+             1 VMODE !        \ call this video mode 1
+             0 380  0 VFILL   \ erase the entire 40 col. screen space
+             E0 DUP KTP C!    \ KSCAN re-writes VDP Reg1 with this byte
+      ( -- E0) 1 VWTR         \ VDP register 1  bit3 = 0 = Graphics Mode
+             1 6 VWTR         \ set sprite descriptor table to 1x$800=$800
+             CTAB 10 10 VFILL \ color table: black on transparent [1,0]
+             8 SCREEN         \ cyan SCREEN
+             20 C/L!          \ 32 chars/line
              CLEAR ;
 
 \ CHAR sub-program is renamed to CHARDEF
-: CHARDEF  ( addr char# --)  ]PDT      8 VWRITE ;   \ ti basic call char              
-: CHARPAT  ( addr char# --)  ]PDT SWAP 8 VREAD ;    \ ti basic call charpat
+: CHARDEF  ( addr char# --)  ]PDT      8 VWRITE ; \ ti basic call char
+: CHARPAT  ( addr char# --)  ]PDT SWAP 8 VREAD ;  \ ti basic call charpat
 
-: PATTERN: ( u u u u  -- )       \ character pattern, compatible with CHARDEF
+: PATTERN: ( u u u u -- )
 \ USAGE:  HEX 0000 FF00 AABB CCDD PATTERN: SHAPE1
-           CREATE     >R >R >R   \ Rpush 3 values so we can reverse order
-           ,  R> , R> , R> , ;   \ compile 4 ints in VDP useable order
+           CREATE     
+              >R >R >R
+           ,  R> , R> , R> , ;
 
-: GCHAR ( col row -- char) AT-XY VPOS VC@ ;
+: GCHAR ( col row -- char) VROW 2@ >VPOS VC@ ;
 
 \ NOTES:
 \ 1. Unlike BASIC HCHAR & VCHAR must have the cnt parameter
 \ 2. col and row do not affect AT-XY, VCOL or VROW
-: HCHAR  ( col row char cnt -- ) \ parameter order not ideal so we shuffle
-          SWAP 2>R          \ swap char & cnt, push to return stack
+: HCHAR  ( col row char cnt -- )
+          SWAP 2>R           \ swap char & cnt, push to return stack
           >VPOS              \ ( -- vdp_addr)
-          R>  2DUP + ?SCR    \ bring back count add to Vadr and test
-          R>  VFILL ;        \ bring back char and FILL Video memory
+          R>  2DUP + ?SCR    \ add count to Vadr and test
+          R>  VFILL ;        \ get char, FILL Vmemory
 
 : VCHAR  ( col row char cnt -- ) \ parameter order not ideal so we shuffle
-          2>R                \ ( -- x y )  push char & cnt to rstack
-          >VPOS              \ ( -- vdp_addr) calc the Video position in memory
-          C/SCR @ 1- SWAP    \ ( -- lim vdpaddr) End of screen - 1, is the Video Limit
-          R> SWAP            \ ( -- lim char vadr) get the char and reverse order
-          R> 0               \ ( -- lim char vadr cnt index) all that crap to get this
-          ?DO                \ ( -- lim char vadr)  let 'er rip
-             2DUP VC!        \ write char to video memory)
-             C/L@ +  VCLIP   \ clip vadr to lim value (CODE word for speed)
+          2>R                \ ( -- x y )
+          >VPOS              \ ( -- vdp_addr)
+          C/SCR @ SWAP       \ ( -- lim vdpaddr)
+          R> SWAP            \ ( -- lim char vadr)
+          R> 0               \ ( -- lim char vadr
+          ?DO                \ ( -- lim char vadr)
+             2DUP VC!
+             C/L@ +  VCLIP
           LOOP
           2DROP DROP ;
 

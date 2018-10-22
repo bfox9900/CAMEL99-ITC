@@ -36,12 +36,11 @@ CODE: FNAME]  ( vaddr -- vaddr') TOS  9 ADDI,     NEXT, END-CODE
 : VPLACE   ( $addr len Vaddr -- )  \ like PLACE, but for VDP RAM
            2DUP VC! 1+ SWAP VWRITE ;
 
-\ MAKEPAB needs ^PAB set to a VDP address
+\ INITPAB needs ^PAB set to a VDP address. *NO ERROR CHECKING USED*
 \ it inits the pab to DV80 file format
-\ puts file name on stack into PAB
-\ record length is set by the O/S to 80 bytes
-: MAKEPAB  ( addr len -- )
-           14 [PAB FLG]    VC!    \ SET MODE: INPUT,DISPLAY,VARIABLE
+: INITPAB  ( addr len -- )
+           14 [PAB FLG]    VC!    \ mode: input,display,variable
+           50 [PAB RECLEN] VC!    \ 80 bytes/rec
           [PAB FNAME] DUP         \ -- addr len vadr vadr
            BL + [PAB FBUFF] V!    \ set FBUFF 32 bytes past fname
            VPLACE                 \ write string to [PAB FNAME]
@@ -57,10 +56,10 @@ CODE: FNAME]  ( vaddr -- vaddr') TOS  9 ADDI,     NEXT, END-CODE
 
 \ VARIABLE: LINES                           \ moved to CAMEL2.HSF
 
-: ?FILE    ( n -- ) 
+: ?FILE    ( n -- )
            0= TS" Filename" ?ABORT ;  \ tests string length only
 
-CODE: 1+!  ( addr -- ) 
+CODE: 1+!  ( addr -- )
           *TOS INC,
            TOS POP,
            NEXT,
@@ -76,15 +75,14 @@ CODE: 1+!  ( addr -- )
            SOURCE-ID @ >R                  \ save source-ID
            SOURCE 2>R                      \ save interpreter input source
            >IN @ >R                        \ save input string pointer
-           8356 @ >R                       \ save current file ID
-          -120 ^PAB +!  MAKEPAB            \ make new PAB on PAB stack
+          -120 ^PAB +!  INITPAB            \ make new PAB on PAB stack
            0 FILEOP ?FILERR                \ open new file (sets new DSRNAM)
            SOURCE-ID 1+!                   \ incr. source ID (1st file is 1)
 
            52 DUP MALLOC >R                \ get a buffer pointer & RPUSH
 
            BEGIN
-           \ *if we read past end of file, FILEOP closes the file automatically
+           \ *if we read past end of file, O/S closes file automatically
              2 FILEOP 0=                   \ read a record
            WHILE                           \ while err=0
              [PAB CHARS] VC@ DUP           \ get the #chars read
@@ -95,7 +93,6 @@ CODE: 1+!  ( addr -- )
            R> DROP                         \ drop buffer address from rstack
          ( 52 ) MFREE                      \ release the buffer memory
            120 ^PAB +!                     \ pop back 1 pab on the pabstack
-           R> 8356 !                       \ restore old file ID
            R> >IN !                        \ restore >IN
            2R> 'SOURCE 2!                  \ restore interpreter SOURCE
            R> SOURCE-ID !                  \ restore SOURCE-ID
