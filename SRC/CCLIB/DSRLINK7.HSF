@@ -1,9 +1,8 @@
-\ DSRLNK in XFC99 cross-compiler 9900 Assembler
+\ DSRLNK for XFC99 cross-compiler/Assembler
 
-\ VERSION 6 PASSES error code back to Forth workspace, TOS register
-\ AND KEEPS THE EXTRA CODE RE: R12
+\ PASSES error code back to Forth workspace, TOS register
 
-\ Source: 
+\ Source:
 \ http://atariage.com/forums/topic/283914-specialized-file-access-from-xb/page-2
 \ by InsaneMultitasker via Thierry Nouspikel
 
@@ -20,6 +19,8 @@ CROSS-COMPILING XASSEMBLER DEFINITIONS
        DUP           SWPB,
            VDPWA @@  MOVB,
                      NOP,  ;
+                     
+: [TOS]    8 (R13)  ;  \ gives access to Forth top of stack register
 
 [cc] HEX
 
@@ -49,19 +50,20 @@ l: H1300  1300 DATA,
 CLR-JMPTABLE
 
 CREATE: DSR1
-      *R14+     R5   MOV,    \ CALLER'S address->R5, auto inc for return
+      *R14+     R5   MOV,    \ get '8'->R5, auto inc for return
        HEX20 @@ R15  SZCB,   \ >20 eq flag=0
        8356 @@  R0   MOV,    \ [PAB FNAME] to R0
        R0       R9   MOV,    \ dup R0 to R9
        R9       -8   ADDI,   \ R9-8 = [PAB FLG]
        R0           VDPWA,
        VDPRD @@ R1   MOVB,   \ R1= length of FNAME
+       
+\ setup to copy VDP FNAME ->namebuf to '.' character
        R1       R3   MOVB,   \ DUP length byte to R3
        R3       08   SRL,    \ swap the byte to other side
        R4            SETO,   \ R4 = -1
        R2   NAMBUF   LI,     \ R2 is ^namebuf
-
-  BEGIN, ( copy VDP FNAME ->namebuf upto '.' character  )
+    BEGIN,
        R0            INC,    \ point to next fname VDP address
        R4            INC,    \ counter starts at 0
        R4       R3   CMP,    \ is counter = fnamelength
@@ -70,29 +72,29 @@ CREATE: DSR1
        VDPRD @@ R1  MOVB,    \ read next VDP char from fname
        R1      *R2+ MOVB,    \ copy to namebuf & inc pointer
        R1 PERIOD @@ CMPB,    \ is it a '.'
-  EQ UNTIL,                  \ until '.' found  34 bytes!!!
+   EQ UNTIL,                 \ until '.' found  34 bytes!!!
 
 @@1:   R4        R4  MOV,    \ test R4(device name length)=0
        @@6           JEQ,    \ if so, goto ERROR6
        R4        07  CMPI,   \ is dev name length>7
-       @@8           JGT,    \ if so, goto @@8 (same as @@6)
+       @@8           JGT,    \ if so, goto @@8 (ERROR6)
        83D0 @@       CLR,    \ erase magic CRU addr. holder
        R4   8354 @@  MOV,    \ put length in magic address
        R4            INC,    \ +1 points to '.' character
        R4   8356 @@  ADD,    \ add offset to PAB address (makes "real PAB")
 
 \ ==== GPL WORKSPACE ====
+       0 LIMI,
        83E0         LWPI,    \ SROM (search ROM device list)
        R1           CLR,     \ MAGIC GPL REGISTER=0
        H2000 @@ CYC1 @@ MOV, \ init the CYC1 variable ??
        R12     1000 LI,      \ init CRU base to 1000
-       @@A          JMP, 
+       @@A          JMP,
 
-@@9:  R12   0F00   LI,       \ Scan ROM
-       H1300 @@ CYC1 @@ MOV,
-
-@@A:  \ scan for I/O cards
-    BEGIN,
+@@9:   R12   1000   LI,      \ init CRU address
+       H1300 @@ CYC1 @@ MOV, \
+@@A:
+    BEGIN,  \ scan for I/O cards
        R12   R12   MOV,
        NE IF,              \ if card address<>0
            00 SBZ,         \ turn off card
@@ -110,12 +112,13 @@ CREATE: DSR1
        R2   4000    LI,    \ ROM start addr -> R2
       *R2  HEXAA @@ CMPB,  \ test for card present
     EQ UNTIL,              \ loop until card is found
-       DREG(5) @@ R2 ADD,
+       DREG(5) @@ R2 ADD,  \ add '8'+4000= >4008 DSR ROM list
        @@9          JMP,
 
 
 @@3: \ scan ROM linked list for code address
-    BEGIN,
+   BEGIN,
+     BEGIN,
        83D2 @@   R2 MOV,   \ start of ROM device list -> R2
        00           SBO,   \ turn card on
 @@9:  *R2       R2  MOV,   \ Fetch next link
@@ -126,25 +129,25 @@ CREATE: DSR1
        8355 @@  R5  MOVB,  \ dev length->R5
        @@4          JEQ,   \ if 0 we have a string match
        R5      *R2+ CMPB,  \
-    EQ UNTIL,              \ JNE DLOOP3
+     EQ UNTIL,
 
 \ find dev string match
        R5       08  SRL,   \ shift length byte
        R6   NAMBUF  LI,    \ R6 hold ^nambuf
-    BEGIN,                
+     BEGIN,
        *R6+   *R2+  CMPB,  \ compare namebuf to ROM string
         @@3         JNE,   \ if mismatch goto @@3
         R5          DEC,   \ dec the counter register
-    EQ UNTIL,
-
+     EQ UNTIL,
 @@4: \ DJUMP4 run DSR code
-       R1            INC,
+       R1            INC,  \ count entries into the DSR ?
       *R9            BL,   \ call the DSR code
-       @@3           JMP,  \ try next card
+  AGAIN, \  @@3  JMP,      \ try next card
+
 \   -- DSR returns here if we are done --
        00            SBZ,  \ Turn off the card
        DREGS         LWPI, \ ==== DSR Workspace ====
-\       R9    R0      MOV, \ put [PAB FLG] addr ->R0
+       2 LIMI,
        R9           VDPWA, \ set vdp address
        VDPRD @@  R1  MOVB, \ read error value to DREGS R1
        R1 0D         SRL,  \ shift error to correct range
@@ -153,8 +156,9 @@ CREATE: DSR1
 
 \ error condition handlers
 @@5:    DREGS        LWPI,
-@@6: @@8:  R1        SETO, \ device error code = -1
-@@7:    R1   8 (R13) MOV,  \ put error code in Forth r0 \ TOS (r4)
+@@6:                       \ dev. name too long
+@@8:    R1           SETO, \ dev. name not found: code = -1
+@@7:    R1     [TOS] MOV,  \ put error code in Forth
         HEX20 @@ R15 SOCB, \ set EQ flag = 1
                      RTWP,
 \    ====== DSR LINK ENDS======
@@ -165,9 +169,7 @@ l: DLNK   DREGS T, DSR1 T,
 CODE: DSRLNK  ( -- ior)
         TOS PUSH,          \ space for error code on Forth stack
         TOS CLR,
-        0 LIMI,
         DLNK @@      BLWP,
         8            DATA,
-        2 LIMI,
         NEXT,
         END-CODE
