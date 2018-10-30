@@ -1,9 +1,9 @@
 \ Dutch flag problem DEMO using combsort
 \ *SORTS IN PLACE FROM VDP MEMORY*
 
- INCLUDE DSK1.GRAFIX.F
- INCLUDE DSK1.RANDOM.F
- INCLUDE DSK1.ELAPSE.F
+NEEDS HCHAR  FROM DSK1.GRAFIX
+NEEDS RND    FROM DSK1.RANDOM
+NEEDS ELAPSE FROM DSK1.ELAPSE
 
 HEX
 
@@ -118,7 +118,7 @@ SQUARE PTR1   CHARDEF
               2DROP 2DROP    ( -- )
            THEN
         LOOP
-        SFLAG @  GAP @ 1 = AND            \ additional conditional
+        SFLAG @  GAP @ 1 = AND  \ additional conditional
     UNTIL
     DROP ;
 
@@ -153,13 +153,14 @@ SQUARE PTR1   CHARDEF
 : TEST#1.  ." #1 In order test (Stability)" ;
 
 : FULLRUN ( -- )
-         PAGE CR ." COMBSORT DEMO"
-              CR TEST#1.                  WAIT
-         DUTCH      START COMBSORT STOP.  WAIT
-         RNDSCREEN  START COMBSORT STOP.  WAIT
-         BLUWHTRED  START COMBSORT STOP.  WAIT
-         RUSSIAN    START COMBSORT STOP.  WAIT
-         FRENCH     START COMBSORT STOP.  WAIT
+         PAGE 
+         CR ." COMBSORT DEMO"
+         CR         TEST#1.               WAIT  \ Timing
+         DUTCH      START COMBSORT STOP.  WAIT  \ 00:11.36
+         RNDSCREEN  START COMBSORT STOP.  WAIT  \ 00:12.28
+         BLUWHTRED  START COMBSORT STOP.  WAIT  \ 00:12.23
+         RUSSIAN    START COMBSORT STOP.  WAIT  \ 00:12.30
+         FRENCH     START COMBSORT STOP.  WAIT  \ 00:12.26
 
          CR ." COMBSORT Completed"
          1000 MS
@@ -168,14 +169,14 @@ SQUARE PTR1   CHARDEF
          CR   ." You should go get a coffee..."
          WAIT
 
-         PAGE CR ." BUBBLE SORT DEMO"
-              CR TEST#1.                 WAIT
-         DUTCH      START COMBSORT STOP. WAIT
-         RNDSCREEN  START BUBBLE   STOP. WAIT
-         BLUWHTRED  START BUBBLE   STOP. WAIT
-         RUSSIAN    START BUBBLE   STOP. WAIT
-         FRENCH     START BUBBLE   STOP. WAIT
-
+         PAGE 
+         CR ." BUBBLE SORT DEMO"
+         CR TEST#1.                      WAIT  \ timing
+         DUTCH      START COMBSORT STOP. WAIT  \ 00:11.35
+         RNDSCREEN  START BUBBLE   STOP. WAIT  \ 06:00.15
+         BLUWHTRED  START BUBBLE   STOP. WAIT  \ 06:06.60
+         RUSSIAN    START BUBBLE   STOP. WAIT  \ 06:22:21
+         FRENCH     START BUBBLE   STOP. WAIT  \ 06:06.12
          CR ." Completed"  ;
 
 : FRENCHRUN ( -- )

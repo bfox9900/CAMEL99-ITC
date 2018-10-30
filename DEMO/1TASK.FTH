@@ -1,6 +1,6 @@
 \ mtask demo
-INCLUDE DSK1.TOOLS.F
-INCLUDE DSK1.MTASK99.F
+INCLUDE DSK1.TOOLS
+INCLUDE DSK1.MTASK99
 
 INIT-MULTI
 ( word to  create a task in heap and FORK)
@@ -40,6 +40,10 @@ HEX
 
 ' STKTHING TASK1 ASSIGN
 
+\ To start:
+\ MULTI <ENTER>
+\ TASK1 WAKE <ENTER>
+\ (look at memory address >2000..2100 in debugger to see TASK1 stack
 
 
 

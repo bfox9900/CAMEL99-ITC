@@ -1,7 +1,7 @@
 \ QUICKSORT From Rossetta Code with test framework by B Fox
-INCLUDE DSK1.TOOLS.F
-INCLUDE DSK1.RANDOM.F
-INCLUDE DSK1.ELAPSE.F
+INCLUDE DSK1.TOOLS
+INCLUDE DSK1.RANDOM
+INCLUDE DSK1.ELAPSE
 
 HEX
 VARIABLE GAP
@@ -11,7 +11,7 @@ VARIABLE SFLAG
 VARIABLE PASSES
 
 DECIMAL
-1000 CONSTANT SIZE
+2000 CONSTANT SIZE
 
 CREATE Q   SIZE CELLS CELL+ ALLOT
 
@@ -55,7 +55,12 @@ CREATE Q   SIZE CELLS CELL+ ALLOT
 : SORT ( array len -- )
   DUP 2 < IF 2DROP EXIT THEN  1- CELLS OVER + QSORT ;
 
-: QUICKSORT CR ." QUICKSORT!"    Q SIZE SORT ;
+: QUICKSORT
+            CR ." QUICKSORT!"
+            TICKER OFF  
+            Q SIZE SORT
+            .ELAPSED 
+            CR SIZE . ." integers" ;
 
 \ ============ TESTING COMMANDS ======================
 \ load the array with different kinds of mixed up data

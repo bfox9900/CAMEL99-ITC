@@ -1,7 +1,7 @@
-\ blinky   write to screen based on a stack value that is negative or positive
+\ blinky: write to screen based on a stack value that is negative or positive
 \ and toggle the value after each write.
 
-INCLUDE DSK1.GRAFIX.F
+INCLUDE DSK1.GRAFIX
 
 DECIMAL
 : BLINKY   GRAPHICS
@@ -16,10 +16,3 @@ DECIMAL
               500 MS
               KEY?
            UNTIL  ;
-
-
-
-
-
-
-

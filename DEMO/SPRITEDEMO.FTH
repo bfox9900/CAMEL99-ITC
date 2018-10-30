@@ -4,9 +4,10 @@ CR .( For use with CAMEL99 V2.0.17 or greater)
 CR
 CR
 
- INCLUDE DSK1.TOOLS.F
- INCLUDE DSK1.DIRSPRIT.F
- INCLUDE DSK1.MOTION.F
+NEEDS BREAK  FROM DSK1.TOOLS
+ INCLUDE DSK1.DIRSPRIT
+ INCLUDE DSK1.RANDOM
+ INCLUDE DSK1.MOTION
 
 \ ========================================
 \ demo code
@@ -43,31 +44,76 @@ DECIMAL
    90  10   0 125  26 SPRITE
    48  11   0 130  27 SPRITE  \ 0
    49  12   0 140  28 SPRITE  \ 1
-   50  13   0 150  29 SPRITE  \ 2                                         
+   50  13   0 150  29 SPRITE  \ 2
    51  14   0 160  30 SPRITE  \ 3
    52  16   0 170  31 SPRITE  \ 4
 ;
 
-: RUN    CLEAR ." 31 sprites are in motion"
-         CR ." Press FNCT 4 to halt demo"
-         DELALL  MAKE-SPRITES
-         0 MAGNIFY
-        \ dx dy spr# spr#
-        \ --------------
-          0  1        0 MOTION   \ only sprite 0 moves this way.
-          1  0   1    4 MOTIONS
-         -1  0   5   10 MOTIONS
-          0 -1  11   15 MOTIONS
-          1  3  16   20 MOTIONS
-         -1 -3  21   26 MOTIONS
-          0  1  27   31 MOTIONS
-         BEGIN
-           0 SP.MOVE  0 SP.MOVE   \ makes spr# - move faster
-           ALL-SPRITES TRANSLATE
-           20 MS
-           ?BREAK
-         AGAIN  ;
+: RNDI  ( -- n ) 4 RND 2- ;
 
-CLEAR  ." TYPE RUN to start"
+: RNDYX ( -- y x ) RNDI  RNDI ;  \ RNDI RNDI ;
+
+\ you can make any sprite move any way with this table
+: MY-MOTIONS ( -- )
+        \ dy dx   spr#
+        \ ----------------------
+          1   0    0 MOTION   \ only sprite 0 moves this way.
+          1   0    1 MOTION
+          1   0    2 MOTION
+          1   0    3 MOTION
+          1   0    4 MOTION
+          1   0    5 MOTION
+          1   0    6 MOTION
+          1   0    7 MOTION
+          1   0    8 MOTION
+          1   0    9 MOTION
+          1   0   10 MOTION
+          1   0   11 MOTION
+          1   0   12 MOTION
+          1   0   13 MOTION
+          1   0   14 MOTION
+          1   0   15 MOTION
+         -1   0   16 MOTION
+         -1   0   17 MOTION
+         -1   0   18 MOTION
+         -1   0   19 MOTION
+         -1   0   20 MOTION
+         -1   0   21 MOTION
+         -1   0   22 MOTION
+         -1   0   23 MOTION
+         -1   0   24 MOTION
+         -1   0   25 MOTION
+         -1   0   26 MOTION
+         -1   0   27 MOTION
+         -1   0   28 MOTION
+         -1   0   29 MOTION
+         -1   0   30 MOTION
+         -1   0   31 MOTION
+;
+
+: SET-MOTIONS   1 0 0 31 MOTIONS ;
+
+: RUN
+         CLEAR ." 32 sprites moving in Forth"
+         CR    ." Sprite 0 is 2X faster"
+         CR    ." Sprite 31 is 3X faster"
+         CR
+         CR    ." Press FNCT 4 to halt demo"
+         CR    ." Type: MY-MOTIONS RUN"
+
+         DELALL  MAKE-SPRITES
+         250 MS
+         0 MAGNIFY
+         BEGIN
+           ALL-SPRITES TRANSLATE    \ move everybody
+           0 SP.MOVE                \ move Spr#0 once more
+           31 SP.MOVE 31 SP.MOVE    \ Move Spr#31 2x more
+           ?BREAK
+         AGAIN ;
+
+CLEAR
+SET-MOTIONS
+CR ." Motions are set"
+CR ." TYPE RUN to start"
 
 

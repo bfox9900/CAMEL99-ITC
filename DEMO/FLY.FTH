@@ -1,8 +1,8 @@
 \ alpha intelligence demonstration with CRAZY behaviour
 
-INCLUDE DSK1.TOOLS.F
-INCLUDE DSK1.GRAFIX.F
-INCLUDE DSK1.RANDOM.F
+INCLUDE DSK1.TOOLS
+INCLUDE DSK1.GRAFIX
+INCLUDE DSK1.RANDOM
 
 MARKER ALPHA
 \ ==================================
@@ -105,7 +105,7 @@ VARIABLE SPEED
             UNTIL
             HAPPY   ;
 
-: CRAZY ( -- )      \ crazy random movement
+: CRAZY ( -- )      \ crazy random movement    
         RNDV 0>     \ if we get 1 ( 33% chance)
         IF
           CHANGE-DIR

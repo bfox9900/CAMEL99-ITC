@@ -1,6 +1,6 @@
 \ BACKGROUND TI sound list player in CAMEL99 Forth V2
 
-INCLUDE DSK1.MTASK99.F
+INCLUDE DSK1.MTASK99
 
 \ 1. This player uses a final '0' to mark the end of the sound data
 \ 2. It turns off all sounds when the data is ended
@@ -8,6 +8,12 @@ INCLUDE DSK1.MTASK99.F
 \ 4. It can Queue up to 16 sound lists to play
 \ 5. Player goes to sleep when sound Queue is empty
 \ 6. TWO end user comands: BGPLAY  >SNDQ
+
+\ To run demo:
+\ MULTI
+\ PACMAN >SNDQ 
+\ MUNCHMAN >SNDQ
+\ PLAYQ
 
 \ ========================================================
 \ sound list player
@@ -67,7 +73,6 @@ CREATE PLAYER USIZE ALLOT  PLAYER FORK
 
 \ ===============================================
 \ end user commands
-\ Usage:  MUNCHMAN BGPLAY  PACMAN BGPLAY  BGPLAY
 : >SNDQ  ( list -- ) SOUNDQ Q! ;
 : PLAYQ   ( list -- ) PLAYER RESTART ;
 : KILLQ  ( -- )      SHEAD @ STAIL ! ;

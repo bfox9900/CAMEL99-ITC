@@ -1,13 +1,11 @@
 \ there was an old lady, in ANS Forth,  from Rosetta Code
 \ ported to CAMEL99 Forth V2.
 
-INCLUDE DSK1.MOVE.F
-
-\ store string at HERE , with a count
+\ store a stack string at HERE , with a count
 : STRING, ( c-addr u -- ) DUP C, HERE SWAP DUP ALLOT MOVE ;
- 
+
 \ create doubly linked list in the Forth dictionary: 
-\ structure:  0|prev, 0|next, aside?, cstr animal; cstr aside
+\ structure:  0|prev, 0|next, aside?, $tring animal; $tring aside
 
 \ Note:  make ASIDE? field true if the aside is always displayed.
 VARIABLE SWALLOWED
@@ -42,30 +40,36 @@ SWALLOW pig    ASIDE Her mouth was so big, she swallowed a pig;
 SWALLOW goat   ASIDE She just opened her throat, and swallowed a goat;
 SWALLOW cow    ASIDE I don't know how, she swallowed a cow;
 SWALLOW donkey ASIDE It was rather wonky, she swallowed a donkey;
- 
+
 : ?ASIDE ( swallow-addr -- )  \ print aside if aside? is true
          DUP >ASIDE?
          IF  >ASIDE CR TYPE
          ELSE DROP
          THEN ;
- 
+
+DECIMAL
 : REASONS ( swallow-addr -- )  \ print reasons she swallowed something
           BEGIN
             DUP @
           WHILE
             DUP CR ." She swallowed the " >ANIMAL TYPE ."  to catch the "
             @ DUP >ANIMAL TYPE ." ," DUP ?ASIDE
+            500 MS
           REPEAT DROP ;
  
 : VERSE ( swallow-addr -- )
-        CR ." There was an old lady who swallowed a " DUP >ANIMAL TYPE ." ,"
-        DUP >ASIDE CR TYPE
+        CR ." There was an old lady who swallowed a " DUP >ANIMAL TYPE ." ," 1000 MS
+        DUP >ASIDE CR TYPE  1000 MS
         REASONS
-        CR ." Perhaps she'll die!"  ;
+        CR ." Perhaps she'll die!"
+        CR ." -------------------"
+        1500 MS  ;
 
 : SONG ( -- )
        PAGE
        FIRST @ BEGIN DUP VERSE CR >NEXT DUP 0= UNTIL DROP
-       CR ." There was an old lady who swallowed a horse..."
-       CR ." She's dead, of course!" ;
+       CR ." There was an old lady who swallowed a"
+       CR ." horse..."  1000 MS
+       CR
+       CR ." SHE'S DEAD, OF COURSE!" ;
   

@@ -1,7 +1,7 @@
 \ Sieve of Erathosenes in Forth
 \ Tested with TurboForth and CAMEL99 Forth
 
-INCLUDE DSK1.ELAPSE.F
+INCLUDE DSK1.ELAPSE
 
 \ array calculators as text macros
 : []@ ( n addr -- n ) S" + C@" EVALUATE ; IMMEDIATE
@@ -15,6 +15,13 @@ INCLUDE DSK1.ELAPSE.F
 HEX
 : FREEMEM  ( -- n) FF00 HERE - ;
 : ?MEM     ( n -- )  FREEMEM OVER < ABORT" Out of memory" ;
+
+: SEEPRIMES ( -- )
+        CR ." Primes: "
+        2 DO
+            I HERE []@ 0= IF I . THEN
+            ?TERMINAL IF ABORT THEN
+        LOOP ;
 
 \ byte array uses unallocated memory at HERE
 DECIMAL
@@ -41,8 +48,10 @@ DECIMAL
         CR
         DROP
         CR ." Press any key to see primes:" KEY DROP
-        ." Primes: " 2 DO  I HERE []@ 0= IF I . THEN  LOOP
+        SEEPRIMES
 ;
+
+: RUN  10000 TICKER OFF PRIMES ;
 
 
 \ 1000 primes
@@ -53,5 +62,5 @@ DECIMAL
 \ TF               8.0
 \ CAMEL99 ITC     10.28
 \ CAMEL99 V2 ITC   8.25    ( optimized HERE )
-\ CAMEL99 V2 with []!, []@ as macros  7.0 SECS
+\ CAMEL99 V2.1 with []!, []@ as macros  7.2 SECS
 

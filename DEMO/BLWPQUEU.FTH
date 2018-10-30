@@ -7,8 +7,8 @@
 
 \ Interface to Forth is via the Forth TOS register with the [TOS] macro.
 
-INCLUDE DSK1.TOOLS.F
-INCLUDE DSK1.ASM9900.F
+INCLUDE DSK1.TOOLS
+INCLUDE DSK1.ASM9900
 
 \ DATA =======================
 HEX
@@ -16,9 +16,8 @@ HEX
 QSIZE 1-   CONSTANT QMASK  \ used for wrap pointer wrap around
 
 \ data is allocated in Lo memory with MALLOC
-QSIZE MALLOC CONSTANT Q      \ points to Q's data
-20    MALLOC CONSTANT QREGS  \ points to a workspace for Q operations
-
+  QSIZE MALLOC CONSTANT Q
+  20    MALLOC CONSTANT QREGS
 \ ============================
 \ Compiler Directive to create a BLWP sub-program
 \ ... THAT CALLS ITSELF!
@@ -41,7 +40,7 @@ QREGS PROG: INIT-QREGS        \ code that initializes wksp
     	RTWP,
       ;PROG
 
-\ Forth word to erase Q data and QREGS and call INIT-REGS
+\ Forth word to allocate memory, erase Q data and QREGS and call INIT-REGS
 : INIT-Q
         QREGS 20 0 FILL
         Q QSIZE  0 FILL
@@ -90,11 +89,11 @@ QREGS PROG: QSTAT ( 0 -- ?) \ true means data waiting
 \ Hi-level Forth API to the sub-programs
 : QDATA? ( -- ?) 0 QSTAT ;
 
-: QC!    ( c -- ) ENQ ABORT" Q full" ;
+: QC!    ( c -- )  ENQ ABORT" Q full" ;
 : QC@    ( -- c |-1) 0 DEQ DUP TRUE = ABORT" Q empty" ;
 : Q$! ( addr len -- ) BOUNDS DO  I C@ QC! LOOP ;
 
-: QEMIT  ( -- )
+: PRINTQ ( -- )
         BEGIN
           QDATA?
         WHILE
@@ -102,9 +101,11 @@ QREGS PROG: QSTAT ( 0 -- ?) \ true means data waiting
         REPEAT ;
 
 : TEST  ( -- )
+        PAGE
+        CR ." Init the workspace...
         INIT-Q
-        PAGE ." Testing character Queue"
-        BEGIN  
+        CR ." Testing character Queue"
+        BEGIN
           CR
           CR ." Loading 5 strings into Q..."
           S" String #1. " Q$!
@@ -114,7 +115,8 @@ QREGS PROG: QSTAT ( 0 -- ?) \ true means data waiting
           S" String #5. " Q$!
           CR
           CR ." Reading ALL strings..."
-          CR QEMIT CR
-          ?BREAK
-        AGAIN ;
+          CR PRINTQ CR
+          ?TERMINAL
+        UNTIL ;
+
 

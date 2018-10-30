@@ -4,12 +4,10 @@
 \ Approximately 10X faster than BUBBLE Sort except when list is 
 \ already sorted.
 
-HEX
-83C0 CONSTANT SEED   \ RAM where TI has a number incrementing in main menu
-1045 CONSTANT GEN#   \ GForth uses $10450405, we take the 1st 16 bits
-: RNDW      ( -- n )   SEED @ GEN# UM* DROP 1+ DUP SEED ! ;
-: RANDOMIZE ( n -- )   SEED ! ;
-: RND       ( n -- n') RNDW ABS SWAP MOD ;
+INCLUDE DSK1.ASM9900
+INCLUDE DSK1.TOOLS
+INCLUDE DSK1.RANDOM
+INCLUDE DSK1.ELAPSE
 
 VARIABLE GAP
 VARIABLE ITEMS
@@ -27,7 +25,13 @@ CREATE Q   SIZE CELLS CELL+ ALLOT
 
 \ : ]Q  ( n -- adr) CELLS Q + ;   \ this is faster than using DOES>
 
- : ]Q    S" 2* Q + "  EVALUATE ;  IMMEDIATE
+\  : ]Q    S" 2* Q + "  EVALUATE ;  IMMEDIATE
+
+CODE ]Q  ( n -- adr)  \ fast array access
+          TOS 1 SLA,
+          TOS Q  AI,
+         NEXT,
+         ENDCODE
 
 : ERASE   0 FILL ;
 
@@ -47,27 +51,28 @@ CREATE Q   SIZE CELLS CELL+ ALLOT
 \ use this to print the array
 : SEEIT   ( -- ) CR  SIZE  0 DO  I ]Q @ U. ?BREAK LOOP ;
 
-\ : /1.3 ( N -- N ) 10 13 */  1 MAX ;
+: /1.3 ( N -- N ) 10 13 */  1 MAX ;
 
 \ this macro makes the sort faster
 \ 100/135 is the fastest GAP ratio I have found. (versus 10/13)
-: /1.3 ( N -- N ) S" 100 135 */  1 MAX " EVALUATE ;  IMMEDIATE
+\ : /1.3 ( N -- N ) S" 100 135 */  1 MAX " EVALUATE ;  IMMEDIATE
 
 : 1+!  ( n addr -- ) 1 SWAP +! ;
 
-: XCHG  ( ADR ADR -- ) S"  OVER @  OVER @ SWAP ROT !  SWAP !" EVALUATE ; IMMEDIATE
+: XCHG  ( ADR ADR -- ) 
+        S"  OVER @  OVER @ SWAP ROT !  SWAP !" EVALUATE ; IMMEDIATE
+
 : +GAP  ( n -- ) S" GAP @ +" EVALUATE ; IMMEDIATE
 
 
-: COMBSORT ( N -- )
+: COMBSORT ( n -- )
     DUP ITEMS ! GAP !
-    0 PASSES !
     BEGIN
         GAP @  /1.3  GAP !                 \ additional line
         SFLAG ON
         ITEMS @  GAP @ -  0
         DO
-           I +GAP ]Q @   I ]Q @  <
+           I +GAP ]Q   I ]Q <
            IF
               I +GAP ]Q   I ]Q  XCHG
               SFLAG OFF
@@ -77,11 +82,10 @@ CREATE Q   SIZE CELLS CELL+ ALLOT
        SFLAG @  GAP @ 1 = AND     \ additional conditional
    UNTIL ;
 
-
-
 : COMBIT
-    CR ." COMB SORT! "
+    CR ." COMB SORT! " SIZE . ." integers..."
     SIZE COMBSORT
     CR ." Combsort complete in " PASSES ?  ."  PASSES" CR  .S ;
+    
 
 

@@ -40,7 +40,7 @@ DECIMAL
 : .ITEM  ( addr len -- ) ?DUP IF  '"' TYPE '"'   ELSE  DROP  THEN ;
 : .ITEMS ( addr len...adr' len' cnt --) CR 0 ?DO  .ITEM  SPACE LOOP ;
 
-: TEXT S" [ foo ] [bar][fizz] [" ;
+: TEXT S" [ foo ] [bar][fizz] [CAMEL99] [Forth]  " ;
 
 \  usage:   TEXT SPLITSTR .ITEMS
 

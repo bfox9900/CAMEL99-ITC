@@ -1,8 +1,7 @@
 \ Guess the number in CAMEL99 Forth
 
-INCLUDE DSK1.RANDOM.F
-INCLUDE DSK1.INPUT.F
-INCLUDE DSK1.GRAFIX.F
+INCLUDE DSK1.RANDOM
+INCLUDE DSK1.INPUT
 
 DECIMAL
 VARIABLE TRIES
@@ -46,11 +45,15 @@ DECIMAL
           THEN ;            \ then end the sub-routine
 
 : PLAYAGAIN? ( -- flag)
-          CR ." Want to play again? (Y/N)"  Y/N?    ;
+          CR ." Want to play again? (Y/N)"  Y/N?  ;
 
+HEX
+: BLK/YEL   1B 7 VWTR ;  \ CLEAR, yellow bg
+
+DECIMAL
 : RUN ( -- )
        BEGIN
-          CLEAR 
+          PAGE BLK/YEL
           0 TRIES !
           10 RND 1+ ( -- rnd#)
           BEGIN

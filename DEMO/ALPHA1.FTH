@@ -1,8 +1,8 @@
 \ alpha intelligence demonstration using characters
 
-INCLUDE DSK1.TOOLS.F
-INCLUDE DSK1.GRAFIX.F
-INCLUDE DSK1.RANDOM.F
+INCLUDE DSK1.TOOLS
+INCLUDE DSK1.GRAFIX
+INCLUDE DSK1.RANDOM
 
 MARKER ALPHA
 \ ==================================
@@ -20,21 +20,20 @@ DECIMAL
 176 CONSTANT FOOD
 
 \ define chars
- REDBRICK  BRICK CHARDEF   BRICK SET#  7 15 COLOR
- PLANT     FOOD  CHARDEF   FOOD  SET# 13  1 COLOR
+ REDBRICK  BRICK CHARDEF   BRICK  SET#  7 15 COLOR
+ PLANT    FOOD CHARDEF   FOOD SET# 13 1 COLOR
 
 : CLIP       ROT MIN MAX ;
 
-: RNDX   ( -- x)  24 RND  2 22 CLIP ;
-: RNDY   ( -- y)  32 RND  2 30 CLIP ;
+: RNDX   ( -- x)  23 RND 2 22 CLIP ;
+: RNDY   ( -- y)  33 RND 2 30 CLIP ;
 
 : .BORDER   ( -- )
           \ col row
              0   1 BRICK 32 HCHAR
              0  23 BRICK 32 HCHAR
              0   1 BRICK 23 VCHAR
-            31   1 BRICK 23 VCHAR
-            0 0 CLRLN ;
+            31   1 BRICK 23 VCHAR ;
 
 : .WALLS
             RNDY  RNDX BRICK 10 VCHAR
@@ -53,97 +52,91 @@ CREATE VECTOR 0 , 0 ,
 CREATE MY-XY  RNDY , RNDX ,    \ independant cursor for alpha guy
 
 : RNDV   ( -- -1 0 1 )  3 RND 1- ;
-: CHANGE-DIR   ( -- )  RNDV RNDV VECTOR 2! ;
 
+: NON-0  ( -- n)
+             BEGIN
+                RNDV DUP 0 <>
+             UNTIL ;
+
+: NEW-VECTORS  ( -- X Y)      \ we need to prevent a (0,0) vector condition
+               RNDV DUP 0=    \ If 1st # is 0
+               IF    NON-0    \ wait for a non-zero 2nd #
+               ELSE  RNDV
+               THEN ;
+
+: CHANGE-DIR   ( -- )  NEW-VECTORS VECTOR 2! ;
+: VECTOR@      ( --  dx dy)  VECTOR 2@ ;
 : VECT+        ( x y dx dy -- x' y' ) ROT +  -ROT + SWAP ;
 
 \ direct memory screen control
-: GETXY        ( -- y x) MY-XY 2@ ;
-: PUT-CHAR     ( c  -- ) MY-XY 2@ >VPOS VC! ;
-: ERASE-MAN    ( -- )   BL GETXY PUT-CHAR ;
-: READ-CHAR    ( y x -- c) >VPOS VC@ ;  \ read char without moving cursor
+: >VPOS        ( Y X -- vaddr)  C/L@ * + ;
+: GETXY        ( -- x y) MY-XY 2@ ;
+: PUT-CHAR     ( c -- ) GETXY >VPOS VC! ;
+: ERASE-MAN    ( -- )   BL PUT-CHAR ;
+: SHOW-MAN     ( -- )   ALPHA-GUY PUT-CHAR ;
 
-: FIND-SPACE  ( -- Y X )
-               0 0 CLRLN ." Placing Alpha-guy..."
-               BEGIN
-                  RNDY RNDX 2DUP >VPOS VC@ BL <>
-               WHILE
-                  2DROP
-               REPEAT ;
+: READ-CHAR    ( Y X -- c) >VPOS VC@ ;  \ read char without moving cursor
+: NEXT-POS     ( -- Y X ) GETXY VECTOR@ VECT+  ;
 
-: NEXT-POS     ( -- Y X ) MY-XY 2@ VECTOR 2@ VECT+  ;
-
-: MOVE-MAN     ( -- )
-               MY-XY 2@                  \ current position
-               NEXT-POS MY-XY 2!         \ store the next pos.
-               ALPHA-GUY PUT-CHAR
-               BL -ROT >VPOS VC! ;       \ ERASE where he was
+: MOVE-MAN     ( -- ) ERASE-MAN   NEXT-POS MY-XY 2!  SHOW-MAN ;
 
 DECIMAL
 VARIABLE TRYS
 VARIABLE SPEED
 
 \ print right justified n spaces
-: .R   ( n n -- )  
-       >R DUP ABS 0 <# #S ROT SIGN #>  R> OVER - SPACES TYPE ;
+: .R   ( n n -- )  >R DUP ABS 0 <# #S ROT SIGN #>  R> OVER - SPACES TYPE ;
 
 : .BRAIN     ( -- )
-       0 0 AT-XY  ." Vector"  VECTOR 2@  2 .R ." ," 2 .R
-       SPACE      ." Trys" TRYS @ 2 .R
-       3 SPACES   ." Energy" SPEED @ 150 - ABS 3 .R ;
+     0 0 CLRLN
+     ." Vector"  VECTOR 2@  2 .R ." ," 2 .R
+     SPACE ." Trys " TRYS @ 2 .R
+     SPACE ." Energy " SPEED @ 150 - ABS 3 .R ;
 
-: SAD         ALPHA-GUY  SADFACE   OVER CHARDEF    SET#  9 1 COLOR ;
-: HAPPY       ALPHA-GUY  HAPPYFACE OVER CHARDEF    SET# 11 1 COLOR ;
+: SAD         ALPHA-GUY  SADFACE   OVER CHARDEF    SET#  9 1 COLOR  ;
+: HAPPY       ALPHA-GUY  HAPPYFACE OVER CHARDEF    SET# 12 1 COLOR  ;
 
 : .PLANT      176 RNDY RNDX >VPOS  VC! ;
 
-: PLANTS      40 RND 10 +   0 DO  .PLANT LOOP ;
+: PLANTS      RNDY 0 DO  .PLANT LOOP ;
 
-: SPEED!     ( n -- ) 5 140 CLIP SPEED ! ;
-: SPEED++    ( -- ) SPEED @ 15 - SPEED! ;   \ speed is inverse
-: SPEED--    ( -- ) SPEED @ 1+   SPEED! ;
+: SPEED!     ( n -- ) 5 150 CLIP  SPEED ! ;
+: SPEED++    ( -- ) SPEED @ 35 - SPEED! ;   \ speed is inverse
+: SPEED--    ( -- ) SPEED @ 1+  SPEED! ;
 
 : EAT        ( -- )
              BL NEXT-POS >VPOS VC!
              SPEED++ ;
 
-: CLEAR-AHEAD? ( -- ?) NEXT-POS READ-CHAR  BL =  ;
+: CLEAR-AHEAD? ( -- ?) NEXT-POS READ-CHAR  BL = ;
 : FOOD?        ( -- ?) NEXT-POS READ-CHAR  FOOD = ;
 
-
 : ALPHA-THINK  ( -- )
-            SAD                   \ SAD face while thinking
-            SPEED--                
+            SAD SPEED--                \ change face & color while thinking
             TRYS OFF                   \ reset the trys counter
             BEGIN
                1 TRYS +!               \ count the try
-               .BRAIN 30 MS
-               FOOD?                   \ is the obstacle food?
-               IF BEEP EAT                  \ yes! eat it
-               ELSE CHANGE-DIR         \ get new direction                   
-               THEN
+               CHANGE-DIR              \ get new direction
+               .BRAIN 50 MS                                               
                CLEAR-AHEAD?
             UNTIL
-            HAPPY ;
+            HAPPY   ;
 
 DECIMAL
 : RUN      ( -- )
        BEGIN
-           16 SCREEN
            PAGE 4 10 AT-XY ." Alpha Intelligence Demo" 1000 MS
            PAGE
-           .BORDER  .WALLS  
-           .BRAIN
-           PLANTS
-           HAPPY 
-           FIND-SPACE MY-XY 2!
-           ALPHA-GUY PUT-CHAR
+           16 SCREEN
+           .BORDER  .WALLS  PLANTS
+           HAPPY SHOW-MAN
            CHANGE-DIR
            150 SPEED!     \ 150 is slow, longest delay
            BEGIN
+              FOOD? IF BEEP EAT THEN
               CLEAR-AHEAD?
-              IF   MOVE-MAN     \ if true
-              ELSE ALPHA-THINK  \ otherwise
+              IF   MOVE-MAN   \ if true
+              ELSE ALPHA-THINK             \ otherwise
               THEN SPEED @ MS
               KEY?
            UNTIL

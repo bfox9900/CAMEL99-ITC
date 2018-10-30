@@ -1,6 +1,6 @@
 \ 99 bottles of beer.  Create a beer language and write the program
 
-INCLUDE DSK1.CASE.F
+INCLUDE DSK1.CASE
 
 DECIMAL
 : BOTTLES ( n -- )
@@ -16,17 +16,12 @@ DECIMAL
 
 : HANGOVER    ." :-("  CR QUIT ;
 
-: OF       ." of "   ;
-: BEER     ." beer " ;
-: ON       ." on "   ;
-: THE      ." the "  ;
-: WALL     ." wall" ;
-: TAKE     ." take " ;
-: ONE      ." one "  ;
-: DOWN     ." down, " ;
-: PASS     ." pass " ;
-: IT       ." it "   ;
-: AROUND   ." around" ;
+: OF       ." of "   ;     : BEER     ." beer " ;
+: ON       ." on "   ;     : THE      ." the "  ;
+: WALL     ." wall" ;      : TAKE     ." take " ;
+: ONE      ." one "  ;     : DOWN     ." down, " ;
+: PASS     ." pass " ;     : IT       ." it "   ;
+: AROUND   ." around" ;    
 
 : POPONE    1 SWAP CR ;
 : DRINK     POSTPONE DO ; IMMEDIATE

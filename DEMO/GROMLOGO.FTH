@@ -1,6 +1,6 @@
 \ TI LOGO read from GROM memory
-INCLUDE DSK1.GRAFIX.F
-INCLUDE DSK1.CHARSET.F
+INCLUDE DSK1.GRAFIX
+INCLUDE DSK1.CHARSET
 
 CR ." Loading LOGO from GROM to VDP"
 \    GROM     VDP     9 patterns
@@ -12,5 +12,4 @@ CR ." Loading LOGO from GROM to VDP"
         CR 14 EMIT 15 EMIT 16 EMIT
         CR 17 EMIT 18 EMIT 19 EMIT ; 
 
-CR CR  TI.LOGO CR
-
+PAGE TI.LOGO

@@ -1,5 +1,5 @@
 \ TI LOGO GRAPHICS chars patterns from Sometimes99er
-INCLUDE DSK1.GRAFIX.F
+INCLUDE DSK1.GRAFIX
 
 : TI.LOGO ( -- )
         CR 11 EMIT 12 EMIT 13 EMIT    \ print 3 characters
@@ -24,12 +24,6 @@ HERE
   DUP   11 ]PDT  4 CELLS 9 *  VWRITE
 
 \ put the dictionary pointer back (reclaims the memory)
-DP !
+( here) DP !
 
-PAGE TI.LOGO
-
-CR ." No CPU memory was used in the making of the this program" \ :-)
-
-
-
-
+PAGE  TI.LOGO

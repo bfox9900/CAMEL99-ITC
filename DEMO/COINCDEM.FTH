@@ -1,6 +1,7 @@
-INCLUDE DSK1.TOOLS.F
-INCLUDE DSK1.DIRSPRIT.F   \ this also loads GRAFIX.F
-INCLUDE DSK1.RANDOM.F
+INCLUDE DSK1.TOOLS
+INCLUDE DSK1.DIRSPRIT   \ this also loads GRAFIX.F
+INCLUDE DSK1.RANDOM
+
 
 \ happy face in 4 pieces
 HEX
@@ -19,8 +20,7 @@ CREATE V0   -1 ,  1 ,    \ each sprite needs its own vector
 CREATE V1    1 ,  0 ,
 
 : .VECTORS
-          V0 2@  0 0 AT-XY . .
-          V1 2@ 26 0 AT-XY . . ;
+         0 0 CLRLN  V1 2@  . . ;
 
 : NEWVECTORS
           RNDXY  V0 2!
@@ -31,8 +31,8 @@ CREATE V1    1 ,  0 ,
 : REVERSE ( motion-vector-addr -- )
           DUP 2@ NEGATE SWAP NEGATE SWAP ROT 2! ;
 
-: SP.MOVE ( dx dy spr# -- )  \ move sprite by vector dx dy
-          DUP >R SP.Y@ + R@ SP.Y!
+: SP.POS+ ( dx dy spr# -- )  \ add dx dy sprite's position
+          DUP>R  SP.Y@ + R@ SP.Y!
               R@ SP.X@ + R> SP.X! ;
 
 : MAKE-FACE
@@ -44,11 +44,22 @@ CREATE V1    1 ,  0 ,
 : MAKE-SPRITES ( -- )
       \ Ptrn    clr col  row  spr#
       \ ------  --- ---  ---  ----
-      [CHAR] w   16  150  80   0   SPRITE   \ the only white sprite
-      [CHAR] w   11   20  80   1   SPRITE ;
+  \    [CHAR] w   16  150  80   0   SPRITE   \ the only white sprite
+      [CHAR] w   11   20  80   1   SPRITE
+      [CHAR] w    9   10  16   2   SPRITE
+      [CHAR] w    9  125  16   3   SPRITE
+      [CHAR] w    9  220  16   4   SPRITE
+
+\      [CHAR] w    9   10  90   5   SPRITE
+\      [CHAR] w    9  125  90   6   SPRITE
+\      [CHAR] w    9  220  90   7   SPRITE
+
+      [CHAR] w    9   10  170  8   SPRITE
+      [CHAR] w    9  125  170  9   SPRITE
+      [CHAR] w    9  220  170 10   SPRITE  ;
 
 \ Speed control example.
-VARIABLE SPEED   5 SPEED !
+VARIABLE SPEED
 
 : MOVE#1  ( -- )
 \ each time this word is called we
@@ -58,22 +69,17 @@ VARIABLE SPEED   5 SPEED !
            -1 SPEED +!
            SPEED @ 0=
            IF                    \ when it hits 0 move sprite
-               V1 2@ 1 SP.MOVE
+             V1 2@  1 SP.POS+
                5 SPEED !         \ reset the speed counter
            THEN ;
 
-: MOVE-EVERYBODY ( -- ) \ fetch
-          V0 2@ 0 SP.MOVE                                               
-          MOVE#1 ;
-
 : BOUNCE ( -- )  \ bounce off each other
-           7 1 SP.COLOR
-           V0 REVERSE
            V1 REVERSE
-           50 0 DO
-              V0 2@ 0 SP.MOVE
-              V1 2@ 1 SP.MOVE
-              40 MS
+           30 0
+           DO
+              I 1 SP.COLOR
+              V1 2@  1 SP.POS+
+              5 JIFFS
            LOOP
            11 1 SP.COLOR
            NEWVECTORS ;
@@ -86,12 +92,13 @@ VARIABLE SPEED   5 SPEED !
        2 MAGNIFY
        MAKE-FACE
        MAKE-SPRITES
+       4 SPEED !
        BEGIN
-        400 0 
-        DO
-          MOVE-EVERYBODY
-          COINCALL IF  BOUNCE  THEN
-          ?BREAK
+        400 0 DO
+          MOVE#1 \ MOVE-EVERYBODY
+          COINCALL
+          IF BEEP BOUNCE
+          THEN ?BREAK
         LOOP
         NEWVECTORS
       AGAIN ;

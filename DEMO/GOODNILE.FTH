@@ -1,9 +1,9 @@
 \ FORTH STYLE TRANSLATION OF DENILE.BAS
 \ Orignal program by RETROSPECT, Atariage.com
 
-INCLUDE DSK1.GRAFIX.F
+INCLUDE DSK1.GRAFIX
 \ INCLUDE DSK1.STRINGS.F \ We don't strings for this version.
-INCLUDE DSK1.CHARSET.F
+INCLUDE DSK1.CHARSET
 
 \ Character DATA patterns are named in CAMEL99 Forth
 HEX
@@ -100,7 +100,7 @@ DECIMAL
 
 \ These variables keep track of the wave characters
 \ We could do this on the stack but it would be harder to understand
-VARIABLE T
+VARIABLE T  
 VARIABLE Y
 
 : INIT-WAVES ( -- )

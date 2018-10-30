@@ -1,7 +1,7 @@
 \ combsort.fth  taken from byte April 1991.  coded bfox Sept 94
 \ PORTED to CAMEL99 2017 for demo in screen
 
-INCLUDE DSK1.GRAFIX.F
+INCLUDE DSK1.GRAFIX
 
 VARIABLE GAP
 VARIABLE ITEMS
