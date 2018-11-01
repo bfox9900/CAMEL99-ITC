@@ -87,10 +87,10 @@ DECIMAL
 \   == FORTH VERSION      == BASIC VERSION ===
 DECIMAL
 : READ-DATA
-     104 40 DO             \ 110 FOR A=40 TO 103
+     104 40 DO             \ 110 FOR I=40 TO 103
         READ               \ 120 READ A$
        ( addr) I CHARDEF   \ 130 CALL CHAR(A,A$)( Forth loop index is 'I')
-     LOOP  ;               \ 140 NEXT A
+     LOOP  ;               \ 140 NEXT I
 
 \ Even though Forth reads this data 20 times faster than BASIC
 \ we would NEVER load VDP memory with a DO LOOP when we have VWRITE.
@@ -102,12 +102,12 @@ DECIMAL
 
 \ this is a very BASIC way to write to the screen
 : SHOW-FACE
-     8 0 DO                \ 150 FOR R=0 TO 7
-       8 0 DO              \ 160 FOR C=0 TO 7
-                           \ 170 CALL HCHAR(R+8,C+12,40+R*8+C)
-            I 12 +   J 8 +   J 8* 40 + I +  1 HCHAR
-       LOOP                \ 180 NEXT C
-     LOOP ;                \ 190 NEXT R
+     8 0 DO                \ 150 FOR J=0 TO 7
+       8 0 DO              \ 160 FOR I=0 TO 7
+                           \ 170 CALL HCHAR(J+8,I+12,40+J*8+I)
+            I 12 +   J 8 +   40 J 8* + I +  1 HCHAR
+       LOOP                \ 180 NEXT I
+     LOOP ;                \ 190 NEXT J
 
 
 \ We made our own very fast "DISPLAY-AT"
@@ -129,36 +129,36 @@ DECIMAL
 \ ?TERMINAL tests for FCTN 4
 : *BREAK*   ?TERMINAL IF  CR ." *BREAK*"  CHARSET  8 SCREEN  ABORT  THEN ;
 
-: COLOR-SCR
-      17 3 DO              \ 200 FOR A=3 TO 16
+: FACES
+      17 3 DO              \ 200 FOR I=3 TO 16
           PAGE             \ added so you can see FAST-FACE write to screen
-          I SCREEN         \ 210 CALL SCREEN(A)
+          I SCREEN         \ 210 CALL SCREEN(I)
           500 MS
           SHOW-FACE        \ this is the slow method
           FAST-FACE        \ This is the fast way
           500 MS           \ 220 CALL SOUND(2000,44733,0)
                            ( sound used for delay in BASIC)
           *BREAK*          \ Forth has no automatic BREAK key
-      LOOP  ;              \ 230 NEXT A
+      LOOP  ;              \ 230 NEXT I
 
 \ *CAMEL99 Forth has 'MS' which delays, so we don't need CALL SOUND
 
 : RUN
      GRAPHICS              \ we have to change to 32 col graphics mode
-     S" VDPTYPE   DO/LOOP HCHAR" 1 7 VDPTYPE
-     500 MS
+     S" VDPTYPE  | DO/LOOP HCHAR" 1 7 VDPTYPE
+     1500 MS
      BEGIN
        RESTORE             \ we need RESTORE if we run more than once
        READ-DATA
-       SHOW-FACE  500 MS
-       COLOR-SCR
+\       NEW-PATTERNS       \ faster method to set characters
+       FACES
        ?TERMINAL
      UNTIL
      8 SCREEN         \ restore default stuff
      4 19 2 1 COLORS
      CHARSET ;
 
-\ Test these with ELAPSE T1    ELAPSE T2     
+\ Test these with ELAPSE T1    ELAPSE T2
 DECIMAL
 : T1    100 0 DO  RESTORE READ-DATA  LOOP   CHARSET ;
 
