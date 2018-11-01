@@ -6,9 +6,9 @@
 \ .TASKS
 \ X ? ( test if the variable is incrementing)
 
-INCLUDE DSK1.TOOLS.F     \ for debugging etc.
-INCLUDE DSK1.MTASK99.F
-INCLUDE DSK1.MTOOLS.F
+INCLUDE DSK1.TOOLS   \ for debugging etc.
+INCLUDE DSK1.MTASK99
+INCLUDE DSK1.MTOOLS
 
 INIT-MULTI
 

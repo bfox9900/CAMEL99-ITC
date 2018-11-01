@@ -1,8 +1,8 @@
 \ alpha intelligence demonstration using characters
 
-INCLUDE DSK1.TOOLS.F
-INCLUDE DSK1.GRAFIX.F
-INCLUDE DSK1.RANDOM.F
+INCLUDE DSK1.TOOLS
+INCLUDE DSK1.GRAFIX
+INCLUDE DSK1.RANDOM
 
 MARKER ALPHA
 \ ==================================
