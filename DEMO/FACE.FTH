@@ -16,6 +16,7 @@
 INCLUDE DSK1.GRAFIX
 INCLUDE DSK1.VDPTYPE
 INCLUDE DSK1.CHARSET
+INCLUDE DSK1.ELAPSE   \ for speed evaluation
 
 HEX
 CREATE DATA  ( -- addr)
@@ -83,12 +84,8 @@ DECIMAL
 
 \ ==============================================================
 
-\ a way to add BREAK to Forth. ?TERMINAL tests for FCTN 4
-: *BREAK*   ?TERMINAL IF  CR ." *BREAK*"  CHARSET  8 SCREEN  ABORT  THEN ;
-
 \   == FORTH VERSION      == BASIC VERSION ===
 DECIMAL
-\ 160 mSec
 : READ-DATA
      104 40 DO             \ 110 FOR A=40 TO 103
         READ               \ 120 READ A$
@@ -100,15 +97,15 @@ DECIMAL
 \ VWRITE is written in assembler. We can transfer all the DATA
 \ at once to VDP "pattern descriptor table" called ]PDT 2X faster
 
-\ 80 mSec                 \ source   dest.   byte-cnt
-: NEW-PATTERNS  ( -- )  DATA   40 ]PDT   64 8*   VWRITE ;  
+                     \ source   dest.   byte-cnt
+: NEW-PATTERNS  ( -- )  DATA   40 ]PDT   64 8*   VWRITE ;  \ 4.7x FASTER!
 
 \ this is a very BASIC way to write to the screen
 : SHOW-FACE
      8 0 DO                \ 150 FOR R=0 TO 7
        8 0 DO              \ 160 FOR C=0 TO 7
                            \ 170 CALL HCHAR(R+8,C+12,40+R*8+C)
-            I 12 +   J 8 +   J 8* 40 + I +  1 HCHAR  
+            I 12 +   J 8 +   J 8* 40 + I +  1 HCHAR
        LOOP                \ 180 NEXT C
      LOOP ;                \ 190 NEXT R
 
@@ -128,6 +125,10 @@ DECIMAL
          S" XYZ[\]^_"  0 14 VDPTYPE
          S" `abcdefg"  0 15 VDPTYPE ;
 
+\ add BREAK to Forth that restores graphics like BASIC. 
+\ ?TERMINAL tests for FCTN 4
+: *BREAK*   ?TERMINAL IF  CR ." *BREAK*"  CHARSET  8 SCREEN  ABORT  THEN ;
+
 : COLOR-SCR
       17 3 DO              \ 200 FOR A=3 TO 16
           PAGE             \ added so you can see FAST-FACE write to screen
@@ -135,7 +136,7 @@ DECIMAL
           500 MS
           SHOW-FACE        \ this is the slow method
           FAST-FACE        \ This is the fast way
-          500 MS           \ 220 CALL SOUND(2000,44733,0)  
+          500 MS           \ 220 CALL SOUND(2000,44733,0)
                            ( sound used for delay in BASIC)
           *BREAK*          \ Forth has no automatic BREAK key
       LOOP  ;              \ 230 NEXT A
@@ -156,3 +157,9 @@ DECIMAL
      8 SCREEN         \ restore default stuff
      4 19 2 1 COLORS
      CHARSET ;
+
+\ Test these with ELAPSE T1    ELAPSE T2     
+DECIMAL
+: T1    100 0 DO  RESTORE READ-DATA  LOOP   CHARSET ;
+
+: T2    100 0 DO  NEW-PATTERNS LOOP   CHARSET ;
