@@ -567,10 +567,7 @@ VARIABLE ROGERIAN        \ set if Rogerian answer is needed
             CR ." CAMEL99 FORTH"
             CR  QUIT ;
 
-\ ===========[ END OF REPLYS ] ============
-
-
-\ ------------------[ replies end ]-----------------
+\     ===========[ END OF REPLYS ] ============
 \ /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
 
@@ -623,7 +620,7 @@ VARIABLE ROGERIAN        \ set if Rogerian answer is needed
 
 : /CONJUGATE  ( addr len -- )
          TRIM
-         BEGIN                                                                    
+         BEGIN
            DUP 0> ( len>0 ?)
          WHILE
             BL /WORD 2SWAP SPUSH            \ cut each word->string stack
