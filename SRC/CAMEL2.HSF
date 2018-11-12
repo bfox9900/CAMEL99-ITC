@@ -165,21 +165,21 @@ HEX
 \       CAMEL99 memory map
 \     +--------------------+ $FFFF end of memory
 \     |          TIB       | $FF02
-\     +--------------------+ $FF00
-\     |                    |
-\     |                    |
-\     |                    |
-\     |                    |
-\     |                    |
-\     |                    |
-\     |                    |
-\     |                    |
-\     |    USER PROGRAM    |   24K program space
-\     |                    |
-\     +--------------------+
-\     |                    |
-\     |       CAMEL99      |
-\     |       KERNEL       |
+\     +--------------------+ $FF00    -------------
+\     |                    |                .
+\     |                    |                .
+\     |                    |                .
+\     |                    |                .
+\     |                    |                .
+\     |                    |                .
+\     |                    |                .
+\     |                    |                .
+\     |    USER PROGRAM    |        24K program space
+\     |        ~16K        |                .
+\     +--------------------+                .
+\     |                    |                .
+\     |       CAMEL99      |                .
+\     |       KERNEL 8K    |                .
 \     +--------------------+  $A000 (hi-RAM) Forth Dictionary begins here
 \     |  MEM mapped device |
 \     +--------------------+ $83FF
@@ -195,15 +195,14 @@ HEX
 \     | return stack       |                      .
 \     +vvvvvvvvvvvvvvvvvvvv+ $3F80 SP0            .
 \     | parameter stack    |                      .
+\     |    DSR WORKSPACE   |                      .
 \     |                    |                      .
-\     |                    |                      .
-\     |                    |
-\     |    HEAP MEMORY     |
+\     |                    |               8K low mem block
+\     |    HEAP MEMORY     |                      .
 \     |   ^^^^^^^^^^^^^    |                      .
-\     |  (SCROLL BUFFER)   |                      .
-\     |--------------------| $2100         8K low mem block
+\     |--------------------| $2100            ---------
 \     |   TI O/S USAGE     |
-\     +--------------------+ $2000             --------
+\     +--------------------+ $2000
 \     |                    |
 \     |   CONSOLE ROMS     |
 \     +--------------------+ $0000
@@ -215,7 +214,8 @@ HEX
 [CC] cr .( Compile Forth Assembler primitives ...)  \ This is a talking comment.
                                                     \ It reports what's happending
                                                     \ during compilation
- INCLUDE CC9900\9900FAST.HSF
+ INCLUDE CC9900\9900FAS2.HSF                        \ forth primitives
+ INCLUDE CC9900\TI99PRIM.HSF                        \ TI99 I/O ROUTINES
 
 \ ========================================================================
 \ RESOLVE CODE WORD FORWARD REFERENCES FOR CROSS-COMPILER
@@ -225,7 +225,7 @@ HEX
 \ Below we give them the execution token (XT) of their respective ASM WORDS.
 [CC]
  T' EXIT   RESOLVES 'EXIT
-      ENTR RESOLVES 'DOCOL
+    ENTR   RESOLVES 'DOCOL
  T' DOVAR  RESOLVES 'DOVAR
  T' LIT    RESOLVES 'LIT
  T' DOCON  RESOLVES 'DOCON
@@ -282,8 +282,6 @@ CROSS-COMPILING HEX
 cr .( Constants and Variables...)
 
 TARGET-COMPILING
-\ Memory constants for CAMEL99
-
 \ ASM/Equate       Forth Name
 \ -----------      ------------
  'TIB     constant: TIB            \ address of terminal input buffer (TIB) in high memory
@@ -373,7 +371,7 @@ TARGET-COMPILING
 \ Other High speed RAM locations
 \ *these constants define memory locations so they are actually VARIABLES :-)
  _CURSR constant: CURS            \ holds CURSOR character for KEY
-  variable: H               \ MASTER HEAP POINTER can also be a user variable
+ _floor CONSTANT: FLOOR           \ flag: 0=Symetrical div.  -1=floored div.
    8375 constant: KVAL            \ GPL KSCAN outputs ascii value here. >FF if no key pressed
    83D4 constant: KTP             \ copy of VDP R1. TI-99 system stores the keyboard type here
    83C6 constant: KUNIT#          \ keyboard unit# (CAMEL99 uses MODE 5, BASIC MODE)
@@ -385,7 +383,7 @@ variable: LATEST                  \ LATEST returns the NFA of last word defined
 variable: ORGDP                   \ restore DP to this on COLD boot
 variable: ORGLAST                 \ restore LATEST to this on COLD boot
 variable: BOOT                    \ ADDRESS OF THE FIRST Forth word to run
-variable: TPAD  
+variable: TPAD                    \ "task pad" offset for each task. separate pad per task
 
 [CC] DECIMAL [TC]
    0024 constant: L/SCR           \ 24 lines per screen on a TI-99
@@ -398,6 +396,7 @@ variable: ^PAB                    \ pointer to current open file PAB
 variable: LINES                   \ track lines compiled in a file
 variable: C/SCR                   \ chars per screen >300 or 3C0
 variable: 'INTERPRET              \ Vector for the interpreter
+variable: H                       \ MASTER HEAP POINTER can also be a user variable
 
 ?stk
 \ ==============================================
@@ -429,26 +428,13 @@ TARGET-COMPILING
 : [         ( -- ) STATE OFF ;  XIMMEDIATE \ turn off the compiler
 
 \ ========================================================================
-\ MINIMALIST HEAP MEMORY MANAGER
-\ Used within a colon defintion these words provide simple dynamic
-\ memory management.
-\ Used with constants, values or variables, you can create static data types
-\ in TI-99 low memory
-
-\ Usage Examples
-
-\  : COPYSTRING  ( addr len -- addr)
-\                100 MALLOC DUP >R PLACE
-\                R@ ( rstack holds the memory pointer)
-\                < more code...>
-
-\                R> DROP
-\                100 MFREE ;
-
-\ HEX 400 MALLOC CONSTANT MYBUFFER
-
+\ Minimalist heap memory manager ( see SCROLL for example)
 : MALLOC     ( n -- addr ) H @  SWAP H +! ;   \ allocate heap and return pointer
 : MFREE      ( n -- ) NEGATE H +! ;           \ free n bytes of heap memory
+
+\ ========================================================================
+\ Reset base PAB address
+: RSTPAB  ( -- ) 8370 @ 1- ^PAB ! ;
 
 [CC] cr .( Stack primitives ...)  [tc]
 \ ========================================================================
@@ -459,7 +445,7 @@ TARGET-COMPILING
 
 0 [if] \ these don't work ???
 
-     : 2>R ( w w --)  >R >R ;
+     : 2>R ( w w --) >R >R ;
      : 2R> ( -- w w)  R> R> ;
 
  [else]
@@ -502,32 +488,19 @@ TARGET-COMPILING
 
 \ ========================================================================
 \ M I X E D  (32BIT/16BIT)   M A T H   O P E R A T I O N S
-\ Some double-precision arithmetic operators are needed to implement
-\ ANSI numeric conversion in CAMEL Forth.
-0 [if]
+\ === SMALLER FASTER ANS COMPLIANT ===
+\ We included a signed M/MOD primitive as a code word. 
+\ The code is used with permission from FBForth by Lee Stewart.
+\ M/MOD can switch com FLOORED or symetrical DIVISION with:
+\     FLOOR ON  ( floored)
+\     FLOOR OFF ( symetrical)
 
-  \ *** THIS DOES NOT FIT IF YOU NEED FILE SYSTEM ***
-[CC] include cc9900\cclib\floored.hsf  
-
-[else]
-\ === SMALLER FASTER NON-ANS COMPLIANT ===
-\ Removed signed multiplication and division operators to save space.
-\ Substituted TMS9900 machine multiplication and division.
-\ You can load CAMEL Forth floored division above from the
-\ /cclib folder for compatability with ANS/ISO Forth as needed.
-\ I also replaced M* with UM* in the kernel to save space.
-\ This all improves the speed of the kernel but...
-
-\ *SOME CODE WILL NOT WORK PER ANS REQUIREMENTS*
-\                      *****
-: */MOD       ( n1 n2 n3 -- n4 n5)  >R UM* R> UM/MOD ;   \ n1*n2/n3, rem&quot
-: /MOD        ( n1 n2 -- n3 n4)  0 SWAP UM/MOD ;        \  divide/remainder
-: /           ( n n -- n)   /MOD NIP  ; \ these are smaller than CODE words. (4 bytes each)
+: */MOD       ( n1 n2 n3 -- n4 n5)  >R UM* R> M/MOD ;
+: S>D         ( n -- d)  DUP 0< ;
+: /MOD        ( n1 n2 -- n3 n4) >R S>D R> M/MOD ;
+: /           ( n n -- n)   /MOD NIP  ; \ smaller than CODE words (4 bytes each)
 : MOD         ( n n -- n)   /MOD DROP ;
 : */          ( n n n -- n) */MOD NIP ;
-\ : *  ( n n -- n)  UM* DROP ;          \ same size in ASM, 2x faster
-
-[then]
 
 \ ========================================================================
 \ S T R I N G   T H I N G S
@@ -625,9 +598,9 @@ TARGET-COMPILING
               THEN ;
 
 : UD*        ( ud1 u2 -- ud3)              \ 32*16->32 multiply
-              DUP >R * SWAP R> UM* ROT + ;  \ simplified with * BF.
+              DUP >R * SWAP R> UM* ROT + ; \ simplified with * BF.
 
-: >NUMBER    ( ud adr u -- ud' adr' u' )   \ ( 0 0 str len --) convert string to number
+: >NUMBER    ( ud adr u -- ud' adr' u' )   \ ( 0 0 str len --) string to number
               BEGIN  DUP
               WHILE
                   OVER C@ DIGIT? 0=
@@ -638,13 +611,13 @@ TARGET-COMPILING
               REPEAT ;
 
 : ?NUMBER    ( c-addr -- n -1 )            \ string->number
-\ ;Z                   -- c-addr 0          \ if convert error
-              DUP  0 0 ROT COUNT            \ -- ca ud adr n
-              ?SIGN >R                      \ R: -- ?
-              >NUMBER                       \ -- ca ud adr' n'
-              IF    R> 2DROP 2DROP FALSE    \ -- ca 0   (error)
+\ ;Z                   -- c-addr 0         \ if convert error
+              DUP  0 0 ROT COUNT           \ -- ca ud adr n
+              ?SIGN >R                     \ R: -- ?
+              >NUMBER                      \ -- ca ud adr' n'
+              IF    R> 2DROP 2DROP FALSE   \ -- ca 0   (error)
               ELSE  2DROP NIP R>
-                 IF NEGATE THEN TRUE        \ -- n -1   (ok)
+                 IF NEGATE THEN TRUE       \ -- n -1   (ok)
               THEN ;
 
 \ ========================================================================
@@ -678,7 +651,6 @@ TARGET-COMPILING
 : SCROLL   ( -- )
             C/L@ 2* DUP                    \ get chars per cut buffer and dup
             MALLOC ( -- c/s heap)          \ allocate chars per scroll in heap
-
             C/SCR @     C/L@  VTOP @ +     \ loops from 2nd line, to last line
             DO
                PAUSE
@@ -785,11 +757,10 @@ TARGET-COMPILING
 : UD/MOD ( ud1 u2 -- u3 ud4)
          >R 0 R@ UM/MOD -ROT R> UM/MOD ROT ;   \ 32/16->32 divide
 
-
 \ ====================================================
-\ Build 25 Sept 21 2018, added 1-! for faster HOLD
+\ Build 25 Sept 21 2018, added 1-! for faster HOLD                                          S
 
-TRUE [if]
+FALSE [if]
 
 CODE: 1-!  ( addr -- ) *TOS DEC,  TOS POP,  NEXT, END-CODE
 
@@ -816,13 +787,27 @@ CODE: 1-!  ( addr -- ) *TOS DEC,  TOS POP,  NEXT, END-CODE
             NEXT,
             END-CODE
 
-: <#     ( --)          PAD HP ! ;                          \ initialize Hold Pointer to end of the number buffer (#pad)
-: #      ( ud1 -- ud2)  BASE @ UD/MOD ROT  >DIGIT  HOLD  ;  \ convert 1 digit in ud1, place in HOLD buffer
-: #S     ( ud1 -- ud2)  BEGIN   # 2DUP OR    0= UNTIL ;     \ convert all digits in ud1. ud2 will be 0 (the remainder)
-: #>     ( ud1 -- c-addr u) 2DROP HP @ PAD OVER - ;         \ return a stack string (address, length)  of the converted number
-: SIGN   ( n -- ) 0< IF T[CHAR] -  HOLD THEN ;              \ if 'n'<0  add '-' char  string created in #PAD
-: U.     ( u -- ) 0  <#  #S  #>  TYPE SPACE ;   \ print 'u' as an un-signed integer (the '0' converts u to a double(32bit) int)
-: .      ( n -- ) DUP ABS 0  <# #S ROT SIGN #> TYPE SPACE ; \ print n as signed insteger
+ \ initialize Hold Pointer to end of the number buffer (#pad)
+: <#     ( --)          PAD HP ! ;
+
+\ convert 1 digit in ud1, place in HOLD buffer
+: #      ( ud1 -- ud2)  BASE @ UD/MOD ROT  >DIGIT  HOLD  ;  
+
+\ convert all digits in ud1. ud2 will be 0 (the remainder)
+: #S     ( ud1 -- ud2)  BEGIN   # 2DUP OR    0= UNTIL ;     
+
+\ return a stack string (address, length)  of the converted number
+: #>     ( ud1 -- c-addr u) 2DROP HP @ PAD OVER - ;         
+
+\ if 'n'<0  add '-' char  string created in #PAD
+: SIGN   ( n -- ) 0< IF T[CHAR] -  HOLD THEN ;
+
+\ print 'u' as an un-signed integer
+\ the '0' converts u to a double,32bit int)
+: U.     ( u -- ) 0  <#  #S  #>  TYPE SPACE ;  
+
+\ print n as signed insteger
+: .      ( n -- ) DUP ABS 0  <# #S ROT SIGN #> TYPE SPACE ; 
 
 \ ========================================================================
 \ M I S C E L L A N E O U S
@@ -851,6 +836,7 @@ TARGET-COMPILING
 
 \ **later in the code we MUST store an XT in 'INTERPRET or the system will crash
 
+
 \ ========================================================================
 \ Q U I T :  The  O U T E R   I N T E R P R E T E R
 
@@ -858,11 +844,12 @@ TARGET-COMPILING
 : QUIT         ( -- )
                L0 LP !                     \ init LEAVE stack pointer LP
                RP0 RP!                     \ reset rstack
+               RSTPAB                      \ reset PAB stack in VDP RAM
                t[COMPILE] [                \ STATE = 0 (Interpreting mode)
                BEGIN
                   TIB DUP TIB# ACCEPT SPACE ( -- adr len) \ accept input to TIB, maxlen=TIB#
                   INTERPRET                               \ interpret reads the stack string
-                  STATE @ 0= IF  T."  ok" cr THEN         \ if we are not compiling print OK
+                  STATE @ 0= IF  T."  ok" CR THEN         \ if we are not compiling print OK
                AGAIN ;
 
 : EVALUATE     ( c-addr u -- j*x)          \ interpret a stack string
@@ -1005,7 +992,7 @@ TARGET-COMPILING
                        ELSE  ,                   \ otherwise compile it
                        THEN
 
-                  ELSE  ( it's a number)         \ -- textadr
+                  ELSE ( it's a number)         \ -- textadr
                        ?NUMBER
                        IF  t[COMPILE] LITERAL    \ converted ok so compile as a literal
                        ELSE COUNT ?ABORT         \ ERROR: print the bad word & ABORT
@@ -1034,10 +1021,17 @@ TARGET-COMPILING
 : TEXT      ( -- )
              F0 DUP KTP C!        \ TI KSCAN re-writes VReg1 with whatever is in this byte.
        ( -- F0) 01 VWTR           \ VDP register 1: bit3 = 1 sets the TEXT Mode
-              0 06 VWTR           \ no sprite descriptor table is set for TEXT mode
-             20 07 VWTR           \ VDP register 7. color: med. green on transparent screen
-             2 VMODE !            \ record the mode we are in
+             00  2 VWTR
+             0E  3 VWTR
+             01  4 VWTR
+             06  5 VWTR
+              1  6 VWTR           \ sprite descriptor table is set
+             20  7 VWTR           \ VDP register 7. color: med. green on transparent screen
              28 C/L!              \ Set 40 chars/line, which also re-calcs the screen variables
+             VTOP OFF
+             VROW OFF
+             VCOL OFF
+             2 VMODE !            \ record the mode we are in
              PAGE ;               \ "CALL CLEAR" ;-)
 
 \ ========================================================================
@@ -1059,8 +1053,6 @@ TARGET-COMPILING
 \ -------------------------  --------------- -----------
 : CONSTANT  ( n --)  HEADER  COMPILE DOCON     , ; \ the comma compiles 'n' into the constant
 : USER      ( n --)  HEADER  COMPILE DOUSER    , ; \ n is the BYTE offset from workspace pointer
-
-\ something is weird with DOVAR, ?? but using literal address fixes it.
 : CREATE    ( -- )   HEADER  COMPILE DOVAR       ; \ create does not have a parameter by default
 : VARIABLE  ( -- )   CREATE                  0 , ; \ variables are set to zero when created
 
@@ -1083,15 +1075,14 @@ TARGET-COMPILING
 \ =======================================================================
 \ ADD-ONS
 \ ** commment out everything to build the smallest kernel  **
+
 \ [CC] include cc9900\cclib\crusmall.hsf
- [CC] include CC9900\cclib\dsrlink5.hsf
- [CC] include CC9900\cclib\filesysT.hsf
+ [CC] include CC9900\cclib\dsrlink7.hsf
+ [CC] include CC9900\cclib\filesysW.hsf
 
 \ =======================================================================
 \ T E S T   C O D E   G O E S   H E R E
 \ if you want to add any other code it must go before target branch compilers
-
-
 
 \ =======================================================================
 \ LOOPS AND BRANCH COMPILERS FOR THE TI-99 SYSTEM
@@ -1144,6 +1135,7 @@ TARGET-COMPILING
             \ VDP start screen
               TEXT BEEP
               TS" CAMEL99 2.1.E" TYPE
+              LINES OFF 
               TS" DSK1.START" INCLUDED       \ load the start file
               RP0 RP!                        \ reset return stack pointer
               SP0 SP!                        \ reset the data stack pointer
@@ -1164,7 +1156,6 @@ TARGET-COMPILING
 
 \ These are the last definitions but they allow us to extend the TARGET
 \ Forth system with Source code
-
 
 \ To avoid name conflicts we use X: & ;X to create the TARGET system ':' and ';'
 TARGET-COMPILING
