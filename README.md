@@ -10,9 +10,9 @@ The low level primitives are written in Forth Assembler. The file 9900FAST.HSF a
 In CAMEL99 Version 2 we squeezed enough disk support into the 8K kernel to have the word INCLUDED in the system.  This let's the system compile Forth code from disk which means it can extend itself.
 
 ### Made Friendly for BASIC Programmers
-Users of TI BASIC who want to explore Forth might also find this system useful. With that in mind it has a string package that provides many of the features of BASIC including the use of a string stack and automated stack management. It also has an INPUT statement for strings and numbers.  You will also find the TI BASIC graphics functions are emulated in the library file called GRAFIX.F.  The instruction manual has been written to compare BASIC and Forth and there are example programs where the BASIC code is side by side with Forth for faster understanding for those new to Forth.  
+Users of TI BASIC who want to explore Forth might also find this system useful. With that in mind it has a string package that provides many of the features of BASIC including the use of a string stack and automated stack management. It also has an INPUT statement for strings and numbers.  You will also find the TI BASIC graphics functions are emulated in the library file called GRAFIX.  The instruction manual has been written to compare BASIC and Forth and there are example programs where the BASIC code is side by side with Forth for faster understanding for those new to Forth.  
 
-You can load all the "training wheels" with one command: INCLUDE DSK1.BASICHLP.F
+You can load all the "training wheels" with one command: INCLUDE DSK1.BASICHLP
 ... and the files compile into the system. This gives the BASIC programmer most of TI BASIC'S features, but it still requires learning Forth's way of thinking to use it.  
 
 (Future: Include a more TI-BASIC-like file control wordset. ANS Forth file wordset is too complicated)
@@ -20,7 +20,8 @@ You can load all the "training wheels" with one command: INCLUDE DSK1.BASICHLP.F
 ### Changes from V1
 - CAMEL99 V2 finally has TI file access and numerous enhancements that improved the speed/size tradeoff. 
 - The binary program is in folder DSK1 and is called CAMEL99. 
-- All of the loadable source files have a .F extension except the START file which has no file extension.
+- All TI-99 FORMAT source files have no extension.
+- The same files can be found in LIB.TI with a .FTH extension.
 
 ### How it was made
 - CAMEL99 begins with a TMS9900 Cross-Assembler written in HsForth, an MS DOS Forth system written in the 1990s.
@@ -133,6 +134,10 @@ It now loads in the DSK.START file as a library file: TOBODY.F
 - Added TPAD USER VARIABLE which hold the offset of PAD from HERE. By setting TPAD to bigger number for other tasks, each task gets a pad and HOLD buffer in unallocated dictionary memory.
 
 ### Nov 13, 2018 V2.1.E
-- separated Forth primitives and TI-99 I/O primitives into 2 files
-- RSTPAB added to QUIT for stability when using file system
-- Improved ?TERMINAL so it waits for key release after key press
+- Floored division is now the default per ANS/ISO standard. 
+  Due to the slow speed of the 9900 CPU it is coded in Forth Assembler.
+  The code is a re-work of code, used by permission from FB-Forth by
+  Lee Stewart.
+- Separated Forth primitives and TI-99 I/O primitives into 2 files.
+- RSTPAB added to QUIT for stability when using file system.
+- Improved ?TERMINAL so it waits for key release after key press.
