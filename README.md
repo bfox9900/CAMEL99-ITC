@@ -132,6 +132,7 @@ It now loads in the DSK.START file as a library file: TOBODY.F
 - HOLD reverted back to Forth version for multi-tasking
 - Added TPAD USER VARIABLE which hold the offset of PAD from HERE. By setting TPAD to bigger number for other tasks, each task gets a pad and HOLD buffer in unallocated dictionary memory.
 
-### Nov 12, 2018 V2.1.E
+### Nov 13, 2018 V2.1.E
 - separated Forth primitives and TI-99 I/O primitives into 2 files
 - RSTPAB added to QUIT for stability when using file system
+- Improved ?TERMINAL so it waits for key release after key press
