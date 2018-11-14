@@ -1,12 +1,11 @@
 \ The optional Double-Number word set
 
-\ INCLUDE DSK1.TOOLS.F  \ for debugging
+ INCLUDE DSK1.TOOLS  \ for debugging
 
 \    D2/   D2*   DU<  D0=   D0<  D.  D<   D>S  M+ 2ROT
 \    2CONSTANT  2LITERAL    2VARIABLE
 \    DABS D.R  D=    DMAX   DMIN   D-   DNEGATE
-
-\    M*/    ( not implemented)
+\    M*/
 \    2VALUE ( not implemented)
 
 HEX
@@ -65,7 +64,6 @@ ENDCODE
 : DMAX   ( d d -- d)  4DUP D< IF 2DROP ELSE 2NIP THEN ;
 : DMIN   ( d d -- d)  4DUP D< IF 2NIP ELSE 2DROP THEN ;
 
-\ m*/ ( d n1 n2 -- d*n1/n2 )
 
 : ?NEGATE    ( n1 n2 -- n3) 0< IF NEGATE THEN ;
 : DNEGATE    ( d1 -- d2 )   SWAP INVERT SWAP INVERT 1 M+ ;
@@ -73,23 +71,43 @@ ENDCODE
 : ?DNEGATE   ( d1 n -- d2)  0< IF DNEGATE THEN ;
 : DABS       ( d -- d)      DUP ?NEGATE ;
 
- : M*         ( n1 n2 -- d)                      ( signed 16*16->32 multiply)
-              2DUP XOR >R                         ( carries sign of the result)
+ : M*         ( n1 n2 -- d)         ( signed 16*16->32 multiply)
+              2DUP XOR >R           ( carries sign of the result)
               SWAP ABS SWAP ABS UM*
               R> ?DNEGATE ;
 
+\ from GForth
+: M*/  ( d1 n1 +n2 -- d2 )  ( 52.9 mS LOL! )
+       >R                           \ save divisor
+       S>D >R                       \ save multiplier sign
+       ABS -ROT
+       S>D R>                       
+       XOR R>
+       SWAP >R >R                   \ push signs
+       DABS ROT TUCK UM* 2SWAP UM* SWAP >R 0 D+  \ mult. step, add sign
+       R> -ROT R@ UM/MOD -ROT R> UM/MOD -ROT     \ divide step
+       R>                                        \ get sign data
+       IF                                        \ add sign with logic
+          IF
+            1 0 D+
+          THEN
+          DNEGATE
+       ELSE
+          DROP
+       THEN ;
+
+
 \ print  un-signed DOUBLE
-: DU.  ( u -- ) <#  #S  #>  TYPE SPACE ;
+: DU.  ( u -- )  <#  #S  #>  TYPE SPACE ;
+: D.R  ( d n --) >R TUCK DABS <# #S ROT SIGN #> R> OVER - SPACES TYPE ;
+: D.   ( d  -- ) 0 D.R SPACE ;
 
-: D.R  ( d n --)
-       >R TUCK DABS <# #S ROT SIGN #> R> OVER - SPACES TYPE ;
+\ non-standard: convert stack string to double number 
+\ (Like ?NUMBER in CAMEL Forth)
+: ?DNUMBER ( addr len -- d ?) 0 0 2SWAP >NUMBER NIP 0=  ;
 
-: D.   ( d  -- ) 0 D.R ;
-
-: ?DNUMBER ( addr len -- d ? ) 0 0 2SWAP >NUMBER NIP 0 <> ABORT" bad number"  ;
-
+\ examples
 DECIMAL
-: 1.    ( -- d)  S" 1" ?DNUMBER  ;
-: PI    ( -- d)  S" 3141262" ?DNUMBER ;
-
+ S" 1" ?DNUMBER       DROP 2CONSTANT 1.
+ S" 3141262" ?DNUMBER DROP 2CONSTANT PI
 
