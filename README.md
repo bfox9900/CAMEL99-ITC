@@ -135,9 +135,10 @@ It now loads in the DSK.START file as a library file: TOBODY.F
 
 ### Nov 13, 2018 V2.1.E
 - Floored division is now the default per ANS/ISO standard. 
+  Symetrical division is set using the FLOOR variable: FLOOR OFF, FLOOR ON
   Due to the slow speed of the 9900 CPU it is coded in Forth Assembler.
-  The code is a re-work of code, used by permission from FB-Forth by
-  Lee Stewart.
-- Separated Forth primitives and TI-99 I/O primitives into 2 files.
-- RSTPAB added to QUIT for stability when using file system.
+  The code is a re-work of code, used by permission, from FB-Forth by
+  Lee Stewart. ( fbforth.stewkitt.com/ )
+- Forth primitives separated into 2 files: 9900FAS2.HSF, TI99PRIMS.HSF
+- RSTPAB (reset PAB) added to QUIT for stability when using file system.
 - Improved ?TERMINAL so it waits for key release after key press.
