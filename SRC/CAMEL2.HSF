@@ -434,6 +434,9 @@ TARGET-COMPILING
 
 \ ========================================================================
 \ Reset base PAB address
+
+\ >8370 contains 'AA' for the TI-99 O/S to identify end of VDP RAM
+\ We can't touch that byte so the pab stack base address starts 2 bytes below
 : RSTPAB  ( -- ) 8370 @ 2- ^PAB ! ;
 
 [CC] cr .( Stack primitives ...)  [tc]
@@ -478,11 +481,12 @@ TARGET-COMPILING
 \ U< is 6 bytes in ASSEMBLER, 20 bytes in Forth
 \ : U<  ( u u -- ? ) 2DUP XOR 0< IF  NIP 0< EXIT THEN - 0< ;
 
-\ these are 14 bytes smaller in Forth all together
-: U>  ( n n -- ?)  U< INVERT ;
-: 0>  ( n n -- ?)  0< 0= ;
+\ these save 10 bytes by using Forth
+: U>  ( n n -- ?)  1+ U< INVERT ;
+: 0>  ( n n -- ?)  1- 0< INVERT ;
 : <>  ( n n == ?)  =  INVERT ;
 
+\ smaller and faster as code words
 \ : MAX   ( n n -- n ) 2DUP < IF SWAP THEN DROP ;
 \ : MIN   ( n n -- n ) 2DUP > IF SWAP THEN DROP ;
 
@@ -1081,7 +1085,6 @@ TARGET-COMPILING
 \ ADD-ONS
 \ ** commment out everything to build the smallest kernel  **
 
-\ [CC] include cc9900\cclib\crusmall.hsf
  [CC] include CC9900\cclib\dsrlink7.hsf
  [CC] include CC9900\cclib\filesysW.hsf
 
@@ -1147,14 +1150,14 @@ TARGET-COMPILING
               CR QUIT ;                      \ start the interpreter
 
 \ ======================================================================
-\ define comment words
+\ define target comment words
 TARGET-COMPILING
 : (         T[CHAR] ) PARSE 2DROP ; XIMMEDIATE
 : \                 1 PARSE 2DROP ; XIMMEDIATE
 
 [CC]
 \ ******************************************************************
-\ ***    FROM HERE ON WE CANNOT PUT COMMENTS INLINE WITH CODE    ***
+\ ***    FROM HERE ON MUST USE [CC] BEFORE ADDING COMMENTS       ***
 \ ******************************************************************
 \ ======================================================================
 \ C O L O N   C O M P I L E R
@@ -1162,7 +1165,7 @@ TARGET-COMPILING
 \ These are the last definitions but they allow us to extend the TARGET
 \ Forth system with Source code
 
-\ To avoid name conflicts we use X: & ;X to create the TARGET system ':' and ';'
+\ To avoid name confusion we use X:  ;X to create the TARGET system ':' and ';'
 TARGET-COMPILING
  X: :         !CSP  HEADER (:NONAME)  ;X
 
@@ -1180,17 +1183,17 @@ cr ." Forth Kernel compiled completely"
 
 \ Set the target system's LATEST variable to the last WORD compiled
 \ AND copy it into ORGLAST, which is used during COLD re-starts.
-[CC]
+
+[CC] \ We stay in the cross-compiler for this work
          XLATEST @ DUP LATEST T!
                        ORGLAST T!
 
-[CC]
 \ set TARGET Forth's DP variable to the same address as the cross-compiler (THERE)
 \ also copy it into the ORGDP variable used for cold re-starts
 
          THERE DUP DP T!
                    ORGDP T!
-[CC]
+
 \ ======================================================================
 \ P A T C H   T A R G E T   I M A G E
 
@@ -1201,7 +1204,7 @@ cr ." Forth Kernel compiled completely"
          T' COLD     BOOT T!
 
          END.
-[CC]
+
 \ ======================================================================
 \ S A V E   B I N A R Y  I M A G E   F I L E
 
