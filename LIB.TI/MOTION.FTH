@@ -10,12 +10,11 @@
 \   -  2@ 2! were made ANS Compliant in 2.0.21
 \   -  improved speed of SP.MOVE
 
-
-' SP.Y DROP  \ test that DIRSPRIT.F is loaded
+NEEDS SP.Y  FROM DSK1.DIRSPRIT.F
 
 \ create array of direction vectors in dictionary
 \ to hold x y vectors for each sprite (64 BYTES)
-CREATE VECTORS MAX.SP 1+ 4* ALLOT
+CREATE VECTORS   MAX.SP 1+ 4* ALLOT
 
 \ * machine code routines improve speed a lot
 

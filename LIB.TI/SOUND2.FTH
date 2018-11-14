@@ -22,9 +22,8 @@ HEX
 : >FCODE   ( 0abc -- 0cab)    \ ASM would make this much faster
            DUP 0F AND SWAP      ( -- 000c 0abc)
            4 RSHIFT             ( -- 000c 00ab)
-           SWAP ><  ( SWPB)     ( -- 00ab 0c00)
-           + ;
-
+           SWAP FUSE ;
+           
 : HZ>CODE  ( freq -- fcode )  f(clk) ROT UM/MOD NIP >FCODE 8000 OR  ;
 
 \ [HZ] is macro that calcs 9919 chip frequency divisor code at 

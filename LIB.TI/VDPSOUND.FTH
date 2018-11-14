@@ -16,8 +16,7 @@ HEX
        R> JIFFS ;            \ use the delay from Rstack (JIFF=1/60)
 
 : VPLAYLIST   ( addr -- )    \ play a TI sound list
-         BEGIN 
-            DUP VC@ WHILE    \ while the length is not 0
+         BEGIN DUP VC@ WHILE \ while the length is not 0
             PAUSE            \ give somebody else some time
             DUP VPLAY$       \ play a single string
             VCOUNT + 1+      \ advance to the next sound string
@@ -29,7 +28,7 @@ HEX
 : ?BYTE ( n -- ) FF00 AND  ABORT" Not a byte" ;
 
 : VBYTE ( -- )
-         BEGIN  [CHAR] , PARSE-WORD DUP
+         BEGIN  [CHAR] , PARSE-NAME DUP
          WHILE
             EVALUATE DUP ?BYTE
             VC,

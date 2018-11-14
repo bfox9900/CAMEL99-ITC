@@ -1,14 +1,17 @@
-
 ( ORIGINAL TI-FORTH ASSEMBLER modified slightly by Mark Wills, Turboforth)
-( and more changes for CAMEL99 Forth by Brian Fox )
+( and more changes for CAMEL99 Forth by Brian Fox     )
+( *NOTE:                                              )
+(        compare instruction has been changed to CMP, )
+(        to remove name conflict with C,              )
+(        change A, and S, to ADD, SUB,                )
 
-INCLUDE DSK1.CASE.F
+NEEDS CASE  FROM DSK1.CASE
 
-CR .( TI-99 Assembler ...)
+CR .( TI-99 Assembler V2 ...)
 
 HERE   \ save the dictionary pointer on stack
 
-HEX  F400 DP !  \ move DP to High RAM.
+\ HEX  F400 DP !  \ move DP to High RAM.
 
 CR .( Loading Assembler @>) DP @ U.
 
@@ -16,17 +19,21 @@ CR .( Loading Assembler @>) DP @ U.
 ( ASSEMBLER DEFINITIONS)
 
 DECIMAL
- 0 CONSTANT  R0   1 CONSTANT  R1
- 2 CONSTANT  R2   3 CONSTANT  R3
- 4 CONSTANT  R4   5 CONSTANT  R5
- 6 CONSTANT  R6   7 CONSTANT  R7
- 8 CONSTANT  R8   9 CONSTANT  R9
-10 CONSTANT R10  11 CONSTANT R11
-12 CONSTANT R12  13 CONSTANT R13
-14 CONSTANT R14  15 CONSTANT R15
+ 0 CONSTANT  R0    1 CONSTANT  R1
+ 2 CONSTANT  R2    3 CONSTANT  R3
+ 4 CONSTANT  R4    5 CONSTANT  R5
+ 6 CONSTANT  R6    7 CONSTANT  R7
+ 8 CONSTANT  R8    9 CONSTANT  R9
+10 CONSTANT R10   11 CONSTANT R11
+12 CONSTANT R12   13 CONSTANT R13
+14 CONSTANT R14   15 CONSTANT R15
 
 HEX
-: GOP'     OVER DUP 1F > SWAP 30 < AND IF + , , ELSE + , THEN ;
+: GOP'     OVER DUP 1F > SWAP 30 < AND   \ address or register?
+           IF   + , ,                    \ compile instruction & address
+           ELSE + ,                      \ compile register
+           THEN ;
+
 : GOP      CREATE , DOES> @ GOP' ;
 
 0440 GOP B,    0680 GOP BL,   0400 GOP BLWP,
@@ -44,10 +51,10 @@ HEX
            DOES> @ SWAP DUP DUP 1F > SWAP 30 < AND
                  IF   40 * + SWAP >R GOP' R> ,
                  ELSE 40 * + GOP'  THEN ;
-
-A000 GGOP A,   B000 GGOP AB,   8000 GGOP CMP, 9000 GGOP CB,
-6000 GGOP S,   7000 GGOP SB,   E000 GGOP SOC, F000 GGOP SOCB,
-4000 GGOP SZC, 5000 GGOP SZCB, C000 GGOP MOV, D000 GGOP MOVB,
+HEX
+A000 GGOP ADD,  B000 GGOP ADDB, 8000 GGOP CMP, 9000 GGOP CMPB,
+6000 GGOP SUB,  7000 GGOP SUBB, E000 GGOP SOC, F000 GGOP SOCB,
+4000 GGOP SZC,  5000 GGOP SZCB, C000 GGOP MOV, D000 GGOP MOVB,
 
 : 0OP     CREATE ,  DOES> @ , ;
 
@@ -86,7 +93,7 @@ CR .( jump instructions)
 
 3000 GCOP LDCR,
 3400 GCOP STCR,
-
+HEX
 \ Wycove assembler register syntax:
 : @@        020    ;  \ symbolic addressing
 : **        010 +  ;  \ indirect addressing
@@ -122,6 +129,19 @@ CR .( CAMEL99 special registers & modes)
 
 : *R10       R10 ** ;
 : *R11       R11 ** ;
+
+CR .( Pseudo instructions)
+: RT,     ( -- )  R11 ** B, ;
+: NOP,    ( -- )  2 JMP, ;
+: NEXT,   ( -- )  045A ,  ;  \ CAMEL99 NEXT: B *R10
+
+\ PUSH & POP for both stacks
+: PUSH,         ( src -- )  SP DECT,  *SP  MOV, ;    \ 10+18 = 28  cycles
+: POP,          ( dst -- )  *SP+      SWAP MOV, ;    \ 22 cycles
+
+: RPUSH,        ( src -- ) RP DECT,  *RP   MOV, ;
+: RPOP,         ( dst -- ) *RP+      SWAP  MOV, ;
+
 
 CR .( Jump tokens) \ for use with CJMP
 HEX
@@ -195,20 +215,9 @@ CR .( Structured branching and looping )
         ?EXEC
         POSTPONE IF,  CELL+ ; IMMEDIATE
 
-CR .( Pseudo instructions)
-: RT,     ( -- )  *R11 B, ;
-: NOP,    ( -- )  2 JMP, ;
-: NEXT,   ( -- )  *R10 B,  ;  \ CAMEL99 NEXT: B *R10
 
-\ PUSH & POP for both stacks
-: PUSH,         ( src -- )  SP DECT,  *SP   MOV, ;    \ 10+18 = 28  cycles
-: POP,          ( dst -- )  *SP+      SWAP  MOV, ;    \ 22 cycles
-
-: RPUSH,        ( src -- ) RP DECT,  *RP   MOV,  ;
-: RPOP,         ( dst -- ) *RP+      SWAP  MOV,  ;
-
-: CODE      ( -- )  HEADER  HERE >BODY , !CSP ;
-: ENDCODE   ( -- )  ?CSP  ;
+\ : CODE      ( -- )  HEADER  HERE >BODY , !CSP ;
+\ : ENDCODE   ( -- )  ?CSP  ;
 
 : ;CODE
             POSTPONE (;CODE)     \ compiles (;CODE) into definition
@@ -218,8 +227,5 @@ CR .( Pseudo instructions)
             ; IMMEDIATE          \ this is an IMMEDIATE word
 
 CR CR .( Assembler loaded)
-CR HERE F400 - DECIMAL .  .( BYTES used)
-
-( -- here) DP ! \ restore the dictionary pointer
-
+CR HERE SWAP - DECIMAL .  .( BYTES used)
 HEX

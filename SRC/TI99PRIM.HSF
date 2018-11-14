@@ -76,7 +76,6 @@ CODE: VWRITE  ( RAM-addr VDP-addr cnt -- )
               NEXT,
               END-CODE
 
-
 \ VSBW in Forth style  pronounced "Vee-Cee-store"
 CODE: VC!     ( char Vaddr  -- )   \ Video CHAR store
               TOS R0 MOV,          \ need address in R0
@@ -87,7 +86,6 @@ CODE: VC!     ( char Vaddr  -- )   \ Video CHAR store
               TOS POP,             \ refill TOS
               NEXT,
               END-CODE
-
 
 CODE: V!     ( n Vaddr  -- )       \ Video store 16BIT int
               TOS R0 MOV,          \ need address in R0 to call WMODE
@@ -114,7 +112,6 @@ CODE: VFILL   ( VDP-addr count char-- )
               TOS POP,
               NEXT,
               END-CODE
-
 
 \ * VDP write to register. Kept the TI name
 CODE: VWTR    ( n reg -- )         \ Usage: HEX 0705 VWTR {write 5 to register 7}
@@ -244,16 +241,17 @@ CODE: ?TERMINAL ( -- ?)    \ ~200uS, 16 bit ROM speed. Same name as TI-Forth
             TOS     PUSH,
             TOS     CLR,
             0020 @@ BL,          \ Call ROM code, test FNCT 4 key press
-            EQ IF,               \ if KEY pressed TOS = -1
-               TOS SETO,
-            ENDIF,
+            EQ IF,               \ if flag=0
+               TOS  SETO,        \ KEY is pressed, TOS = -1
+               BEGIN,            
+                  0020 @@ BL,    \ call rom routine
+               NE UNTIL,         \ until key is released
+            ENDIF,               
             R12     RPOP,        \ Restore CRU address used by CAMEL Forth
             NEXT,
             END-CODE
 
-
 l: _CURSR   DATA 005F            \ holds the cursor character value default= '_'
-
 CODE: CURS@   ( -- char)         \ return cursor or space for flashing cursor
             TOS PUSH,
            _CURSR @@ TOS MOV,    \ load the cursor char to TOS from memory

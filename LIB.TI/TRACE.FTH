@@ -1,11 +1,11 @@
 \ TRACE colon definitions Forth Dimensions III/2 P.58 26OCT82 LCT
 \ Part of original TI-Forth
-\ Modified for ANS Forth/CAMEL99               Jan 7 2018 B J Fox
+\ Modified for ANS Forth/CAMEL99            Jan 7 2018 B J Fox
 
-\ Aug 9 2018 Improved on screen look 
+\ Aug 9 2018 Improved on screen look
 \            *SEE TRACE.FTH for test code
 
-INCLUDE DSK1.TOOLS.F
+INCLUDE DSK1.TOOLS
 
 HEX
 \ Camel Forth dictionary needs help to get from an XT (CFA) back to the NFA
@@ -42,39 +42,5 @@ VARIABLE TRACE    \ controls if trace runs or not
 : :     ( -- ) !CSP  HEADER (:NONAME)  COMPILE (TRACE) ;
 
 \ Now anything that's defined/re-defined with ':' will be traceable
-
-\ TEST CODE
- VARIABLE X   
- VARIABLE Q
-
- : X    X ;
- : Q    Q ;
-
- : DROP   DROP ;
- : !      !    ;
- : @      @    ;
- : +!     +!   ;
- : DUP    DUP  ;
- : 1    1 ;
- : 2    2 ;
- : 3    3 ;
- : U.   U. ;
-
- : WORD1  ." This is word 1" 1 2 3 DUP  X !  ;
-
- : WORD2  CR ." Word 2 does nothing around here!"  99 ;
-
- : WORD3  CR ." Don't listen to those other words!!!!"
-          DROP DROP DROP DROP   X @ Q +!
-          Q @ U. ;
- : TEST
-         Q OFF
-         20 0 DO
-           WORD1 WORD2 WORD3
-         LOOP ;
-
-\ Usage:
-\ TRACE ON ( -OR- TRACE OFF)
-\ TEST
 
 

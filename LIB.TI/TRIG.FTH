@@ -3,7 +3,7 @@
 \ Modified for ANS Forth, B. Fox
 
 DECIMAL
- CREATE SINTAB   ( 182 bytes)
+CREATE SINTAB   ( 182 bytes)
 \  0      1      2      3      4      5      6      7      8      9
 \ --------------------------------------------------------------------
   0000 , 0174 , 0349 , 0523 , 0698 , 0872 , 1045 , 1219 , 1392 , 1564 ,
@@ -17,25 +17,27 @@ DECIMAL
   9848 , 9877 , 9903 , 9926 , 9945 , 9962 , 9976 , 9986 , 9994 , 9998 ,
   10000 ,
 
-\ calc index into table & fetch value
-: ]SIN  ( ndx -- n) 2* SINTAB + @ ;
+HEX
+\ machine Forth "compilers" make it easy to create VERY fast arrays
+\ R4 is CAMEL99 Forth cache register for Top of stack
+: 2*,   ( n -- 2(n)  A104 , ;             \ A R4,R4
+: +@,   ( addr -- )  C124 , ( addr) , ;   \ MOV addr@(R4),R4
+
+DECIMAL
+CODE ]SIN  ( ndx -- sin) 2*,  SINTAB +@,  NEXT, ENDCODE
+\  : ]SIN  ( ndx -- sin) 2*   SINTAB + @ ;  \ FORTH equivalent
 
 \ save space by defining these constants
- 90 CONSTANT 90^
-180 CONSTANT 180^
-360 CONSTANT 360^
+ 90 CONSTANT 90^   180 CONSTANT 180^   360 CONSTANT 360^
 
-: (SIN)  ( n -- n) 
-         DUP  90^ > IF  180^ SWAP -  THEN ]SIN ;
+: (SIN)  ( n -- n) DUP  90^ > IF  180^ SWAP -  THEN ]SIN ;
 
 : SIN    ( n -- n )
          360^  MOD DUP 0<
          IF    360^ +  THEN
          DUP 180^ >
          IF    180^ - (SIN) NEGATE
-         ELSE  (SIN)
+         ELSE (SIN)
          THEN ;
 
 : COS ( n -- n )  360^ MOD 90^ + SIN ;
-
-

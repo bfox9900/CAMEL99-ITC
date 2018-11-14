@@ -23,8 +23,7 @@ HEX
 : COLOR  ( character-set fg-color bg-color -- )
           1 ?MODE  >COLR SWAP ]CTAB  VC! ;
 
-
-\ ascii value SET# returns the character set no. 
+\ ascii value SET# returns the character set no.
 : SET#  ( ascii -- set#) 3 RSHIFT ;  
 
 ( *NEW*  change contiguous character sets at once)
@@ -74,7 +73,7 @@ HEX
 : VCHAR  ( col row char cnt -- ) \ parameter order not ideal so we shuffle
           2>R                \ ( -- x y )
           >VPOS              \ ( -- vdp_addr)
-          C/SCR @ SWAP       \ ( -- lim vdpaddr)
+          C/SCR @ 1- SWAP    \ ( -- lim vdpaddr)
           R> SWAP            \ ( -- lim char vadr)
           R> 0               \ ( -- lim char vadr
           ?DO                \ ( -- lim char vadr)

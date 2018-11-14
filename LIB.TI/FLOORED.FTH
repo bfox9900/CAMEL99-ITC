@@ -6,7 +6,7 @@
 
 
  : DNEGATE    ( d1 -- d2 )                       ( negate double precision)
-              SWAP INVERT SWAP INVERT 1 M+ ;
+              SWAP NEGATE SWAP NEGATE 1 M+ ;
 
  : ?DNEGATE   ( d1 n -- d2)                      ( negate d1 if n negative)
               0< IF DNEGATE THEN ;               ( ...a common factor)
@@ -37,7 +37,7 @@
               R> DROP ;
 
  : M*         ( n1 n2 -- d)                      ( signed 16*16->32 multiply)
-              DUP XOR >R                         ( carries sign of the result)
+              2DUP XOR >R                         ( carries sign of the result)
               SWAP ABS SWAP ABS UM*
               R> ?DNEGATE ;
 

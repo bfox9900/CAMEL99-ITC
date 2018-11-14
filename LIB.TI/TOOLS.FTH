@@ -7,20 +7,24 @@ HEX
           ALIGN
           CREATE  ,   ,
 
-          DOES>  2@  LATEST ! DP ! ;
+          DOES>  2@  DP !  LATEST !  ;
 
 CR .( MARKER )
 
 .( ? DEPTH .S )
 : ?         ( adr -- ) @ . ;
 
-: DEPTH     ( -- n )   SP0 SP@ CELL+ - 2/ ;
+: DEPTH     ( -- n )   SP0 SP@ 2+ - 2/ ;
 
 \ .S is more complicated with TOS in a register
 : .S        ( -- )
             ." |"
             DEPTH
-            IF   0 DEPTH 2- DO   I PICK  U.  -1 +LOOP
+            IF
+              0 DEPTH 2- 
+              DO   
+                I PICK  U.  
+              -1 +LOOP
             THEN ;
 
 \ : RDEPTH    ( -- n )   RP0 RP@ - 2/ ;
@@ -28,15 +32,11 @@ CR .( MARKER )
 
 .( ?BREAK )
 \ ABORT if function 4 is pressed
-: ?BREAK    ( -- )
-	    ?TERMINAL 
-            IF BEGIN PAUSE ?TERMINAL 0= UNTIL
-               CR ." *BREAK*" ABORT
-            THEN ;
+: ?BREAK    ( -- ) ?TERMINAL ABORT" *BREAK*" ;
 
 .( WORDS )
 
-: .ID       ( addr --) COUNT 1F AND TYPE ;
+: .ID       ( NFAaddr --) COUNT 1F AND TYPE ;
 
 : WORDS     ( -- )
              CR
@@ -79,8 +79,7 @@ HEX
                HEX
                BOUNDS   ( -- endadr startadr)
                DO PAUSE
-                  CR @
-                  I  .####  ':' EMIT
+                  CR  I  .####  ':' EMIT
                   I  ?80  BOUNDS DO  SPACE I @ .#### 2 +LOOP SPACE
                   I  ?80  .ASCII
                   ?BREAK

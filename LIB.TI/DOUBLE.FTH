@@ -9,6 +9,7 @@
 \    M*/    ( not implemented)
 \    2VALUE ( not implemented)
 
+HEX
  CODE D+   ( lo hi lo' hi' -- d)  \ hi'is in TOS register  *TESTED*
       C084 ,   \  TOS R2 MOV,   \ hi'->r2
       C076 ,   \ *SP+ R1 MOV,   \ lo'->R1
@@ -29,7 +30,7 @@ ENDCODE
 \             END-CODE
 
 : 2LITERAL  ( d -- )
-            ?COMP SWAP 
+            ?COMP SWAP
             POSTPONE LITERAL
             POSTPONE LITERAL ; IMMEDIATE
 
@@ -71,6 +72,11 @@ ENDCODE
 : D-         ( d d -- d) DNEGATE D+ ;
 : ?DNEGATE   ( d1 n -- d2)  0< IF DNEGATE THEN ;
 : DABS       ( d -- d)      DUP ?NEGATE ;
+
+ : M*         ( n1 n2 -- d)                      ( signed 16*16->32 multiply)
+              2DUP XOR >R                         ( carries sign of the result)
+              SWAP ABS SWAP ABS UM*
+              R> ?DNEGATE ;
 
 \ print  un-signed DOUBLE
 : DU.  ( u -- ) <#  #S  #>  TYPE SPACE ;

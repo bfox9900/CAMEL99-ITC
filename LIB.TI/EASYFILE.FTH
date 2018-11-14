@@ -5,11 +5,8 @@
 \ make a set of words that are more like BASIC. Although they are not
 \ exactly the same they are easier to use.
 
-\ Example:   S" DSK1.MYFILE" DV80 R/W OPEN AS: #1
-\            S" Put this in a file for me." #1 WRITE
-\            #1 CLOSE ;
-
-INCLUDE DSK1.VALUES.F
+NEEDS VALUE  FROM DSK1.VALUES.F
+NEEDS R/W    FROM DSK1.ANSFILES.F
 
 \ define 3 file identifiers. You can make more if you need to.
 0 VALUE #1
@@ -17,7 +14,7 @@ INCLUDE DSK1.VALUES.F
 0 VALUE #3
 
 \ create commands with error testing included by default
-: OPEN    ( addr len fam-- fid) OPEN-FILE ?FILERR ;
+: OPEN    ( addr len -- fid) OPEN-FILE ?FILERR ;
 : CLOSE   ( fid -- ) CLOSE-FILE ?FILERR ;
 
 \ write a "stack string" to file fid

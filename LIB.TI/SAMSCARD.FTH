@@ -2,8 +2,7 @@
 \ Provides 940K of data space
 HEX
 
-\ 3000 H !    \ move CAMEL99 heap 4K above the mapped area
-            \ SAMS uses the 4K page from >2000...2FFF
+NEEDS SBO  FROM DSK1.CRU 
 
      VARIABLE BANK#      \ current mapped bank
   10 CONSTANT 1STBANK    \ we don't use the lower 64K
@@ -25,9 +24,9 @@ HEX
          \ compute SAMS register for address=MBLOCK at compile time
             [ MBLOCK 0B RSHIFT 4000 + ] LITERAL
 
-              1E00 CRU! 0SBO        \ enable SAMS card
+              1E00 CRU! 0 SBO        \ enable SAMS card
             ( bank# register) !     \ store bank in SAMS register
-              0SBZ                  \ disable SAMS card
+              0 SBZ                  \ disable SAMS card
          THEN MBLOCK OR             \ return the address in mapped block
 ;
 
@@ -39,6 +38,7 @@ HEX
 : !L     ( n 32addr -- ) >BANK ! ;    \ store an int
 
 \ debug words
- : UD.    ( d -- )   <#  #S  #>  TYPE SPACE ;
- : ??     ( addr --) 2@ UD. ;    \ see contents of 32 bit variable
+\ : UD.    ( d -- )   <#  #S  #>  TYPE SPACE ;
+\ : ??     ( addr --) 2@ UD. ;    \ see contents of 32 bit variable
+
 

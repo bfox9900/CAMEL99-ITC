@@ -1,20 +1,24 @@
 \ print TI code as loadable text code word
-\ USAGE: ' <ACODEWORD>  .CODE
-CR .( REQUIRES TOOLS.F)
-HEX
 
-: ?NEWLINE    OUT @ C/L@ 6 - > IF CR THEN ;
-: ?CODE ( cfa -- ) DUP @ 2- - ABORT" Not code word" ;  \ works only for ITC
+HEX
+NEEDS .#### FROM DSK1.TOOLS
+
+: TAB   4 SPACES ;
+
+: ?NEWLINE ( -- )  OUT @ C/L@ 6 - > IF CR TAB THEN  ;
+
+: ?CODE    ( cfa -- ) DUP @ 2- - ABORT" Not code word" ;
 
 : .CODE  ( addr -- )  \ print the machine code for a Forth code word
         DUP ?CODE
-        CR ." CODE " DUP ."  ( " .#### ." )"  CR
-        100 BOUNDS
+        CR ." CODE " DUP ." ( CFA=" .#### ." )"  CR TAB
+        >BODY  100 BOUNDS
         DO
-           I @ DUP 045A =
+           I @ DUP 045A =    \ test for NEXT
            IF  DROP LEAVE
            ELSE  ?NEWLINE .#### ."  , "
            THEN  CELL+
         2 +LOOP
         CR ." NEXT,"
-        CR ." ENDCODE"  ;
+        CR ." END-CODE"  
+        CR ;

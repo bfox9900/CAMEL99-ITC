@@ -9,7 +9,7 @@
 \ INCLUDE DSK1.TOOLS.F   \ for debugging
 \ INCLUDE DSK1.ASM9900.F
 
-INCLUDE DSK1.GRAFIX.F    \ must be in Graphics 1 mode
+NEEDS HCHAR  FROM DSK1.GRAFIX  \ must be in Graphics 1 mode
 
 CR .( compiling direct sprite control)
 HEX
@@ -72,12 +72,12 @@ CODE DUP>R ( n -- ) ( r-- n)
           ENDCODE
 .( .)
 : SPRITE  ( char colr x y sp# -- ) \ create a SPRITE, sp# = 0..31
-           ?NDX
-           DUP>R                 \ copy spr# to rstack
-           LOCATE                \ set screen position
-           R@ SP.COLOR           \ set the sprite color
-           R@ PATTERN            \ set the character pattern to use
-           R>  SPR# @ MAX  SPR# ! ; \ update last spr#
+          ?NDX
+          DUP>R                 \ copy spr# to rstack
+          LOCATE                \ set screen position
+          R@ SP.COLOR           \ set the sprite color
+          R@ PATTERN            \ set the character pattern to use
+          R>  SPR# @ MAX  SPR# ! ; \ update last spr#
 
 \ like Extended BASIC Magnify
 : MAGNIFY  ( mag-factor -- ) 

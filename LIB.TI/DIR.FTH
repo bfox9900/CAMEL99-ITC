@@ -1,10 +1,9 @@
 \ read a TI disk directory
 HEX
-CR .( Requires ANSFILES.F)
-' OPEN-FILE DROP
+NEEDS OPEN-FILE FROM DSK1.ANSFILES
 
 \ print string left justified
-: $.LEFT  ( $ width -- ) 
+: $.LEFT  ( $ width -- )
           OVER C@ - >R  COUNT TYPE   R> SPACES ;
 
 DECIMAL
@@ -24,7 +23,7 @@ HEX
              PAD 50 R@ READ-LINE ?FILERR ( -- len flag) NIP
           WHILE ( flag=0)
              PAD 0C $.LEFT ?CR          \ print record
-             ?TERMINAL                  \ check for *BREAK* key
+             ?TERMINAL                  \ check for *BREAK* key                   
              IF R> CLOSE-FILE           \ if detected we're done here
                 2DROP
                 CR CR ." *BREAK*" ABORT
@@ -34,3 +33,4 @@ HEX
           DECIMAL
           CR LINES @ . ." files" CR
           HEX ;
+

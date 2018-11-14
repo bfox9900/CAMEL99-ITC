@@ -2,7 +2,7 @@
 \ Register DATA taken from Turbo Forth by Mark Wills
 ( default colors changed to green on black screen)
 
-S" DSK1.GRAFIX.F" INCLUDED 
+NEEDS GRAPHICS  FROM DSK1.GRAFIX
 
 HEX
 CREATE 40COL

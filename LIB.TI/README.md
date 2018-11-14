@@ -1,10 +1,5 @@
-# Library Code Text Files
+# TI-99 Library Files
 
-These files are source code for CAMEL99 V2 in PC file format.
-Some of these have not been converted to TI-99 format.  See DSK2 folder for TI-99 file format versions.
+These files has not extension because the TI-99 file system uses the '.' character to delimit device names and parameters. These files are all in the default format for assembler source code on the TI-99. This format is described as DISPLAY, VARIABLE 80 or DV80 as a short form.
 
-Having files in PC format allows you to edit them with your favourite editor and convert them to DV80 format as you see fit.
-
-Some of these files have not been fully tested.
-
-You have been warned.
+DV80 means ASCII text characters are the only characters in the file and the records are 80 bytes long. They are edited with the Editor assembler Editor program (EDIT1) or the third party 80 column editor called EDIT80. 

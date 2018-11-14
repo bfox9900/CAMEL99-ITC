@@ -1,8 +1,9 @@
 
 \ CELLS ANS Forth Core wordset
-\ implemented as macros to use the speed of ASM words when compiled
-: CELLS ( n -- n') S" 2*" EVALUATE ; IMMEDIATE
-: CELL+ ( n -- n') S" 2+" EVALUATE ; IMMEDIATE
 
-: CHAR+ ( n -- n') S" 1+" EVALUATE ; IMMEDIATE
+\ 1 cell alias. *FOR CODE WORDS ONLY*
+: ALIAS ( <newname>  <oldword> ) CODE '  2+   HERE 2- ! ;
 
+ALIAS CELLS  2*
+ALIAS CELL+  2+
+ALIAS CHAR+  1+

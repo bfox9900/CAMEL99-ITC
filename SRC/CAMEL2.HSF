@@ -434,7 +434,7 @@ TARGET-COMPILING
 
 \ ========================================================================
 \ Reset base PAB address
-: RSTPAB  ( -- ) 8370 @ 1- ^PAB ! ;
+: RSTPAB  ( -- ) 8370 @ 2- ^PAB ! ;
 
 [CC] cr .( Stack primitives ...)  [tc]
 \ ========================================================================
@@ -478,6 +478,11 @@ TARGET-COMPILING
 \ U< is 6 bytes in ASSEMBLER, 20 bytes in Forth
 \ : U<  ( u u -- ? ) 2DUP XOR 0< IF  NIP 0< EXIT THEN - 0< ;
 
+\ these are 14 bytes smaller in Forth all together
+: U>  ( n n -- ?)  U< INVERT ;
+: 0>  ( n n -- ?)  0< 0= ;
+: <>  ( n n == ?)  =  INVERT ;
+
 \ : MAX   ( n n -- n ) 2DUP < IF SWAP THEN DROP ;
 \ : MIN   ( n n -- n ) 2DUP > IF SWAP THEN DROP ;
 
@@ -489,7 +494,7 @@ TARGET-COMPILING
 \ ========================================================================
 \ M I X E D  (32BIT/16BIT)   M A T H   O P E R A T I O N S
 \ === SMALLER FASTER ANS COMPLIANT ===
-\ We included a signed M/MOD primitive as a code word. 
+\ We included a signed M/MOD primitive as a code word.
 \ The code is used with permission from FBForth by Lee Stewart.
 \ M/MOD can switch com FLOORED or symetrical DIVISION with:
 \     FLOOR ON  ( floored)
@@ -894,7 +899,7 @@ TARGET-COMPILING
 
 : ?ABORT  ( f c-addr u --)
            ROT IF  CR CR T." * " TYPE  T."  ? "
-                   SOURCE-ID @ 0>
+                   SOURCE-ID @             \ if source is NOT console
                    IF  T."  Line " LINES @ U.
                        CR CR SOURCE TYPE
                    THEN ABORT
@@ -1126,7 +1131,6 @@ TARGET-COMPILING
               26 TPAD !                      \ PAD=HERE+>26, room for HOLD buffer
               TMR!                           \ set 9901 timer to count continously
               2 KUNIT# C!                    \ keyboard #2 is the BASIC keyboard
-              RSTPAB                         \ GET end of VDP mem from O/S, set PAB pointer
               T['] <INTERPRET> 'INTERPRET !  \ set the interpreter vector
               SOURCE-ID OFF                  \ source-id=0 is console input
               TIB 0 'SOURCE 2!  >IN OFF      \ init interpret to TIB
@@ -1135,6 +1139,7 @@ TARGET-COMPILING
             \ VDP start screen
               TEXT BEEP
               TS" CAMEL99 2.1.E" TYPE
+              RSTPAB                         \ GET end of VDP mem from O/S, set PAB pointer
               LINES OFF 
               TS" DSK1.START" INCLUDED       \ load the start file
               RP0 RP!                        \ reset return stack pointer

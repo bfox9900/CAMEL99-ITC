@@ -1,16 +1,18 @@
 \ Mini-OOF   Bernd Paysan                            12apr98py
 
+\ INCLUDE INLIN99.FTH 
+
 : COMPILE, ( n -- ) , ;  \ not in CAMEL99 Kernel
 
 : NOOP ; 
 
 : METHOD ( m v "name" -- m' v )
          CREATE  OVER , SWAP CELL+ SWAP
-         DOES> ( ... O -- ... ) @ OVER @ + @  EXECUTE ;
+         DOES> ( ... O -- ... ) INLINE[ @ OVER @ + @ ] EXECUTE ;
 
 : VAR    ( m v size "name" -- m v' )
          CREATE  OVER , +
-         DOES> ( O -- ADDR ) @ +  ;
+         DOES> ( O -- ADDR ) INLINE[ @ + ]  ;
 
 : CLASS  ( class -- class methods vars ) DUP 2@ ;
 

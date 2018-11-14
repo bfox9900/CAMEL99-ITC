@@ -22,29 +22,28 @@
 \ : SAVE    ( -- ior)  6 FILEOP ;
 \ : DELETE  ( -- ior)  7 FILEOP ;
 \ : SCRATCH ( -- ior)  8 FILEOP ;
+\ : STATUS  ( -- stat) 9 FILEOP ;
 
-NEEDS .S   FROM DSK1.TOOLS   \ for debugging
+\ NEEDS .S   FROM DSK1.TOOLS   \ for debugging
 
 HERE      \ record dictionary position for size calculation
 
 .(  ..)
 \ File handle server
 HEX
-VARIABLE #FILES   
+VARIABLE #FILES
 
 \ 8370 CONSTANT VDPEND   \ TI O/S variable, points to last usable VDP address
 \  120 CONSTANT PSZ      \ size of PAB+DATA_BUFFER
 
-\ File ID array hold VDP PAB address of an open file.
+\ File ID array holds VDP PAB address of an open file.
 CREATE FIDS ( -- addr) 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,
 
 \ ]FID exposes FIDS as an array with range protection
-: ]FID   ( hndl -- PAB_addr )
-         DUP  1 #FILES @ 1+ WITHIN  0= ABORT" Bad handle"
-         2* FIDS + ;
+: ]FID   ( hndl -- PAB_addr ) CELLS FIDS + ;
 
 \ compute the VDP address for any PAB(n)
-: >PABADR   ( n -- VDPadr) 120 * 8370 @ 2- SWAP - ;
+: >PABADR   ( n -- VDPadr) PSZ *   8370 @ 1-   SWAP - ;
 
 : NEWHNDL ( -- hndl) \ returns first free handle
          0           \ start at handle=0
@@ -53,7 +52,7 @@ CREATE FIDS ( -- addr) 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,
            DUP #FILES @ > ABORT" no free handle"
            DUP ]FID @    \ fetch pab table contents
          0= UNTIL ;      \ loop until we find an empty location
-         
+
 : NEWPAB ( n -- )
          DUP >R            \ dup hndl,
          >PABADR           \ calc. PAB for this handle
@@ -62,8 +61,12 @@ CREATE FIDS ( -- addr) 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,
          [PAB 120 0 VFILL  \ erase the PAB  (debug)
 ;
 
-: SELECT  ( hndl -- ) ]FID @ ^PAB ! ;  \ select the PAB
-: RELEASE ( hndl -- ) ]FID OFF ;
+: SELECT  ( hndl -- ) 
+          DUP 1 #FILES @ 1+ WITHIN  0= ABORT" Bad handle"
+          ]FID @ ^PAB !
+          [PAB FNAME]  DSRNAM ! ;  \ select the PAB
+
+: RELEASE ( hndl -- ) ]FID OFF  ( DSRNAM OFF)  ;
 
 \ user level command.
 : FILES   ( n -- )
@@ -117,40 +120,42 @@ HEX
              SP0 SP@ 2+ - 2/          \ calulate stack DEPTH manually
              3 < ABORT" OPEN-FILE args"
 
-             NEWHNDL DUP >R NEWPAB    \ handle is on Rstack
+             NEWHNDL DUP >R NEWPAB   \ handle is on Rstack
             -ROT ( fam $adr len) INITPAB
          
-            ( fam) [PAB FLG] VC!   \ write file access mode
+            ( fam) [PAB FLG] VC!     \ write file access mode
 
-            B/REC @ ?DUP           \ B/REC<>0  ?
-            IF
-               [PAB RECLEN] VC!    \ store reclen in PAB
-               B/REC OFF  THEN     \ reset the B/REC variable
-            0 FILEOP ( -- err#)    \ call O/S OPEN
-            DUP                    \ test for error
+            B/REC @ [PAB RECLEN] VC! \ store reclen in PAB
+            B/REC OFF                \ reset the B/REC variable
+
+            0 FILEOP ( -- err#)      \ call O/S OPEN
+            DUP                      \ test for error
             IF   R> RELEASE 0 SWAP   \ release hndl, return (0,ior)
             ELSE R> SWAP             \ return (fid,ior)
             THEN ;
 
-: CLOSE-FILE ( fid -- ?) DUP SELECT  1 FILEOP SWAP  RELEASE ;
+: CLOSE-FILE ( fid -- ior) DUP SELECT  1 FILEOP SWAP  RELEASE ;
 
-: FSTAT     ( -- n) 9 FILEOP DROP [PAB STAT] VC@ ;
-: EOF       ( fid -- ? ) SELECT  FSTAT 3 AND ;  \ EOF of fid file
+\ : FSTAT ( -- c)
+\        9 FILEOP DROP [PAB STAT] VC@ ; \ see E/A Manual page 298 for meaning
+
+: EOF ( -- c) SELECT FSTAT 3 AND ;
 
 .( ..)
 : READ-LINE ( c-addr u1 fid -- u2 flag ior )
             SELECT
             2 FILEOP DUP >R               \ read operation, rpush error#
             IF                            \ if err#<>0
-               0 FSTAT R>                 \ fatal error, don't read data
+               0  0  R>                   \ error, return err# only
             ELSE
                ( -- adr u1)
                [PAB CHARS] VC@             \ get no. chars actually read
                MIN >R                     \ MIN(u1,chars)= u2, rpush
                [PAB FBUFF] V@ SWAP R@ VREAD   \ move VDP fbuff to c-addr
+
                R>                         \ get u2 (chars actually read)
-               FSTAT 3 AND 0=             \ TRUE if EOF = 0
-               R>                         \ bring back error#
+               FSTAT 3 AND 0=             \ test for EOF
+               R>                         \ get error#.
             THEN ;
 
 : WRITE-LINE ( c-addr u fileid -- ior )
@@ -167,7 +172,7 @@ HEX
 : FILE-POSITION   ( fid -- rec# ior) SELECT  [PAB REC#] V@  [PAB FLG] VC@ ;
 : REPOSITION-FILE ( rec# fid -- ior) SELECT  [PAB REC#] V! 4 FILEOP ;
 
-: DELETE-FILE     ( caddr len -- ior ) R/W OPEN-FILE ?FILERR 7 FILEOP  ;
+: DELETE-FILE     ( caddr len -- ior ) R/W OPEN-FILE ?FILERR 7 FILEOP ;
 
 \ ===================================
 3 FILES             \ set the #FILES now
@@ -177,5 +182,3 @@ DECIMAL
 CR .( Max files set to ) #FILES @ .
 CR HERE SWAP - . .( bytes used)
 HEX
-
-

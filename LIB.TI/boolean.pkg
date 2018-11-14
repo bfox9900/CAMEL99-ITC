@@ -1,0 +1,10 @@
+forth-package
+    key-value name BOOLEAN.FTH
+    key-value version 1.0.0
+    key-value description BOOLEAN ARRAY with traditionalForth arrays syntax.
+    key-value license GPL
+    key-value main BOOLEAN.FTH
+    key-list tags GPL
+    key-list tags ANS Forth
+    key-list dependencies none
+end-forth-package

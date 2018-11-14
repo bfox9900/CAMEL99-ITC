@@ -1,4 +1,4 @@
-\ comma quote creates string literals at compile time
+\ comma quote
 \ Parse input stream until '"' and compile into memory
 
 : ,"          ( -- ) [CHAR] " PARSE  S,  ;  IMMEDIATE

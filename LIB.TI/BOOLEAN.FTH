@@ -7,7 +7,7 @@ HEX
                 8 CONSTANT BITS/BYTE
  CELL BITS/BYTE * CONSTANT BITS/CELL
 
-\ create bit array & erase memory area for 'n' bits
+\ create bit array & erase memory area for 'n' bits                             
 : BITS:      ( n -- )
       CREATE  BITS/BYTE /MOD SWAP >R   \ calc memory size
               HERE OVER 0 FILL         \ erase the memory
@@ -37,21 +37,24 @@ HEX
               SWAP BITMASK INVERT >R  \ invert and save mask
               DUP @                   \ -- addr bits
               R> AND SWAP ! ;         \ mask out bits, store back in addr
-              
-: BTOGGLE    ( bit# addr[] -- )
+
+: BTOG      ( bit# addr[] -- )        \ toggle bit
               BITFLD                  \ -- bit# addr
-              SWAP BITMASK >R         \ invert and save mask
+              SWAP BITMASK >R         \ save the mask
               DUP @                   \ -- addr bits
-              R> XOR SWAP ! ;         \ toggle 1 bit, store back in addr
+              R> XOR SWAP ! ;          \ or mask into bit, store in addr
+
 
 \ Usage Example
-\ DECIMAL
-\ 1024 CONSTANT size \ # of bits we want
-\ size BITS: ]X      \ make array X of size bits
+ DECIMAL
+ 1024 CONSTANT size \ # of bits we want
+ size BITS: ]X      \ make array X of size bits
 
 \ set and reset each bit using the BSET BRST BIT@ words.
-\ : FILLBITS   ." Setting all bits..." size 0 DO  I ]X BSET   LOOP ;
-\ : CLRBITS    ." Erasing..."          size 0 DO  I ]X BRST   LOOP ;
-\ : EVENBITS    CLRBITS ." Setting even bits..." size 0 DO  I ]X BSET   2 +LOOP ;
-\ : SHOWBITS    size 0 DO  I ]X BIT@ . LOOP ;
+ : FILLBITS   ." Setting all bits..." size 0 DO  I ]X BSET   LOOP ;
+ : CLRBITS    ." Erasing..."          size 0 DO  I ]X BRST   LOOP ;
+: TOGGLE       ." Toggling..."         size 0 DO  I ]X BTOG   LOOP ;
+
+: EVENBITS    CLRBITS ." Setting even bits..." size 0 DO  I ]X BSET   2 +LOOP ;
+: SHOWBITS    size 0 DO  I ]X BIT@ . LOOP ;
 

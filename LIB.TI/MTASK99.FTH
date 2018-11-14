@@ -12,7 +12,7 @@
 \ Jun  8. 2018  replaced assembler with machine code to ease of use.
 
 \ INCLUDE DSK1.ASM9900.F
-INCLUDE DSK1.TOOLS.F
+\ INCLUDE DSK1.TOOLS.F
 
 ' CODE  DROP   \ test if we have CODE ENDCODE
 

@@ -98,7 +98,7 @@ PLAYER FORK                   \ init the task
 
 \ ===============================================
 \ end user commands
-\ Usage:  MUNCHMAN >SNDQ  PLAYQ
+\ Usage:  MUNCHMAN >SNDQ PLAYQ
 : >SNDQ   ( list -- ) QDATA Q! ;
 : PLAYQ   ( list -- ) PLAYER RESTART ;
 : KILLQ   ( -- )      QTAIL @ QHEAD ! ;

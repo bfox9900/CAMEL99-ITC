@@ -44,7 +44,7 @@
 \ EXIT NEXT, ENTER, BRANCH and ?BRANCH and LIT in High Speed RAM.
 
 \ CAMEL99 is roughly the same speed as TurboForth in "primtive" benchmarks
-\ but is slower in number conversion/printing, conditonals and screen display.
+\ but is slower in number conversion/printing, conditionals and screen display.
 
 \ ASM Macros are to code the Forth Virtual Machine in a slightly CPU
 \ independant manner. They make sense to a Forth programmer but may
@@ -495,13 +495,27 @@ CODE: 2SWAP   ( n1 n2 n3 n4-- n3 n4 n1 n2)
 \              NEXT,                 \ 18 bytes                                  122
 \              END-CODE
 
-
 CODE: PICK   ( n -- n)   \ GForth ITC takes 10 intel instructions for PICK
-              TOS 1 SLA,     \ 16
+              TOS TOS ADD,   \ 14  (" n CELLS")
               SP TOS ADD,    \ 14
              *TOS TOS MOV,   \ 18
-              NEXT,         \  48
+              NEXT,         \  46
               END-CODE
+
+0 [IF] \ From Wil Baden's TOOLBELT  Thanks Wil. RIP
+
+CODE: 3RD  ( a b c d --  a b c d b)    \ 2X faster than 3 PICK
+              TOS PUSH,         \ 28
+              4 (SP) TOS MOV,   \ 22
+              NEXT,            \  50
+              END-CODE
+
+ CODE: 4TH
+              TOS PUSH,
+              6 (SP) TOS MOV,
+              NEXT,
+              END-CODE
+[THEN]
 
 \ ===================================================================
 CR .( LOGICAL OPERATIONS)
@@ -653,17 +667,17 @@ CODE: *      ( n n -- n)      \ same size as  : *  UM* DROP ; but faster
               NEXT,           \ 74
               END-CODE
 
-CODE: UM/MOD ( ud u1 -- u2 u3 ) \ numerator(32bits), divisor -- remainder,quotient
-              TOS  R0 MOV,     \ divisor->R0                                   14
-             *SP+ TOS MOV,     \ POP high word into TOS                        22
-             *SP   R5 MOV,     \ MOVE low word to r5                           18
-              R0  TOS DIV,     \ perform unsigned division                    124
-              R5  *SP MOV,     \ push remainder                                22
-              NEXT,            \                                              200
+CODE: UM/MOD ( ud u1 -- u2 u3 ) \ numerator(32bits), divisor -- rem,quot
+              TOS  R0 MOV,     \ divisor->R0                 14
+             *SP+ TOS MOV,     \ POP high word into TOS      22
+             *SP   R5 MOV,     \ MOVE low word to r5         18
+              R0  TOS DIV,     \ perform unsigned division  124
+              R5  *SP MOV,     \ push remainder              22
+              NEXT,            \                            200
               END-CODE
 
 \ Signed divide using either Floored or Symmetric Integer Division.
-\ Adapted from FBForth by Lee Stewart
+\ Adapted with permission, from FBForth by Lee Stewart
 \ This routine first does Symmetric Integer Division, then checks FLOOR
 \ for whether we are doing Floored Integer Division.
 \
@@ -782,7 +796,7 @@ CODE: 0=     ( n -- ?)
               @@9 JLT,
               @@8 JMP,
 
--1 [IF]   \ saves 14 bytes if Forth versions are used
+0 [IF]   \ saves 14 bytes if Forth versions are used
 
 +CODE: U>    ( n1 n2 -- flag)
              *SP+ TOS CMP,

@@ -1,23 +1,20 @@
 \ expansion card utils
 
-\ print name of all routines in a Card ROM
-: DSRLIST ( addr -- ) 
+: DSRLIST ( addr -- )
           BEGIN
             DUP @
           WHILE
-             DUP >DSR$ COUNT TYPE ." , "
+             DUP 4 + COUNT TYPE ." , "
              @
           REPEAT
           DROP ;
 
-\ look for a CARD between start and end addresses
-\ stops at first card found.
 : CARDSCAN ( start end -- adr | 0 )  \ usage: HEX 1000 2000 CARDSCAN
            SWAP
            0 -ROT    \ false flag under the args.
            ?DO
-              I CRU!  0 SBO           \ turn card on
+              I ENABLE
               'ID C@ AA =             \ test if present
               IF  DROP I  LEAVE       \ found one. leave
-              THEN 0 SBZ              \ Turn card off
+              THEN 0SBZ              \ Turn card off
           100 +LOOP ;

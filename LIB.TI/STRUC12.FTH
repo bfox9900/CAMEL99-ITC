@@ -10,7 +10,7 @@
 \ ;
 
 \ : END-STRUCTURE  \ addr n --
-\   SWAP ! ;       \ set len
+\   SWAP ! ;          \ set len
 
 INCLUDE DSK1.TOOLS.F
 

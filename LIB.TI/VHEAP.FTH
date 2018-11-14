@@ -20,7 +20,7 @@ HEX 1000 VP !   \ start of free VDP RAM
                                     \ then fetch the const from that VDP address
 
 : VAR:     ( -- vaddr)   VHERE CONSTANT    0 V,
-: VDIM     ( n -- vaddr) VHERE CONSTANT   VALLOT ;
+: DIM      ( n -- vaddr) VHERE CONSTANT   VALLOT ;
 
 \ see: \DEMO\VDPSTRINGS.FTH  for a real application example
 
