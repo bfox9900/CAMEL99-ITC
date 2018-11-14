@@ -135,7 +135,7 @@ It now loads in the DSK.START file as a library file: TOBODY.F
 
 ### Nov 13, 2018 V2.1.E
 - Floored division is now the default per ANS/ISO standard. 
-  Symetrical division is set using the FLOOR variable: FLOOR OFF, FLOOR ON
+  Symmetrical division is set using the FLOOR variable: FLOOR OFF, FLOOR ON
   Due to the slow speed of the 9900 CPU it is coded in Forth Assembler.
   The code is a re-work of code, used by permission, from FB-Forth by
   Lee Stewart. ( fbforth.stewkitt.com/ )
