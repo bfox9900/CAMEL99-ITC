@@ -1,12 +1,14 @@
 \ The optional Double-Number word set
 
- INCLUDE DSK1.TOOLS  \ for debugging
+\ INCLUDE DSK1.TOOLS  \ for debugging
 
 \    D2/   D2*   DU<  D0=   D0<  D.  D<   D>S  M+ 2ROT
 \    2CONSTANT  2LITERAL    2VARIABLE
 \    DABS D.R  D=    DMAX   DMIN   D-   DNEGATE
 \    M*/
 \    2VALUE ( not implemented)
+
+HERE
 
 HEX
  CODE D+   ( lo hi lo' hi' -- d)  \ hi'is in TOS register  *TESTED*
@@ -36,8 +38,9 @@ ENDCODE
 : 2CONSTANT  ( d -- <text>) CREATE  ,  ,  DOES> 2@ ;
 : 2VARIABLE  ( d -- <text>) CREATE 0 , 0 , ;
 
+\ : S>D  ( n -- d )  DUP 0< ;  \ moved to kernel
+
 : D0<  ( d -- ? )  NIP 0< ;
-: S>D  ( n -- d )  DUP 0< ;
 : D2*  ( d -- d')  SWAP S>D NEGATE SWAP 2* ROT 2* ROT + ;
 
 : D2/  ( d -- d')
@@ -51,7 +54,6 @@ ENDCODE
 : D0=  ( d -- ?)   OR 0= ;
 : D=   ( d d -- ?) ROT = -ROT = AND ;
 : D>S  ( d -- n)   DROP ;
-
 
 \ : 2OVER  2>R 2DUP  2R> 2SWAP ;   \ slow
 : 2OVER  ( d d2 -- d d2 d)  3 PICK 3 PICK ; \ 20% faster
@@ -81,8 +83,7 @@ ENDCODE
        >R                           \ save divisor
        S>D >R                       \ save multiplier sign
        ABS -ROT
-       S>D R>                       
-       XOR R>
+       S>D R>  XOR R>
        SWAP >R >R                   \ push signs
        DABS ROT TUCK UM* 2SWAP UM* SWAP >R 0 D+  \ mult. step, add sign
        R> -ROT R@ UM/MOD -ROT R> UM/MOD -ROT     \ divide step
@@ -96,8 +97,7 @@ ENDCODE
           DROP
        THEN ;
 
-
-\ print  un-signed DOUBLE
+\ print DOUBLES: unsigned, right justified, regular
 : DU.  ( u -- )  <#  #S  #>  TYPE SPACE ;
 : D.R  ( d n --) >R TUCK DABS <# #S ROT SIGN #> R> OVER - SPACES TYPE ;
 : D.   ( d  -- ) 0 D.R SPACE ;
@@ -111,3 +111,6 @@ DECIMAL
  S" 1" ?DNUMBER       DROP 2CONSTANT 1.
  S" 3141262" ?DNUMBER DROP 2CONSTANT PI
 
+ HERE SWAP - DECIMAL CR . .(  bytes)
+ 
+ HEX

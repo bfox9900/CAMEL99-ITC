@@ -4,7 +4,7 @@ HEX
 1000 CONSTANT 4K
   10 CONSTANT 1STBANK    \ don't use the lower 64K
 
-4K MALLOC CONSTANT PAGEMEM
+E000 CONSTANT PAGEMEM
 
 \ adapted from TurboForth for TOS in register
  CODE MAP ( bank addr -- )
