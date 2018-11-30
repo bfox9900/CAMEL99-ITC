@@ -1,4 +1,4 @@
-# CAMEL99 for TI-99 V2.1.E
+# CAMEL99 for TI-99 V2.1.F
 
 ### ABOUT CAMEL99 V2
 ---------------------
@@ -142,3 +142,13 @@ It now loads in the DSK.START file as a library file: TOBODY.F
 - Forth primitives separated into 2 files: 9900FAS2.HSF, TI99PRIMS.HSF
 - RSTPAB (reset PAB) added to QUIT for stability when using file system.
 - Improved ?TERMINAL so it waits for key release after key press.
+
+### Nov 30, 2018 V2.1.F
+- Source file CAMEL99F.HSF now has a compiler switch, SMALLER, that uses 
+  Forth words to save space when set to TRUE and more CODE words if SMALLER 
+  is set to FALSE true.
+- Addition of CALLCHAR and LOADSAVE libraries allows compiling FONT 
+  information into binary font files that load into VDP ram in 1 second.
+- Font file source code examples are in FONTS folder. Compiled binary versions are in DSK3.
+- Addition of a direct threaded code (DTC) version of the system that runs about 10% faster.
+  *note* CREATE DOES> is not functional in the DTC version at this time.
