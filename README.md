@@ -150,7 +150,8 @@ It now loads in the DSK.START file as a library file: TOBODY.F
 
 - Source file CAMEL99F.HSF now has a compiler switch, SMALLER, that uses 
   Forth words to save space when set to TRUE and more CODE words if SMALLER 
-  is set to FALSE true.
+  is set to FALSE. SMALLER saves ~46 bytes, but runs a little slower.
+
 - Addition of CALLCHAR and LOADSAVE libraries allows compiling FONT 
   information into binary font files that load into VDP ram in 1 second.
 - Font file source code examples are in FONTS folder. Compiled binary versions are in DSK3.
