@@ -124,10 +124,10 @@ loadaddress 2 cells + equ HSprims                   \ beginning of the code to b
 cr ." Assembling Forth Primitives"
 
 CROSS-ASSEMBLING
-              START.                        \ sets a timer
-              NEW.                          \ init target memory segment to FFFF
-              ABSOLUTE A000 ORIGIN.         \ we must set the origin before TI-99.EA5 directive
-              TI-99.EA5                     \ format the memory/file header for TI-99 EA5 file format
+              START.                \ sets a timer
+              NEW.                  \ init target memory segment to FFFF
+              ABSOLUTE A000 ORIGIN. \ we must set the origin before TI-99.EA5 directive
+              TI-99.EA5             \ format the memory/file header for TI-99 EA5 file format
 
 \ ==============================================================
 \ FAST CODE PRIMITIVES. Concept from TI-Forth and TURBO Forth, 
@@ -138,12 +138,12 @@ CROSS-ASSEMBLING
 \ But there is only 256 bytes! (shame)
 \ Having these critical routines in fast memory makes more difference than ANY other improvements
 
-l: _exit      IP RPOP,        \ placing EXIT before next saves space and is faster  22+next=74
-l: _next                      \ Forth ITC NEXT routine
-@@9:         *IP+ W MOV,      \ move CFA into Working register & incr IP        \ 22  22
-l: _exec     *W+   R5 MOV,     \ move contents of CFA to R5 & INCR W             \ 22  18
-             *R5  B,          \ branch to the address in R5                     \ 12  12
-                                                                              \ = 56  52
+l: _exit      IP RPOP,        \ placing EXIT before next saves space and is faster
+l: _next                      \ Forth ITC NEXT routine (>838A)
+@@9:         *IP+ W  MOV,     \ move CFA into Working register & incr IP   \ 22
+l: _exec     *W+  R5 MOV,     \ move contents of CFA to R5 & INCR W        \ 22
+             *R5  B,          \ branch to the address in R5                \ 12
+                                                                         \ = 56
 l: _?branch   \ Faster way to avoid penalty of TOS refill
               TOS DEC,        \ After DEC if tos=0, this will cause a carry flag                                  10
               TOS POP,        \ refill TOS changes L> A> EQ flags, BUT does not change carry flag       22
@@ -153,10 +153,9 @@ l: _branch   *IP IP ADD,      \ *IP points to an offset number in memory. Add it
 @@2:          IP INCT,        \ move IP forward past branch offset (don't branch)                       10
               @@9 JMP,        \ JMP to _next
 
-l: _enter
-              IP RPUSH,       \ push IP register onto the return stack            28
-              W IP MOV,       \ move PFA into Forth IP register                   14
-              @@9 JMP,        \                                                =  42
+l: _enter     IP RPUSH,       \ push IP register onto the return stack      28
+              W IP MOV,       \ move PFA into Forth IP register             14
+              @@9 JMP,        \                                          =  42
 
 l: _lit       TOS     PUSH,   \ 28
              *IP+ TOS MOV,    \ 22
@@ -168,8 +167,7 @@ l: _@        *TOS TOS MOV,
 l: _DROP      TOS POP,
               @@9 JMP,
 
-\ l: _DUP       TOS PUSH,
-\               @@9 JMP,
+
 l: _HSend   \ this label tells the compiler where the high speed code ends.
 
 
@@ -185,15 +183,11 @@ l: _HSend   \ this label tells the compiler where the high speed code ends.
  _HSend >HSRAM equ HSend   \ end of hi-speed memory code. Needed by copy loop in INIT
 
 \ ==============================================================
-\  *********  C O M P I L E R   C O N T R O L ******************
-
-
+\   ********  C O M P I L E R   C O N T R O L ****************
 
     FALSE VALUE REGISTERS  \ TRUE -> use registers for do loop
 
-
-
-\ **************************************************************
+\   **********************************************************
 \ ==============================================================
 CR .( FORTH PRIMITIVES BEGIN)
 
@@ -205,7 +199,6 @@ CODE: EXIT    ( -- )         \ compiled when ';' is executed
               EXIT2 CFA!     \ convert label address to fast RAM address store in CFA
               END-CODE
 
-
 CODE: DOCOL   ( a -- )       \ Executor that executes a "colon" definition.
               ENTR CFA!
               END-CODE
@@ -216,15 +209,6 @@ CODE: LIT     ( -- w )       \ Execute a LITERAL number in the Forth program
 \             *IP+ TOS MOV,    \ 22
 \              NEXT,
               END-CODE
-
-\ CODE: DLIT
-\              TOS PUSH,      \ save the TOS register
-\             *IP+ TOS MOV,
-\              IP++           \ move IP to next program cell
-\             *IP PUSH,       \ move next XT onto 2nd stack item
-\              IP++           \ move IP to next program cell
-\              NEXT,
-\              END-CODE
 
 \ To understand the following words: W contains the CFA of a word when NEXT runs.
 \ After NEXT completes W is auto-incrmented by 2.  CFA+2=PFA
@@ -287,7 +271,7 @@ CODE: BRANCH
               END-CODE
 
 \ ==========================================================================
-CR .( MEMORY  FETCH  &  STORE)
+CR .( MEMORY FETCH & STORE)
 
 CODE: !      ( n addr -- )
              *SP+ *TOS MOV,   \ 20
@@ -311,9 +295,9 @@ CODE: 2!     ( d addr -- )
 
 \ Aug 4 2018: fixed order of data to be ANS compliant
 CODE: 2@     ( addr -- d)  \ the lower address will appear on top of stack
-              2 (TOS) PUSH,         \ 36
+              2 (TOS) PUSH,         \ 38
              *TOS TOS MOV,          \ 28
-              NEXT,               \ = 64
+              NEXT,               \ = 66
               END-CODE
 
 CODE: C!     ( c addr -- )
@@ -405,7 +389,7 @@ CODE: DROP    ( w -- )
               END-CODE
 
 CODE: NIP     ( n n' -- n')
-              SP++                  \ 10
+              SP INCT,              \ 10
               NEXT,
               END-CODE
 
@@ -466,7 +450,7 @@ CODE: 2DROP   ( n n -- )
               TOS PUSH,            \ 28 copy n2 onto stack
               W PUSH,              \ 28 push onto Stack
               NEXT,                \
-              END-CODE             \ 74,  5 instructions, 10 bytes
+             END-CODE             \ 74,  5 instructions, 10 bytes
 
 \ faster version is 2 bytes bigger. It's hard to win with the 9900!
 \ CODE: 2DUP   ( n1 n2 -- n1 n2 n1 n2 )
@@ -1092,30 +1076,26 @@ CODE: (FIND) ( Caddr NFA -- XT ? )
              *R8 R5 MOVB,             \ caddr C@ -> R5
               R5 8 SRL,               \ get the byte on the correct side right
               R5 INC,                 \ skip length byte
-\ OUTER loop
-            \ load char compare registers
               BEGIN,
+               \ load char compare registers
                  R5 R0 MOV,           \ load R0 with length of caddr string
                  R8 R1 MOV,           \ load R1 with caddr string address
                  R3 R2 MOV,           \ load R2 with the NFA to compare
-
                \ inner character comparator loop
                  BEGIN,
                    *R1+ *R2+ CMPB,    \ compare char by char including the length byte
-                    @@5 JNE,          \ ANY mismatch found, goto @@5
-                    R0 DEC,           \ decr. loop counter
-                 EQ UNTIL,            \ loop while R0 > 0
-                 @@6 JMP,             \ WE FOUND IT!! exit the loop
-
+                    @@1 JNE,          \ ANY mismatch found, goto @@1
+                    R0 DEC, EQ        \ decr. loop counter
+                 UNTIL,               \ loop until R0=0
+                 @@2 JMP,             \ WE FOUND IT!! exit the loop
                \ traverse link list to next NFA
-@@5:             R3  -3 ADDI,         \ convert nfa>lfa
-                *R3  R3 MOV,          \ do a fetch, R3 now has new NFA
-              EQ UNTIL,               \ try the next word in the dictionary!
+@@1:             R3  -3 ADDI,         \ convert nfa>lfa
+                *R3  R3 MOV, EQ       \ do a fetch, R3 now has new NFA
+              UNTIL,                 
               NEXT,                   \ we got zero. End of the list! Go back to Forth
-\ end Outer loop
 
 \ convert NFA in R3 to CFA -> R2
-@@6:          R3 R2 MOV,              \ if found R3 has a name field address (NFA), copy to R2
+@@2:          R3 R2 MOV,              \ if found R3 has a name field address (NFA), copy to R2
              *R3 R0 MOVB,             \ get the length of the name to R0
               R0 SWPB,                \ fix the #$%!@$ byte order again
               R0 R2 ADD,              \ add length to R2, gets past the string to the CFA
@@ -1127,7 +1107,7 @@ CODE: (FIND) ( Caddr NFA -- XT ? )
               R3 DEC,                 \ R3 has the NFA. NFA-1 is the immediate field
              *R3 R0 MOVB,             \ read contents of the immediate field
               NE IF,
-                 TOS NEG,             \ if non zero negate the TOS from -1 to 1
+                   TOS NEG,           \ if non zero negate the TOS from -1 to 1
               ENDIF,                  \ and head for home
           ENDIF,
           R2 *SP MOV,                 \ replace Caddr with the found XT in R2

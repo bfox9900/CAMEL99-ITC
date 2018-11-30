@@ -158,8 +158,8 @@ HEX
 \ ========================================================================
 \ Create FORTH stacks at upper end of TI-99 low memory block
 HEX
-       3EFE     EQU SP0      \ FORTH parameter stack base address.
-      SP0 100 + EQU RP0      \ FORTH return stack base address (CHANGED TO EVEN ADDRESS)
+      FE7E      EQU SP0    \ FORTH parameter stack base address.
+      SP0 80  + EQU RP0    \ FORTH return stack base address (CHANGED TO EVEN ADDRESS)
 
 \ ========================================================================
 \       CAMEL99 memory map
@@ -208,6 +208,14 @@ HEX
 \     +--------------------+ $0000
 
 \ ========================================================================
+\ load word type definers: ( code: variable: constant: user:  ":"  )
+
+ INCLUDE CC9900\compiler\ITCTYPES.HSF   \ indirect threaded versions
+
+ [undefined] variable:
+ [IF] cr .( **** MISSING TYPE DEFINITION FILE ***)  FORTH ABORT [THEN]
+
+\ ========================================================================
 \ C O D E   P R I M I T I V E S
 \ [CC] is short form for CROSS-COMPILING. (disables TARGET-COMPILING [TC] )
 
@@ -239,7 +247,7 @@ HEX
 \ Great to confirm the compiler is making correct code.
 
 CROSS-COMPILING
--1 [IF]
+0 [IF]
        INCLUDE CC9900\CCLIB\TSEE.HSF
 [THEN]
 
@@ -265,7 +273,7 @@ TARGET-COMPILING
 
 CROSS-COMPILING
 
-INCLUDE CC9900\BOOTSTRP.HSF    \ it was simpler to keep this in a separate file
+INCLUDE CC9900\cclib\BOOTSTRP.HSF    \ it was simpler to keep this in a separate file
 
 
 \                  ***  P R E -  A M B L E   E N D S   ***
@@ -285,8 +293,8 @@ TARGET-COMPILING
 \ ASM/Equate       Forth Name
 \ -----------      ------------
  'TIB     constant: TIB            \ address of terminal input buffer (TIB) in high memory
- SP0      constant: SP0            \ Parameter stack base address
- RP0      constant: RP0            \ Return stack base address
+ SP0     constant: SP0            \ Parameter stack base address
+ RP0     constant: RP0            \ Return stack base address
  TIBSIZE  constant: TIB#           \ size of terminal input buffer
 \ 83C2    constant: AMSQ           \ disables misc. ISRs.  see TI-Tech pages on internet
 
@@ -391,37 +399,42 @@ variable: TPAD                    \ "task pad" offset for each task. separate pa
 [CC] HEX [TC]
 variable: VMODE                   \ keeps track of the video mode we are in
 variable: VTOP                    \ top of video screen memory. defaults to 0
-variable: L0    3 TCELLS TALLOT   \ LEAVE stack used to resolve nested LEAVEs (4 LEAVEs max)
+variable: L0   [CC] 3 TCELLS TALLOT [TC]  \ LEAVE stack used to resolve nested LEAVEs (4 LEAVEs max)
 variable: ^PAB                    \ pointer to current open file PAB
 variable: LINES                   \ track lines compiled in a file
 variable: C/SCR                   \ chars per screen >300 or 3C0
 variable: 'INTERPRET              \ Vector for the interpreter
 variable: H                       \ MASTER HEAP POINTER can also be a user variable
 
+
+
+
 ?stk
 \ ==============================================
-\ F O R T H   M E M O R Y   A L L O C A T I O N
 [CC] cr .( Hi-level FORTH Primitives...)
 
 TARGET-COMPILING
 
-: ALLOT    ( n --)  DP +!  ;      \ allocate dictionary space
+\ MEMORY ALLOCATION 
 
-\ : HERE   DP @ ;
-\ By making HERE faster the system goes faster because HERE is used a lot
- CODE: HERE   ( -- addr) TOS PUSH,  DP @@ TOS MOV,  NEXT, END-CODE
+( note: ALLOT and HERE as code words reduced compile times by 1.5%)
+\ : ALLOT    ( n --)  DP +!  ;      \ allocate dictionary space
+CODE: ALLOT   TOS  DP @@ ADD,  TOS POP,  NEXT, END-CODE
 
-: ALIGN     ( -- )     HERE ALIGNED DP ! ;
-: ,         ( n --)    HERE !   2 ALLOT ;
-: C,        ( c --)    HERE C!  1 ALLOT ;
+\ : HERE  ( -- addr) DP @ ;
+CODE: HERE   TOS PUSH,   DP @@ TOS MOV,  NEXT, END-CODE 
+
+: ALIGN    ( -- )   HERE ALIGNED DP ! ;
+: ,        ( n -- ) HERE !   2 ALLOT ;
+: C,       ( c --)  HERE C!  1 ALLOT ;
+
+
 : PAD       ( -- addr) HERE TPAD @ + ;  \ MULT-TASK friendly using TPAD
-
-\ : COMPILE,  ( n --)  ,  ;  \ for ITC Forth this is the same as , (comma compiler)
-
 : COMPILE   ( -- )  R> DUP 2+ >R @ , ;  \ append inline execution token
 
 \ set the precedence BIT in the last word defined
 : IMMEDIATE ( --)  01 LATEST @ 1- ( -- imm-fld) C! ;
+
 : LITERAL   ( n -- n|~) STATE @ IF  COMPILE LIT ,  THEN ; XIMMEDIATE
 
 : ]         ( -- ) STATE ON  ;  XIMMEDIATE \ turn on the compiler
@@ -448,8 +461,8 @@ TARGET-COMPILING
 
 0 [if] \ these don't work ???
 
-     : 2>R ( w w --) >R >R ;
-     : 2R> ( -- w w)  R> R> ;
+     : 2>R ( w w --) COMPILE >R COMPILE >R ; XIMMEDIATE
+     : 2R> ( -- w w) COMPILE R> COMPILE R> ; XIMMEDIATE
 
  [else]
 
@@ -546,6 +559,8 @@ CODE: /STRING ( c-addr1 u1 n -- c-addr2 u2 ) \ ~20uS!!       Clks
 TARGET-COMPILING
 : NFA>LFA       ( nfa -- lfa)  3 - ;
 : NFA>CFA       ( nfa -- cfa ) COUNT  7F AND + ALIGNED ;
+: CFA>CA        ( cfa -- code-addr)  2+ ;  \ used for ITC/DTC compatibility
+: PFA>CA       ( pfa -- cfa) 2- ;
 
 \ smudge bit control in the Camel Forth
 : HIDE          ( -- )  LATEST @ ( nfa) DUP C@ 80 OR  SWAP C! ;
@@ -558,7 +573,15 @@ TARGET-COMPILING
 \ courtesy Brad Rodriguez,  My favourite FORTH Canadian
 TARGET-COMPILING
 
-: SOURCE      ( -- adr n) 'SOURCE 2@ ;    \ Common factor, saves space
+\ SOURCE as code word speeds up compilation by 1% (adds 12 bytes)
+\ : SOURCE    'SOURCE 2@ ;
+ CODE: SOURCE   ( -- adr n)     \ Common factor, saves space
+              TOS PUSH,         \ oldtos          28
+              TOS 'SOURCE LI,  \                   12
+              2 (TOS) PUSH,    \ fetch 2nd cell   38
+             *TOS TOS MOV,     \ fetch 1st cell   18
+              NEXT,            \ 14 BYTES         96  vs 164 in Forth
+              END-CODE
 
                     [CC] [PRIVATE] [TC]   \ only needed by the parser
 : ADR>IN      ( c-addr' --  )             \ set >IN to offset to given adr
@@ -582,7 +605,9 @@ TARGET-COMPILING
               DROP ADR>IN PARSE ;         \ -- adr" n"
 
 : WORD        ( char -- c-addr)           \ word delim'd by char
-              PARSE-WORD HERE PLACE
+              PARSE-WORD HERE  
+              2DUP C! 1+ SWAP CMOVE      \ >COUNTED inline improves compile time 5%
+           \  PLACE
               HERE BL OVER COUNT + C! ;  \ append trailing blank
 
 [CC] cr .( CAMEL FORTH Number conversion)
@@ -592,12 +617,31 @@ TARGET-COMPILING
 [CC] HEX
 
 TARGET-COMPILING
+
+-1 [IF]  ( orignal CAMEL Forth digit convertor)
 : DIGIT?     ( char -- n -1)                \ if char is a valid digit
 \            (      -- x  0 )               \ if char is not valid
               DUP 39 > 100 AND +            \ silly looking
               DUP 140 > 107 AND -
               T[CHAR] 0 -                   \ but it works!
-              DUP BASE @ U< ;               \ 36 bytes
+              DUP BASE @ U< ;               \ 36 bytes  ~1mSec !!
+[ELSE]
+
+CODE: DIGIT?  ( char -- n -1)
+            TOS PUSH,
+            R1  TCHAR 0 LI,
+            R1  TOS SUB,
+            GT IF,
+                  TOS 7  SUB,
+                  TOS 0A CMPI,
+                  LT, IF,
+                        TOS CLR,
+               ELSE,
+
+            ENDIF
+            NEXT,
+            END-CODE
+[THEN]
 
 : ?SIGN      ( adr n -- adr' n') \ advance adr/n if sign; return NZ if negative
               OVER C@                       \ -- adr n c
@@ -613,14 +657,14 @@ TARGET-COMPILING
               BEGIN  DUP
               WHILE
                   OVER C@ DIGIT? 0=
-                  IF   DROP EXIT
-                  THEN
+                  IF   DROP EXIT THEN     \ jump out of >NUMBER
+
                   >R 2SWAP BASE @ UD*
                   R> M+ 2SWAP 1 /STRING
               REPEAT ;
 
 : ?NUMBER    ( c-addr -- n -1 )            \ string->number
-\ ;Z                   -- c-addr 0         \ if convert error
+\ ;Z                  -- c-addr 0         \ if convert error
               DUP  0 0 ROT COUNT           \ -- ca ud adr n
               ?SIGN >R                     \ R: -- ?
               >NUMBER                      \ -- ca ud adr' n'
@@ -628,6 +672,39 @@ TARGET-COMPILING
               ELSE  2DROP NIP R>
                  IF NEGATE THEN TRUE       \ -- n -1   (ok)
               THEN ;
+
+\ ========================================================================
+\ S I M P L E   S O U N D  I N T E R F A C E
+
+[CC] include cc9900\cclib\ticktock.hsf     \ load the hardware milli-second timer
+
+TARGET-COMPILING
+-1 [IF]
+\ write a byte to address of TMS9919 chip
+: SND!   ( c -- )  8400 C!  ;  \ 4 bytes, 277 uS
+
+[ELSE]
+
+ CODE: SND! ( c -- )
+            TOS SWPB,
+            TOS 8400 @@ MOVB,
+            TOS POP,
+            NEXT,        \ 6 bytes, 149 uS
+            END-CODE
+[THEN]
+
+: BEEP       ( -- )
+             80 SND! 5 SND!                 \ precalulated values for OSC1 1328Hz
+             91 SND!                        \ turn on OSC1 at -2 dB level
+             AA MS                          \ Delay ~ 170 mS
+             9F SND! ;                      \ turn off OSC1
+
+\ We use the HONK sound for ABORT like TI-BASIC does on errors
+: HONK       ( -- )
+             81 SND! 20 SND!                \ precalculated values for OSC1 218Hz
+             90 SND!                        \ turn on OSC1 at 0 dB level
+             AA MS                          \ Delay ~ 170 mS
+             9F SND! ;                      \ turn off OSC1
 
 \ ========================================================================
 \ V D P  S C R E E N   D R I V E R
@@ -687,9 +764,10 @@ TARGET-COMPILING
               IF  SCROLL  THEN ;
 
 \ new version works properly in multi-tasking
-: EMIT       ( char -- ) 
-             VPOS (EMIT)  \ (EMIT) takes VDP address arg
-                          \ returns TRUE if we have to CR
+: EMIT       ( char -- )
+\             DUP  7 = IF DROP BEEP EXIT THEN
+\             DUP BL < IF DROP EXIT THEN   \ replace ctrl chars with BL
+             VPOS (EMIT)                   \ (EMIT) returns TRUE at end of line
              IF CR THEN PAUSE ;
 
 : TYPE       ( adr cnt --) BOUNDS ?DO  I C@ EMIT  LOOP  ;
@@ -737,17 +815,17 @@ TARGET-COMPILING
 
 \ High level: input/output                     (c) 31mar95 bjr
 : ACCEPT      ( c-addr +n -- +n')            \ get line from terminal
-              OVER + 1- OVER
-              BEGIN  KEY DUP 0D <>           \ test for enter (hex D)
-              WHILE
+             OVER + 1- OVER
+             BEGIN  KEY DUP 0D <>            \ test for enter (hex D)
+             WHILE
                 DUP EMIT
-                DUP 8 =                      \ test for back-space character
+                DUP 8 =                        \ test for back-space character
                 IF   DROP 1-  >R OVER R> UMAX  \ move the buffer pointer back
-                     2 BS  BL VPUT           \ BF mod: erase char on the Video screen
+                     2 BS                      \ move the cursor back
                 ELSE OVER C!  1+ OVER UMIN
                 THEN
-              REPEAT
-              DROP NIP SWAP -  ;
+             REPEAT
+             DROP NIP SWAP -  ;
 
 [cc] cr .( Number printing)
 \ ======================================================================
@@ -767,17 +845,15 @@ TARGET-COMPILING
          >R 0 R@ UM/MOD -ROT R> UM/MOD ROT ;   \ 32/16->32 divide
 
 \ ====================================================
-\ Build 25 Sept 21 2018, added 1-! for faster HOLD                                          S
+\ Build 25 Sept 21 2018, added 1-! for faster HOLD
 
-FALSE [if]
+false [if]
 
 CODE: 1-!  ( addr -- ) *TOS DEC,  TOS POP,  NEXT, END-CODE
-
-( only about 1% faster in numeric output speed)
-  : HOLD   ( char -- ) HP 1-!  HP @ C! ;   \ decr. HP, Store char at the address contained in HP
+: HOLD     ( char -- ) HP 1-!  HP @ C! ;
 
 [else]
-
+\ decr. HP, Store char at the address contained in HP
   : HOLD   ( char -- ) -1 HP +! HP @ C! ;
 
 [then]
@@ -870,33 +946,11 @@ TARGET-COMPILING
                2R> 'SOURCE 2!              \ restore source 
                SOURCE-ID OFF ;
 
-\ ========================================================================
-\ S I M P L E   S O U N D  I N T E R F A C E
-
-[CC] include cc9900\cclib\ticktock.hsf     \ load the hardware milli-second timer
-
-TARGET-COMPILING
-
-: SND!       ( c -- ) 8400 C!  ;  \ write a byte to address of TMS9919 chip
-
-: BEEP       ( -- )
-             80 SND! 5 SND!                 \ precalulated values for OSC1 1328Hz
-             91 SND!                        \ turn on OSC1 at -2 dB level
-             AA MS                          \ Delay ~ 170 mS
-             9F SND! ;                      \ turn off OSC1
-
-\ We use the HONK sound for ABORT like TI-BASIC does on errors
-: HONK       ( -- )
-             81 SND! 20 SND!                \ precalculated values for OSC1 218Hz
-             90 SND!                        \ turn on OSC1 at 0 dB level
-             AA MS                          \ Delay ~ 170 mS
-             9F SND! ;                      \ turn off OSC1
 
 \ ========================================================================
 \ E R R O R   H A N D L I N G
 \
 : ABORT       ( -- )
-              HONK
               SP0 SP!
               SOURCE-ID OFF
               CR QUIT ;
@@ -906,7 +960,7 @@ TARGET-COMPILING
                    SOURCE-ID @             \ if source is NOT console
                    IF  T."  Line " LINES @ U.
                        CR CR SOURCE TYPE
-                   THEN ABORT
+                   THEN  HONK ABORT
            THEN 2DROP ;
 
 : ?FIND       ( ? -- )       0=    HERE COUNT ?ABORT ;
@@ -1001,7 +1055,7 @@ TARGET-COMPILING
                        ELSE  ,                   \ otherwise compile it
                        THEN
 
-                  ELSE ( it's a number)         \ -- textadr
+                  ELSE ( it's a number)          \ -- textadr
                        ?NUMBER
                        IF  t[COMPILE] LITERAL    \ converted ok so compile as a literal
                        ELSE COUNT ?ABORT         \ ERROR: print the bad word & ABORT
@@ -1018,10 +1072,10 @@ TARGET-COMPILING
 
 \ To find the XT of a word in the TARGET Forth we use the cross-compiler word T'
 \ which finds the execution token (an address) of a word in the TARGET dictionary.
-\ We use T! to store that XT number in the TARGET system variable.
+\ We use T! to store that XT number in the TARGET system variable 'interpret
 
 CROSS-COMPILING
- T' <INTERPRET>  'INTERPRET ( -- addr variable) T!
+ T' <INTERPRET>  'INTERPRET T!
 
 \ ======================================================================
 \ T I - 9 9   T E X T   M O D E   C O N T R O L
@@ -1085,6 +1139,8 @@ TARGET-COMPILING
 \ ADD-ONS
 \ ** commment out everything to build the smallest kernel  **
 
+: DEPTH ( -- n) SP0 SP@ 2+ - 2/ ;
+
  [CC] include CC9900\cclib\dsrlink7.hsf
  [CC] include CC9900\cclib\filesysW.hsf
 
@@ -1141,13 +1197,11 @@ TARGET-COMPILING
 
             \ VDP start screen
               TEXT BEEP
-              TS" CAMEL99 2.1.E" TYPE
+              TS" CAMEL99 2.1.F" TYPE
               RSTPAB                         \ GET end of VDP mem from O/S, set PAB pointer
               LINES OFF 
               TS" DSK1.START" INCLUDED       \ load the start file
-              RP0 RP!                        \ reset return stack pointer
-              SP0 SP!                        \ reset the data stack pointer
-              CR QUIT ;                      \ start the interpreter
+              CR ABORT ;                      \ start the interpreter
 
 \ ======================================================================
 \ define target comment words

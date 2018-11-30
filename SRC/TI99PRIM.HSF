@@ -163,8 +163,8 @@ CODE: (CR)    ( -- ? )  \ return true if we need to SCROLL
 
 CODE: >VPOS ( col row -- vaddr) \ compute video address
              R1         STWP,
-             TOS     R3  MOV,
-             2E (R1) R3  MPY,   \ multply by chars/line. result goes to R4
+             TOS     R3  MOV,   \ this move to make best use of MPY
+             2E (R1) R3  MPY,   \ multply by chars/line. result goes to R4 ie: TOS
             *SP+     TOS ADD,   \ add col value to tos
              NEXT,
              END-CODE
@@ -251,14 +251,14 @@ CODE: ?TERMINAL ( -- ?)    \ ~200uS, 16 bit ROM speed. Same name as TI-Forth
             NEXT,
             END-CODE
 
-l: _CURSR   DATA 005F            \ holds the cursor character value default= '_'
+l: _CURSR   DATA 005F            \ holds the cursor character default= '_'
 CODE: CURS@   ( -- char)         \ return cursor or space for flashing cursor
             TOS PUSH,
            _CURSR @@ TOS MOV,    \ load the cursor char to TOS from memory
-            8379 @@ W MOVB,      \ read interrupt timer to control flash speed
-            W 1800 ANDI,         \ AND it with >18. This mask made a pleasant looking flash
-            NE IF,               \ if = 0 then we return the cursor char
-               TOS BL LI,        \ otherwise return a blank (space)  18 bytes
+            8378 @@ W MOV,       \ read interrupt timer to control flash speed
+            W 0018 ANDI,         \ AND it with HEX18. This mask made a pleasant looking flash
+            NE IF,               \ if <> 0 
+                TOS BL LI,       \ change cursor character to blank
             ENDIF,
             NEXT,
             END-CODE

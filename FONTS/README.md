@@ -1,7 +1,3 @@
 #Source Code for Fonts
 
-So far we have just one.
-
-TODO:
-
-Create binary files that load directly to VDP RAM for faster loading.
+These files use CALLCHAR and SAVE-FONT to create binary font images than can load in 1 second.

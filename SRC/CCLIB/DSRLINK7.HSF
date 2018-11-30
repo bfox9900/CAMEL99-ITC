@@ -15,34 +15,28 @@ CROSS-COMPILING XASSEMBLER DEFINITIONS
 \ MACRO to simplify the VDP code
 : VDPWA, ( reg -- )
        DUP           SWPB,   \ setup VDP address
-       DUP VDPWA @@  MOVB,
+       DUP VDPWA @@  MOVB,   \ write 1st byte of address to VDP chip
        DUP           SWPB,
-           VDPWA @@  MOVB,
-                     NOP,  ;
+           VDPWA @@  MOVB,   \ write 2nd byte of address to VDP chip
+                     NOP,  ; \ need this tiny delay for VDP chip
                      
 : [TOS]    8 (R13)  ;  \ gives access to Forth top of stack register
 
 [CC] HEX
 
 TARGET-COMPILING
-\ 8C02 EQU VDPWA
-\ 8C00 EQU VDWWD
-\ 8800 EQU VDPRD
-
 l: HEX20   20 BYTE,
 l: HEXAA   AA BYTE,
-l: PERIOD  2E BYTE,  \ '.'
+l: PERIOD  2E BYTE,    \ '.'
           .EVEN
 
-l: NAMBUF  BSS  6    \ no header string space
+l: NAMBUF  BSS  6      \ string buffer for filename
 l: H2000   DATA 2000
 l: CYC1    DATA 0000
 l: H1300   DATA 1300
 
-\ take some space in Forth DATA stack for a workspace
-[CC] SP0 100 - [TC] VALUE: DREGS
-
-[CC] 5 2* DREGS + [TC] EQU DREG(5)
+[CC] SP0 80 - [TC]     EQU DREGS    \ use space below Forth DATA stack for a DSR workspace
+[CC] 5 2* DREGS + [TC] EQU DREG(5)  \ compute address of DREGS register 5
 
 CLR-JMPTABLE
 

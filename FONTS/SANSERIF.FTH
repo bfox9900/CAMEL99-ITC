@@ -1,5 +1,6 @@
 
 \ SANS Serif SOURCE code for CAMEL99 Forth
+\ LOADS by compiling. very slow
 
 HEX
 
