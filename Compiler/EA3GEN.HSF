@@ -1,0 +1,123 @@
+\ TI-99 EA3 format tagged output file generator
+\ For XFC99 Cross compiler
+
+\ make a markup language that creates the file
+
+CROSS-COMPILING
+
+\ variables that hold the state of the output file
+VARIABLE ORGADR
+VARIABLE LINE#
+VARIABLE COMPRESS
+VARIABLE CHKSUM
+
+DECIMAL
+18 CONSTANT B/REC      \ bytes per record
+
+: PADDING     ( -- ) C/L @ OUT @ -  4 - SPACES ;  \ move cursor to end of line -4
+
+HEX
+: CRC+!       ( byte -- ) CHKSUM +! ;
+
+\ number formatting with no spaces for the file data output
+\ with integrated checksum addition
+: <#>         ( c -- ) ( CRC+!) S>D <#    #  #> TYPE ;
+: <##>        ( c -- ) ( CRC+!) S>D <#  # #  #> TYPE ;
+: <####>      ( n -- ) S>D <#  # # # #  #> TYPE ;
+: <####>CRC   ( n -- )  DUP SPLIT + CRC+! <####> ;
+
+\ create some file tag markup code
+
+: <NEW.EA3>    ( -- )
+               LOADADDRESS ORGADR !
+               LINE# OFF
+               CHKSUM OFF
+               HEX ;
+
+\ simple tags
+: <READABLE>   ( -- )  0 <#> ;
+: <COMPRESSED> ( -- )  1 <#> ;
+: <6>          ( -- )  6 <#> ;
+: <7>          ( -- )  7 <#> ;
+: <9>          ( -- )  9 <#> ;    \ ####: new address where to load data.
+: <8>          ( -- )  8 <#> ;    \ IGNORE the checksum.  Cheaky buggers
+: <B>          ( -- )  B <#> ;    \ Load data word #### at the current address (then increment the pointer)
+: <EOR>        ( -- )  F <#> ;    \ end of record tag
+: <EOF>        ( -- ) ." :"  ;    \ end of file tag
+
+: <IDT>        ( -- )  8 SPACES ; \ ignored by TI99 loader
+
+: <LINE#>      ( -- )
+               LINE# 1+!
+               DECIMAL PADDING  LINE# @  <####>   CHKSUM OFF  HEX ;
+
+
+: <BR>         ( -- ) CR ;      \ break line
+: <BL>         ( -- ) SPACE ;   \ emit a space
+
+: <AORG>       ( u -- )  <6> <####>  ; \ usage: A000 <AORG >
+
+: <BYTE>       ( addr -- )   <B> TC@ DUP  <##>   CHKSUM +! ; \ fetch from memory & print 1 byte, add to chksum
+: <BYTES>      ( addr n -- ) BOUNDS DO  I <BYTE>  LOOP ;     \ output n bytes at addr
+
+: <.CELL>      ( addr -- )   <B> T@  DUP <####>  split +  CHKSUM +! ;
+: <.CELLS>     ( addr n -- ) BOUNDS DO   I <.CELL>   CELL +LOOP ;
+
+: <CRC>        ( -- )  <7>  7 CHKSUM +!  CHKSUM @ NEGATE <####>  ;
+: <NOCRC>      ( -- )  <8>  8 CHKSUM +!  0000 <####> ;
+
+: <PROGID>     ( -- )  S"         " TYPE ;
+
+: <HEADER>     ( -- ) <READABLE> 0000 <####>   ;
+
+: <FOOTER>     ." XFC99  TI-99 Cross Compiler V5.0" ;
+: <PROGRAM>    FILENAME$ $. ;
+
+HEX
+: .EA3  ( -- )   \ outputs progam in text object file format
+         <NEW.EA3>
+        <HEADER>  <PROGID>   <9>  ORGADR @ <####>  ORGADR @ B/REC <.CELLS>  <noCRC> <EOR> <LINE#> <BR>
+        THERE  ORGADR @ B/REC -
+        DO
+           I  B/REC <.CELLS>  <noCRC> <EOR> <LINE#> <BR>
+           B/REC
+        +LOOP
+        LOADADDRESS <AORG> <PROGRAM> <BL> <NOCRC> <EOR> <LINE#> <BR>
+        <EOF> <FOOTER> <LINE#> ;
+
+: hEMIT  ( c -- )  \ emit a byte to currently open file handle
+               HANDLE @ C!H
+               OUT 1+! ;
+
+: ZEROS  ( n -- )  0 ?DO 0 HEMIT LOOP ;
+
+: TI_HEADER ( -- )
+             7 HEMIT ." TIFILES"
+             0 HEMIT  2 HEMIT
+             0 HEMIT  3 HEMIT
+             0 HEMIT 50 HEMIT
+            04 HEMIT  0 HEMIT
+            70 ZEROS ;
+
+: SAVE.EA3 ( $ADR -- )
+           cr ." Saving from " ORGADR @ U. ." , " THERE ORGADR @ - U. ."  bytes"
+           MAKE-OUTPUT
+\          >FILE TI_HEADER
+           >FILE .EA3
+           CLOSE-OUTPUT
+           CR ." Done"
+           CONSOLE ;
+
+: .ADRS   ( -- ) THERE A000 DO  <9> I <####>  CR B/REC +LOOP ;
+
+0 [IF]
+
+include cc9900\COMPILER\EA3TST.hsf
+
+C" EA3TST.TXT" SAVE.EA3
+
+// COPY  EA3TEST.O CC9900\CLSSIC99\DSK2\EA3TST2.O
+
+[THEN]
+
+

@@ -144,6 +144,10 @@ It now loads in the DSK.START file as a library file: TOBODY.F
 - Improved ?TERMINAL so it waits for key release after key press.
 
 ### Nov 30, 2018 V2.1.F
+- *COMPILER CHANGE: To handle ITC and DTC versions the cross-compiler "word creators"
+  are kept in separate files and are included in the Forth system source code as required.
+  Documentation is forth coming.  See compiler/ITCTYPES.HSF  and compiler/DTCTYPE.HSF
+
 - Source file CAMEL99F.HSF now has a compiler switch, SMALLER, that uses 
   Forth words to save space when set to TRUE and more CODE words if SMALLER 
   is set to FALSE true.

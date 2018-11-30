@@ -1,0 +1,77 @@
+\ cr .( Loading DTC Forth primitives and macros...)
+
+
+\ The following words have been called "DOERS" by many in the past. I don't like the name.
+\ I have chosen to to call them "EXECUTORS".  The words are the EXECUTION CODE that runs
+\ for the various type of words in a Forth sytstem.
+
+CODE: EXIT    ( -- )
+              EXIT2 @@ B,             \ This becomes a High level Forth word
+              END-CODE                \ because we branch to it in HS RAM
+
+\ These are NOT Forth words, but code routines I call "EXECUTORS"
+                                     \ Executor that executes a "CONSTANT"
+l: _docon     TOS PUSH,              \ make room in TOS
+              W 4 ADDI,              \ jump over DTC code fragment
+             *W TOS MOV,             \ put contents of PFA (W+4) in TOS
+              NEXT,
+
+l: _dovar                            \ Executor that executes a "VARIABLE"
+              TOS PUSH,              \ make room in TOS
+              W 4 ADDI,              \ jump over DTC code fragment
+              W TOS MOV,             \ put the parameter field address in TOS
+              NEXT,
+
+\ In CAMEL99 the WP register doubles as User pointer
+l: _douser    TOS PUSH,               \ Executor that executes a "USER VARIABLE" (local to each task)
+              TOS STWP,               \ store workspace register WP in TOS
+              W 4 ADDI,               \ jump over DTC code fragment
+             *W TOS ADD,              \ add the offset stored in the USER variable's parameter field
+              NEXT,
+
+\ CODE: DOCODE    *IP B, NEXT, END-CODE       \ let's jump into code from a Forth word
+
+\ *From Camel Forth MSP430*
+\ ; DODOES is the code action of a DOES> clause.
+\ ; defined word:  CFA: doescode
+\ ;                PFA: parameter field
+\ ;
+\ ; doescode: MOV #DODOES,PC      ; 16-bit direct jump, in two cells
+\ ;           high-level thread
+\ ;
+\ ; Note that we use JMP DODOES instead of CALL #DODOES because we can
+\ ; efficiently obtain the thread address.  DODOES is entered with W=PFA.
+\ ; It enters the high-level thread with the address of the parameter
+\ ; field on top of stack.
+
+\ dodoes: \ -- a-addr    ; 3 for MOV #DODOES,PC
+\        SUB #2,PSP      ; 1 make room on stack
+\        MOV TOS,0(PSP)  ; 4
+\        MOV W,TOS       ; 1 put defined word's PFA in TOS
+\        PUSH IP         ; 3 save old IP on return stack
+\        MOV -2(W),IP    ; 3 fetch adrs of doescode from defined word
+\        ADD #4,IP       ; 1 skip MOV instruction to get thread adrs
+\        NEXT            ; 4
+                       \   20
+
+l: DODOES  ( -- a-addr)
+              TOS PUSH,       \ 28
+              W TOS MOV,      \ 14
+              IP RPUSH,       \ 28
+              -2 (W) IP MOV,  \ 22
+              IP 4 ADDI,      \ 14
+              NEXT,        \   102
+              END-CODE
+
+\ ==========================================================================
+\ DTC MACROS are compiled into each FORTH word. NOT needed by CODE words.
+\ reminder: We have to BRANCH to these routines because TMS9900
+\ does not have a nestable sub-routine call.
+
+CROSS-COMPILING
+\ CR .( DTC macros )
+
+: JMP.DOCOL       ENTR  @@ B, ;  \ ENTR = calculated address of _DOCOL in HSRAM
+: JMP.DOVAR     _dovar  @@ B, ;
+: JMP.DOCON     _docon  @@ B, ;
+: JMP.DOUSER    _douser @@ B, ;
