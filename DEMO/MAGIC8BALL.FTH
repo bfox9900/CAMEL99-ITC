@@ -34,7 +34,7 @@ CASE: MAGIC8BALL  20 VECTORS  ;CASE
 : GO   
        CR ." Please enter your question or a blank line to quit."
        BEGIN CR ." ? :" PAD 80 ACCEPT 0>
-       WHILE CR 19 RANDOM MAGIC8BALL CR
+       WHILE CR 19 RND MAGIC8BALL CR
        REPEAT ;
 
 
