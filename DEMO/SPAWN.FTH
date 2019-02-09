@@ -6,17 +6,17 @@
 \ .TASKS
 \ X ? ( test if the variable is incrementing)
 
-INCLUDE DSK1.TOOLS   \ for debugging etc.
-INCLUDE DSK1.MTASK99
-INCLUDE DSK1.MTOOLS
+NEEDS DUMP FROM DSK1.TOOLS   \ for debugging etc.
+NEEDS FORK FROM DSK1.MTASK99
+NEEDS .TASKS FROM DSK1.MTOOLS
 
 INIT-MULTI
 
 \ create a task in heap, fork it, assign Execution token and run it
-: SPAWN  ( xt -- )  
+: SPAWN  ( xt -- )
          USIZE MALLOC ( pid)
          DUP >R FORK
-         R@ ASSIGN  
+         R@ ASSIGN
          R> WAKE ;
 
 HEX 10 CONSTANT STKSIZE  \ each task has ONLY 20 cells for each stack
@@ -47,5 +47,4 @@ VARIABLE #TASKS
          USIZE #TASKS @ *  MFREE
          INIT-MULTI  ;
 
-DECIMAL 
-
+DECIMAL
