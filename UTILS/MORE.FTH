@@ -12,7 +12,7 @@ HEX
              PAD DUP 50 R@ READ-LINE ?FILERR ( adr len flag)
           WHILE
              CR TYPE
-             KEY?
+             CKEY?
              IF CR ." ..."
                 KEY 0F =            \ test for escape key
                 IF R> CLOSE-FILE    \ if detected we're done here

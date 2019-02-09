@@ -1,15 +1,14 @@
-\ vectored I/O for RS232 control
-
-\ name the user variables in the table for this purpose
+\ vectored I/O Version 2.1.F or higher
 HEX
- 2E USER 'EMIT   \ vector for char. output routine
- 30 USER 'CR     \ vector for carriage return
- 32 USER 'KEY    \ vector for wait-for-key
- 34 USER 'KEY?   \ vector for key pressed test
- 36 USER 'TYPE   \ vector for block output
- 38 USER 'PAGE   \ vector for screen clear
+ 48 USER 'EMIT            \ vector for char. output routine
+ 4A USER 'CR              \ vector for carriage return
+ 4C USER 'KEY             \ vector for wait-for-key
+ 4E USER 'KEY?            \ vector for key pressed test
+ 50 USER 'TYPE            \ vector for block output
+ 52 USER 'PAGE            \ vector for screen clear
 
-\ Set TI-99 Console drivers
+
+\ Set vectors to use TI-99 I/O words
 : CONSOLE
    ['] EMIT 'EMIT !
    ['] CR   'CR !
@@ -17,17 +16,18 @@ HEX
    ['] KEY? 'KEY? !
    ['] TYPE 'TYPE !
    ['] PAGE 'PAGE !
+   SOURCE-ID OFF      \ default I/O device is 0
 ;
 
-CONSOLE   \ init the vectors
+CONSOLE   \ init the vectors now
 
 : PERFORM ( addr -- ) @ EXECUTE ;
 
-\ re-define I/O words to use vectors
+\ re-define FORTH I/O words to use vectors
 : EMIT    ( -- )  'EMIT PERFORM ;
-: CR      ( -- )  'CR PERFORM ;
-: KEY     ( -- )  'KEY PERFORM ;
+: CR      ( -- )  'CR   PERFORM ;
+: KEY     ( -- )  'KEY  PERFORM ;
 : KEY?    ( -- )  'KEY? PERFORM ;
 : TYPE    ( -- )  'TYPE PERFORM ;
-
+: PAGE    ( -- )  'PAGE PERFORM ;
 

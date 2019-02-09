@@ -90,9 +90,9 @@ CODE NEG!  ( adr -- )
               ENDCODE
 
 
-\ : XCHGS     OVER @  OVER @  SWAP ROT !  SWAP ! ;  (18bytes)
+\ : XCHG1     OVER @  OVER @  SWAP ROT !  SWAP ! ;  (18bytes)
 
-\  X Y XCHGS  is 703uS
+\  X Y XCHG1  is 703uS
 \  X Y XCHG   IS 256 uS   270% faster
 CODE XCHG   ( adr1 adr2 -- ) \ exchange values of 2 variables
              *SP+  R0 MOV,    \ pop adr1 into R0             22

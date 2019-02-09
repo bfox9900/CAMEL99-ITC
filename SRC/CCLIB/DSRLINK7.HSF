@@ -105,7 +105,7 @@ l: DSR1                      \ headless code
        @@9          JMP,
 
 @@3: \ scan ROM linked list for code address
-       BEGIN,
+      BEGIN,
          BEGIN,
            83D2 @@   R2 MOV,   \ start of ROM device list -> R2
            00           SBO,   \ turn card on
@@ -116,21 +116,21 @@ l: DSR1                      \ headless code
           *R2+      R9  MOV,   \ fetch code address ->R9
            8355 @@  R5  MOVB,  \ dev length->R5
            @@4          JEQ,   \ if 0 we have a string match
-           R5      *R2+ CMPB,  \
+           R5      *R2+ CMPB,
          EQ UNTIL,
 
 \ find dev string match
          R5       08  SRL,     \ shift length byte
          R6   NAMBUF  LI,      \ R6 holds ^nambuf
          BEGIN,
-           *R6+   *R2+  CMPB,  \ compare namebuf to ROM string
-            @@3         JNE,   \ if mismatch goto @@3
-            R5          DEC,   \ dec the counter register
+           *R6+   *R2+ CMPB,   \ compare namebuf to ROM string
+            @@3        JNE,    \ if mismatch goto @@3
+            R5         DEC,    \ dec the counter register
          EQ UNTIL,
-@@4: \ DJUMP4 run DSR code
+@@4: \ run DSR code
          R1            INC,    \ count entries into the DSR ?
         *R9            BL,     \ call the DSR code
-       AGAIN,                  \ try next card
+      AGAIN,                   \ try next card
 
 \   -- DSR returns here if we are done --
        00            SBZ,  \ Turn off the card
@@ -142,11 +142,11 @@ l: DSR1                      \ headless code
                      RTWP, \ else return to Forth workspace
 
 \ error condition handlers
-@@5:    DREGS        LWPI,
+@@5:   DREGS         LWPI,
 @@6:                       \ dev. name too long
-@@8:    R1           SETO, \ dev. name not found: code = -1
-@@7:    R1     [TOS] MOV,  \ put error code in Forth
-        HEX20 @@ R15 SOCB, \ set EQ flag = 1
+@@8:   R1            SETO, \ dev. name not found: code = -1
+@@7:   R1     [TOS]  MOV,  \ put error code in Forth
+       HEX20 @@ R15  SOCB, \ set EQ flag = 1
                      RTWP,
 \    ====== DSR LINK ENDS======
 
@@ -156,9 +156,9 @@ l: DLNK   DREGS T, DSR1 T,
 CODE: DSRLNK  ( -- ior)
         TOS PUSH,          \ space for error code on Forth stack
         TOS CLR,
-        0 LIMI,            \ critical that we disable interrupts here.
-        DLNK @@      BLWP,
-        8            DATA,
-        2 LIMI,
+          0 LIMI,          \ critical that we disable interrupts here.
+        DLNK @@ BLWP,
+          8 DATA,
+          2 LIMI,
         NEXT,
         END-CODE

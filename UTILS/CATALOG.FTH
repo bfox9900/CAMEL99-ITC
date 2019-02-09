@@ -1,28 +1,23 @@
-\ read a TI disk directory
+\ CAT command: read a TI disk directory
 HEX
 \ TI Floppy-disk directory record
 \ filename   TYPE     records  REC LEN
 \ --------   -------  -------  -------
 \ len,name,  8,float, 8,float  8,float
 
-CR .( Requires ANSFILES.F, CASE.F)
-' OPEN-FILE DROP
-' ENDOF     DROP
-
- INCLUDE DSK1.TOOLS.F   \ for debugging
- INCLUDE DSK1.ANSFILES.F
- INCLUDE DSK1.CASE.F
-
+NEEDS OPEN-FILE FROM DSK1.ANSFILES
+NEEDS CASE      FROM DSK1.CASE
+ 
 \ print unsigned int, right justified
 : U.R  ( u n --) >R 0 <# #S #> ( adr len) R> OVER - SPACES TYPE ;
-
+ 
 \ string helpers
 : $.       ( $addr -- ) COUNT TYPE ;
 : NEXT$    ( addr len -- addr len ) + COUNT ;
-
+ 
 \ print string left justified '
 : $.LEFT  ( $ width -- ) OVER C@ - >R $.  R> SPACES ;
-
+ 
 HEX
 \ crude 3 DIGIT BCD to int convertor. Limited to 999
 : F>INT   ( addr len -- addr len n)
@@ -45,13 +40,13 @@ DECIMAL
              5 OF ." Program"  ENDOF
              ." ????"
           ENDCASE ;
-
+ 
 : HEAD.REC ( addr -- )
           DUP  7 $.LEFT SPACE COUNT ( addr len)
-          NEXT$ 
+          NEXT$
           ."  Size" NEXT$ F>INT 5 U.R   ."  Used" NEXT$ F>INT 5 U.R
           2DROP  ;
-
+ 
 : DIR.REC ( addr -- )
           DUP  11 $.LEFT SPACE COUNT ( addr len)
           NEXT$ DIR.TYPE
@@ -60,7 +55,7 @@ DECIMAL
           2DROP  ;
 
 : PAGEBRK ( -- )
-          LINES @ L/SCR 3 - MOD 0=  \ bottom of page?
+          LINES @ L/SCR 3 - MOD 0=  \ bottom of page?                                 
           IF
             CR ." Press any key..." KEY DROP
           THEN ;
@@ -77,13 +72,14 @@ DECIMAL
 
           LINES OFF
           BEGIN
-             PAD 80 R@ READ-LINE ?FILERR ( len flag) NIP
+             PAD DUP 80 R@ READ-LINE ?FILERR 2DROP
+           ( PAD)  C@   \ do while length > 0
           WHILE
              PAD CR DIR.REC
              1 LINES +!
              PAGEBRK
              ?TERMINAL
-             IF BEGIN PAUSE ?TERMINAL 0= UNTIL
+             IF
                 R> CLOSE-FILE
                 CR ." *BREAK*" ABORT
              THEN
@@ -92,3 +88,4 @@ DECIMAL
           CR LINES @ . ." files" CR
           R> BASE ! ;
 
+ 

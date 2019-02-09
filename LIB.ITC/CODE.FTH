@@ -1,7 +1,6 @@
-\ CODE.FTH let's you make machine code words
-\ for use with the assembler
+\ CODE.FTH let's you make machine code words for use with the assembler
 
-: CODE      ( -- )  HEADER  HERE >BODY , !CSP ;
+: CODE      ( -- )  HEADER  HERE 2+ , !CSP ;
 : NEXT,     ( -- )  045A , ;  \ B *R10
 : ENDCODE   ( -- )  ?CSP  ;
 

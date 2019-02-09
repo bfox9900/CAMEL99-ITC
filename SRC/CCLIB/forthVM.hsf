@@ -1,0 +1,131 @@
+\ ===========================================================================
+\  TMS9900  F O R T H   V I R T U A L   M A C H I N E   D E F I N I T I O N S
+\ ===========================================================================
+
+\ Define the FORTH virtual machine registers in terms of the TARGET machine registers
+
+CROSS-COMPILING     \ these words will extend the functionality of the Cross-Assembler/Compiler
+
+: TOS     R4  ;        \ TOP of stack is cached in R4
+: SP      R6  ;        \ parameter stack pointer
+: RP      R7  ;        \ return stack pointer
+: W       R8  ;        \ Forth 'W' register OR general purpose in a system CODE word
+: IP      R9  ;        \ Forth VM Instruction pointer
+: NEXT    R10 ;        \ Forth's "NEXT" routine address cached in R10
+
+\ Named registers defined in all the addressing modes
+: *TOS          *R4  ;
+: *TOS+         *R4+ ;
+: (TOS)         (R4) ;
+
+: *SP           *R6  ;
+: *SP+          *R6+ ;
+: (SP)          (R6) ;
+
+: *RP           *R7  ;
+: *RP+          *R7+ ;
+: (RP)          (R7) ;
+
+: *W            *R8  ;
+: *W+           *R8+ ;
+: (W)           (R8) ;
+
+: *IP           *R9  ;
+: *IP+          *R9+ ;
+: (IP)          (R9) ;
+
+: *NEXT         *R10 ;   \ we only use indirect addressing for this one
+
+
+\ Create MACROs for Forth operations to simplify the code
+: IP++         IP INCT, ;
+
+: RP++         RP INCT, ;
+: RP--         RP DECT, ;
+
+: SP++         SP INCT, ;
+: SP--         SP DECT, ;
+
+\ PUSH & POP on both stacks
+: PUSH,         ( src -- )  SP DECT,  *SP   MOV, ;    \ 10+18 = 28  cycles
+: POP,          ( dst -- )  *SP+      SWAP  MOV, ;    \ 22 cycles
+
+: RPUSH,        ( src -- ) RP DECT,  *RP   MOV,  ;
+: RPOP,         ( dst -- ) *RP+      SWAP  MOV,  ;
+
+\ ========================================================================
+\ N E S T E D   S U B - R O U T I N E   M A C R O
+\ "Psuedo-instruction" to implements a CALL sub-routine mechanism on the
+\ Forth return stack using the Branch & Link instruction.
+\ You use CALL, exactly the same as you would use BL, but you can nest
+\ sub-routine calls with CALL,
+
+\ Return from CALL is done with psuedo instruction RT, just like BL,
+
+\ See Xassembler   : RT,    *R11 B, ;             \ 12 cycles
+
+: CALL,         ( dst -- )
+                R11 RPUSH,       \ save R11 on forth return stack                 28
+            ( addr) @@ BL,       \ branch & link saves the PC in R11             +16 =  44 to call
+                 R11 RPOP, ;     \ R11 RPOP, is laid down by CALL, in the caller. 22+12= 34 to return
+                                 \ We have to lay it in the code after BL so
+                                 \ when we return from the Branch&link, R11 is
+                                 \ restored to the original value from the rstack
+
+\ Why not use BLWP?
+
+\ TI's BLWP instruction uses 32 cycles to call (symbolic)  and RTWP takes 14 cycles.
+\ Although faster than CALL,/RT, and it gives you new registers it is still only 1 level deep.
+\ *AND* you have to create a 4 byte vector data structure for every sub-routine.
+\ (IE:  myroutine data workspace,program-counter )
+\
+\ *AND* you have reach back into the previous workspace to get register parameters.
+
+\ ==========================================================================
+\ F O R T H   I N N E R   I N T E R P R E T E R  "N E X T"
+\ On the TMS9900 NEXT needs 4 bytes to compile the ITC inner interpreter
+\ at the end of every code word.
+\ BUT if coded as an indirect branch through a register it is only 2 bytes per word.
+\ Therefore CAMEL99 uses R10 to hold the address of the actual next code
+\ to save space.
+\ See: 9900CODE.HSF
+\
+\ In CAMEL99 we intialize the NEXT register (R10) with the startup code:
+\
+\            R10 NEXT2 LI,     \  see: INIT in CAMEL99.hsf
+
+\ =========================================================================
+\ This is that actual macro that runs at the end of CAMEL99 code words
+\ It is equivalent to "return" for a Forth system
+
+: JMP-NEXT       ( -- ) *NEXT B, ;     \ this is 4 bytes, 12 cycles
+
+\ ==========================================================================
+\ RESOLVE NEXT, a deferred word
+
+\ NEXT, is a deferred word in the cross-assembler so you can create different
+\ threading mechanisms with the Cross-assembler easiy.
+
+\ We must assign an Execution token to "NEXT," so all the subsequent
+\ CODE: words in 9900CODE.HSF will compile the correct code.
+
+ ' JMP-NEXT IS NEXT,         \ meaning: Find execution address of JMP-NEXT
+                             \          and put into NEXT,
+
+
+\ ==========================================================================
+\ You can improve the speed of next by writing it inline after a code word.
+\ It takes 4 extra bytes per word so use it wisely.
+\ The speed up is about 21% however
+
+: ILNEXT,
+             *IP+ W MOV,     \ move CFA into Working register        \ 22
+             *W+  R5 MOV,    \ move contents of CFA to R5 & INCR W   \ 22
+             *R5  B,         \ branch to the address in R5           \ 12
+;                                                                 \ = 56
+
+
+\ debugging macro.   Stops machine code in place
+: BREAK    $$ JMP, ;
+
+\ cr .( Press enter to continue  )  KEY 13 <> [IF] cr ." ABORTED" ABORT [THEN]

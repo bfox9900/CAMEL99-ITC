@@ -8,13 +8,13 @@
 \ ===================================================================
 \ M E M O R Y   M A P P E D   D E V I C E S
 
-hex
-8800 equ vdprd               \ vdp ram read data
-8802 equ vdpsts              \ vdp status
-8C00 equ vdpwd               \ vdp ram write data
+HEX
+8800 equ VDPRD               \ vdp ram read data
+8802 equ VDPSTS              \ vdp status
+8C00 equ VDPWD               \ vdp ram write data
 8C02 equ VDPWA               \ vdp ram read/write address
 83D4 equ vr1cpy              \ copy of vdp register 1 - see e/a manual pg. 248
-\ 8400 equ _sndport            \ moved to TMS9919.hsf
+\ 8400 equ _sndport          \ moved to TMS9919.hsf
 
 \ Meet the GROM ports
 9800 equ GRMRD ( GROM base)   \ GROM read byte
@@ -57,8 +57,8 @@ HEX
 \ These are user variable locations in V2
 \ We must define them here so the 9900FAST.HSF file needs these addresses
 8348 equ _OUT                   \
-834A equ _VCOL
-834C equ _VROW
+834A equ _VROW                  \ re-defined as a user variable in CAMEL2.hsf
+834C equ _VCOL                  \ re-defined as a user variable in CAMEL2.hsf
 834E equ _C/L
 8350 equ _C/SCR
 836E equ _spr#                  \ sprite count for automotion.
@@ -68,48 +68,4 @@ HEX
 83A0 equ GSTK                   \ steal the GPL stack for Forth?
 8EBE equ GRSTK                  \ steal the GPL stack for Forth?
 83D4 equ VDPR1                  \ copy of VDP Register 1
-
-
-\ ===================================================================
-\ UTLTAB memory table used by DSRLINK to report back to ASM progs
-\ From TI-99 Editor Assembler manual page 265
-
-\ Address   Name       Information
-\ -------   -----     ------------
-\  2022  equ UTLTAB    \ Entry address.
-\  2024  equ FSTHI     \ First free address in high memory.
-\  2026  equ LSTHI     \ Last free address in high memory.
-\  2028  equ FSTLOW    \ First free address in low memory.
-\  202A  equ LSTLOW    \ Last free address in low memory.
-\  202C  equ CHKSAV    \ Checksum.
-\  202E  equ FLGPTR    \ Pointer to the flag in the PAB.
-\  2030  equ SVGPRT    \ GPL return address.
-\  2032  equ SAVCRU    \ CRU address of the peripheral.
-\  2034  equ SAVENT    \ Entry address of the DSR or subprogram.
-\  2036  equ SAVLEN    \ Device or subprogram name length.
-\  2038  equ SAVPAB    \ Pointer to the device or subprogram name in
-\  203A  equ SAVVER    \ Version number of the DSR.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

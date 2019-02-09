@@ -99,7 +99,7 @@ CROSS-COMPILING
 [UNDEFINED] CALL,
 [IF]
     CR ." Defining Forth Virtual machine MACROs ..."
-    include cc9900\forthvm.hsf           \ contains macros: PUSH POP CALL etc...
+    include CC9900\CCLIB\FORTHVM.HSF     \ contains macros: PUSH POP CALL etc...
 [THEN]
 
 
@@ -145,12 +145,14 @@ l: _exec     *W+  R5 MOV,     \ move contents of CFA to R5 & INCR W        \ 22
              *R5  B,          \ branch to the address in R5                \ 12
                                                                          \ = 56
 l: _?branch   \ Faster way to avoid penalty of TOS refill
-              TOS DEC,        \ After DEC if tos=0, this will cause a carry flag                                  10
-              TOS POP,        \ refill TOS changes L> A> EQ flags, BUT does not change carry flag       22
-              @@2 JOC,        \                                                                         10
+              TOS DEC,        \ After DEC if tos=0, this will cause a carry flag                      10
+              TOS POP,        \ refill TOS changes L> A> EQ flags, BUT does not change carry flag     22
+              @@2 JOC,        \                                                                       10
 l: _branch   *IP IP ADD,      \ *IP points to an offset number in memory. Add it to IP causes a jump.
-              @@9 JMP,        \ *replaced NEXT, with short JMP. 20% faster! same size                   10
-@@2:          IP INCT,        \ move IP forward past branch offset (don't branch)                       10
+              @@9 JMP,        \ *replaced NEXT, with short JMP. 20% faster! same size                10
+
+
+@@2:          IP INCT,        \ move IP forward past branch offset (don't branch)     10
               @@9 JMP,        \ JMP to _next
 
 l: _enter     IP RPUSH,       \ push IP register onto the return stack      28
@@ -220,9 +222,9 @@ CODE: DOCON   ( -- n )         \ Executor that executes a "CONSTANT"
               END-CODE
 
 CODE: DOVAR   ( -- addr)       \ Executor that executes a "VARIABLE"
-              TOS PUSH,        \ <-- dovar  enters at this address
-              W   TOS MOV,     \ put the parameter field address into TOS
-              NEXT,
+              TOS PUSH,        \ <-- dovar  enters at this address         28
+              W   TOS MOV,     \ put the parameter field address into TOS  14
+              NEXT,                                                     \  42
               END-CODE
 
 \ In CAMEL99 the 9900 WP register doubles as USER pointer
@@ -348,16 +350,14 @@ CODE: RP!     ( a -- )
               END-CODE
 
 CODE: >R      ( w -- )
-              RP DECT,          \ 10
-              TOS *RP  MOV,     \ 18
-             *SP+  TOS MOV,     \ 22
+              TOS RPUSH,        \ 28
+              TOS POP,          \ 22
               NEXT,
               END-CODE          \ 50
 
 CODE: R>      ( -- w )
-              SP DECT,          \ 10
-              TOS *SP  MOV,     \ 18
-             *RP+  TOS MOV,     \ 22
+              TOS PUSH,         \ 28
+              TOS RPOP,         \ 22
               NEXT,
               END-CODE          \ 50
 
@@ -470,15 +470,6 @@ CODE: 2SWAP   ( n1 n2 n3 n4-- n3 n4 n1 n2)
               NEXT,                \    120
               END-CODE
 
-\ CODE: 2OVER  ( d1 d2 -- d1 d2 d1)  \ this is smaller in Forth
-\             *SP W MOV,             \ d2 lsb -> temp                             18
-\              W   PUSH,             \ push temp                                  28
-\              TOS PUSH,             \ push d2 MSBits                             28
-\              4 (SP) TOS MOV,       \ pick 4th item, d1 MSBits to TOS            22
-\              6 (SP) *SP MOV,       \ pick 6th item, d1 LSBits to next on stack  26
-\              NEXT,                 \ 18 bytes                                  122
-\              END-CODE
-
 CODE: PICK   ( n -- n)   \ GForth ITC takes 10 intel instructions for PICK
               TOS TOS ADD,   \ 14  (" n CELLS")
               SP TOS ADD,    \ 14
@@ -494,7 +485,7 @@ CODE: 3RD  ( a b c d --  a b c d b)    \ 2X faster than 3 PICK
               NEXT,            \  50
               END-CODE
 
- CODE: 4TH
+CODE: 4TH
               TOS PUSH,
               6 (SP) TOS MOV,
               NEXT,
@@ -522,8 +513,8 @@ CODE: XOR     ( w w -- w )
 
 \ ===================================================================
 CR .( ARITHMETIC)
-\ TOS in place math is about 40% faster with TOS in register
-CODE: 1+     ( n -- n')     \ changed from 1+ for compliance
+\ simple math is about 40% faster with TOS in register
+CODE: 1+     ( n -- n')
               TOS INC,
               NEXT,
               END-CODE
@@ -533,7 +524,7 @@ CODE: 1-      ( n -- n')
               NEXT,
               END-CODE
 
-CODE: 2+     ( n -- n)   \ changed from 2+ for compliance
+CODE: 2+     ( n -- n)
               TOS INCT,
               NEXT,
               END-CODE
@@ -543,12 +534,12 @@ CODE: 2-     ( n -- n)
               NEXT,
               END-CODE
 
-CODE: 2*      ( n -- n)     \ changed from 2* for compliance
-              TOS TOS ADD,  \ mpy instruction is 52 clocks minimum. This is 14 clocks
+CODE: 2*      ( n -- n)
+              TOS TOS ADD,  \ mpy is 52 clocks minimum. This is 14 clocks
               NEXT,
               END-CODE
 
-CODE: 4*      ( n -- nx4)    \ use in graphics & sprite calulations
+CODE: 4*      ( n -- nx4)   \ use in graphics & sprite calulations
               TOS 2 SLA,
               NEXT,
               END-CODE
@@ -659,6 +650,7 @@ CODE: UM/MOD ( ud u1 -- u2 u3 ) \ numerator(32bits), divisor -- rem,quot
               R5  *SP MOV,     \ push remainder              22
               NEXT,            \                            200
               END-CODE
+
 
 \ Signed divide using either Floored or Symmetric Integer Division.
 \ Adapted with permission, from FBForth by Lee Stewart
@@ -815,7 +807,7 @@ CODE: MIN     ( n1 n2 -- n)
 END-CODE   \ for MIN
 
 \ ===================================================================
-CR .(  MOVE CMOVE CMOVE>  FILL )
+CR .( CMOVE CMOVE>  FILL )
 
 CODE: CMOVE  ( src dst n -- )  \ forward character move
              *SP+ R0 MOV,       \ pop DEST into R0                         22
@@ -918,7 +910,7 @@ CODE: <?DO> ( limit ndx -- )
               TOS POP,          \ refill TOS, (does not change overflow flag)
               @@2 JMP,
 +CODE: UNLOOP
-@@3:         *RP+ *RP+ CMP,      \ INC by 4, 2 bytes, collapse rstack frame
+@@3:          RP  4 ADDI, ( *RP+ *RP+ CMP,) \ INC by 4, 2 bytes, collapse rstack frame
               NEXT,
               END-CODE
 
@@ -936,6 +928,7 @@ CODE: J       ( -- n)
               NEXT,
               END-CODE
 [THEN]
+
 
 CODE: BOUNDS ( adr len -- adr2 adr1)  \ same size as Forth version
              *SP R1 MOV,
@@ -969,40 +962,39 @@ cr .( SKIP SCAN S= )
 \ ; available on many CPUs, and so are easy to implement and fast.
 
 \ used CAMEL Forth MSP430 as reference code
-
 CODE: SKIP  ( c-addr u char -- c-addr' u')    \ skip matching chars
               TOS SWPB,                       \ fix this silly byte order. It took me hrs to realize this !@#$!
               2 (SP) W MOV,                   \ get address->w, leave space on stack
              *SP+ R1 MOV,                     \ POP count into R1, char is already in TOS
               NE IF,                          \ if r1=0 get out
-                BEGIN,
-                  TOS *W+ CMPB,               \ does character match? &  auto-incr. address
-                  @@2 JNE,                    \ no, so we are done
-                  R1 DEC,                     \ decr loop counter
-                EQ UNTIL,                     \ try again
-@@2:          W DEC,                          \ correct result address after auto-inc.
+                  BEGIN,
+                    TOS *W+ CMPB,               \ does character match? &  auto-incr. address
+                    @@2 JNE,                    \ NO MATCH jump out
+                    R1 DEC,                     \ decr loop counter
+                  EQ UNTIL,                     \ loop until R1=0
+@@2:              W DEC,                        \ correct result address after auto-inc.
               ENDIF,
               W *SP  MOV,                     \ store updated address on stack
               R1 TOS MOV,                     \ updated count to TOS
               NEXT,
               END-CODE
 
-CODE: SCAN   ( adr len char -- adr' len' )    \ find matching char
+ CODE: SCAN   ( adr len char -- adr' len' )    \ find matching char
               TOS SWPB,                       \ silly machine needs this to compare memory to register
               2 (SP) W MOV,                   \ get address->w
              *SP+ R1 MOV,                     \ POP count into R1, char is already in TOS
               NE IF,                          \ R1<>0 ?
-                 BEGIN,
-                   TOS *W CMPB,               \ does character match?
-                   @@2 JEQ,                   \ YES, we are done, JUMP OUT
-                   W INC,                     \ next character
-                   R1 DEC,                    \ dec. loop counter
-                 EQ UNTIL,
+                  BEGIN,
+                    TOS *W CMPB,               \ does character match?
+                    @@2 JEQ,                   \ YES, we are done, JUMP OUT
+                     W INC,                    \ next character
+                     R1 DEC,                   \ dec. loop counter
+                  EQ UNTIL,                    \ hit end of string, jmp out
               ENDIF,
 @@2:          W *SP  MOV,                     \ store updated address on stack
               R1 TOS MOV,                     \ updated count to TOS
               NEXT,
-              END-CODE
+             END-CODE
 
 \ ===========================================================
 \ adapted from Camel Forth MSP430.

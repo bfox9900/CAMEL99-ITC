@@ -1,18 +1,22 @@
-
+CR .( VT100 terminal control)
 DECIMAL
-: .PARM
-        BASE @ SWAP DECIMAL U. BASE ! ;
+: .#      ( n -- ) 0 <#  #S  #>  TYPE ;  ( type number with no space)
+: <PARM>  ( n -- ) BASE @ >R  DECIMAL .#  R> BASE ! ; ( output decimal number)
 
-: \ESC    ( -- ) 27 EMIT ." [" ;
-: \PARM   ( c -- ) \ESC .PARM ;
-: <UP>    ( -- )   \PARM ." A" ;
-: <DOWN>  ( -- )   \PARM ." B" ;
-: <RIGHT> ( -- )   \PARM ." C" ;
-: <BACK>  ( -- )   \PARM ." D" ;
-: <HOME>  ( -- )   \ESC  ." F" ;
-: <CLS>   ( -- )   \ESC  ." 2J" ;
-: <CLRLN> ( -- )   \ESC  ." K" ;
+\ create markup language for terminal control codes
+: <ESC>[  ( -- )   27 EMIT  91 EMIT  ;
+: \PARM   ( c -- ) <ESC>[ <PARM> ;
+: <UP>    ( n -- ) \PARM ." A" ;
+: <DOWN>  ( n -- ) \PARM ." B" ;
+: <RIGHT> ( n -- ) \PARM ." C" ;
+: <BACK>  ( n -- ) \PARM ." D" ;
+: <HOME>  (  -- )  <ESC>[ ." 0;0H" ;
+: <CLS>   ( n -- ) <ESC>[ ." 2J" ;
+: <CLRLN> ( -- )   <ESC>[ ." K" ;
 
-: AT-XY  ( col row --) SWAP \ESC .PARM ." ;" .PARM ." H" ;
-: PAGE   ( -- ) <CLS>  <HOME> ;
+\ redefine Forth words using markup words
+: AT-XY   ( col row --) SWAP <ESC>[ <PARM> ." ;" <PARM> ." f" ;
+: VT100PAGE ( -- ) <CLS>  <HOME> ;
 
+CR .( Set PAGE vector for VT100)
+' VT100PAGE  'PAGE !

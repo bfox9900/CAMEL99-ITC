@@ -1,36 +1,34 @@
 \ SAMS expanded memory card primitives
-\ Provides 940K of data space
+
+NEEDS DUMP  FROM DSK1.TOOLS
+NEEDS SBO  FROM DSK1.CRU
+
 HEX
-
-NEEDS SBO  FROM DSK1.CRU 
-
      VARIABLE BANK#      \ current mapped bank
   10 CONSTANT 1STBANK    \ we don't use the lower 64K
-1000 CONSTANT B/BANK     \ bytes per bank = 4K
-6000 CONSTANT MBLOCK     \ >6000 maps the memory to the cartidge port space
+1000 CONSTANT 4K         \ bytes per bank = 4K
+3000 CONSTANT MBLOCK     \ paged memory block location
 
-HEX
-: >BANK  ( 32bit -- addr)           \ must have 32bit address!!
-         B/BANK UM/MOD  1STBANK +   ( -- offset bank#+1STBANK)
-         BANK# @ OVER =             \ are we using the same bank#
-         IF   \ Yes!. Drop the bank# and get out
-              DROP
+\ compute register address for mapping >3000..>3FFF
+MBLOCK 0B RSHIFT 4000 +  CONSTANT SAMSREG
 
+: >BANK  ( addr bank# -- addr)      \ must have 32bit address!!
+         4K UM/MOD ( -- offset bank#)
+         DUP BANK# @ =             \ are we using the same bank#
+         IF
+             DROP                  \ Yes!. Drop the bank# and get out
          ELSE \ MAP in a new bank
-              DUP FF00 AND ABORT" Bank# Err!"
+              DUP FF00 AND ABORT" SAMS Err!"
               DUP BANK# !           \ update bank#
-              DUP FUSE              \ Hi & lo bytes are now identical
-
-         \ compute SAMS register for address=MBLOCK at compile time
-            [ MBLOCK 0B RSHIFT 4000 + ] LITERAL
-
-              1E00 CRU! 0 SBO        \ enable SAMS card
-            ( bank# register) !     \ store bank in SAMS register
-              0 SBZ                  \ disable SAMS card
-         THEN MBLOCK OR             \ return the address in mapped block
+              ><                    \ bank# must be in left byte
+             1E00 CRU! 0SBO         \ enable SAMS card
+            ( bank#) SAMSREG !      \ store bank in SAMS register
+              0SBZ                  \ disable SAMS card
+         THEN
+         MBLOCK +              \ return the address in mapped block
 ;
 
-\ direct access to 900K memory space
+\ direct access to 1M of memory space
 : C@L    ( 32addr -- n)  >BANK C@ ;   \ fetch a byte
 : C!L    ( n 32addr -- ) >BANK C! ;   \ store a byte
 
@@ -38,7 +36,6 @@ HEX
 : !L     ( n 32addr -- ) >BANK ! ;    \ store an int
 
 \ debug words
-\ : UD.    ( d -- )   <#  #S  #>  TYPE SPACE ;
-\ : ??     ( addr --) 2@ UD. ;    \ see contents of 32 bit variable
+: ??     ( addr --) 2@ DU. ;    \ see contents of 32 bit variable
 
 

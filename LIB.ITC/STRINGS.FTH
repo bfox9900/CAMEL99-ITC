@@ -49,7 +49,8 @@ HEX 3FFF SSW +  CONSTANT $STACK
            SWAP COUNT SPUSH >R COUNT R@ +PLACE R>  ;
 
 : POS$  ( $1 $2 -- n )  \ return "position" $1 in $2
-           DUP -ROT DUP -ROT
+\           DUP -ROT DUP -ROT
+           TUCK SWAP OVER       ( $2 $2 $1 $2)
            COUNT BOUNDS         \ step $2 char by char
            DO
              I OVER COUNT S=

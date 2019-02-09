@@ -37,7 +37,7 @@ CODE: [PAB   ( -- adr) TOS PUSH,  ^PAB @@ TOS MOV,  NEXT, END-CODE
 : ?FILERR  ( ior -- )
            ?DUP
            IF CR T." * File Err "  .
-              RSTPAB  HONK ABORT
+              RSTPAB ( HONK) ABORT
            THEN ;
  
 : VPLACE   ( $addr len Vaddr -- )  \ like PLACE, but for VDP RAM

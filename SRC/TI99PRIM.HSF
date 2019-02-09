@@ -1,5 +1,4 @@
-\ =======================================================================
-CR ." V D P  C H I P  I N T E R F A C E"
+[CC] CR ." V D P  C H I P  I N T E R F A C E"
 \ We took a Forth approach to naming VDP memory routines.
 \ So VSBR becomes VC@  and VSBW becomes VC!.
 \ VMBW and VMBR become VWRITE AND VREAD.
@@ -10,7 +9,7 @@ CR ." V D P  C H I P  I N T E R F A C E"
 \ to call these fast routines directly from Forth.
 \ With these fast primitives we can write most of the VDP driver
 \ in Forth and still get excellent performance.
-
+TARGET-COMPILING
 \ factored sub-routines. Set up VDP address for write or read modes
 l: WMODE      R0 4000  ORI,       \ set control bits to write mode
 l: RMODE      W  8C02  LI,        \ VDP port address into working register
@@ -114,12 +113,12 @@ CODE: VFILL   ( VDP-addr count char-- )
               END-CODE
 
 \ * VDP write to register. Kept the TI name
-CODE: VWTR    ( n reg -- )         \ Usage: HEX 0705 VWTR {write 5 to register 7}
-              TOS R0 MOV,          \ changed to: 5 7 VWTR
+CODE: VWTR    ( c reg -- )         \ Usage: 5 7 VWTR
+              TOS R0 MOV,
               R0 8 SLA,            \ register goes to left side
              *SP+ TOS MOV,
               TOS 00FF ANDI,
-              TOS R0 SOC,
+              TOS R0 SOC,          \ 'OR' this bytes together
               R0 8000 ORI,         \ set "write to register" mode bit
               RMODE @@ BL,
               TOS POP,
@@ -146,21 +145,6 @@ CROSS-ASSEMBLING
 \      34 USER: VCOL  34
 \      2E USER: C/L
 
-CODE: (CR)    ( -- ? )  \ return true if we need to SCROLL
-              TOS      PUSH,
-              TOS      CLR,
-              R1       STWP,   \ store current workspace pointer in R1
-              30 (R1)  CLR,    \ CLR USER 30
-              34 (R1)  CLR,    \ CLR USER 34
-              32 (R1)  INC,    \ CLR USER 32
-              W _L/SCR  LI,    \ load W with "lines per screen" (should be a user)
-              32 (R1) W CMP,   \ compare USER 32 with W
-              EQ IF,           \ if VROW=l/scr we will need to scroll.
-                   TOS SETO,   \ TOS=TRUE
-              ENDIF,
-              NEXT,
-              END-CODE
-
 CODE: >VPOS ( col row -- vaddr) \ compute video address
              R1         STWP,
              TOS     R3  MOV,   \ this move to make best use of MPY
@@ -169,34 +153,8 @@ CODE: >VPOS ( col row -- vaddr) \ compute video address
              NEXT,
              END-CODE
 
-\ Note: (EMIT) could be done in Forth but it is slower so ...
-\ : (EMIT) ( char vaddr -- ?)
-\           VC!
-\           1 DUP OUT +!  VCOL +!
-\           C/L@ VCOL @ =
-\           IF   TRUE
-\           ELSE FALSE
-\           THEN ;
-
- CODE: (EMIT) ( char vaddr -- ?)  \ (emit) returns true if we need to CR
-              TOS R0 MOV,          \ cursoradr->R0
-              WMODE @@ BL,         \ call: setup VDP address in "write mode"
-              TOS POP,             \ get char from stack
-              TOS SWPB,
-              TOS VDPWD @@ MOVB,   \ write char to vdp data port
-            \ houskeeping...
-              R1      STWP,
-              30 (R1) INC,         \ inc USER 30 ( OUT)
-              34 (R1) INC,         \ inc USER 4C ( VCOL)
-              TOS CLR,             \ clear TOS. It's the output flag
-             2E (R1) 34 (R1) CMP,  \ compare USER2E & USER 4C (C/L , VCOL)
-              EQ IF,
-                  TOS SETO,        \ set TOS to true, we need a new line
-              ENDIF,
-              NEXT,
-              END-CODE
-
 \ FAST user variable for screen driver
+CROSS-ASSEMBLING
 CODE: C/L@   ( -- n )             \ this is used 8 times in the KERNEL. Saves 14 bytes
              TOS        PUSH,     \ and is 50% faster than C/L @
              R1         STWP,
@@ -215,12 +173,10 @@ CODE: VCLIP  ( lim char addr -- lim char addr)
 
 \ ===================================================================
 CR .( KEY?  and  ?TERMINAL)
-
 \ Camel99 interface to KSCAN.
 \ We used the ROM routine to test if a KEY was pressed only.
 \ We read the character value from RAM with Forth code. See: KEY
-
-CODE: KEY? ( -- ?)  \ *WARNING* it takes 1.15 mS for KEY? scan to run
+CODE: KEY? ( -- ?)  \ *WARNING* it takes 1,128uS for KEY? scan to run
              TOS PUSH,
              TOS CLR,            \ TOS will be our true/false flag
              0 LIMI,
@@ -243,7 +199,7 @@ CODE: ?TERMINAL ( -- ?)    \ ~200uS, 16 bit ROM speed. Same name as TI-Forth
             0020 @@ BL,          \ Call ROM code, test FNCT 4 key press
             EQ IF,               \ if flag=0
                TOS  SETO,        \ KEY is pressed, TOS = -1
-               BEGIN,            
+               BEGIN,
                   0020 @@ BL,    \ call rom routine
                NE UNTIL,         \ until key is released
             ENDIF,               
@@ -263,6 +219,13 @@ CODE: CURS@   ( -- char)         \ return cursor or space for flashing cursor
             NEXT,
             END-CODE
 
-CODE: BYE    ( -- )
+CODE: BYE    ( -- )             \ From TI-Forth 1984 :-)
+       \     R0 4246 LI,         \ chars "BF" -> R0
+       \     R1 2000 LI,         \ start of low mem -> R1
+       \     BEGIN,
+       \       R0 *R1+ MOV,      \ fill low mem with "BF"
+       \       R1 4000 CMPI,
+       \     EQ UNTIL,
             0000 @@ BLWP,        \ ROM reset vector is at 0000
             END-CODE
+            

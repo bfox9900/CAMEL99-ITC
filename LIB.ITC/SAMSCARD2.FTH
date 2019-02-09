@@ -1,8 +1,8 @@
 \ SAMS expanded memory card primitives
 \ Provides 940K of data space
-INCLUDE DSK1.TOOLS.F
-INCLUDE DSK1.ELAPSE.F
-INCLUDE DSK1.ASM9900.F
+INCLUDE DSK1.TOOLS
+INCLUDE DSK1.ELAPSE
+INCLUDE DSK1.ASM9900
 
 HEX
      VARIABLE BANK#      \ current mapped bank
@@ -10,7 +10,7 @@ HEX
 1000 CONSTANT B/BANK     \ bytes per bank = 4K
 
 \ SAMS uses a 4K page
-6000 CONSTANT SAMSPAGE   \ >6000 maps the memory to the cartidge port space
+3000 CONSTANT SAMSPAGE   \ >6000 maps the memory to the cartidge port space
 
 SAMSPAGE 0B RSHIFT 4000 + \ compute the SAMS register for the SAMS page
      CONSTANT SAMSREG    \ make it a constant

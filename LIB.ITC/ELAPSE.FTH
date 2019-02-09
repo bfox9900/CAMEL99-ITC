@@ -2,7 +2,8 @@
 \ Thanks to Tom Zimmer for the good ideas in FPC circa 1990
 \ Ported to HsForth 08MAR91  Brian Fox Canada
 
-\ Ported to CAMEL99 Nov 29 2017
+\ Ported to CAMEL99 Nov 29 2017, 
+\ Simplified with SEXTAL Dec 6 2018
 \ Good for 9 minutes maximum duration
 
 \ *** YOU CANNOT CALL KSCAN WHILE TIMING ***
@@ -11,26 +12,17 @@ HEX
 83D6 CONSTANT TICKER   \ screen timeout counter increments by 2 /16mS
 
 DECIMAL
-: ##      ( n -- )  0 <#  # #  #> TYPE ;
+: SEXTAL   6 BASE ! ;
+: <:>     [CHAR] : HOLD ;
+: <.>     [CHAR] . HOLD ;
+: ##:     # SEXTAL # DECIMAL <:> ;
 
-: .MINS   ( h S M  -- )
-          BASE @ >R   
-          DECIMAL  ## [CHAR] : EMIT  ##  [CHAR] . EMIT ##
+: .TIME   ( n -- )
+          BASE @ >R
+          0 <#  DECIMAL # #  <.> ##:  #S  #> TYPE
           R> BASE ! ;
 
-\ 1 TICK = .008333 mS
-: REALTIME ( -- n )  TICKER @  5 6 */ ;  \ ratio fixed by Lee Stewart
+: .ELAPSED ( -- )  CR ." Elapsed time =" TICKER @ 5 6 */ .TIME ;
 
-: >TIME  ( n -- .hh secs mins  )  \ convert n to time
-          6000 /MOD   ( -- rem mins) >R  \ push minutes
-          100  /MOD   ( -- ms secs)      \ calculate seconds & hundredths
-          R> ;                           \ pop minutes
-
-: .ELAPSED ( -- ) CR ." Elapsed time ="  REALTIME >TIME .MINS ;
-
-: ELAPSE  ( -- <forth words> )
-           1 PARSE
-           TICKER OFF
-           EVALUATE
-          .ELAPSED ;
+: ELAPSE   ( -- <text> ) 1 PARSE  TICKER OFF  EVALUATE .ELAPSED ;
 

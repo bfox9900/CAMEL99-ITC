@@ -31,7 +31,7 @@ CODE 0SBZ   1E00 ,  NEXT, ENDCODE
          F000 AND                    \ only need 4 bits
          0B RSHIFT                   \ divide by 2048
          4000 +                      \ convert to SAMS register address
-         SWAP 00FF AND               \ mask to get a byte
+         SWAP \ 00FF AND               \ mask to get a byte
          DUP FUSE                    \ Hi & lo bytes are now identical
          SWAP                       ( -- bank_addr samsregister)
          1E00 CRU!                   \ select SAMS card
@@ -40,11 +40,11 @@ CODE 0SBZ   1E00 ,  NEXT, ENDCODE
          0SBZ ;                      \ disable SAMS card
 
 \ Assumes paged mem is constant location Forth ~1/4 speed
- 2000 CONSTANT PAGEMEM
+ 3000 CONSTANT PAGEMEM
 
  : MAP3  ( bank# -- ) \ ~1/2 SPEED
-\         F000 AND                    \ set the constant correctly :-)
-[ PAGEMEM 0B RSHIFT 4000 + ] LITERAL \ compute at compile time
+\         F000 AND                   \ set the constant correctly :-)
+[ PAGEMEM 0B RSHIFT 4000 + ] LITERAL \ compute SAMS register at compile time
          SWAP 00FF AND               \ mask to get a byte
          DUP FUSE                    \ Hi & lo bytes are now identical
          SWAP                       ( -- bank_addr samsregister)
@@ -60,9 +60,9 @@ CODE (MAP)
          R0    R2 XOR,  \ combine r0 & r2. Hi & lo bytes are now identical
          R2    08 SLA,  \ move to high byte
          R12 1E00 LI,   \ cru address of SAMS
-         0 SBO,   \ enable SAMS card
+         0 SBO,         \ enable SAMS card
          R2  *TOS MOV,  \ poke sams register
-         0 SBZ,  \ disable sams card
+         0 SBZ,         \ disable sams card
          TOS POP,
          NEXT,
          ENDCODE
@@ -70,6 +70,11 @@ CODE (MAP)
  : MAP4 ( bank# -- ) \ forth tricks and ASM code
         [ PAGEMEM 0B RSHIFT 4000 + ] LITERAL \ compute at compile time
          (MAP) ;
+
+CODE MAP3000 ( bank# -- )
+         R0 4006 LI,    \ SAMS register for >3000
+         TOS
+
 
 : TEST1  TMR@  5 6000 MAP TMR@ - ABS . ;  \  298uS
 : TEST2  TMR@  5 6000 MAP2 TMR@ - ABS . ; \ 1022uS

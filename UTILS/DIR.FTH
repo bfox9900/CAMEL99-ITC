@@ -3,7 +3,7 @@ HEX
 NEEDS OPEN-FILE FROM DSK1.ANSFILES
 
 DECIMAL
-: ?CR     OUT @ 10 + C/L@ > IF CR THEN ; \ CR if near end of screen
+: ?CR     OUT @ 10 + C/L@ > IF CR THEN ;   \ CR if near end of screen
 
 HEX
 : DIR  ( <DSK?.> )   \  needs the '.' ONLY shows file name
@@ -15,10 +15,11 @@ HEX
           CR PAD COUNT TYPE CR
           LINES OFF
           BEGIN
-             PAD 10 R@ READ-LINE ?FILERR NIP ( eof?)
+           PAD DUP 80 R@ READ-LINE ?FILERR 2DROP
+         ( PAD)  C@   \ do while length > 0
           WHILE
              PAD COUNT DUP >R TYPE  C/L@ 2/ R>  - SPACES
-             ?TERMINAL          
+             ?TERMINAL
              IF R> CLOSE-FILE
                 2DROP
                 CR CR ." *BREAK*" ABORT

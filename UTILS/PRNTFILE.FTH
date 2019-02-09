@@ -2,7 +2,16 @@
 
 INCLUDE DSK1.TOOLS
 INCLUDE DSK1.ANSFILES
-INCLUDE DSK1.LINPUT
+
+\ linput reads file record into a counted string
+
+: LINPUT  ( $ handle -- )
+            >R DUP 1+ R>  ( -- $ $+1 handle)
+            SELECT                        \ select the correct PAB
+            2 FILEOP ?FILERR              \ read operation, test error#
+            [PAB FBUFF] V@  SWAP [PAB RECLEN] VC@  VREAD
+            [PAB CHARS] VC@ SWAP C!       \ update string length
+;  
 
 \ Print the contents of a DV80 file
 DECIMAL

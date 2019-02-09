@@ -2,7 +2,9 @@
 \ License: Free for non-commercial use
 
 HEX
-INCLUDE DSK1.CASE.F
+NEEDS ?BREAK  FROM DSK1.TOOLS
+NEEDS CASE    FROM DSK1.CASE
+
 
 \ support words
 : .ID        ( nfa --) COUNT 1F AND TYPE ;
@@ -11,7 +13,7 @@ INCLUDE DSK1.CASE.F
 
 : ?BREAK    ( -- )
 	    KEY?
-            IF 
+            IF
                CR ." *BREAK*" ABORT
             THEN ;
 
@@ -118,7 +120,7 @@ CHAR " CONSTANT '"'
 : DECOMPILE ( nfa cfa -- )
             CR ." : "  OVER .ID
             CR TAB
-            BEGIN
+            BEGIN  
               CELL+    \ move to next cell in the thread
               DUP @              \ -- cell XT
               DUP 'EXIT = 0=  \ not the end of word?

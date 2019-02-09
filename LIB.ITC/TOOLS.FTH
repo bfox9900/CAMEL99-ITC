@@ -8,7 +8,7 @@ CR .( TOOLS for Camel99 Forth V2)
       DEPTH
       IF
          0 DEPTH 2-
-         DO   I PICK  U.    -1 +LOOP
+         ?DO   I PICK  U.    -1 +LOOP
       THEN ;
 
 .( ..)
