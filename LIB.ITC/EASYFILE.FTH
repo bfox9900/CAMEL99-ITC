@@ -5,6 +5,16 @@
 \ make a set of words that are more like BASIC. Although they are not
 \ exactly the same they are easier to use.
 
+\ EXAMPLE:
+\ DECIMAL
+\  80 DIM A$
+\  DV80 S" DSK1.MYFILE" OPEN AS: #1
+\  A$ #1 LINPUT
+\  A$ COUNT TYPE
+\  S" A NEW RECORD in a string"  A$ replaces
+\ A$ #1 WRITE$
+\ S" OR you can write a stack string like this" #1 write
+
 NEEDS VALUE  FROM DSK1.VALUES.F
 NEEDS R/W    FROM DSK1.ANSFILES.F
 
@@ -33,5 +43,3 @@ NEEDS R/W    FROM DSK1.ANSFILES.F
 ;
 \ alias the word TO for use with OPEN
 : AS:     ( n -- <value>) POSTPONE TO ; IMMEDIATE
-
-
