@@ -352,7 +352,7 @@ VARIABLE HIDDEN
 \ Cross-compiler "CREATE" primitive creates a word in CURRENT HOST vocabulary AND...
 \ then duplicates the same label in the TARGET system memory image
 : TCREATE:  ( -- )
-               HIDDEN @ 0= 
+               HIDDEN @ 0=
                IF   ( [PUBLIC] word creation)
                   CREATE             \ create a new word in the Host MIRROR vocabulary
                   LASTWORD$ $HEADER  \ make the header in the TARGET Forth space
@@ -657,7 +657,7 @@ HEX 40 CONSTANT host-immbit                                \ mask for HsForth im
 
 : HsFIND83      ( $ --  HOST-pfa immbits ? or 0 )
 \ Cross-compiler FIND uses HsForth Forth83 search order (only also etc...)
-\ Returns: hsForth pfa, immbits, flag.   
+\ Returns: hsForth pfa, immbits, flag.
 \ *** PAY ATTENTION ***  this is HOST FORTH searching the MIRROR vocabulary for TARGET words
                 find-buffer $!
                 find-buffer DUP UPPER $find-83 ;
@@ -725,8 +725,8 @@ CROSS-COMPILING
                 Xstate T@                  \ are we target compiling??
                 if    'LIT  t, ( n ) t,    \ yes so compile LIT address and the number into target memory
                 then ;
-                
- \ SMARTER EQUATE 
+
+ \ SMARTER EQUATE
 : EQU:          ( n -- )
                 CREATE          \ creates a HOST forth name
                       ,         \ compile n into HOST forth word
@@ -764,7 +764,7 @@ SYNONYM TCOMPILE  CC[']  IMMEDIATE        \ took me awhile to realize this was r
 \ C R O S S - C O M P I L E R  /  I N T E R P R E T E R
 
 : TINTERPRET     ( <word> )
-                BEGIN  
+                BEGIN
                   BL WORD DUP LEN 0>
                 WHILE
                 HsFIND83 ( HOST-PFA HOST-immbit ? | 0 )   \ lookup MIRROR word, return pfa and the immediate flag
@@ -819,13 +819,12 @@ CR
 include CC9900\COMPILER\ASM99005.HSF
 
 \ ============================================================================
-\ SAVE the final cross-compilerCR
+\ SAVE the final cross-compiler
+CR
 FORTH
  cr .( Saving cross-compiler EXE file...)
  SAVE-EXE XFCC99.EXE CR ." XFC99 TI-99 Cross-Compiler V2.0 2018"  READ.CMDLINE CR
- 
+
  CR
- CR 
+ CR
  BYE
-
-
