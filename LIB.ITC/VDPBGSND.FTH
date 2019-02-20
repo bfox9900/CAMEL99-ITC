@@ -1,7 +1,7 @@
 \ BACKGROUND VDP sound list player in CAMEL99 Forth V2
 
-INCLUDE DSK1.MTASK99.F
-INCLUDE DSK1.VDPMEM.F
+INCLUDE DSK1.MTASK99
+INCLUDE DSK1.VDPMEM
 
 .( ..)
 \ Sound player features are:
@@ -71,8 +71,8 @@ FIFO 2 CELLS + CONSTANT QDATA
 .( ..)
 \ machine code version of above assembler code
 CODE []++  ( fifo head|tail -- addr)
-         C014 , 05C0 , 0240 , 001F , 
-         C500 , C100 , A136 , NEXT, 
+         C014 , 05C0 , 0240 , 001F ,
+         C500 , C100 , A136 , NEXT,
 ENDCODE
 
 : Q@     ( fifo -- n) QTAIL []++  @ ;  \ bump tail and fetch data
@@ -118,4 +118,3 @@ PLAYER FORK                   \ init the task
          2DROP ;
 .( ..)
 : /VEND   0 VC, 0 VC, ;  \ compile zero
-
