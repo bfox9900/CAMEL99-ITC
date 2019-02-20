@@ -41,15 +41,15 @@ SQUARE PTR1   CHARDEF
 : RNDI    ( -- n ) SIZE 1+ RND ; \ return a random VDP screen address
 
 : NOTRED    (  -- n ) \ return rnd index that is not RED
-           BEGIN  
-              RNDI DUP VC@ REDSQR = 
-           WHILE 
-              DROP  
+           BEGIN
+              RNDI DUP VC@ REDSQR =
+           WHILE
+              DROP
            REPEAT ;
 
 : NOTREDWHT    ( -- n ) \ return rnd index that is not RED or BLU
            BEGIN  RNDI DUP
-              VC@  DUP REDSQR =  
+              VC@  DUP REDSQR =
               SWAP WHTSQR = OR
            WHILE
               DROP
@@ -61,7 +61,7 @@ SQUARE PTR1   CHARDEF
 : RNDWHT (  -- ) \ place white where there is no red or white
           #256 0 DO   WHTSQR NOTREDWHT VC!   LOOP ;
 
-: BLUSCREEN ( -- )  
+: BLUSCREEN ( -- )
            0 768 BLUSQR VFILL ;
 
 \ load the screen with random red,white&blue squares
@@ -90,7 +90,7 @@ SQUARE PTR1   CHARDEF
 \ Algorithm Dijkstra(A)  \ A is an array of three colors
 \ begin
 \   r <- 1;
-\   b <- n; 
+\   b <- n;
 \   w <- n;
 \ while (w>=r)
 \       check the color of A[w]
@@ -105,21 +105,24 @@ SQUARE PTR1   CHARDEF
 \               b<-b-1
 \ end
 
-
 : XCHG  ( adr1 adr2 -- )
       OVER VC@ OVER VC@        \ read the chars in VDP RAM
       SWAP ROT VC! SWAP VC! ;  \ exchange the characters
+
+: >=  ( n n -- ? ) S" 1- >" EVALUATE ; IMMEDIATE \ make a new operator
 
 \ address pointer variables
 VARIABLE R
 VARIABLE B
 VARIABLE W
+SIZE 1- CONSTANT n   \ sugar to match the Algorithm
 
 : DIJKSTRA ( -- )
            0 R !
-           SIZE 1- DUP  B !  W !
+           n B !
+           n W !
            BEGIN
-               W @  R @  1- >
+               W @  R @ >=
            WHILE
                W @ VC@
                CASE

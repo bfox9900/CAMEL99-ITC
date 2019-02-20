@@ -1,10 +1,10 @@
 \ alpha intelligence demonstration using characters
 
-INCLUDE DSK1.TOOLS.F
-INCLUDE DSK1.GRAFIX.F
-INCLUDE DSK1.RANDOM.F
+INCLUDE DSK1.TOOLS
+INCLUDE DSK1.GRAFIX
+INCLUDE DSK1.RANDOM
 
-MARKER ALPHA
+\ MARKER ALPHA
 \ ==================================
 \ character patterns
 HEX
@@ -24,6 +24,9 @@ DECIMAL
  PLANT     FOOD  CHARDEF   FOOD  SET# 13  1 COLOR
 
 : CLIP       ROT MIN MAX ;
+\ we need these if you use TTY1 Kernel
+: VPOS    ( -- vaddr)    VROW 2@ >VPOS ;
+: CLRLN   ( col row -- ) >VPOS C/L@ BL VFILL ;  \ clear line on screen
 
 : RNDX   ( -- x)  24 RND  2 22 CLIP ;
 : RNDY   ( -- y)  32 RND  2 30 CLIP ;
@@ -84,7 +87,7 @@ VARIABLE TRYS
 VARIABLE SPEED
 
 \ print right justified n spaces
-: .R   ( n n -- )  
+: .R   ( n n -- )
        >R DUP ABS 0 <# #S ROT SIGN #>  R> OVER - SPACES TYPE ;
 
 : .BRAIN     ( -- )
@@ -107,26 +110,28 @@ VARIABLE SPEED
 
 : ALPHA-THINK  ( -- )
             SAD                       \ SAD face while thinking
-            SPEED--                
+            SPEED--
             TRYS OFF                   \ reset the trys counter
             BEGIN
                1 TRYS +!               \ count the try
                .BRAIN 30 MS
                CHANGE-DIR         \ get new direction
                CLEAR-AHEAD?
-            UNTIL 
+            UNTIL
             HAPPY ;
 
 DECIMAL
 : RUN      ( -- )
+       PAGE   \ clear terminal page
        BEGIN
-           16 SCREEN
-           PAGE 4 10 AT-XY ." Alpha Intelligence Demo" 1000 MS
-           PAGE
+            4 10 AT-XY ." Alpha Intelligence Demo" 1000 MS
+            CLEAR  \ clear VDP screen
+            16 SCREEN
            .BORDER  .WALLS
+           ?TERMINAL ABORT" Halt by user"
            .BRAIN
            PLANTS
-           HAPPY 
+           HAPPY
            FIND-SPACE MY-XY 2!
            ALPHA-GUY PUT-CHAR
            CHANGE-DIR
@@ -136,8 +141,6 @@ DECIMAL
               IF   MOVE-MAN     \ if true
               ELSE ALPHA-THINK  \ otherwise
               THEN SPEED @ MS
-              KEY?
+              ?TERMINAL
            UNTIL
-           ?BREAK
         AGAIN ;
-

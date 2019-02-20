@@ -15,15 +15,7 @@ VARIABLE HNDL
          HNDL @ CLOSE-FILE ?FILERR
          2R> AT-XY ;                           \ restore screen xy
 
-: CAPTURE  ( <PATH> )
+: CAPTURE  ( <disk-path> ) \ Usage: CAPTURE DSK1.MYSCREEN
            BL PARSE-WORD
            DV80  W/O OPEN-FILE ?FILERR HNDL !
            (CAPTURE) ;
-
-
-
-
-
-
-
-

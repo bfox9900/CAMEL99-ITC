@@ -1,5 +1,8 @@
 \ SAMS expanded memory card primitives
 
+\ This version is all Forth and is about 1/2 speed to machine code
+\ See: SAMS.FTH for machine code version (with asm comments)
+
 NEEDS DUMP  FROM DSK1.TOOLS
 NEEDS SBO  FROM DSK1.CRU
 
@@ -37,5 +40,3 @@ MBLOCK 0B RSHIFT 4000 +  CONSTANT SAMSREG
 
 \ debug words
 : ??     ( addr --) 2@ DU. ;    \ see contents of 32 bit variable
-
-

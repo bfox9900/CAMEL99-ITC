@@ -1,7 +1,8 @@
 \ Dutch flag DEMO using CAMEL99 Forth using Dijkstra's Algorithm
 \ *SORTS IN PLACE FROM Video MEMORY*
 
-\ uses INLINE and ASM code words for speed up
+\ Compare this version to dijkstra.fth
+\ This code uses INLINE and ASM words for a 25% speed up
 
  INCLUDE DSK1.TOOLS   ( for debugging)
  INCLUDE DSK1.GRAFIX
@@ -45,14 +46,14 @@ SQUARE PTR1   CHARDEF
 : RNDI    ( -- n ) SIZE 1+ RND ; \ return a random VDP screen address
 
 : NOTRED    (  -- n ) \ return rnd index that is not RED
-           BEGIN  
-              RNDI DUP VC@ REDSQR = 
-           WHILE DROP  
+           BEGIN
+              RNDI DUP VC@ REDSQR =
+           WHILE DROP
            REPEAT ;
 
 : NOTREDWHT    ( -- n ) \ return rnd index that is not RED or BLU
            BEGIN  RNDI DUP
-              VC@  DUP REDSQR =  
+              VC@  DUP REDSQR =
               SWAP WHTSQR = OR
            WHILE
               DROP
@@ -64,7 +65,7 @@ SQUARE PTR1   CHARDEF
 : RNDWHT (  -- ) \ place white where there is no red or white
           #256 0 DO   WHTSQR NOTREDWHT VC!   LOOP ;
 
-: BLUSCREEN ( -- )  
+: BLUSCREEN ( -- )
            0 768 BLUSQR VFILL ;
 
 \ load the screen with random red,white&blue squares
@@ -92,7 +93,7 @@ SQUARE PTR1   CHARDEF
 \ Algorithm Dijkstra(A)  \ A is an array of three colors
 \ begin
 \   r <- 1;
-\   b <- n; 
+\   b <- n;
 \   w <- n;
 \ while (w>=r)
 \       check the color of A[w]
@@ -143,22 +144,24 @@ CODE >=     ( n1 n2 -- flag) \ 2% faster than 1- >
               NEXT,
               ENDCODE
 
-\ note: Using simple Assembler makes the code 22% faster
-\       Speed could be improved to 25% by optimizing XCHG
+\ note: Using Assembler for variables makes the code 14% faster
+\       Inlining XCHG gave another 11% (25% improvemnt)
 : DIJKSTRA ( -- )
            0 R !
-           SIZE 1- DUP  B !  W !
+           SIZE 1-
+           DUP B !
+           W !
            BEGIN
              *W *R >=
            WHILE
               *W VC@
               CASE
-                 REDSQR OF *R *W XCHG2
+                 REDSQR OF *R *W XCHG
                             R++           ENDOF
 
                  WHTSQR OF  W--           ENDOF
 
-                 BLUSQR OF *W *B XCHG2
+                 BLUSQR OF *W *B XCHG
                             W--
                             B--          ENDOF
               ENDCASE
