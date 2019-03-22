@@ -1,22 +1,27 @@
 CR .( VT100 terminal control)
 DECIMAL
-: .#      ( n -- ) 0 <#  #S  #>  TYPE ;  ( type number with no space)
-: <PARM>  ( n -- ) BASE @ >R  DECIMAL .#  R> BASE ! ; ( output decimal number)
+\ type a number in base 10, with no space
+: <ARG>   ( n -- )
+           BASE @ >R
+           0 <#  DECIMAL #S  #> TYPE
+           R> BASE ! ;
 
-\ create markup language for terminal control codes
+\ markup language for terminal control codes
 : <ESC>[  ( -- )   27 EMIT  91 EMIT  ;
-: \PARM   ( c -- ) <ESC>[ <PARM> ;
-: <UP>    ( n -- ) \PARM ." A" ;
-: <DOWN>  ( n -- ) \PARM ." B" ;
-: <RIGHT> ( n -- ) \PARM ." C" ;
-: <BACK>  ( n -- ) \PARM ." D" ;
-: <HOME>  (  -- )  <ESC>[ ." 0;0H" ;
+: <UP>    ( n -- ) <ESC>[ <ARG> ." A" ;
+: <DOWN>  ( n -- ) <ESC>[ <ARG> ." B" ;
+: <RIGHT> ( n -- ) <ESC>[ <ARG> ." C" ;
+: <BACK>  ( n -- ) <ESC>[ <ARG> ." D" ;
+: <HOME>  ( -- )   <ESC>[ ." 0;0H" ;
 : <CLS>   ( n -- ) <ESC>[ ." 2J" ;
 : <CLRLN> ( -- )   <ESC>[ ." K" ;
 
 \ redefine Forth words using markup words
-: AT-XY   ( col row --) SWAP <ESC>[ <PARM> ." ;" <PARM> ." f" ;
-: VT100PAGE ( -- ) <CLS>  <HOME> ;
+: AT-XY   ( col row --)
+          2DUP VROW 2!
+          SWAP <ESC>[ <ARG> ." ;" <ARG> ." f" ;
+
+: TTYPAGE ( -- ) <CLS>  <HOME> ;
 
 CR .( Set PAGE vector for VT100)
-' VT100PAGE  'PAGE !
+' TTYPAGE  'PAGE !

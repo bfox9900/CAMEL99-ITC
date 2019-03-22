@@ -2,6 +2,8 @@
 \ Sets multiple display attribute settings.
 \ The following lists standard attributes:
 
+NEEDS <ARG> FROM DSK1.VT100
+
 0 CONSTANT RESET
 1 CONSTANT BRIGHT
 2 CONSTANT DIM
@@ -10,12 +12,13 @@
 7 CONSTANT REVERSE
 8 CONSTANT HIDDEN
 
+DECIMAL
 \ colour modifiers
 : FG>  ( n -- n') 30 + ;
 : BG>  ( n -- n') 40 + ;
 
 \  Colours  MUST be used with FG>  BG>
-\ Usage:  <BLK FG> <CYN BG> COLOR>
+\ Usage:  <BLK FG> <CYN BG> <COLOR>
 0 CONSTANT <BLK
 1 CONSTANT <RED
 2 CONSTANT <GRN
