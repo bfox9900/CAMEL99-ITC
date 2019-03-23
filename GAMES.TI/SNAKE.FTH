@@ -1,305 +1,193 @@
 \ snake  a simple game in Forth ported to CAMEL99 Forth
-\ DERIVED FROM: https://skilldrick.github.io/easyforth/#snake
-\ revised to use CAMEL99/TI-99 features
-\   \\\\\\\\\\\ Version 4 \\\\\\\\\\\\\\\\
-\   \\  snake sounds and mouse squeak  \\\\\
+\ source https://skilldrick.github.io/easyforth/#snake
 
-INCLUDE DSK1.RANDOM.F
-INCLUDE DSK1.GRAFIX.F
-INCLUDE DSK1.SPLITFUS.F
-INCLUDE DSK1.CASE.F
-
-\ =======================================
-\ We use direct control of the sound chip
-\ rather than sound lists and a player.
-
-\ noise control words
-: NOISE   ( n -- ) E0 OR SND! ; \ n selects the noise type
-
-\ noise envelope control
-: NOISE-DB   ( db --) F MIN F0 OR SND! ;
-: NOISE-OFF  ( -- )   F NOISE-DB ;
+INCLUDE DSK1.RANDOM
 
 HEX
-: NOISE-UP   ( speed  -- ) 
-             2  F  DO  I NOISE-DB  DUP MS   -1 +LOOP DROP ;
+83C0 CONSTANT SEED   \ RAM where TI has a number incrementing in main menu
+1045 CONSTANT GEN#   \ GForth uses $10450405, we take the 1st 16 bits
 
-: NOISE-DOWN ( speed -- )
-             F  2  DO  I NOISE-DB  DUP MS    LOOP DROP NOISE-OFF ;
-
-\ channel 1 sound control words
-
-DECIMAL
-: f(clk) ( -- d) 46324 1  ;   \ this is 111,860 as 32 bit int.
-
-\ >FCODE re-arranges freq. value nibbles (4bits) for the TMS9919
-HEX
-: >FCODE   ( 0abc -- 0cab)    \ ASM would make this much faster
-           DUP 0F AND SWAP      ( -- 000c 0abc)
-           4 RSHIFT             ( -- 000c 00ab)
-           SWAP ><  ( SWPB)     ( -- 00ab 0c00)
-           + ;
-
-: HZ>CODE  ( freq -- fcode )  f(clk) ROT UM/MOD NIP >FCODE 8000 OR  ;
-
-\ *TRICKY STUFF*
-\ Calculating the 9919 freq. code takes too long BUT we can convert frequency
-\ to 9919 chip code at compile time then compile as 16 bit literal number
-\ using this text MACRO
-: [HZ] ( freq -- fcode ) S" HZ>CODE ] LITERAL" EVALUATE ;
-
-\ sound channel #1 control words
-: FREQ!    ( fcode -- ) SPLIT SND! SND! ;
-: ]HZ      ( freq -- ) [HZ] POSTPONE FREQ! ;      \ pre-compiled fcode version
-: HZ       ( freq -- )  HZ>CODE SPLIT SND! SND! ; \ runtime calculation version
-: DB       ( n -- )    90 OR SND! ;
-: MUTE     ( -- )      9F SND! ;
+: RNDW      ( -- n )   SEED @ GEN# UM* DROP 1+ DUP SEED ! ;
+: RANDOMIZE ( n -- )   SEED ! ;
+: RND       ( n -- n') RNDW ABS SWAP MOD ;
 
 DECIMAL
-500 CONSTANT MAXLENGTH
-
-\ x/y coordinate storage for the snake
-CREATE SNAKE-X-HEAD  MAXLENGTH CELLS ALLOT
-CREATE SNAKE-Y-HEAD  MAXLENGTH CELLS ALLOT
-
-VARIABLE SPEED
-VARIABLE PREY-X
-VARIABLE PREY-Y
-VARIABLE DIRECTION
-VARIABLE LENGTH
+VARIABLE SNAKE-X-HEAD  500 CELLS ALLOT
+VARIABLE SNAKE-Y-HEAD  500 CELLS ALLOT
+VARIABLE APPLE-X
+VARIABLE APPLE-Y
 
 0 CONSTANT LEFT
 1 CONSTANT UP
 2 CONSTANT RIGHT
 3 CONSTANT DOWN
 
-\ characters used
-128 CONSTANT PREY
-42  CONSTANT SNAKE
-30  CONSTANT BRICK
-BL  CONSTANT WHITE
-
-\ shape data for PREY, brick, mouse and snake chars
 HEX
-007E 6A56 6A56 7E00 PATTERN: CLAY
-3C5E EBF7 EBDD 7E3C PATTERN: VIPER
-0004 3E7B 7FFC 8270 PATTERN: MOUSE
-0008 3F7B 7EFC 8270 PATTERN: MOUSE2 \ mouse looking up
-84BE FB7F 3C42 0000 PATTERN: JUMPMS
+CREATE MAC   0006 , 093C , 7E7E , 7E3C ,
+CREATE CLAY  007E , 6A56 , 6A56 , 7E00 ,
+CREATE VIPER 3C5E , EBF7 , EBDD , 7E3C ,
 
 DECIMAL
-\ get random x or y position within playable area
-: RANDOM-X ( -- n ) C/L@  2-  RND 1+ ;
-: RANDOM-Y ( -- n ) L/SCR 2-  RND 1+ ;
+128 CONSTANT APPLE
+42  CONSTANT SNAKE
+30  CONSTANT BRICK
 
-\ create snake coordinate arrays
-: ]SNAKE-X ( index -- address )  CELLS SNAKE-X-HEAD + ;
-: ]SNAKE-Y ( index -- address )  CELLS SNAKE-Y-HEAD + ;
+: WIDTH     C/L@ ;
 
-\ Using >VPOS and VC! CODE words for speed
-\ >VPOS ( to video position) converts X & Y to a VDP RAM address
-\ VC!  (video char store) writes a byte to VDP RAM address
-\ We are writing directly to VDP Screen memory
-: DRAW-WHITE ( x y -- ) >VPOS  BL   SWAP VC! ;
-: DRAW-SNAKE ( X Y -- ) >VPOS SNAKE SWAP VC! ;
+ L/SCR CONSTANT HEIGHT
 
-: DRAW-PREY ( -- ) PREY  PREY-X @ PREY-Y @ >VPOS VC!  ;
+VARIABLE DIRECTION
+VARIABLE LENGTH
+
+: SNAKE-X ( OFFSET -- ADDRESS )  CELLS SNAKE-X-HEAD + ;
+: SNAKE-Y ( OFFSET -- ADDRESS )  CELLS SNAKE-Y-HEAD + ;
+
+: CONVERT-X-Y ( X Y -- OFFSET ) WIDTH * + ;
+
+: DRAW ( char X Y -- )  CONVERT-X-Y  VC! ;
+
+: DRAW-WHITE ( X Y -- ) BL    -ROT DRAW ; \ blank char is white
+: DRAW-BLACK ( X Y -- ) SNAKE -ROT DRAW ; \ 42 is snake
+: DRAW-BRICK ( X Y -- ) BRICK -ROT DRAW ;
+
+: DRAW-APPLE ( -- ) APPLE-X @ APPLE-Y @ APPLE ROT ROT DRAW ;
 
 : DRAW-WALLS
-      0  0 BRICK 31 HCHAR
-      0  1 BRICK 22 VCHAR
-     31  0 BRICK 24 VCHAR
-      0 23 BRICK 31 HCHAR ;
+     WIDTH 0
+     DO
+       I 0 DRAW-BRICK
+       I HEIGHT 1 - DRAW-BRICK
+     LOOP
+
+     HEIGHT 0
+     DO
+        0 I DRAW-BRICK
+        WIDTH 1- I DRAW-BRICK
+     LOOP ;
+
+: INITIALIZE-SNAKE
+      4 LENGTH !
+      LENGTH @ 1 + 0
+      DO
+         12 I - I SNAKE-X !
+         12 I SNAKE-Y !
+      LOOP
+      RIGHT DIRECTION ! ;
+
+: SET-APPLE-POSITION ( y x -- ) APPLE-X ! APPLE-Y ! ;
+
+: INITIALIZE-APPLE ( -- ) 4 4 SET-APPLE-POSITION ;
+
+: INITIALIZE
+     GRAPHICS
+     12 SCREEN
+     MAC  128  CHARDEF
+     CLAY  30  CHARDEF
+     VIPER 42  CHARDEF
+     APPLE SET# 7 1 COLOR
+     SNAKE SET# 3 1 COLOR
+     BRICK SET# 9 1 COLOR
+
+     WIDTH 0
+     DO         \ clear screen the hard way
+       HEIGHT 0
+       DO
+          J I DRAW-WHITE
+       LOOP
+     LOOP
+
+     DRAW-WALLS
+     INITIALIZE-SNAKE
+     INITIALIZE-APPLE ;
+
+: MOVE-UP     ( -- ) -1 SNAKE-Y-HEAD +! ;
+: MOVE-LEFT   ( -- ) -1 SNAKE-X-HEAD +! ;
+: MOVE-DOWN   ( -- )  1 SNAKE-Y-HEAD +! ;
+: MOVE-RIGHT  ( -- )  1 SNAKE-X-HEAD +! ;
+
+: MOVE-SNAKE-HEAD
+      DIRECTION @
+      LEFT  OVER = IF MOVE-LEFT  ELSE
+      UP    OVER = IF MOVE-UP    ELSE
+      RIGHT OVER = IF MOVE-RIGHT ELSE
+      DOWN  OVER = IF MOVE-DOWN  THEN 
+      THEN THEN THEN DROP ;
+
+\ move each segment of the snake forward by one
+: MOVE-SNAKE-TAIL
+    0 LENGTH @
+    DO
+       I SNAKE-X @ I 1+ SNAKE-X !
+       I SNAKE-Y @ I 1+ SNAKE-Y !
+    -1 +LOOP ;
+
+: IS-HORIZONTAL  DIRECTION @ DUP  LEFT = SWAP RIGHT = OR ;
+: IS-VERTICAL    DIRECTION @ DUP    UP = SWAP  DOWN = OR ;
+
+: TURN-UP        IS-HORIZONTAL IF UP    DIRECTION ! THEN ;
+: TURN-LEFT      IS-VERTICAL   IF LEFT  DIRECTION ! THEN ;
+: TURN-DOWN      IS-HORIZONTAL IF DOWN  DIRECTION ! THEN ;
+: TURN-RIGHT     IS-VERTICAL   IF RIGHT DIRECTION ! THEN ;
+
+: CHANGE-DIRECTION ( key -- )
+     [CHAR] S OVER = IF TURN-LEFT  ELSE
+     [CHAR] E OVER = IF TURN-UP    ELSE
+     [CHAR] D OVER = IF TURN-RIGHT ELSE
+     [CHAR] X OVER = IF TURN-DOWN
+     THEN THEN THEN THEN DROP ;
+
+: READ-KEY  ( -- c|)  KEY? IF  KVAL C@  ELSE  0  THEN ;
+
+: CHECK-INPUT  ( -- ) READ-KEY CHANGE-DIRECTION ;
+
+\ get random x or y position within playable area
+: RANDOM-X ( -- n ) WIDTH 2-  RND 1 + ;
+: RANDOM-Y ( -- n ) L/SCR 2-  RND 1 + ;
+
+: MOVE-APPLE
+     APPLE-X @ APPLE-Y @ DRAW-WHITE
+     RANDOM-Y RANDOM-X SET-APPLE-POSITION
+     DRAW-APPLE ;
+
+: GROW-SNAKE ( -- ) 1 LENGTH +! ;
+
+: CHECK-APPLE
+     SNAKE-X-HEAD @ APPLE-X @ =
+     SNAKE-Y-HEAD @ APPLE-Y @ = AND
+     IF BEEP
+        MOVE-APPLE
+        GROW-SNAKE
+     THEN ;
+
+: CHECK-COLLISION ( -- FLAG )
+     SNAKE-X-HEAD @ SNAKE-Y-HEAD @  \ get current x/y position
+     CONVERT-X-Y VC@                \ get Char at current position
+     BL <> ;                        \ compare to blank
 
 : DRAW-SNAKE
      LENGTH @ 0
      DO
-        I ]SNAKE-X @   I ]SNAKE-Y @ DRAW-SNAKE
+        I SNAKE-X @ I SNAKE-Y @ DRAW-BLACK
      LOOP
-     LENGTH @ DUP ]SNAKE-X @
-             SWAP ]SNAKE-Y @  DRAW-WHITE ;
+     LENGTH @ SNAKE-X @
+     LENGTH @ SNAKE-Y @
+     DRAW-WHITE ;
 
-: INITIALIZE-SNAKE
-      4 DUP LENGTH !
-      1+ 0
-      DO
-         12 I - I ]SNAKE-X !
-         12 I ]SNAKE-Y !
-      LOOP
-      RIGHT DIRECTION ! ;
+: SNAKE ( -- )
+     BEGIN
+        DRAW-SNAKE
+        DRAW-APPLE
+        130 MS
+        CHECK-INPUT
+        MOVE-SNAKE-TAIL
+        MOVE-SNAKE-HEAD
+        CHECK-APPLE
+        CHECK-COLLISION
+     UNTIL
+     HONK  10 8 AT-XY ." GAME OVER"
+     250 MS
+     KEY DROP GRAPHICS  ;
 
-: PLACE-PREY ( y x -- ) PREY-X ! PREY-Y ! ;
-
-: MOVE-SNAKE-HEAD ( n -- )
-     DIRECTION @
-     CASE
-       LEFT  OF  -1 SNAKE-X-HEAD +!  ENDOF
-       UP    OF  -1 SNAKE-Y-HEAD +!  ENDOF
-       RIGHT OF   1 SNAKE-X-HEAD +!  ENDOF
-       DOWN  OF   1 SNAKE-Y-HEAD +!  ENDOF
-     ENDCASE ;
-
-\ move each segment of the snake forward by one
-HEX
-: MOVE-SNAKE-TAIL
-     0 LENGTH @
-     DO
-        I ]SNAKE-X DUP @ SWAP CELL+ !
-        I ]SNAKE-Y DUP @ SWAP CELL+ !
-     -1 +LOOP ;
-
-: MOVE-SNAKE  (  -- )
-              MOUSE2 PREY CHARDEF
-              4 NOISE  8 NOISE-DB   \ soft white noise
-              MOVE-SNAKE-TAIL
-              A NOISE-DB            \ ramp down noise
-              MOVE-SNAKE-HEAD
-              C NOISE-DB            \ ramp down noise
-              NOISE-OFF
-              MOUSE PREY CHARDEF ;
-
-DECIMAL
-: HORIZONTAL? ( -- ?) DIRECTION @ DUP  LEFT = SWAP RIGHT = OR ;
-: VERTICAL?   ( -- ?) DIRECTION @ DUP    UP = SWAP  DOWN = OR ;
-
-: TURN-UP        HORIZONTAL? IF UP    DIRECTION ! THEN ;
-: TURN-LEFT      VERTICAL?   IF LEFT  DIRECTION ! THEN ;
-: TURN-DOWN      HORIZONTAL? IF DOWN  DIRECTION ! THEN ;
-: TURN-RIGHT     VERTICAL?   IF RIGHT DIRECTION ! THEN ;
-
-: CHANGE-DIRECTION ( key -- )
-      CASE
-        [CHAR] S OF TURN-LEFT  ENDOF
-        [CHAR] E OF TURN-UP    ENDOF
-        [CHAR] D OF TURN-RIGHT ENDOF
-        [CHAR] X OF TURN-DOWN  ENDOF
-     ENDCASE 
-     ;
-
-DECIMAL
-: SWOOSH   ( -- )
-            NOISE-OFF
-            5 NOISE
-            8 NOISE-UP
-            20 NOISE-DOWN ;
-
-: NEW-PREY
-     SWOOSH
-     PREY-X @ PREY-Y @ DRAW-WHITE
-     RANDOM-Y RANDOM-X PLACE-PREY
-     DRAW-PREY ;
-
-: GROW-SNAKE  ( -- ) 1 LENGTH +! ;
-
-: DEAD-SNAKE  ( -- )
-              NOISE-OFF
-              SNAKE SET#  DUP 11 1 COLOR  250 MS   2 1 COLOR ;
-
-: HAPPY-SNAKE ( -- )
-              [ SNAKE SET# ] LITERAL
-              12 4 DO
-                     DUP I 1 COLOR
-                     40 MS
-                   LOOP
-             ( -- 5)  11 1 COLOR ;
-
-DECIMAL
-: DECAY        ( n -- ) 16 0 DO  I DB  DUP MS LOOP DROP ;
-
-: SQUEAK      ( -- )
-               NOISE-OFF
-              [ 3800 ]HZ 0 DB  45 MS  \ pre-computed freq. is faster
-                6 DB  25 MS
-              [ 3500 ]HZ 75 MS
-                8 DB 25 MS
-              [ 1300 ]HZ
-                11 DB 25 MS
-              [ 800 ]HZ
-               MUTE ;
-DECIMAL
-: SCARED-PREY ( -- )
-              JUMPMS PREY CHARDEF
-              SQUEAK
-             [ PREY SET# ] LITERAL  DUP  9 1 COLOR
-              2 1 COLOR
-              MOUSE PREY CHARDEF ;
-
-: FASTER    ( -- ) SPEED @ 5 -  5 MAX SPEED ! ;
-
-: CHECK-PREY  ( -- )
-     SNAKE-X-HEAD @ PREY-X @ =
-     SNAKE-Y-HEAD @ PREY-Y @ =  AND
-     IF
-        SCARED-PREY
-        HAPPY-SNAKE
-        GROW-SNAKE
-        FASTER
-        NEW-PREY
-     THEN ;
-
-: COLLISION? ( -- ? )
-     SNAKE-X-HEAD @ SNAKE-Y-HEAD @ >VPOS VC@
-     DUP  BRICK =
-     SWAP SNAKE = OR  ;
-
-\ utility words for menus
-: WAIT-KEY   BEGIN KEY? UNTIL ;
-: AT"        POSTPONE AT-XY  POSTPONE ." ;  IMMEDIATE
-
-: INITIALIZE
-     PAGE
-     4 SCREEN
-     MOUSE PREY  CHARDEF   [ PREY SET#  ] LITERAL  2 1 COLOR
-     CLAY  BRICK CHARDEF   [ BRICK SET# ] LITERAL  9 1 COLOR
-     VIPER SNAKE CHARDEF   [ SNAKE SET# ] LITERAL 11 1 COLOR
-     DRAW-WALLS
-     INITIALIZE-SNAKE
-     RANDOM-Y RANDOM-X PLACE-PREY
-     100 SPEED !  ;
-
-HEX
-: PLAY ( -- )
-       BEGIN
-          SPEED @ MS
-          DRAW-SNAKE
-          DRAW-PREY
-          83C8 OFF   \ set continuous key reading
-          KEY?       \ TI KSCAN
-          IF   KVAL C@ CHANGE-DIRECTION
-          THEN MOVE-SNAKE
-          CHECK-PREY
-          COLLISION?
-       UNTIL
-       0C SCREEN
-       HONK
-       0B 5 AT" GAME OVER"
-       HONK
-       DEAD-SNAKE ;
-
-DECIMAL
-: TITLE  ( -- )
-       GRAPHICS
-       5  5 AT" THE SNAKE"
-       5  7 AT" Use the E,S,D,X keys"
-       5  8 AT" to move the snake
-       5  9 AT" and catch the mouse."
-       5 12 AT" The more he eats,
-       5 13 AT" the faster he goes!"
-       5 20 AT" Press any key to begin..."
-       WAIT-KEY ;
-
-: RUN ( -- )
-      TITLE
-      BEGIN
-         INITIALIZE
-         PLAY
-         2 13 AT" Your snake was " LENGTH @ . ." Ft. long"
-         2 15 AT" Press ENTER to play again"
-         KEY 13 <>
-      UNTIL
-      NOISE-OFF
-      8 20 AT" SSSSSee you later!"
-      1500 MS
-      GRAPHICS ;
+: START ( -- ) INITIALIZE  SNAKE ;
 
 
