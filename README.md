@@ -189,5 +189,5 @@ tested with Tera Term, Hyper-terminal and PUTTY under windows 10. Terminal
 configuration is 9600,8,n,1, hardware handshake.
 - A word VTYPE ( $addr len VDPaddr -- ) is part of the CAMEL99T to allow
 simple printing to the VDP screen at a screen address. (no protection!)
-- Libary file call XONXOFF.FTH vectors EMIT to provide this protocol
-- File VT100 can be included to provide cursor control.
+- Library file call XONXOFF.FTH vectors EMIT to provide XON/XOFF protocol
+- File VT100 can be included to provide cursor control for a VT100 terminal.
