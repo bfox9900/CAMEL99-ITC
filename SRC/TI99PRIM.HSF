@@ -202,7 +202,7 @@ CODE: ?TERMINAL ( -- ?)    \ ~200uS, 16 bit ROM speed. Same name as TI-Forth
                BEGIN,
                   0020 @@ BL,    \ call rom routine
                NE UNTIL,         \ until key is released
-            ENDIF,               
+            ENDIF,
             R12     RPOP,        \ Restore CRU address used by CAMEL Forth
             NEXT,
             END-CODE
@@ -213,19 +213,13 @@ CODE: CURS@   ( -- char)         \ return cursor or space for flashing cursor
            _CURSR @@ TOS MOV,    \ load the cursor char to TOS from memory
             8378 @@ W MOV,       \ read interrupt timer to control flash speed
             W 0018 ANDI,         \ AND it with HEX18. This mask made a pleasant looking flash
-            NE IF,               \ if <> 0 
+            NE IF,               \ if <> 0
                 TOS BL LI,       \ change cursor character to blank
             ENDIF,
             NEXT,
             END-CODE
 
 CODE: BYE    ( -- )             \ From TI-Forth 1984 :-)
-       \     R0 4246 LI,         \ chars "BF" -> R0
-       \     R1 2000 LI,         \ start of low mem -> R1
-       \     BEGIN,
-       \       R0 *R1+ MOV,      \ fill low mem with "BF"
-       \       R1 4000 CMPI,
-       \     EQ UNTIL,
-            0000 @@ BLWP,        \ ROM reset vector is at 0000
+            83C4 @@ CLR,        \ clear interrupt vector
+            0000 @@ BLWP,       \ ROM reset vector is at 0000
             END-CODE
-            

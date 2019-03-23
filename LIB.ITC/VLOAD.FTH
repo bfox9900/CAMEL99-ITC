@@ -1,6 +1,6 @@
 \ VLOAD VSAVE  fast file transfer into VDP memory
 
-INCLUDE DSK1.ANSFILES.F
+INCLUDE DSK1.ANSFILES
 
 HEX
 

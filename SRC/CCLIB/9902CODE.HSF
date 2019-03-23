@@ -3,13 +3,13 @@
 
 \ These routines protect the value in R12 on the return stack
 \ then restore it when returning to Forth.
-\ This should help with acessing other I/O devices while using
+\ This should help with accessing other I/O devices while using
 \ the serial port.
 
 [CC] HEX [TC]
-\               1300 CONSTANT: RS232/1    \ card address
+               1300 CONSTANT: RS232/1     \ card address
 [CC] 1300 40 + [TC] CONSTANT: /TTY1       \ 40= 9902#1,
-\ [CC] 1300 80 + [TC] CONSTANT: /TTY2       \ 80= 9902#2
+\ [CC] 1300 80 + [TC] CONSTANT: /TTY2     \ 80= 9902#2
 
 \ 9902 control bits
 [CC] DECIMAL
@@ -59,7 +59,7 @@ CODE: OPEN-TTY  ( port -- ) \ Usage: /TTY1 OPEN-TTY
 [CC] DECIMAL
 CROSS-ASSEMBLING
 \ this word turns on the LED when sending
-CODE: (CEMIT) ( c -- )
+CODE: CEMIT ( c -- )  \ 'com-emit"
          R12 RPUSH,
          LEDON @@ BL,
          PORT @@ R12 MOV,
@@ -67,7 +67,7 @@ CODE: (CEMIT) ( c -- )
            27 TB, EQ    \ test -DSR bit =0
          UNTIL,
          16 SBO,        \ set RTS
-          BEGIN,
+         BEGIN,
            22 TB, EQ    \ wait XBRE empty
          UNTIL,
          TOS SWPB,      \ put byte on the other side
@@ -81,17 +81,28 @@ CODE: (CEMIT) ( c -- )
          NEXT,
          END-CODE
 
-CODE: CKEY? ( -- n )      \ fast tty read
+[CC] HEX [TC]
+
+VARIABLE: KBUFF           \ holds the last char rcv'd
+
+ [CC] DECIMAL
+CROSS-ASSEMBLING
+CODE: CKEY? ( -- n )         \  "com-key"
+         0 LIMI,
          R12 RPUSH,
-         PORT @@ R12 MOV,    \ select the 9902
+         PORT @@ R12 MOV,    \ select >1340 CRU address
          TOS PUSH,
          TOS CLR,
-         21 TB,              \ test if char ready
+         21 TB,               \ test if char ready
          EQ IF,
-            TOS 8 STCR,      \ read the char
-            TOS 8 SRL,       \ shift to other byte
-               18 SBZ,       \ reset char buffer
-         ENDIF,
-         R12 RPOP,
-         NEXT,
-         END-CODE
+             TOS 8 STCR,      \ read the char
+             18 SBZ,          \ reset 9902 rcv buffer
+             TOS 8 SRL,       \ shift to other byte
+             TOS KBUFF @@ MOV,
+          ENDIF,
+          R12 RPOP,
+          2 LIMI,
+          NEXT,
+          END-CODE
+
+[CC] HEX [TC]

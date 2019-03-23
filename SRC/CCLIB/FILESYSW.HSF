@@ -1,4 +1,4 @@
-\ FilesysW.hsf    Nov 12 2018
+ \ FilesysW.hsf    Nov 12 2018
 
 [CC] HEX
 
@@ -39,7 +39,7 @@ CODE: [PAB   ( -- adr) TOS PUSH,  ^PAB @@ TOS MOV,  NEXT, END-CODE
            IF CR T." * File Err "  .
               RSTPAB ( HONK) ABORT
            THEN ;
- 
+
 : VPLACE   ( $addr len Vaddr -- )  \ like PLACE, but for VDP RAM
            2DUP VC! 1+ SWAP VWRITE ;
 
@@ -113,4 +113,3 @@ CODE: 1+! ( addr -- )  *TOS INC,   TOS POP,  NEXT, END-CODE
            2R> 'SOURCE 2!                  \ restore interpreter SOURCE
            2R> >IN ! SOURCE-ID !           \ restore >IN, SOURCE-ID
 ;
-

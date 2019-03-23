@@ -1,7 +1,7 @@
 \ SOUND Envelope control
 
 DECIMAL
-: TICKS    ( -- )   0 ?DO LOOP ;  \ simple delay loop ~106uS/loop
+: DELAYS   ( -- ) 0 ?DO LOOP ;  \ simple delay loop ~106uS/loop
 
 : ATTACK ( time -- )
          ?DUP 0>  \ if it's zero attack time, just skip it
@@ -12,11 +12,12 @@ DECIMAL
 
 : DECAY  ( time -- )
          ?DUP 0>
-         IF    15 0 DO  I ATTENUATE DUP TICKS   LOOP DROP MUTE
+         IF    15 0 DO  I DB DUP DELAYS   LOOP DROP MUTE
          ELSE  MUTE
          THEN ;
 
 VARIABLE ATAK   VARIABLE ONTM   VARIABLE DCAY
+
 
 : ENV-PLAY  ( -- )
 

@@ -3,28 +3,33 @@
 
 \ Each new Vocabulary links back to Forth
 
-INCLUDE DSK1.TOOLS
+NEEDS .S FROM  DSK1.TOOLS
 
 HEX
-36 USER CURRENT
+\ 36 USER CURRENT
 38 USER CONTEXT
 
 VARIABLE VOCLINK
 
-LATEST CURRENT !
+CREATE FORTH   0 , CURRENT @  , HERE VOCLINK @ ,  VOCLINK ! 
 
 : VOCABULARY
-        CREATE  CURRENT @ ,
-                HERE
-                VOCLINK @ ,
+        CREATE  FORTH , CURRENT @ ,  HERE  VOCLINK @ ,
                 VOCLINK !
 
-        DOES> CELL+ CONTEXT ! ;
+        DOES> CELL+ @ CONTEXT ! ;
 
 : DEFINITIONS  ( -- ) CURRENT @ CONTEXT ! ;
 
 
-: FIND2   CURRENT @ @ (FIND) ;
 
+\ Neil Baud vocab
+\ : Do-Vocabulary               ( -- )
 
+\     \  From Standard Forth Rationale A.16.6.2.0715.
+\     DOES>  @ >R               ( )( R: widnew)
+\         GET-ORDER  SWAP DROP  ( wid_n ... wid_2 n)
+\     R> SWAP SET-ORDER ;
 
+\ : VOCABULARY                  ( "name" -- )
+\     WORDLIST CREATE ,  Do-Vocabulary ;

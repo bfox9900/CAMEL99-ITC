@@ -1,11 +1,11 @@
-# CAMEL99 for TI-99 V2.1.F
+# CAMEL99 for TI-99 V2.1.G
 
 ### ABOUT CAMEL99 V2
 ---------------------
-CAMEL99 Forth has been built as an educational tool for those who are interested in how you could cross-compile Forth to a different CPU using an existing Forth system. Rather than starting from scratch it uses CAMEL Forth by Dr. Brad Rodriguez for the hi-level Forth code. 
+CAMEL99 Forth has been built as an educational tool for those who are interested in how you could cross-compile Forth to a different CPU using an existing Forth system. Rather than starting from scratch it uses CAMEL Forth by Dr. Brad Rodriguez for the hi-level Forth code.
 This has been "tweeked" and dare I say improved a little to better fit the very slow TI-99 computer. (More things written in Assembler was the answer)
 
-The low level primitives are written in Forth Assembler. The file 9900FAST.HSF also contains the low level drivers for TI-99 Keyboard and Video display I/O. The final console interfaces are written in Forth including the screen scrolling code, just to demonstrate how it can be done in hi-level Forth. 
+The low level primitives are written in Forth Assembler. The file 9900FAST.HSF also contains the low level drivers for TI-99 Keyboard and Video display I/O. The final console interfaces are written in Forth including the screen scrolling code, just to demonstrate how it can be done in hi-level Forth.
 
 In CAMEL99 Version 2 we squeezed enough disk support into the 8K kernel to have the word INCLUDED in the system.  This let's the system compile Forth code from disk which means it can extend itself.
 
@@ -18,8 +18,8 @@ You can load all the "training wheels" with one command: INCLUDE DSK1.BASICHLP
 (Future: Include a more TI-BASIC-like file control wordset. ANS Forth file wordset is too complicated)
 
 ### Changes from V1
-- CAMEL99 V2 finally has TI file access and numerous enhancements that improved the speed/size tradeoff. 
-- The binary program is in folder DSK1 and is called CAMEL99. 
+- CAMEL99 V2 finally has TI file access and numerous enhancements that improved the speed/size tradeoff.
+- The binary program is in folder DSK1 and is called CAMEL99.
 - All TI-99 FORMAT source files have no extension.
 - The same files can be found in LIB.TI with a .FTH extension.
 
@@ -27,11 +27,11 @@ You can load all the "training wheels" with one command: INCLUDE DSK1.BASICHLP
 - CAMEL99 begins with a TMS9900 Cross-Assembler written in HsForth, an MS DOS Forth system written in the 1990s.
   (The cross-compiler is XFC99.EXE)
 
-- With the cross-assembler we define the primitive operations in the file 9900FAST.HSF. 
+- With the cross-assembler we define the primitive operations in the file 9900FAST.HSF.
 
-- The Cross-Assembler is combined with a Cross-compiler, which gives us the tools to create the Forth dictionary, a linked list of structures in the TARGET memory image. This lets us give each primitive a "header" (name) in the dictionary with pointers to the code that they will run. 
+- The Cross-Assembler is combined with a Cross-compiler, which gives us the tools to create the Forth dictionary, a linked list of structures in the TARGET memory image. This lets us give each primitive a "header" (name) in the dictionary with pointers to the code that they will run.
 
-- The file CAMEL99.HSF uses the assembler primitives to create the high level Forth words that let us build the TARGET COMPILER. 
+- The file CAMEL99.HSF uses the assembler primitives to create the high level Forth words that let us build the TARGET COMPILER.
 
 - As each piece is added to the TARGET system less of the Cross-compiler is used. It's truly an excerise in boot-strapping.
 
@@ -52,7 +52,7 @@ Other emulators are available but have not been tested by the author.
 
 ### Starting CAMEL99 Forth
 Start the TI-99 computer with the Editor/Assembler cartridge.  The folder DSK1 must be present on DSK1 of your computer or emulator.
-Select the run program file option from the menu and enter "DSK1.CAMEL99" 
+Select the run program file option from the menu and enter "DSK1.CAMEL99"
 
 ## Loading Source Code Files
 At the console type: INCLUDE DSK1.TOOLS.F  -or- S" DSK1.TOOLS.F" INCLUDED
@@ -68,10 +68,10 @@ ALL the TI-99 source code files for CAMEL99 must be in TI-99 DV80 format. DV80 m
 
 (COPIES OF THE LIBRARY SOURCE FILES FILES ARE IN /LIB.TI AS TEXT FILES)
 
-A simple way to create TI Files on a PC is to open the TI Editor (Menu Option 1) and start the editor (Menu Option 1). 
+A simple way to create TI Files on a PC is to open the TI Editor (Menu Option 1) and start the editor (Menu Option 1).
 Using the the Classic99 emulator on your PC you can paste text into the TI editor window and then save the file in the default DV80 format by following the on screen prompts. It's a quaint old fashioned editor but it works.
 
-With your file correctly saved to DSK1 you can type S" DSK1.MYFILE" INCLUDED in the CAMEL99 console and the file will be loaded as source code. The current version of CAMEL99 V2 takes almost all of the 8K Binary space that is the current maximum program size generated by my TI-99 cross-compiler. This means that all additions to the system must be loaded as source code at this time. 
+With your file correctly saved to DSK1 you can type S" DSK1.MYFILE" INCLUDED in the CAMEL99 console and the file will be loaded as source code. The current version of CAMEL99 V2 takes almost all of the 8K Binary space that is the current maximum program size generated by my TI-99 cross-compiler. This means that all additions to the system must be loaded as source code at this time.
 
 Source code will load/compile at the blazing speed of about 14 lines per second. :-)
 
@@ -107,7 +107,7 @@ It now loads in the DSK.START file as a library file: TOBODY.F
 - Fixed bug in file handle server and RELEASE handle routine
 - New manual version 0.99 needs final edit review.
 
-### Jul 10, 2018 V2.0.19 
+### Jul 10, 2018 V2.0.19
 - Internal test version
 
 ### Aug 4, 2018 V2.0.20
@@ -115,9 +115,9 @@ It now loads in the DSK.START file as a library file: TOBODY.F
 - Removed word INCLD from kernel and put code in body of INCLUDED
 - Change INIT code to use structured assembler loop
 - Comment improvements
-- Move DATA stack reset in COLD word to just before QUIT. This fixed the first error bug. 
+- Move DATA stack reset in COLD word to just before QUIT. This fixed the first error bug.
  (First bad word entered at console gave "empty stack" error)
-- Removed SPRITE support word DXY from KERNEL, moved to DIRSPRIT (direct sprite control) as a machine code word. 
+- Removed SPRITE support word DXY from KERNEL, moved to DIRSPRIT (direct sprite control) as a machine code word.
 - Added SEE.F to DSK1 which is a Forth decompiler.
 ### Aug 23, 2018 V2.0.21
 - Moved @ and DROP primitives into 16 bit RAM for small speed improvement.
@@ -134,7 +134,7 @@ It now loads in the DSK.START file as a library file: TOBODY.F
 - Added TPAD USER VARIABLE which hold the offset of PAD from HERE. By setting TPAD to bigger number for other tasks, each task gets a pad and HOLD buffer in unallocated dictionary memory.
 
 ### Nov 13, 2018 V2.1.E
-- Floored division is now the default per ANS/ISO standard. 
+- Floored division is now the default per ANS/ISO standard.
   Symmetrical division is set using the FLOOR variable: FLOOR OFF, FLOOR ON
   Due to the slow speed of the 9900 CPU it is coded in Forth Assembler.
   The code is a re-work of code, used by permission, from FB-Forth by
@@ -148,12 +148,46 @@ It now loads in the DSK.START file as a library file: TOBODY.F
   are kept in separate files and are included in the Forth system source code as required.
   Documentation is forth coming.  See compiler/ITCTYPES.HSF  and compiler/DTCTYPE.HSF
 
-- Source file CAMEL99F.HSF now has a compiler switch, SMALLER, that uses 
-  Forth words to save space when set to TRUE and more CODE words if SMALLER 
+- Source file CAMEL99F.HSF now has a compiler switch, SMALLER, that uses
+  Forth words to save space when set to TRUE and more CODE words if SMALLER
   is set to FALSE. SMALLER saves ~46 bytes, but runs a little slower.
 
-- Addition of CALLCHAR and LOADSAVE libraries allows compiling FONT 
+- Addition of CALLCHAR and LOADSAVE libraries allows compiling FONT
   information into binary font files that load into VDP ram in 1 second.
 - Font file source code examples are in FONTS folder. Compiled binary versions are in DSK3.
 - Addition of a direct threaded code (DTC) version of the system that runs about 10% faster.
   *note* CREATE DOES> is not functional in the DTC version at this time.
+
+### Nov 30, 2018 V2.1.G
+- Version G corrects a long-time bug in the interpreter that reported
+"empty stack" under some conditions erroneously (CAMELG2.HSF)
+- Compiler switch name has been changed to USEFORTH (previously SMALLER) because
+sometimes Forth is smaller and sometimes Assembler code is smaller.
+- Version G has a code word for DIGIT? to improved compile times
+- The word ?SIGN is now PRIVATE, no visible in the dictionary to save space
+- The word >NUMBER has been changed slighly from the original CAMEL FORTH that speeds
+it for the 9900 cpu.
+- The ELAPSE.FTH program has been significantly improved for accuracy and the
+code size has been reduced.
+- A file based BLOCK system is available as a library: /LIB.ITC/BLOCKS.FTH
+These blocks are compatible with FBFORTH and Turbo Forth allowing the developer
+read programs from these other Forth systems.  Compiling this code will not be
+possible without writing a "translation harness" however for simple programs
+this is not too difficult.
+- A simple demo of BLOCK usage is file LINEDIT80.FTH for use with 80col displays
+or the TTY based kernel CAMEL99T
+- data structures per Forth 2012 are now supported in file STRUC12.FTH. A simple
+example is part of the file. (remove or comment out if you use the file)
+- ACCEPT has been changed passing backspace cursor control to EMIT. (see below)
+- EMIT has been changed to handle newline and backspace characters
+- (EMIT) and (CR) i/o primitives can be compiled as Forth or CODE
+(controlled by USEFORTH )
+
+### CAMEL99T (tty)
+- Version CAMEL99T is built to use RS232/1 as the primary console. It has been
+tested with Tera Term, Hyper-terminal and PUTTY under windows 10. Terminal
+configuration is 9600,8,n,1, hardware handshake.
+- A word VTYPE ( $addr len VDPaddr -- ) is part of the CAMEL99T to allow
+simple printing to the VDP screen at a screen address. (no protection!)
+- Libary file call XONXOFF.FTH vectors EMIT to provide this protocol
+- File VT100 can be included to provide cursor control.

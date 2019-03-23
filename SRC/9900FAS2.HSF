@@ -43,7 +43,7 @@
 \ speed 16 bit RAM chip. To even come close to Turbo Forth we had to put
 \ EXIT NEXT, ENTER, BRANCH and ?BRANCH and LIT in High Speed RAM.
 
-\ CAMEL99 is roughly the same speed as TurboForth in "primtive" benchmarks
+\ CAMEL99 is roughly the same speed as TurboForth in "primitive" benchmarks
 \ but is slower in number conversion/printing, conditionals and screen display.
 
 \ ASM Macros are to code the Forth Virtual Machine in a slightly CPU
@@ -54,13 +54,13 @@
 \ Multi-tasking ready:
 \ CAMEL99 commandeers R13,R14 & R15 to allow the smallest multi-tasker
 \ ever made. 3 instructions lets us jump to a task in about 20uS.
-\ see: TASKS99.HSF
+\ see: MTASKS99.HSF
 
 \ CREDITS:
 \         Special thanks Mark Wills for giving the world TurboForth
 \         It provided examples of how to deal with the crazy TI-99/4a
 
-\         Also thanks go to to Lee Stewart atariage.com who can spot
+\         Also thanks go to Lee Stewart atariage.com who can spot
 \         a bug a nautical mile away.
 
 \         Big thanks to Dr. Brad Rodriguez for Camel Forth MSP430
@@ -84,7 +84,7 @@
 \ R11     9900 sub-routine return register  - OR - general purpose register
 \ R12     9900 CRU register                 - OR - general purpose register
 \ R13     Multi-tasker LINK to next task
-\ R14     Multi-tasker Program counter: holds address of TSTAT routine see: TASKS99.HSF
+\ R14     Multi-tasker Program counter
 \ R15     Multi-tasker task Status register
 
   [UNDEFINED] XASSEMBLER
@@ -130,8 +130,7 @@ CROSS-ASSEMBLING
               TI-99.EA5             \ format the memory/file header for TI-99 EA5 file format
 
 \ ==============================================================
-\ FAST CODE PRIMITIVES. Concept from TI-Forth and TURBO Forth, 
-\ by Mark Wills
+\ FAST CODE PRIMITIVES. Concept from TI-Forth and TURBO Forth by Mark Wills
 
 \ The following code is copied into TI-99 "PAD" memory chip by INIT to address _HSstart (8388)
 \ TI-99 "PAD" is the ONLY zero wait-state 16 bit buss wide memory chip in the TI-99.
@@ -194,8 +193,9 @@ l: _HSend   \ this label tells the compiler where the high speed code ends.
 CR .( FORTH PRIMITIVES BEGIN)
 
 \ The following words have been called "DOERS" by many in the past. I don't like the name.
-\ I have chosen to to call them "EXECUTORS".  The words are the EXECUTION CODE that runs
-\ for the various types of words in a Forth sytstem.
+\ I have chosen to call them "EXECUTORS". They are the EXECUTION CODE that runs
+\ for the various types of words in a Forth system.
+
 TALIGN
 CODE: EXIT    ( -- )         \ compiled when ';' is executed
               EXIT2 CFA!     \ convert label address to fast RAM address store in CFA
@@ -213,7 +213,7 @@ CODE: LIT     ( -- w )       \ Execute a LITERAL number in the Forth program
               END-CODE
 
 \ To understand the following words: W contains the CFA of a word when NEXT runs.
-\ After NEXT completes W is auto-incrmented by 2.  CFA+2=PFA
+\ After NEXT completes W is auto-incremented by 2.  CFA+2=PFA
 \ By auto-incrementing in NEXT we save 1 instruction in each of these words.
 CODE: DOCON   ( -- n )         \ Executor that executes a "CONSTANT"
               TOS PUSH,        \ make room in TOS
@@ -245,11 +245,11 @@ CODE: DOUSER ( -- addr)
 \ DODOES is entered with W=PFA (parameter field address)
 \ DODOES moves  W to the TOP of Stack (TOS)
 \ So the high-level Forth code begins with the address of the parameter
-\ field on top of stack. ( cached in R4 in this version)
+\ field on top of stack. (cached in R4 in this version)
 \
 \ MSP430 version translates to TMS9900 very easily
 CODE: DODOES  ( -- a-addr)
-              TOS PUSH,       \ save TOS reg on pstack (uses PUSH macro)
+              TOS PUSH,       \ save TOS reg on data stack
               W TOS MOV,      \ put defined word's PFA in TOS
               IP RPUSH,       \ push old IP onto return stack
              -2 (W) IP MOV,   \ PFA-2=CFA: CFA@ -> IP
@@ -444,6 +444,7 @@ CODE: 2DROP   ( n n -- )
               NEXT,            \ = 38
               END-CODE
 
+0 [IF]
 \ used 10x in the CAMEL Forth Kernel. Provides good speedup on some critical words
  CODE: 2DUP   ( n1 n2 -- n1 n2 n1 n2 )
              *SP W MOV,            \ 18 copy n1
@@ -451,14 +452,15 @@ CODE: 2DROP   ( n n -- )
               W PUSH,              \ 28 push onto Stack
               NEXT,                \
              END-CODE             \ 74,  5 instructions, 10 bytes
-
+[ELSE]
 \ faster version is 2 bytes bigger. It's hard to win with the 9900!
-\ CODE: 2DUP   ( n1 n2 -- n1 n2 n1 n2 )
-\              SP -4 ADDI,       \  14   make room for 2 cells
-\              4 (SP) *SP MOV,   \  26   n1->*SP
-\              TOS  2 (SP) MOV,  \  22   n2 -> next stack location
-\              NEXT,            \   62   ,  3 instructions 12 bytes
-\              END-CODE
+ CODE: 2DUP   ( n1 n2 -- n1 n2 n1 n2 )
+              SP -4 ADDI,       \  14   make room for 2 cells
+              4 (SP) *SP MOV,   \  26   n1->*SP
+              TOS  2 (SP) MOV,  \  22   n2 -> next stack location
+              NEXT,            \   62   ,  3 instructions 12 bytes
+              END-CODE
+[THEN]
 
 CODE: 2SWAP   ( n1 n2 n3 n4-- n3 n4 n1 n2)
               TOS       R0 MOV,    \ n4  14
@@ -479,16 +481,16 @@ CODE: PICK   ( n -- n)   \ GForth ITC takes 10 intel instructions for PICK
 
 0 [IF] \ From Wil Baden's TOOLBELT  Thanks Wil. RIP
 
-CODE: 3RD  ( a b c d --  a b c d b)    \ 2X faster than 3 PICK
+CODE: 3RD  ( a b c d --  a b c d b)    \ 3X faster than 3 PICK due to Lit,NEXT
               TOS PUSH,         \ 28
               4 (SP) TOS MOV,   \ 22
-              NEXT,            \  50
+              NEXT,            \  50   \ same speed as OVER :-)
               END-CODE
 
 CODE: 4TH
               TOS PUSH,
               6 (SP) TOS MOV,
-              NEXT,
+              NEXT,             \ same speed as OVER :-)
               END-CODE
 [THEN]
 
@@ -651,7 +653,6 @@ CODE: UM/MOD ( ud u1 -- u2 u3 ) \ numerator(32bits), divisor -- rem,quot
               NEXT,            \                            200
               END-CODE
 
-
 \ Signed divide using either Floored or Symmetric Integer Division.
 \ Adapted with permission, from FBForth by Lee Stewart
 \ This routine first does Symmetric Integer Division, then checks FLOOR
@@ -677,7 +678,7 @@ CODE: UM/MOD ( ud u1 -- u2 u3 ) \ numerator(32bits), divisor -- rem,quot
 \   R2=16-bit remainder (rem)
 \   set flags to reflect signs of operands, and force operands positive...
 
-l: _floor  DATA -1    \ variable controls symetrical(0) or floored(-1) division
+l: _floor  DATA -1  \ variable controls symmetrical(0) or floored(-1) division
 
 CODE: M/MOD  ( lsb msb n3 -- rem quot)
        TOS R3 MOV,             \ DUP for sign of denominator
@@ -1083,7 +1084,7 @@ CODE: (FIND) ( Caddr NFA -- XT ? )
                \ traverse link list to next NFA
 @@1:             R3  -3 ADDI,         \ convert nfa>lfa
                 *R3  R3 MOV, EQ       \ do a fetch, R3 now has new NFA
-              UNTIL,                 
+              UNTIL,
               NEXT,                   \ we got zero. End of the list! Go back to Forth
 
 \ convert NFA in R3 to CFA -> R2
@@ -1130,4 +1131,3 @@ CODE: PAUSE   ( -- )             \ MULTI-TASKER switcher needed by I/O words in 
               END-CODE
 
 cr .( Code primitives complete)
-
