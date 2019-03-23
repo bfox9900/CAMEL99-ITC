@@ -24,7 +24,7 @@ HEX
           1 ?MODE  >COLR SWAP ]CTAB  VC! ;
 
 \ ascii value SET# returns the character set no.
-: SET#  ( ascii -- set#) 3 RSHIFT ;  
+: SET#  ( ascii -- set#) 3 RSHIFT ;
 
 ( *NEW*  change contiguous character sets at once)
 : COLORS  ( set1 set2 fg bg  -- )
@@ -41,7 +41,7 @@ HEX
 : GRAPHICS  ( -- )
              1 VMODE !        \ call this video mode 1
              0 380  0 VFILL   \ erase the entire 40 col. screen space
-             E0 DUP KTP C!    \ KSCAN re-writes VDP Reg1 with this byte
+             E0 DUP 83D4 C!    \ KSCAN re-writes VDP Reg1 with this byte
       ( -- E0) 1 VWTR         \ VDP register 1  bit3 = 0 = Graphics Mode
              1 6 VWTR         \ set sprite descriptor table to 1x$800=$800
              CTAB 10 10 VFILL \ color table: black on transparent [1,0]
@@ -55,7 +55,7 @@ HEX
 
 : PATTERN: ( u u u u -- )
 \ USAGE:  HEX 0000 FF00 AABB CCDD PATTERN: SHAPE1
-           CREATE     
+           CREATE
               >R >R >R
            ,  R> , R> , R> , ;
 
