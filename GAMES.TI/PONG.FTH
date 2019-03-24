@@ -1,11 +1,13 @@
 \ simple pong DEMO for CAMEL99      Dec 30 2017 B Fox
 
-INCLUDE DSK1.RANDOM.F
-INCLUDE DSK1.DIRSPRIT.F   \ this loads GRAFIX.F first
-INCLUDE DSK1.SMPLSND.F    \ 1 voice, decay control
-
+INCLUDE DSK1.RANDOM
+INCLUDE DSK1.DIRSPRIT     \ this loads GRAFIX.F first
+INCLUDE DSK1.SMPLSND      \ 1 voice, decay control
+INCLUDE DSK1.CASE
 \ ===============================================================
 CR .( Compiling PONG)
+
+HEX 8375 CONSTANT KVAL
 
 DECIMAL
 : CLINK   ( -- ) [ 1650 ]HZ  0 ATT  50 DECAY ;
@@ -13,6 +15,7 @@ DECIMAL
 
 VARIABLE HUMAN      \ POINTS variables
 VARIABLE COMPUTER
+
 CR .( ..)
 HEX
 \ screen boundary patterns
@@ -36,7 +39,7 @@ DECIMAL
          LRIGHT   4 CHARDEF
          LLEFT    5 CHARDEF
          BALL   127 CHARDEF
-         PADDLE 126 CHARDEF 
+         PADDLE 126 CHARDEF
          NET    128 CHARDEF ;
 
 : Boundary ( -- )
@@ -66,11 +69,11 @@ HEX
          THEN ;
 
 : UpDown ( -- -3,0,3 ) \ return a value to move the paddle
-         ?KEY
-         [CHAR] E OVER = IF  -4 ELSE
-         [CHAR] X OVER = IF   4 ELSE
-                              0   ( default value)
-         THEN THEN NIP ;
+         ?KEY CASE
+         [CHAR] E OF     -3 ENDOF
+         [CHAR] X OF      3 ENDOF
+                          0   ( default value)
+         ENDCASE ;
 
 : CLIP    ( n min max -- n ) ROT MIN MAX ; \ clip n to within min & max
 
@@ -102,7 +105,7 @@ VARIABLE YVEC
                KEY?
              UNTIL
              KVAL C@ OVER =
-           UNTIL 
+           UNTIL
            DROP ;
 
 : MoveBall ( -- ) \ uses direct sprite X,Y read/write
@@ -131,11 +134,11 @@ VARIABLE YVEC
 
 : FollowBall ( spr# -- ) \ match computer paddle to ball Y coordinate
              0 SP.Y@  SWAP  SP.Y! ;
-             
+
 : ?    ( variable -- ) @ . ;
 
 : ScoreBoard ( -- )
-       2 0 AT-XY ." Human      " HUMAN ?  
+       2 0 AT-XY ." Human      " HUMAN ?
        ." | "  COMPUTER ? ."     TI-99" ;
 
 : Opening ( -- )
@@ -160,7 +163,7 @@ VARIABLE OFFSET
             MoveBall
             WallTest
             0 1 5 COINC IF 1 PaddleHit THEN 1 MovePaddle
-            0 2 5 COINC IF 2 PaddleHit THEN ComputerPlayer
+            0 2 5 COINC IF 2 PaddleHit THEN ComputerPlayer 1 MovePaddle
             0 SP.X@ OffBoard?
          UNTIL
 \ ball went OffBoard...
@@ -200,7 +203,7 @@ VARIABLE OFFSET
 .( ..)
 : Winner? ( -- ?)
           HUMAN @ 5 =
-          COMPUTER @ 5 = 
+          COMPUTER @ 5 =
           OR ;      \ if either play get to 5 they win
 
 : RUN    GRAPHICS
@@ -230,6 +233,3 @@ VARIABLE OFFSET
 
 CR  .( Pong compiled)
 CR  .( Type RUN to start game)
-
-
-
