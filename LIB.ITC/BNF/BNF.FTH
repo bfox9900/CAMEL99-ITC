@@ -1,9 +1,7 @@
 \ Backus Naur Parser Generator - Brad Rodriguez
 \ BNF Parser                                (c) 1988 B. J. Rodriguez
 
-INCLUDE DSK1.TOOLS.F
-
-MARKER EMPTY
+INCLUDE DSK1.TOOLS
 
 VARIABLE SUCCESS
 
@@ -32,7 +30,7 @@ VARIABLE SUCCESS
 
 : =TOKEN ( N -- )
          SUCCESS @ IF @TOKEN =  DUP SUCCESS ! +TOKEN
-         ELSE DROP 
+         ELSE DROP
          THEN ;
 
 : TOKEN ( N -- )    CREATE C, DOES> ( A -- )  C@ =TOKEN ;

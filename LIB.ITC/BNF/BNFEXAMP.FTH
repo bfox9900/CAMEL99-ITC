@@ -6,7 +6,7 @@
 
 : /BNF ( -- )  SOURCE NIP >IN ! ;
 
-: TKN 
+: TKN
       CREATE DUP C, BOUNDS ?DO I C@ C, LOOP
       DOES> COUNT BOUNDS ?DO I C@ =TOKEN LOOP ;
 
@@ -15,7 +15,8 @@ S" BALL" TKN
 
 BNF:   |  | ;
 
-S" THE" TKN    S" YOUR" TKN
+S" THE" TKN
+S" YOUR" TKN
 
 BNF:   |  | ;BNF
 
@@ -26,7 +27,7 @@ BL TOKEN
 BNF:       ;BNF
 
 : PARSEX 0BNF   /BNF
-  CR SUCCESS @ IF ." MATCHED " CR 
+  CR SUCCESS @ IF ." MATCHED " CR
   ELSE ." FAILED " CR THEN ;
 
 PARSEX YOUR CAT

@@ -1,5 +1,7 @@
 \ VDP sound list examples
 
+\ these sounds require VDPBGSND.FTH
+
 HEX
 VCREATE MUNCHMAN
        VBYTE 08,85,2A,90,A6,08,B0,CC,1F,12
@@ -202,12 +204,17 @@ VCREATE FUEL
 /VEND
 
 
-: QALL   MUNCHMAN >SNDQ  PACMAN >SNDQ
+: QALL   MUNCHMAN >SNDQ
+         PACMAN >SNDQ
          SHPSND >SNDQ
-         FIRE     >SNDQ  FIRE2  >SNDQ  EXPLODE >SNDQ
-         CHIME    >SNDQ  SW1SND >SNDQ
-         SW2SND   >SNDQ  SND123 >SNDQ  
-         SND4     >SNDQ  FUEL   >SNDQ  
-         EXPLODE >SNDQ 
+         FIRE     >SNDQ
+         FIRE2  >SNDQ
+         EXPLODE >SNDQ
+         CHIME    >SNDQ
+         SW1SND >SNDQ
+         SW2SND   >SNDQ
+         SND123 >SNDQ
+         SND4     >SNDQ
+         FUEL   >SNDQ
+         EXPLODE >SNDQ
          NOKIA >SNDQ ;
-

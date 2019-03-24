@@ -619,8 +619,10 @@ CODE: DIGIT?   ( char -- n f )
         UNTIL       \ loop until result is not zero
         2DROP ;     \ drop the initial value
 
+: JIFFS  ( n -- ) 0 ?DO  1/60 LOOP ;
+
 \ MS resolution limited to 1/60 second and minimum is 1/60 sec.
-: MS  ( n -- ) PAUSE 4 RSHIFT  0 ?DO  1/60 LOOP ;  \ mS/16 = 1/60
+: MS  ( n -- ) PAUSE 4 RSHIFT JIFFS  ;  \ mS/16 = 1/60
 
 \ ========================================================================
 \ VDP screen type to send messages to TI-99 screen
