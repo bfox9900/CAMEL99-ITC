@@ -619,7 +619,7 @@ CODE: DIGIT?   ( char -- n f )
         UNTIL       \ loop until result is not zero
         2DROP ;     \ drop the initial value
 
-: JIFFS  ( n -- ) 0 ?DO  1/60 LOOP ;
+: JIFFS  ( n -- ) 0 ?DO  1/60 LOOP ;  \ fine resolution timer
 
 \ MS resolution limited to 1/60 second and minimum is 1/60 sec.
 : MS  ( n -- ) PAUSE 4 RSHIFT JIFFS  ;  \ mS/16 = 1/60
@@ -636,8 +636,8 @@ CODE: DIGIT?   ( char -- n f )
  include cc9900\cclib\9902code.hsf     \ ti99 rs232 i/o routines
 
 [cc] HEX
-11 CONSTANT: Xon
-13 CONSTANT: Xoff
+\ 11 CONSTANT: Xon
+\ 13 CONSTANT: Xoff
 
 TARGET-COMPILING
 
@@ -1056,8 +1056,7 @@ TARGET-COMPILING
               HEX
               50 DUP C/L! VMODE !            \ set line length to 80chars
 
-               BA=9600 8,N,1
-              /TTY1 OPEN-TTY                 \ select TTY1 for I/O
+              BA=9600 8,N,1 /TTY1 OPEN-TTY  \ select TTY1 for I/O
 
               t['] CEMIT 'EMIT !             \ assign emit vector so we can print
               TS" CAMEL99 TTY V.30" 2DUP
