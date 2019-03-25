@@ -7,17 +7,16 @@ HEX
 
 NEEDS OPEN-FILE FROM DSK1.ANSFILES
 NEEDS CASE      FROM DSK1.CASE
- 
+
 \ print unsigned int, right justified
 : U.R  ( u n --) >R 0 <# #S #> ( adr len) R> OVER - SPACES TYPE ;
- 
+
 \ string helpers
-: $.       ( $addr -- ) COUNT TYPE ;
 : NEXT$    ( addr len -- addr len ) + COUNT ;
- 
+
 \ print string left justified '
-: $.LEFT  ( $ width -- ) OVER C@ - >R $.  R> SPACES ;
- 
+: $.LEFT  ( $ width -- ) OVER C@ - >R COUNT TYPE  R> SPACES ;
+
 HEX
 \ crude 3 DIGIT BCD to int convertor. Limited to 999
 : F>INT   ( addr len -- addr len n)
@@ -40,13 +39,13 @@ DECIMAL
              5 OF ." Program"  ENDOF
              ." ????"
           ENDCASE ;
- 
+
 : HEAD.REC ( addr -- )
           DUP  7 $.LEFT SPACE COUNT ( addr len)
           NEXT$
           ."  Size" NEXT$ F>INT 5 U.R   ."  Used" NEXT$ F>INT 5 U.R
           2DROP  ;
- 
+
 : DIR.REC ( addr -- )
           DUP  11 $.LEFT SPACE COUNT ( addr len)
           NEXT$ DIR.TYPE
@@ -55,7 +54,7 @@ DECIMAL
           2DROP  ;
 
 : PAGEBRK ( -- )
-          LINES @ L/SCR 3 - MOD 0=  \ bottom of page?                                 
+          LINES @ L/SCR 3 - MOD 0=  \ bottom of page?
           IF
             CR ." Press any key..." KEY DROP
           THEN ;
@@ -87,5 +86,3 @@ DECIMAL
           R> CLOSE-FILE  ?FILERR
           CR LINES @ . ." files" CR
           R> BASE ! ;
-
- 
