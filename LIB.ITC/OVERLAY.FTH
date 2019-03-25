@@ -31,4 +31,5 @@ HEX
 ( file len VDPaddr size) 2SWAP R/O100 LOAD-FILE
             R> R> R> ( VPDaddr cpu-adr size) VREAD ;
 
-: LINK-OVERLAY
+\ incomplete...
+\ : LINK-OVERLAY
