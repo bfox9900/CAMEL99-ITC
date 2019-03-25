@@ -5,6 +5,9 @@ NEEDS OPEN-FILE FROM DSK1.ANSFILES
 DECIMAL
 : ?CR     OUT @ 10 + C/L@ > IF CR THEN ;   \ CR if near end of screen
 
+\ print string left justified '
+: $.LEFT  ( $ width -- ) OVER C@ - >R COUNT TYPE  R> SPACES ;
+
 HEX
 : DIR  ( <DSK?.> )   \  needs the '.' ONLY shows file name
           BL PARSE-WORD DUP ?FILE
@@ -18,7 +21,7 @@ HEX
            PAD DUP 80 R@ READ-LINE ?FILERR 2DROP
          ( PAD)  C@   \ do while length > 0
           WHILE
-             PAD COUNT DUP >R TYPE  C/L@ 2/ R>  - SPACES
+             PAD 0A $.LEFT SPACE ?CR
              ?TERMINAL
              IF R> CLOSE-FILE
                 2DROP
