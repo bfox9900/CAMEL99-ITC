@@ -14,6 +14,7 @@ CR .( TOOLS for Camel99 Forth V2)
 .( ..)
 \ ABORT if function 4 is pressed
 : ?BREAK  ( -- ) ?TERMINAL ABORT" *BREAK*" ;
+: ?CR     ( -- ) OUT @ 0A + C/L@ > IF CR THEN ;
 
 .( ..)
 : .ID     ( NFAaddr --) COUNT 1F AND TYPE ;
@@ -22,8 +23,8 @@ CR .( TOOLS for Camel99 Forth V2)
            0         ( word counter on stack)
            LATEST @
            BEGIN
-             DUP   ( -- nfa) .ID SPACE
-             SWAP 1+ SWAP        \ inc. the counter
+             DUP ( -- nfa) .ID SPACE ?CR
+             SWAP 1+ SWAP   \ inc. the counter
              NFA>LFA @ DUP
              ?BREAK
            0= UNTIL
@@ -31,9 +32,6 @@ CR .( TOOLS for Camel99 Forth V2)
            CR  U. SPACE ." words" ;
 
 \ BFox DUMP looks like dos debug, but without segment address
-2E CONSTANT '.'
-3A CONSTANT ':'
-
 : .####   ( n --) 0 <# # # # # #> TYPE ;
 
 : .ASCII  ( adr n --)
@@ -41,7 +39,7 @@ CR .( TOOLS for Camel99 Forth V2)
           DO
             I C@ DUP
             BL 1-  80 WITHIN
-            0= IF DROP  '.'
+            0= IF DROP  [CHAR] .
             THEN EMIT
           LOOP ;
 
@@ -56,7 +54,7 @@ HEX
          HEX
          BOUNDS   ( -- endadr startadr)
          DO PAUSE
-         CR  I  .####  ':' EMIT
+         CR  I  .####  [CHAR] : EMIT
              I  ?80  BOUNDS DO  SPACE I @ .####  2 +LOOP SPACE
              I  ?80  .ASCII
              ?BREAK
@@ -65,16 +63,17 @@ HEX
           R> BASE ! ;
 
 .( ..)
-: UNUSED   ( -- u) TIB HERE - ;   \ ANS Forth 94 word
+: UNUSED ( -- u) TIB HERE - ;   \ ANS Forth 94 word
 
-: .FREE      BASE @ >R
-             DECIMAL
-             CR ." Free Mem"
-             CR ." Low Heap :  " 3F20 H @  - U.
-             CR ." Upper mem: " UNUSED U.
-             CR ." VDP mem  : " 8370 @ 1000 - .
-             R> BASE ! ;
+: .FREE  ( -- )
+         BASE @ >R
+         DECIMAL
+         CR ." Free Mem"
+         CR ." Low Heap :  " 3F20 H @  - U.
+         CR ." Upper mem: " UNUSED U.
+         CR ." VDP mem  : " 8370 @ 1000 - .
+         R> BASE ! ;
+
 DECIMAL
 .FREE
 HEX
-
