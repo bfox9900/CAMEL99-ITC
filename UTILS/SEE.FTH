@@ -11,11 +11,7 @@ NEEDS CASE    FROM DSK1.CASE
 
 : .####     ( n --) 0 <# # # # # #> TYPE ;
 
-: ?BREAK    ( -- )
-	    KEY?
-            IF
-               CR ." *BREAK*" ABORT
-            THEN ;
+: ?BREAK    ( -- )  ?TERMINAL ABORT" *BREAK*"  ;
 
 \ Getting back from the CFA to the NFA is tricky in CAMEL Forth
 : CFA>NFA  ( cfa -- nfa | 0 )
@@ -39,12 +35,12 @@ NEEDS CASE    FROM DSK1.CASE
 : LOOKUP    ( <text> -- cfa)
             BL WORD FIND  0= ABORT" Not a word" ;
 
-CR .( ..) 
+CR .( ..)
      VARIABLE IMMFLAG    \ set if decompiled word is immediate
 HEX
  045A    CONSTANT $NEXT  \ machine code for CAMEL99 NEXT (B *R10)
 
-( lookup XTs of special words at compile time) 
+( lookup XTs of special words at compile time)
 ( declare constants for speed)
 ' EXIT   CONSTANT 'EXIT
 ' (S")   CONSTANT '(S")
@@ -68,14 +64,14 @@ HEX
             CLEANSTK ;
 
 \ only works with workspace=8300
-: .USER     ( nfa cfa -- nfa) 
+: .USER     ( nfa cfa -- nfa)
             CR  DUP >BODY @ DUP  U. ." USER " ROT .ID
             ."  = " 8300 + @ U.
             CLEANSTK ;
 
 : .EXIT     ( cfa -- )
             ."  ; "
-            IMMFLAG @ IF CR TAB ." IMMEDIATE" THEN  
+            IMMFLAG @ IF CR TAB ." IMMEDIATE" THEN
             CR  ;
 
 .( ..)
@@ -98,8 +94,9 @@ CHAR " CONSTANT '"'
             >BODY   \ advance to data field
             BEGIN
               DUP @  ?NEWLINE .#### ."  , "
-              CELL+ 
+              CELL+
               DUP @ $NEXT =
+							?BREAK
             UNTIL
             DROP
             CR TAB ." NEXT,"
@@ -113,20 +110,20 @@ CHAR " CONSTANT '"'
             ELSE
               SWAP  \ not a word so drop the nfa
                     \ fetch the contents and print it
-              DUP @ .  SPACE                                                                 
+              DUP @ .  SPACE
             THEN ;
 
 .( ..)
 : DECOMPILE ( nfa cfa -- )
             CR ." : "  OVER .ID
             CR TAB
-            BEGIN  
+            BEGIN
               CELL+    \ move to next cell in the thread
               DUP @              \ -- cell XT
               DUP 'EXIT = 0=  \ not the end of word?
             WHILE
               DUP '(S") =       \ is it a string?
-              IF   
+              IF
                    ( cfa) DROP
                    .SQUOTE
               ELSE
@@ -140,7 +137,7 @@ CHAR " CONSTANT '"'
             CASE
               'DOVAR  OF  .VARIABLE     ENDOF
               'DOCON  OF  .CONSTANT     ENDOF
-              'DOUSER OF  .USER         ENDOF                           
+              'DOUSER OF  .USER         ENDOF
             ENDCASE ;
 
 .( ..)
