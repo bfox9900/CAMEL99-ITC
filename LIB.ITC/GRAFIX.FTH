@@ -19,7 +19,8 @@ HEX
 : >COLR ( fg bg -- byte) 1- ?COLOR SWAP 1- ?COLOR  04 LSHIFT + ;
 
 \ TI-BASIC SUB-PROGRAMS BEGIN
-: CLEAR  ( -- )  PAGE  0 17 AT-XY  ;   ( just because you love it )
+\ Changed clear to work with TTY or TI-99 console
+: CLEAR  ( -- )  0 C/SCR @ BL VFILL   0 17 VROW 2!  ;
 : COLOR  ( character-set fg-color bg-color -- )
           1 ?MODE  >COLR SWAP ]CTAB  VC! ;
 
