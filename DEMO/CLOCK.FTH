@@ -1,14 +1,12 @@
-\ A simple Clock
+\ A simple Clock based on the TI-99 Interrupt counter
 
-\ This clock creates a timer based on the TI-99 Interrupt counter
+CREATE SECONDS  0 , 0 ,   \ 2 CELLS holds a 32bit integer
+
+: SECONDS++  ( -- )  SECONDS 2@ 1 M+  SECONDS 2! ;
+
 HEX
+8379 CONSTANT TICKER   \ interval is 1/60 second
 
-VARIABLE HRS
-VARIABLE MINS
-VARIABLE SECS
-VARIABLE TICKS
-
-8379 CONSTANT TICKER
 \ wait until ticker changes. subtract old value from new value
 : 1/60  ( -- )
         TICKER DUP @   \ dup ticker & fetch initial timer value
@@ -18,32 +16,27 @@ VARIABLE TICKS
         UNTIL         \ loop until result is not zero
         2DROP ;        \ drop the initial value
 
-\ increment no. in the address
-: 1+!   ( addr -- ) 1 SWAP +! ;
-
 DECIMAL
-: 1SEC   ( -- )  60 0 DO 1/60 LOOP ;
+: 1SEC  ( -- )  60 0 DO  1/60  LOOP   SECONDS++  ;
 
-: KEEPTIME
-         1SEC SECS 1+!
-         SECS @ 60 = IF SECS OFF  MINS 1+! THEN
-         MINS @ 60 = IF MINS OFF  HRS  1+! THEN ;
+: SEXTAL   6 BASE ! ;
+: <:>     [CHAR] : HOLD ;
+: <.>     [CHAR] . HOLD ;
+: ##:     # SEXTAL # DECIMAL <:> ;
 
-: ##  ( n -- )  0 <# # # #> TYPE ;
-: :## ( n -- )  0 <# # # 58 HOLD #> TYPE ;
-
-: .TIME ( -- )  SECS @ MINS @ HRS @  ## :## :## ;
-
-: SETCLOCK  ( hrs mins sec -- )  SECS !  MINS !  HRS ! ;
+: .TIME   ( d -- )
+          BASE @ >R
+          <#  ##: ##:  # #  #> TYPE
+          R> BASE ! ;
 
 : CLOCK  ( -- )
          BEGIN
-            0 0 AT-XY .TIME
-            KEEPTIME
+            1SEC
+            0 0 AT-XY SECONDS 2@ .TIME
             ?TERMINAL
          UNTIL
          2DROP ;
 
-3 34 0 SETCLOCK
+: SETCLOCK  ( hrs mins -- )  S>D ROT 60 *  M+  SECONDS 2! ;
 
-PAGE  20 0 CLOCK
+PAGE  CLOCK

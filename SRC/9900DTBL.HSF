@@ -35,22 +35,10 @@
 \ We chose smaller is better except where performance would really suffer.
 
 \ PERFORMANCE:
-\ Cycle counting against Turbo Forth for TI-99, which does not keep TOS in
-\ a register, shows as much as a 40% performance increase on simple primitives.
-\ This is counter balanced by the slowdown of PUSHing and POPing the TOS
-\ register which can slowdown other code words by as much as 100%.
-
-\ The benchmark system, Turbo Forth, puts many small routines in the high
-\ speed 16 bit RAM chip. To even come close to Turbo Forth we had to put
-\ EXIT NEXT, ENTER, BRANCH and ?BRANCH and LIT in High Speed RAM.
-
-\ CAMEL99 is roughly the same speed as TurboForth in "primtive" benchmarks
-\ but is slower in number conversion/printing, conditionals and screen display.
-
-\ ASM Macros are to code the Forth Virtual Machine in a slightly CPU
-\ independant manner. They make sense to a Forth programmer but may
-\ be less clear to someone new to Forth.
-\ (see FORTHVM.HSF for detailS)
+\ The direct threaded version on the 9900 runs empty loops 20% to 30% FASTER
+\ than ITC Forth. However in a real world application of compiling the ASSEMBLER
+\ where the compiler primitives (HERE ','  ALLOT) are code words, the speedup
+\ is almost not measureable.
 
 \ Multi-tasking ready:
 \ CAMEL99 commandeers R13,R14 & R15 to allow the smallest multi-tasker
@@ -79,11 +67,11 @@
 \ R5      Temp for NEXT, overflow for '*' and '/',  general purpose register
 \ R6      parameter stack pointer
 \ R7      return stack pointer
-\ R8      Forth 'W' register OR general purpose in a system CODE word
+\ R8      general purpose register
 \ R9      Forth VM Instruction pointer
 \ R10     Forth's "NEXT" routine cache
-\ R11     9900 sub-routine return register  - OR - general purpose register
-\ R12     9900 CRU register                 - OR - general purpose register
+\ R11     Contains PFA when calling Forth word, OR sub-routine return register
+\ R12     9900 CRU register  - OR - general purpose register
 \ R13     Multi-tasker LINK to next task
 \ R14     Multi-tasker Program counter: holds address of TSTAT routine see: TASKS99.HSF
 \ R15     Multi-tasker task Status register
@@ -151,8 +139,8 @@ CROSS-ASSEMBLING
 \
 l: _exit     *RP+ IP MOV,     \ placing EXIT before next saves space and is faster  22+next=60
 l: _next                      \ Forth DTC NEXT routine
-@@9:         *IP+  W MOV,     \ move IP to W & auto inc IP                   \ 22
-             *W    B,         \ branch to the address in W                   \ 16
+@@9:         *IP+ R5 MOV,    \ move IP to W & auto inc IP                   \ 22
+                 *R5 B,      \ branch to the address in W                   \ 16
                                                                            \ = 38 vs 56 in ITC
 l: _?branch   \ Faster way to avoid penalty of TOS refill
               TOS DEC,        \ After DEC if tos=0, this will cause a carry flag                        10
@@ -164,8 +152,7 @@ l: _branch   *IP IP ADD,      \ *IP points to an offset number in memory. Add it
               @@9 JMP,        \ JMP to _next
 
 l: _docol     IP RPUSH,       \                                                   28
-              W 4 ADDI,       \ jump past the code fragment in the header         14
-              W IP MOV,       \ move PFA into Forth IP register                   14
+              R11 IP MOV,     \ move PFA into Forth IP register                   14
               @@9 JMP,        \                                                =  56 vs 42 ITC
 
  l: _lit      TOS PUSH,       \ 28
@@ -190,6 +177,7 @@ l: _HSend                     \ this label tells the compiler where the high spe
  _lit     >HSRAM equ LIT2
 \  _douser  >HSRAM equ DOUSER2
 
+
 \ ==============================================================
 \   ********  C O M P I L E R   C O N T R O L ****************
 
@@ -201,22 +189,19 @@ l: _HSend                     \ this label tells the compiler where the high spe
 
 \ Executor that executes a "CONSTANT"
 l: _docon    TOS PUSH,      \ make room in TOS
-            *W+ *W+ CMP,     \  INC by 4
-             *W TOS MOV,     \ move PFA into Forth IP register    14
+             *R11 TOS MOV,    \ move PFA into Forth IP register    14
               NEXT,
 
  \ Executor that executes a "VARIABLE"
 l: _dovar     TOS    PUSH,   \ make room in TOS                   28
-             *W+ *W+  CMP,   \ INC by 4
-              W   TOS MOV,   \ move PFA into Forth IP register    14
+              R11  TOS MOV,  \ move PFA into Forth IP register    14
               NEXT,
 
 \ In CAMEL99 the 9900 WP register doubles as User pointer
-l: _douser    TOS PUSH,      \ Executor that executes a "USER VARIABLE" (local to each task)
-              TOS STWP,      \ store workspace register WP in TOS
-             *W+ *W+ CMP,    \ INC by 4
-             *W  TOS ADD,    \ add contents of PFA to workspace address
-              NEXT,
+l: _douser       TOS PUSH,    \ Executor that executes a "USER VARIABLE" (local to each task)
+                 TOS STWP,    \ store workspace register WP in TOS
+            *R11 TOS ADD,     \ add contents of PFA to workspace address
+             NEXT,
 
 \ ; push old IP onto the Return Stack
 \ ; pop new IP from the CPU stack
@@ -225,46 +210,47 @@ l: _douser    TOS PUSH,      \ Executor that executes a "USER VARIABLE" (local t
 \          exactly what we want!
 \  NEXT    ; invoke high-level interpreter
 l: _DODOES  ( -- a-addr)
-              IP RPUSH,       \ 28
-              TOS PUSH,       \ 28  push the CFA
-              W   TOS MOV,    \ CFA is in TOS
-             *TOS+ *TOS+ CMP, \ inc TOS by 4 converts CFA to PFA
-              *W    IP  MOV,     \ pfa -> IP
-              IP  4 ADDI, 
+              IP RPUSH,
+\              TOS PUSH,
+\              R11 TOS MOV,
+              R11 IP MOV,
               NEXT,
 
 \ =======================================================================
 \ DTC MACROS are compiled into each FORTH word. NOT needed by CODE words.
-\ reminder: We have to BRANCH to these routines because TMS9900
-\ does not have a nestable sub-routine call.
+\ Using BL puts the PFA automatically in R11  Yeah!
 
 CROSS-COMPILING
 \ CR .( DTC macros )
 
-: MAC.DOCOL      ENTR   @@ B, ;    ' MAC.DOCOL  IS JMP.DOCOL
-: MAC.DOUSER    _douser @@ B, ;    ' MAC.DOUSER IS JMP.DOUSER
-: MAC.DOCON     _docon  @@ B, ;    ' MAC.DOCON  IS JMP.DOCON
-: MAC.DOVAR     _dovar  @@ B, ;    ' MAC.DOVAR  IS JMP.DOVAR
+: MAC.DOCOL      ENTR   @@ BL, ;    ' MAC.DOCOL  IS JMP.DOCOL
+: MAC.DOUSER    _douser @@ BL, ;    ' MAC.DOUSER IS JMP.DOUSER
+: MAC.DOCON     _docon  @@ BL, ;    ' MAC.DOCON  IS JMP.DOCON
+: MAC.DOVAR     _dovar  @@ BL, ;    ' MAC.DOVAR  IS JMP.DOVAR
 
 \ ==============================================================
 CR .( FORTH PRIMITIVES BEGIN)
 
 CROSS-ASSEMBLING
-\ Forth hooks to hi-speed RAM routines
-CODE: EXIT    ( -- )
+
+
+\ *SPECIAL* Forth words to hi-speed RAM routines
+
+ CODE: EXIT    ( -- )
               EXIT2 @@ B,     \ Branch to fast address
               END-CODE
 
-CODE: ?BRANCH
-             ?BRANCH2 @@ B,  \ Branch to fast address
-              END-CODE
+\ removed these and now compile hi-speed addresses directly
+\ CODE: ?BRANCH
+\             ?BRANCH2 @@ B,  \ Branch to fast address
+\              END-CODE
 
-CODE: BRANCH
-              BRANCH2 @@ B,   \ Branch to fast address
-              END-CODE
+\ CODE: BRANCH
+\              BRANCH2 @@ B,   \ Branch to fast address
+\              END-CODE
 
-CODE: LIT     LIT2 @@ B,      \ Branch to fast address
-              END-CODE
+\ CODE: LIT     LIT2 @@ B,      \ Branch to fast address
+\              END-CODE
 
 \ ==========================================================================
 CODE: EXECUTE ( xt -- )
@@ -384,13 +370,13 @@ CODE: SP!     ( a -- )
 
 CODE: DROP    ( w -- )
               TOS POP,             \ 22 *SP+ TOS MOV,
-              NEXT,
+              NEXT,     \ INLINE
               END-CODE
 
 CODE: NIP     ( n n' -- n')
               SP INCT,              \ 10
               NEXT,
-              END-CODE
+              END-CODE   \ INLINE
 
 CODE: ?DUP    ( x -- 0 | x x)       \ ?DUP interleaved with DUP to save space
               TOS TOS MOV,          \ test for TOS<>0
@@ -435,7 +421,7 @@ CODE: -ROT    ( n1 n2 n3 --  n2 n3 n1)
 CODE: ><      ( n -- n )           \ swap bytes in n
               TOS SWPB,            \ handy and only 1 instruction
               NEXT,
-              END-CODE
+              END-CODE  \ INLINE
 
 \ used in number conversion. Same size as DROP DROP 3X faster
 CODE: 2DROP   ( n n -- )
@@ -504,12 +490,12 @@ CODE: AND     ( w w -- w )
 CODE: OR      ( w w -- w )
              *SP+ TOS OR,                                     \  22
               NEXT,
-              END-CODE
+              END-CODE    \ INLINE
 
 CODE: XOR     ( w w -- w )
              *SP+ TOS XOR,
               NEXT,
-              END-CODE
+              END-CODE   \ INLINE
 
 \ ==================================================================
 CR .( ARITHMETIC)
@@ -517,42 +503,42 @@ CR .( ARITHMETIC)
 CODE: 1+     ( n -- n')     \ changed from 1+ for compliance
               TOS INC,
               NEXT,
-              END-CODE
+              END-CODE      \ INLINE
 
 CODE: 1-      ( n -- n')
               TOS DEC,
               NEXT,
-              END-CODE
+              END-CODE     \ INLINE
 
 CODE: 2+     ( n -- n)   \ changed from 2+ for compliance
               TOS INCT,
               NEXT,
-              END-CODE
+              END-CODE      \ INLINE
 
 CODE: 2-     ( n -- n)
               TOS DECT,
               NEXT,
-              END-CODE
+              END-CODE   \ INLINE
 
 CODE: 2*      ( n -- n)     \ changed from 2* for compliance
               TOS TOS ADD,  \ mpy instruction is 52 clocks minimum. This is 14 clocks
               NEXT,
-              END-CODE
+              END-CODE   \ INLINE
 
 CODE: 4*      ( n -- nx4)    \ use in graphics & sprite calulations
               TOS 2 SLA,
               NEXT,
-              END-CODE
+              END-CODE   \ INLINE
 
 CODE: 8*      ( n -- nx8)   \ use in graphics & sprite calulations
               TOS 3 SLA,
               NEXT,
-              END-CODE
+              END-CODE   \ INLINE
 
 CODE: 2/      ( n -- n)     \ div instruction is 52 clocks minimum
               TOS 1 SRA,    \ this is 14
               NEXT,
-              END-CODE
+              END-CODE   \ INLINE
 
 \ ==================================================================
 CR .( ANS Shift operations)
@@ -587,13 +573,13 @@ CODE: SRA   ( n bits -- n') \ shift right arithmetic. Very handy for scaling
 CODE: INVERT  ( u -- w)
               TOS INV,              \ 10
               NEXT,
-              END-CODE
+              END-CODE   \ INLINE
 
 \ : +   ( u1 u2 -- u ) UM+ DROP ;  original Camel Forth code is bigger
 CODE: +       ( u1 u2 -- u )
              *SP+ TOS ADD,         \ ADD 2nd item to TOS and incr stack pointer.
               NEXT,
-              END-CODE
+              END-CODE   \ INLINE
 
 \ I found the 9900 weirdness but Brad's MSP430 code is 1 more instruction than mine :-)
 CODE: -       ( u1 u2 -- u )
@@ -614,12 +600,12 @@ CODE: M+      ( d n -- d )     \ add single to double signed output
 CODE: ABS    ( n -- n )
               TOS ABS,
               NEXT,
-              END-CODE
+              END-CODE  \ INLINE
 
 CODE: NEGATE ( n -- n )
               TOS NEG,
               NEXT,
-              END-CODE
+              END-CODE  \ INLINE
 
 CODE: ALIGNED ( n -- n)
               TOS INC,

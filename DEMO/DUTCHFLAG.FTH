@@ -98,13 +98,14 @@ SQUARE PTR1   CHARDEF
 : /1.3  ( n -- n/1.35 ) \ 100/135 is fastest GAP  ratio for this sort
         S" 100 135 */ 1 MAX " EVALUATE ;  IMMEDIATE
 
-: XCHG  ( adr1 adr2 CHAR1 CHAR2 -- ) 
+
+: XCHG  ( adr1 adr2 CHAR1 CHAR2 -- )
         S" SWAP ROT VC! SWAP VC!" EVALUATE ;  IMMEDIATE
 
 : COMBSORT (  -- )
     SIZE DUP  GAP !
     BEGIN
-        GAP @  /1.3  GAP !  \ calc. new gap
+        GAP @ /1.3  GAP !    \ calc. new gap
         SFLAG ON
         DUP GAP @ -  0
         DO                   ( **stack state**)
@@ -153,15 +154,14 @@ SQUARE PTR1   CHARDEF
 : TEST#1.  ." #1 In order test (Stability)" ;
 
 : FULLRUN ( -- )
-         PAGE 
+         PAGE
          CR ." COMBSORT DEMO"
          CR         TEST#1.               WAIT  \ Timing
          DUTCH      START COMBSORT STOP.  WAIT  \ 00:11.36
-         RNDSCREEN  START COMBSORT STOP.  WAIT  \ 00:12.28
-         BLUWHTRED  START COMBSORT STOP.  WAIT  \ 00:12.23
+         RNDSCREEN  START COMBSORT STOP.  WAIT  \ 00:12.18
+        BLUWHTRED  START COMBSORT STOP.  WAIT  \ 00:12.23
          RUSSIAN    START COMBSORT STOP.  WAIT  \ 00:12.30
          FRENCH     START COMBSORT STOP.  WAIT  \ 00:12.26
-
          CR ." COMBSORT Completed"
          1000 MS
 
@@ -169,7 +169,7 @@ SQUARE PTR1   CHARDEF
          CR   ." You should go get a coffee..."
          WAIT
 
-         PAGE 
+         PAGE
          CR ." BUBBLE SORT DEMO"
          CR TEST#1.                      WAIT  \ timing
          DUTCH      START COMBSORT STOP. WAIT  \ 00:11.35
@@ -192,4 +192,11 @@ SQUARE PTR1   CHARDEF
          PAGE CR ." BUBBLE SORT DEMO"    WAIT
          FRENCH     START BUBBLE   STOP. WAIT
          CR ." Completed"  ;
+
+: FRENCH2 ( -- )
+         PAGE
+         CR ." COMBSORT DEMO  GAP=GAP/2"   3000 MS
+         FRENCH  TICKER OFF COMBSORT STOP.  \ 00:12.18
+         CR ." COMBSORT Completed"
+         1000 MS  ;
 

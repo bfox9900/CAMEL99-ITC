@@ -144,12 +144,11 @@ l: _exec     *W+  R5 MOV,     \ move contents of CFA to R5 & INCR W        \ 22
              *R5  B,          \ branch to the address in R5                \ 12
                                                                          \ = 56
 l: _?branch   \ Faster way to avoid penalty of TOS refill
-              TOS DEC,        \ After DEC if tos=0, this will cause a carry flag                      10
-              TOS POP,        \ refill TOS changes L> A> EQ flags, BUT does not change carry flag     22
-              @@2 JOC,        \                                                                       10
+              TOS DEC,        \ After DEC if tos=0, this will cause a carry flag                     10
+              TOS POP,        \ refill TOS changes L> A> EQ flags, BUT does not change carry flag    22
+              @@2 JOC,        \                                                                      10
 l: _branch   *IP IP ADD,      \ *IP points to an offset number in memory. Add it to IP causes a jump.
               @@9 JMP,        \ *replaced NEXT, with short JMP. 20% faster! same size                10
-
 
 @@2:          IP INCT,        \ move IP forward past branch offset (don't branch)     10
               @@9 JMP,        \ JMP to _next
@@ -395,10 +394,11 @@ CODE: NIP     ( n n' -- n')
 
 CODE: ?DUP    ( x -- 0 | x x)       \ ?DUP interleaved with DUP to save space
               TOS TOS MOV,          \ test for TOS<>0
-              @@1 JNE,              \ if TOS<>0 goto DUP
-              NEXT,                 \ goto next word
+              EQ IF,                \ if TOS<>0 goto DUP
+                   NEXT,            \ goto next word
 +CODE: DUP    ( w -- w w )          \ create a Forth Header for DUP
-@@1:          TOS PUSH,
+              ENDIF,
+              TOS PUSH,
               NEXT,
               END-CODE
 
@@ -451,7 +451,7 @@ CODE: 2DROP   ( n n -- )
               TOS PUSH,            \ 28 copy n2 onto stack
               W PUSH,              \ 28 push onto Stack
               NEXT,                \
-             END-CODE             \ 74,  5 instructions, 10 bytes
+             END-CODE              \ 74,  5 instructions, 10 bytes
 [ELSE]
 \ faster version is 2 bytes bigger. It's hard to win with the 9900!
  CODE: 2DUP   ( n1 n2 -- n1 n2 n1 n2 )
@@ -541,12 +541,12 @@ CODE: 2*      ( n -- n)
               NEXT,
               END-CODE
 
-CODE: 4*      ( n -- nx4)   \ use in graphics & sprite calulations
+CODE: 4*      ( n -- nx4)   \ use in graphics & sprite calculations
               TOS 2 SLA,
               NEXT,
               END-CODE
 
-CODE: 8*      ( n -- nx8)   \ use in graphics & sprite calulations
+CODE: 8*      ( n -- nx8)   \ use in graphics & sprite calculations
               TOS 3 SLA,
               NEXT,
               END-CODE
@@ -560,17 +560,17 @@ CODE: 2/      ( n -- n)     \ div instruction is 52 clocks minimum
 CR .( ANS Shift operations)
 
 CODE: RSHIFT  ( n bits -- n')  \ shift right logical. ANS/ISO Forth requirement
-              TOS R0  MOV,            \ 14 the shift bits MUST be in R0 to do this
-             *SP+ TOS   MOV,          \ 22
-              R0 R0 MOV,              \ ANS:  1 0 LSHIFT -> 1
-              NE IF,                  \       so skip the shift if R0=1
+              TOS R0  MOV,     \ 14 the shift bits MUST be in R0 to do this
+             *SP+ TOS   MOV,   \ 22
+              R0 R0 MOV,       \ ANS:  1 0 LSHIFT -> 1
+              NE IF,           \       so skip the shift if R0=1
                  TOS R0 SRL,
               ENDIF,
               NEXT,
               END-CODE
 
 CODE: LSHIFT  ( n bits -- n') \ shift left arithmetic. NOT ANS compliant
-              TOS R0  MOV,           \ the shift bits MUST be in R0 to do this
+              TOS R0  MOV,    \ the shift bits MUST be in R0 to do this
              *SP+ TOS MOV,
               R0 R0 MOV,
               NE IF,

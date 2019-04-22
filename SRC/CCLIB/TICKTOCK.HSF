@@ -47,7 +47,8 @@ TARGET-COMPILING
            0 ?DO
                  TMR@
                  BEGIN
-                   PAUSE TMR@ |-| 650 >
+                   PAUSE
+                   TMR@ |-| 650 >
                  UNTIL
                  DROP
            LOOP ;

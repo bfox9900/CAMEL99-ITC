@@ -230,9 +230,8 @@ FALSE CONSTANT USEFORTH   \ true uses more Forth words, false uses more CODE
 \ C O D E   P R I M I T I V E S
 \ [CC] is short form for CROSS-COMPILING. (disables TARGET-COMPILING [TC] )
 
-[CC] cr .( Compile Forth Assembler primitives ...)  \ This is a talking comment.
-                                                    \ It reports what's happending
-                                                    \ during compilation
+[CC] cr .( Compile Forth Assembler primitives ...)
+
  INCLUDE CC9900\9900FAS2.HSF                        \ forth primitives
  INCLUDE CC9900\TI99PRIM.HSF                        \ TI99 I/O ROUTINES
 
@@ -424,10 +423,8 @@ TARGET-COMPILING
 ( note: ALLOT and HERE as code words reduced compile times by 1.5%)
 
 USEFORTH [IF]
- \ : HERE  ( -- addr) DP @  ;
-CODE: HERE  ( -- addr)       TOS PUSH,  DP @@ TOS MOV,  NEXT, END-CODE
-\ : ALLOT    ( n --) DP +! ;      \ allocate dictionary space
-CODE: ALLOT ( n -- )    TOS DP @@ ADD,        TOS POP,  NEXT, END-CODE
+ : HERE  ( -- addr) DP @  ;
+ : ALLOT    ( n --) DP +! ;      \ allocate dictionary space
  : ,       ( n -- ) HERE !   2 ALLOT ;
  : C,      ( c --)  HERE C!  1 ALLOT ;
 
@@ -477,11 +474,11 @@ USEFORTH [IF]
 [THEN]
 
 \ ========================================================================
-\ Reset base PAB address
+\ PAB base address
 
 \ >8370 contains 'AA' for the TI-99 O/S to identify end of VDP RAM
 \ We can't touch that byte so the pab stack base address starts 2 bytes below
-: RSTPAB  ( -- ) 8370 @ 2- ^PAB ! ;
+: VDPTOP  ( -- n) 8370 @ 2- ;
 
 [CC] cr .( Stack primitives ...)  [tc]
 \ ========================================================================
@@ -490,10 +487,13 @@ USEFORTH [IF]
 
 : TUCK  ( w1 w2 --  w2 w1 w2 ) SWAP OVER ;
 
-0 [if] \ these don't work ???
+0 [if]
 
-     : 2>R ( w w --)  >R  >R ; XIMMEDIATE
-     : 2R> ( -- w w)  R>  R> ; XIMMEDIATE
+   : 2>R ( w w --)  >R  >R ; XIMMEDIATE
+   : 2R> ( -- w w)  R>  R> ; XIMMEDIATE
+
+: 1+!   ( addr -- )  1 SWAP +! ;
+: 1-!   ( addr -- ) -1 SWAP +! ;
 
  [else]
 
@@ -513,6 +513,19 @@ USEFORTH [IF]
               TOS RPOP,            \ 22
               NEXT,              \ = 88
               END-CODE
+
+\ 9900 can directly access any memory (variable) so these are great
+CODE: 1+! ( addr -- )  \ increment variable in place
+            *TOS INC,
+             TOS POP,
+             NEXT,
+            END-CODE
+
+CODE: 1-! ( addr -- )  \ increment variable in place
+           *TOS DEC,
+            TOS POP,
+            NEXT,
+           END-CODE
 [then]
 
 \ ========================================================================
@@ -575,14 +588,18 @@ TARGET-COMPILING
 \ After seeing the VFX intel code for /STRING i realized it's WAY better
 \ as a code word.  8 bytes vs 10 bytes and 10X faster
 \ Speeds up WORD and PARSE for faster compiling
-\ : /STRING ( c-addr1 u1 n -- c-addr2 u2 ) ROT OVER + -ROT - ;  \ ~ 290uS
+USEFORTH [IF]
 
+    : /STRING ( c-addr1 u1 n -- c-addr2 u2 ) ROT OVER + -ROT - ;  \ ~ 290uS
+
+[ELSE]
 CODE: /STRING ( c-addr1 u1 n -- c-addr2 u2 ) \ ~20uS!!       Clks
               TOS *SP SUB,                                  \ 18
               TOS 2 (SP) ADD,                               \ 22
               TOS POP,                         \ refill TOS   22
               NEXT,                            \ 8 bytes      62  ~20uS
               END-CODE
+[THEN]
 
 \ compile a stack string into memory with the count (Gforth)
 : S,         ( c-addr u -- ) HERE OVER 1+ ALLOT PLACE  ALIGN ;
@@ -611,15 +628,15 @@ USEFORTH [IF]
      : SOURCE  'SOURCE 2@ ;    \ Common factor, saves space
 
 [ELSE]
-
-\ CODE: SOURCE   ( -- adr n)
-\              TOS PUSH,        \ save old tos    28
-\              TOS 'SOURCE LI,  \                 12
-\              2 (TOS) PUSH,    \ fetch 2nd cell  38
-\             *TOS TOS MOV,     \ fetch 1st cell  18
-\              NEXT,            \ 14 BYTES        96
-\              END-CODE
-
+ TRUE [IF]
+ CODE: SOURCE   ( -- adr n)
+              TOS PUSH,        \ save old tos    28
+              TOS 'SOURCE LI,  \                 12
+              2 (TOS) PUSH,    \ fetch 2nd cell  38
+             *TOS TOS MOV,     \ fetch 1st cell  18
+              NEXT,            \ 14 BYTES        96
+              END-CODE
+ [ELSE]
   CODE: SOURCE   ( -- adr n)
             SP -4 ADDI,       \ make room       14
             TOS  2 (SP) MOV,  \ save TOS        22
@@ -628,6 +645,7 @@ USEFORTH [IF]
            *TOS TOS MOV,      \ fetch 1st cell  18
             NEXT,             \ 16 BYTES        92
             END-CODE
+  [THEN]
 [THEN]
 
                     [CC] [PRIVATE] [TC]   \ only needed by the parser
@@ -679,7 +697,7 @@ USEFORTH [IF]
               DUP BASE @ U< ;              \ 48 bytes  15 us
 [ELSE]
 CODE: DIGIT?   ( char -- n f )
-               TOS PUSH,        \  dup char
+               TOS PUSH,          \  dup char
                TOS -30 ADDI,      \  convert char to number
                TOS 9 CMPI, GT
                IF,
@@ -706,8 +724,8 @@ CODE: DIGIT?   ( char -- n f )
              DUP IF 1+                     \ -- +=0, -=+2
                     >R 1 /STRING R>        \ -- adr' n' f
              THEN ;
-                       [PUBLIC]
 
+                       [PUBLIC]
 : UD*        ( ud1 u2 -- ud3)              \ 32*16->32 multiply
              DUP >R * SWAP R> UM* ROT + ;  \ simplified with * BF.
 
@@ -790,9 +808,9 @@ TARGET-COMPILING
 \ speed without needing to write everything in Assembler.
 \ We use MALLOC to create a temporary buffer to hold 2 lines of screen text
 
-[PRIVATE]
+                              [PRIVATE]
 \ calc size of 2 lines,
-USEFORTH
+TRUE
  [IF]
     : 2C/L ( -- n) C/L@ 2* ;
 
@@ -802,8 +820,7 @@ CODE: 2C/L ( -- n) CODE[ C/L@ 2* ] NEXT, END-CODE  \ 8 BYTES bigger
 
  [THEN]
 
-[PUBLIC]
-
+                              [PUBLIC]
 : SCROLL   ( -- )
            2C/L DUP                       \ get chars per cut buffer and dup
            MALLOC ( -- c/s heap)          \ allocate 2 lines in heap
@@ -823,17 +840,19 @@ CODE: 2C/L ( -- n) CODE[ C/L@ 2* ] NEXT, END-CODE  \ 8 BYTES bigger
 \ VDP text driver can use FORTH or ASM words (CR) (EMIT)
 [cc] HEX [tc]
 
+: VPUT      ( c -- ) VPOS VC! ; \ put c at current col,row (that's all)
+
 USEFORTH  [IF]
 : (CR)   ( -- ?)
           OUT OFF  VCOL OFF
-          1 VROW +!
+          VROW 1+!
           FALSE
-          VROW @ L/SCR = IF  DROP TRUE THEN ;
+          VROW @ L/SCR = IF  DROP TRUE THEN ; \ 34 bytes
 
-: (EMIT) ( char vaddr -- ?) \ replaced with code version: TI99PRIM.HSF
-          VC!
-          1  OUT +!
-          1 VCOL +!
+: (EMIT) ( char -- ?) \ replaced with code version: TI99PRIM.HSF
+          VPUT
+          OUT  1+!
+          VCOL 1+!
           FALSE
           C/L@ VCOL @ = IF  DROP TRUE THEN ;
 
@@ -852,7 +871,7 @@ CODE: (CR)    ( -- ? )  \ return true if we need to SCROLL
                    TOS SETO,   \ TOS=TRUE
               ENDIF,
               NEXT,
-              END-CODE
+              END-CODE  \ 32 bytes
 
  CODE: (EMIT) ( char vaddr -- ?)  \ (emit) returns true if we need to CR
               TOS R0 MOV,          \ cursoradr->R0
@@ -885,7 +904,7 @@ CODE: (CR)    ( -- ? )  \ return true if we need to SCROLL
             IF  SCROLL  THEN  ;
 
 : BS  ( --)  VCOL DUP @ 1- 0 MAX SWAP !  \ move cursor position back
-             -1 OUT +! ;                 \ decrement output counter
+             OUT 1-! ;                   \ decrement output counter
 
 [CC] HEX [TC]
 
@@ -900,8 +919,6 @@ CODE: (CR)    ( -- ? )  \ return true if we need to SCROLL
 : TYPE      ( adr cnt --) PAUSE BOUNDS ?DO  I C@ EMIT  LOOP ;
 : SPACE     ( -- )   BL EMIT ;
 : SPACES    ( n -- ) PAUSE 0 MAX  0 ?DO SPACE LOOP ;
-
-: VPUT      ( c -- ) VPOS VC! ; \ put c at current col,row (that's all)
 
 \ ========================================================================
 \ S T R I N G   L I T E R A L S
@@ -926,19 +943,19 @@ T' TYPE  RESOLVES 'TYPE
 
 TARGET-COMPILING
 
-: KEY        ( -- char)                      \ simple non-repeating KEY
-              BEGIN
-                CURS@ VPUT                   \ show the flashing cursor
-                PAUSE                        \ multi-tasking switch
-                KEY?
-              UNTIL                          \ wait for key press
-            8375 C@ 7F AND                   \ fetch KSCAN buffer, 7 bits only
-              BL VPUT ;                      \ erase cursor character
+: KEY       ( -- char)                     \ simple non-repeating KEY
+            BEGIN
+              CURS@ VPUT                   \ show the flashing cursor
+              PAUSE                        \ multi-tasking switch
+              KEY?
+            UNTIL                          \ wait for key press
+            8375 C@ 7F AND                 \ fetch KSCAN buffer, 7 bits only
+            BL VPUT ;                      \ erase cursor character
 
 \ High level: input/output                      (c) 31mar95 bjr
-: ACCEPT      ( c-addr +n -- +n')            \ get line from terminal
+: ACCEPT     ( c-addr +n -- +n')            \ get line from terminal
              OVER + 1- OVER
-             BEGIN  KEY DUP 0D <>            \ test for enter (hex D)
+             BEGIN  KEY DUP 0D <>           \ test for enter (hex D)
              WHILE
                 DUP EMIT
                 DUP 8 =                        \ test for back-space character
@@ -966,7 +983,7 @@ TARGET-COMPILING
          >R 0 R@ UM/MOD -ROT R> UM/MOD ROT ; \ 32/16->32 divide
 
 \ decrement hold pointer HP. Store char at the address in HP
-    : HOLD   ( char -- )  HP -1 OVER +! @ C! ;
+    : HOLD   ( char -- )  HP DUP 1-! @ C! ;
 
 USEFORTH [if]
 
@@ -991,7 +1008,7 @@ CODE: >DIGIT  ( n -- c)        \ ASM is 9 bytes, 4X faster
 : #      ( ud1 -- ud2)  BASE @ UD/MOD ROT  >DIGIT  HOLD  ;
 
 \ convert all digits in ud1. ud2 will be 0 (the remainder)
-: #S     ( ud1 -- ud2)  BEGIN   # 2DUP OR    0= UNTIL ;
+: #S     ( ud1 -- ud2)  BEGIN  # 2DUP OR  WHILE REPEAT ; \ 10% faster with WHILE
 
 \ return a stack string (address, length)  of the converted number
 : #>     ( ud1 -- c-addr u) 2DROP HP @ PAD OVER - ;
@@ -1041,11 +1058,12 @@ TARGET-COMPILING
 \ ========================================================================
 \ Q U I T :  The  O U T E R   I N T E R P R E T E R
 
-\ QUIT is the Forth REPL (read,evaluate,print loop)
+\ QUIT is the Forth REPL (read, evaluate, print loop)
 : QUIT         ( -- )
                L0 LP !                     \ init LEAVE stack pointer LP
                RP0 RP!                     \ reset rstack
-               RSTPAB                      \ reset PAB stack in VDP RAM
+               SOURCE-ID OFF
+               VDPTOP ^PAB !               \ GET end of VDP mem from O/S, set PAB pointer
                t[COMPILE] [                \ STATE = 0 (Interpreting mode)
                BEGIN
                   TIB DUP TIB# ACCEPT SPACE ( -- adr len) \ accept input to TIB, maxlen=TIB#
@@ -1065,15 +1083,12 @@ TARGET-COMPILING
 \ ========================================================================
 \ E R R O R   H A N D L I N G
 \
-: ABORT       ( -- )
-              SP0 SP!
-              SOURCE-ID OFF
-              CR QUIT ;
+: ABORT       ( -- )  SP0 SP!  CR QUIT ;
 
 : ?ABORT  ( f c-addr u --)
            ROT IF  HONK
                    CR CR T." ? "  TYPE
-                   SOURCE-ID @   \ if source is NOT console
+                   SOURCE-ID @   ( if source is NOT console)
                    IF  T."  Line " LINES @ U.
                        CR CR SOURCE TYPE
                    THEN ABORT
@@ -1194,7 +1209,7 @@ CROSS-COMPILING
 TARGET-COMPILING
 
 : TEXT      ( -- )
-             F0 DUP 83D4 C!        \ TI KSCAN re-writes VReg1 with whatever is in this byte.
+             F0 DUP 83D4 C!       \ TI KSCAN re-writes VReg1 with whatever is in this byte.
        ( -- F0) 01 VWTR           \ VDP register 1: bit3 = 1 sets the TEXT Mode
 
 \             00  2 VWTR   ( DEFAULTS FROM EDITOR ASSEMBLER)
@@ -1232,10 +1247,10 @@ TARGET-COMPILING
 
 \                    text    runtime-action   parameter
 \ -------------------------  --------------- -----------
-: CONSTANT  ( n --)  HEADER  COMPILE DOCON     , ; \ the comma compiles 'n' into the constant
-: USER      ( n --)  HEADER  COMPILE DOUSER    , ; \ n is the BYTE offset from workspace pointer
-: CREATE    ( -- )   HEADER  COMPILE DOVAR       ; \ create does not have a parameter by default
-: VARIABLE  ( -- )   CREATE                  0 , ; \ variables are set to zero when created
+: CONSTANT  ( n --)  HEADER  COMPILE DOCON     , ;  \ the comma compiles 'n' into the constant
+: USER      ( n --)  HEADER  COMPILE DOUSER    , ;  \ n is the BYTE offset from workspace pointer
+: CREATE    ( -- )   HEADER  COMPILE DOVAR       ;  \ create does not have a parameter by default
+: VARIABLE  ( -- )   CREATE                  0 , ;  \ variables are set to zero when created
 
 \ (:noname) came from studying gforth. It's a nice factor.
 \ had to use the literal address of ENTR ($839E) to make this work.
@@ -1254,21 +1269,21 @@ TARGET-COMPILING
        ; XIMMEDIATE
 
 \ =======================================================================
-\ ADD-ONS
-\ ** commment out everything to build the smallest kernel  **
+\ TI-99 F I L E   S Y S T E M   I N T E R F A C E
+\ ** comment out everything to build the smallest kernel  **
 
-: DEPTH ( -- n) SP0 SP@ 2+ - 2/ ;
-
- [CC] include CC9900\cclib\dsrlink8.hsf
- [CC] include CC9900\cclib\filesysW.hsf
+ [CC] include CC9900\cclib\dsrlinkA.hsf
+ [CC] include CC9900\cclib\filesysX.hsf
 
 \ =======================================================================
 \ T E S T   C O D E   G O E S   H E R E
 \ if you want to add any other code it must go before target branch compilers
 
+
+
 \ =======================================================================
 \ LOOPS AND BRANCH COMPILERS FOR THE TI-99 SYSTEM
-\ [CC] CR .( TARGET forth BRANCHING and LOOPING ...)
+ [CC] CR .( TARGET Forth BRANCHING and LOOPING ...)
 
  [CC]  include cc9900\cclib\targloop.hsf  \ these compile code on the TARGET system
 
@@ -1310,10 +1325,10 @@ TARGET-COMPILING
               HEX                            \ set the RADIX to hex
 \ VDP start screen
               TEXT BEEP
-              TS" CAMEL99G" TYPE
-              RSTPAB                         \ GET end of VDP mem from O/S, set PAB pointer
+              TS" CAMEL99G FAST" TYPE
+              VDPTOP ^PAB !
               TS" DSK1.START" INCLUDED       \ load the start file
-              ABORT ;                        \ re-start the interpreter
+              CR QUIT ;                      \ re-start the interpreter
 
 \ ======================================================================
 \ define target comment words

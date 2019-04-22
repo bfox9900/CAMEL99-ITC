@@ -8,6 +8,8 @@ This implementation creates simple string list syntax in Forth to help manage th
 
 By parsing the user text the program scans for keywords and key phrases. The matched text is converted into a Forth word by removing spaces and punctuation.  Armed with a valid Forth word we simply pass it to EVALUATE to kick off Eliza's response.
 
-Lists of responses are created and compiled with the word REPLY: <name>
+Lists of responses are created and then compiled as a Forth word with the word REPLY: <name>
 
 Using the list structure for keywords, phrases and conjugations coupled with directly executing Forth "REPLYs" makes modification quite simple.
+
+The file ELIZADATA.FTH contains the source code for the replies. They are separated from the program for ease of editing.

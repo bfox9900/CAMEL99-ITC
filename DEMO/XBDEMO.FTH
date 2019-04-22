@@ -1,7 +1,7 @@
 \ EXTENDED BASIC DEMO ported to CAMEL99 V2
 
-INCLUDE DSK1.CHARSET
-INCLUDE DSK1.DIRSPRIT
+NEEDS CHARSET  FROM DSK1.CHARSET
+NEEDS SPRITE   FROM DSK1.DIRSPRIT
 
 CR .( Patterns... )
 HEX
@@ -174,7 +174,7 @@ DECIMAL
         2DUP    AT-XY ." 9::;"
         1+ 2DUP AT-XY ." HPQ<"
         1+      AT-XY ." ?>>="  ;
-        
+
 .( Main... )
 DECIMAL
 : RUN   ( -- )
@@ -202,6 +202,3 @@ DECIMAL
            ?TERMINAL
         UNTIL
         DEFAULTS ;
-
-
-

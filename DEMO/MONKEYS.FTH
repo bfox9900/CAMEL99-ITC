@@ -1,28 +1,33 @@
 \ monkeys.fth
-\
+\ TESTED with verison G
 
-INCLUDE DSK1.RANDOM
+NEEDS .S  FROM DSK1.TOOLS
+NEEDS RND FROM DSK1.RANDOM
 
 DECIMAL
-VARIABLE WORD_LEN   
+VARIABLE WORD_LEN
 VARIABLE CHARSOUT
 VARIABLE WORDSOUT
 
 HEX 7FFF CONSTANT 32K
 
-: 1+!  ( addr -- ) 1 SWAP +! ;
+\ : 1+!  ( addr -- ) 1 SWAP +! ; ( THIS IS IN KERNEL VERSION F and up)
 : CLIP  ( n min max -- n') ROT MIN MAX ;
-: VOWELS S" AEIOU" ;
-: BETWEEN ( n min max -- ? ) 1+ WITHIN ;
+
+: Vowels       S" AEIOU" ;
+: Consonants   S" BCDFGHJKLMNPQRSTVWXYZ" ;
+
+: BETWEEN ( n min max -- ? )  1+ WITHIN ;
 : UALPHA? ( c -- ?)  [CHAR] A [CHAR] Z BETWEEN ;
-: LOWER?  ( c -- ?) [CHAR] a [CHAR] z BETWEEN ;
+: LOWER?  ( c -- ?)  [CHAR] a [CHAR] z BETWEEN ;
 : TOUPPER ( c -- c) DUP LOWER? IF 05F AND THEN ;
 
 DECIMAL
-: VOWEL?  ( char -- ? )    VOWELS ROT SCAN NIP 0> ;
-: CONSONANT? ( char -- ? ) VOWEL? 0= ;
+: MEMBER? ( char addr len -- ? ) ROT SCAN NIP 0> ;
+: VOWEL?  ( char -- ? )    TOUPPER Vowels MEMBER? ;
+: CONSONANT? ( char -- ? ) TOUPPER Consonants MEMBER? ;
 
-VARIABLE PREVIOUS-CHAR  
+VARIABLE PREVIOUS-CHAR
 \ PREVIOUS VALUES: -1=VOWEL, 0=UNDEFINED,  1=CONSONANT
 
 -1 CONSTANT AVOWEL
@@ -33,9 +38,9 @@ VARIABLE VOWELS
 
 : NEW-WORD  ( -- ) CONSONANTS OFF   VOWELS OFF   PREVIOUS-CHAR OFF ;
 
-: MONKEY-FINGER ( -- char) 
-                BEGIN  
-                  27 RND [CHAR] A +  
+: MONKEY-FINGER ( -- char)
+                BEGIN
+                  26 RND [CHAR] A +
                   DUP UALPHA?
                 UNTIL
                 CHARSOUT 1+! ;
@@ -55,15 +60,13 @@ VARIABLE VOWELS
 : KILL|KEEP ( char ? -- char | ?)  IF  DROP FALSE  ELSE TRUE THEN ;
 
 : GETVOWEL ( -- vowel-char)
-          BEGIN   
-            MONKEY-FINGER DUP CONSONANT? 
-            KILL|KEEP
+          BEGIN
+            MONKEY-FINGER DUP CONSONANT? KILL|KEEP
           UNTIL ;
 
 : GETCONST ( -- consonant-char)
-          BEGIN   
-            MONKEY-FINGER DUP VOWEL? 
-            KILL|KEEP       
+          BEGIN
+            MONKEY-FINGER DUP VOWEL? KILL|KEEP
           UNTIL ;
 
 : CONSONANTS? ( char n -- ?)
@@ -91,45 +94,41 @@ VARIABLE VOWELS
          WORDSOUT 1+!
         SPACE ;
 
-: TAB  ( n -- ) VCOL ! ;
-
 : WAITKEYUP  ( -- ) BEGIN KEY? 0= UNTIL ;
-: WAITKEY    ( -- ) KEY? IF KEY DROP THEN ; 
+: WAITKEY    ( -- ) KEY? IF KEY DROP THEN ;
+
+: TAB        ( n --) VCOL ! ;
 
 DECIMAL
 : MONKEY-LINE  ( -- )
-          CR   MONKEY-WORD  13 TAB  MONKEY-WORD 26 TAB MONKEY-WORD ;
+          CR   MONKEY-WORD  13 TAB  MONKEY-WORD  26 TAB MONKEY-WORD ;
 
-: TITLE
-PAGE
-CR 2 TAB ." IF..."
-CR
-CR 2 TAB ." an infinite number of monkeys, with"
-CR 2 TAB ." an infinite number of typewriters,"
-CR 2 TAB ." type for an infinite amount of time,"
-CR 2 TAB ." they will type the complete works"
-CR 2 TAB ." of Shakespeare."
-CR
-CR 29 TAB ." Anonymous"
+: TITLE PAGE
+  CR 2 TAB ." IF..."
+  CR
+  CR 2 TAB ." an infinite number of monkeys, with"
+  CR 2 TAB ." an infinite number of typewriters,"
+  CR 2 TAB ." type for an infinite amount of time,"
+  CR 2 TAB ." they will type the complete works"
+  CR 2 TAB ." of Shakespeare."
+  CR
+  CR 29 TAB ." Anonymous"
 
-10 23 AT-XY  ." Press a key to begin..." KEY DROP ;
+  10 23 AT-XY  ." Press a key to begin..." KEY DROP ;
 
 : MONKEYS  ( -- )
          27 7 VWTR
          TITLE PAGE
          CHARSOUT OFF
          WORDSOUT OFF
-         10 WORD_LEN !
+         8 WORD_LEN !
          CR ." Max word length = " WORD_LEN @ .
          BEGIN
            WAITKEY
            MONKEY-LINE
-           CHARSOUT @ 32K =
-           ?TERMINAL OR
+          ?TERMINAL
          UNTIL
          WAITKEYUP
          CR
          CR ." The monkeys typed " CHARSOUT @ U.  ." characters
          CR ." in " WORDSOUT @ . ." words." ;
-
-

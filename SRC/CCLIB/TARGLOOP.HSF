@@ -6,10 +6,12 @@
 
 TARGET-COMPILING
 \ branch compilers: these make the code look clearer by naming the direction
+\                           [PRIVATE]   ( save 16 bytes)
 : AHEAD    ( -- addr)  HERE   0 , ;         \ leave adr for forward branch, compile empty cell
 : BACK     ( addr -- ) HERE   - , ;         \ compile a branch offset (ADDR-HERE = OFFSET we jump to)
 : RESOLVE  ( addr -- ) HERE OVER - SWAP ! ; \ resolve forward branch and compile offset at addr
 
+                          [PUBLIC]
 \ CAMEL Forth LEAVE stack is called L0. It is initialized by QUIT.
 : >L        ( x -- ) ( L: -- x )  \ push x to leave stack
             2 LP +!  LP @ ! ;        ( L stack grows up)

@@ -53,7 +53,7 @@ DECIMAL
 \ the original version of PYRAMID used string CONCATENATION
 \ to combine the characters needed to draw each row of stones
 \ with the correct slope on each end.
-\ String concatentation is slow because it copies strings in memory. 
+\ String concatentation is slow because it copies strings in memory.
 
 \ In Forth we should make some new words to do the job for us.
 : .LSLOPE ( -- ) [CHAR] A EMIT ;  \ print 1 left slope brick
@@ -71,9 +71,9 @@ DECIMAL
           DO
             CR 15 I - TAB               \ newline & tab to centre of screen
               .LSLOPE I BRICKS .RSLOPE  \ print line of BRICKs
-          LOOP 
+          LOOP
          CR .GRASS
-         CR 
+         CR
          CR
          CR .GRASS ;
 
@@ -89,7 +89,7 @@ DECIMAL
              IF DROP 104  \ reset it to 104
              THEN ;
 
-\ Forth Style: 
+\ Forth Style:
 \ Create custom variable incrementers, that limit themselves!
 \
 : 1+@   ( variable -- n ) \ INCR variable, limit to 104..111, return value
@@ -100,7 +100,7 @@ DECIMAL
 
 \ These variables keep track of the wave characters
 \ We could do this on the stack but it would be harder to understand
-VARIABLE T  
+VARIABLE T
 VARIABLE Y
 
 : INIT-WAVES ( -- )
@@ -112,7 +112,7 @@ VARIABLE Y
            0 22  Y 2+@  32 HCHAR ;
 
 \ Now the water flow loop is so simple
-: FLOW     ( -- )  
+: FLOW     ( -- )
            INIT-WAVES
            BEGIN
              .WAVES
@@ -133,6 +133,3 @@ VARIABLE Y
           4 19 2 1 COLORS       \ reset printable character's colors
           CHARSET               \ reset character patterns
 ;
-
-
-

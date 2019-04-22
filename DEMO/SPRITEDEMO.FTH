@@ -4,7 +4,6 @@ CR .( For use with CAMEL99 V2.0.17 or greater)
 CR
 CR
 
-NEEDS BREAK  FROM DSK1.TOOLS
  INCLUDE DSK1.DIRSPRIT
  INCLUDE DSK1.RANDOM
  INCLUDE DSK1.MOTION
@@ -108,12 +107,10 @@ DECIMAL
            ALL-SPRITES TRANSLATE    \ move everybody
            0 SP.MOVE                \ move Spr#0 once more
            31 SP.MOVE 31 SP.MOVE    \ Move Spr#31 2x more
-           ?BREAK
+           ?TERMINAL ABORT" BREAK"
          AGAIN ;
 
 CLEAR
 SET-MOTIONS
 CR ." Motions are set"
 CR ." TYPE RUN to start"
-
-

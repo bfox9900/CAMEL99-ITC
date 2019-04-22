@@ -1,3 +1,5 @@
+\ Demo from TI-BASIC USER'S REFERENCE GUIDE
+
 \ 100 REM  Random Color Dots
 \ 110 RANDOMIZE
 \ 120 CALL CLEAR
@@ -39,9 +41,9 @@ DECIMAL
       16 SCREEN  CLEAR
       SET-COLORS
       BEGIN
-	 COL ROW CHR 1 HCHAR
+	       COL ROW CHR 1 HCHAR
          GEN1 150 Y -2 SOUND \ Select sound Generator #1
-	 ?TERMINAL     \ check for the break key
+	       ?TERMINAL     \ check for the break key
       UNTIL
       8 SCREEN         \ restore things like BASIC
       4 19 2 1 COLORS

@@ -3,8 +3,19 @@
 INCLUDE DSK1.TOOLS
 INCLUDE DSK1.GRAFIX
 INCLUDE DSK1.RANDOM
+INCLUDE DSK1.SOUND
 
-MARKER ALPHA
+VARIABLE SPEED
+
+\ ==================================
+\ sound words
+DECIMAL
+: SNDINIT     GEN4 3 NOISE MUTE
+              GEN3 1500 HZ MUTE ;
+
+: BUZZ        GEN3 1300 SPEED @ - HZ   GEN4 12 4 RND + DB ;
+: ANGRY       GEN3 1350 200 RND + HZ   GEN4  6 2 RND + DB ;
+
 \ ==================================
 \ character patterns
 HEX
@@ -45,7 +56,7 @@ DECIMAL
 
 \ ==================================
 \ double variable hold Y and X
-CREATE VECTOR 0 , 0 ,          
+CREATE VECTOR 0 , 0 ,
 CREATE MY-XY  RNDY , RNDX ,    \ independant cursor for alpha guy
 
 : RNDV     ( -- -1 0 1 )  3 RND 1- ;
@@ -66,26 +77,24 @@ CREATE MY-XY  RNDY , RNDX ,    \ independant cursor for alpha guy
 : >VPOS        ( Y X -- vaddr)  C/L@ * + ;
 : GETXY        ( -- x y) MY-XY 2@ ;
 : PUT-CHAR     ( c -- ) GETXY >VPOS VC! ;
-: ERASE-MAN    ( -- )   BL PUT-CHAR ;
-: SHOW-MAN     ( -- )   ALPHA-GUY PUT-CHAR ;
+: ERASE-FLY    ( -- )   BL PUT-CHAR ;
+: SHOW-FLY    ( -- )   ALPHA-GUY PUT-CHAR ;
 
 : READ-CHAR    ( Y X -- c) >VPOS VC@ ;  \ read char without moving cursor
 : NEXT-POS     ( -- Y X ) GETXY VECTOR@ VECT+  ;
 
-: MOVE-MAN     ( -- )
-               ERASE-MAN   NEXT-POS MY-XY 2!  SHOW-MAN ;
+: MOVE-FLY    ( -- )  ERASE-FLY  NEXT-POS MY-XY 2!  SHOW-FLY ;
 
 DECIMAL
 VARIABLE TRYS
-VARIABLE SPEED
 
 \ print right justified n spaces
 : .R   ( n n -- )  >R DUP ABS 0 <# #S ROT SIGN #>  R> OVER - SPACES TYPE ;
+: .VECTOR  ." Vector"  VECTOR 2@  2 .R ." ," 2 .R ;
+: .TRYS    ." Trys "   TRYS @     2 .R ;
+: .SPEED   ." Speed "  SPEED @    3 .R ;
 
-: .BRAIN     ( -- )
-     0 0 CLRLN
-     ." Vector"  VECTOR 2@  2 .R ." ," 2 .R  SPACE ." Trys " TRYS @ 2 .R  
-     ( SPACE  DEPTH . ) ;
+: .BRAIN  ( -- )  0 0 CLRLN  .VECTOR SPACE .TRYS SPACE .SPEED  ;
 
 : SAD         ALPHA-GUY  AFLY   OVER CHARDEF    SET#  7 1 COLOR  ;
 : HAPPY       ALPHA-GUY  AFLY   OVER CHARDEF    SET#  2 1 COLOR  ;
@@ -98,19 +107,30 @@ VARIABLE SPEED
             SAD                        \ change face & color while thinking
             TRYS OFF                   \ reset the trys counter
             BEGIN
+               ANGRY
                CHANGE-DIR              \ get new direction
                1 TRYS +!               \ count the try
-               .BRAIN \ 50 MS            \ report to screen
+               .BRAIN                  \ report to screen
               CLEAR-AHEAD?
             UNTIL
-            HAPPY   ;
+            HAPPY  BUZZ ;
 
-: CRAZY ( -- )      \ crazy random movement    
+: CRAZY ( -- )      \ crazy random movement
         RNDV 0>     \ if we get 1 ( 33% chance)
         IF
-          CHANGE-DIR
-          200 RND  15 MAX SPEED !  \ change to random speed
+          CHANGE-DIR BUZZ
+          100 RND  4 MAX DUP SPEED !  MS
         THEN ;
+
+: FLY  ( -- )
+        200 RND 0
+        DO
+           CLEAR-AHEAD?
+           IF   MOVE-FLY
+           ELSE ALPHA-THINK
+           THEN SPEED @ MS
+        LOOP
+        SILENT 1000 RND MS ;
 
 DECIMAL
 : RUN      ( -- )
@@ -118,17 +138,14 @@ DECIMAL
            16 SCREEN
            PAGE 4 10 AT-XY ." Fly Intelligence Demo" 1000 MS
            PAGE  .BORDER  .WALLS
-           HAPPY SHOW-MAN
+           HAPPY SHOW-FLY
            CHANGE-DIR
            25 SPEED !
+           SNDINIT
            BEGIN
-              CLEAR-AHEAD?
-              IF   MOVE-MAN
-              ELSE ALPHA-THINK
-              THEN SPEED @ MS    \ random speed delay
-              CRAZY
+              FLY
               KEY?
            UNTIL
-           ?BREAK
+           SILENT
+           ?TERMINAL IF ABORT THEN
         AGAIN ;
-

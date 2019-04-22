@@ -1,10 +1,10 @@
- \ FilesysW.hsf    Nov 12 2018
+ \ FilesysX.hsf    Apr 8 2019
 
 [CC] HEX
 
 TARGET-COMPILING
 
-\ VARIABLE: ^PAB            \ *moved to CAMEL2.HSF
+\ VARIABLE: ^PAB            \ *moved to CAMEL kernel file
 
 \ To save kernel space we are reading/writing VDP directly.
 \ There is NO PAB duplicate in CPU RAM.
@@ -12,9 +12,12 @@ TARGET-COMPILING
 \ fast fetch of pab base pointer. (*This is also the OPCODE field)
 CODE: [PAB   ( -- adr) TOS PUSH,  ^PAB @@ TOS MOV,  NEXT, END-CODE
 
-\ PAB field words calculate offset from PAB base. 16 BYTES smaller than Forth
-\ square bracket trailing to indicate they are used with [PAB
-\ Example:  [PAB FBUFF] V@
+\ PAB field words calculate offset from [PAB base in ** VDP RAM **
+\ CODE is 16 BYTES smaller than Forth equivalent and faster
+\ Trailing square bracket is to indicate they are used with [PAB
+\ read/write the PAB with V@ VC@  VREAD VWRITE
+
+\ Example:  [PAB FBUFF] V@   [PAB CHARS] VC@
 
  CODE: FLG]    ( vaddr -- vaddr') TOS INC,         NEXT, END-CODE \ 1+
  CODE: FBUFF]  ( vaddr -- vaddr') TOS INCT,        NEXT, END-CODE \ 2+
@@ -24,21 +27,15 @@ CODE: [PAB   ( -- adr) TOS PUSH,  ^PAB @@ TOS MOV,  NEXT, END-CODE
  CODE: STAT]   ( vaddr -- vaddr') TOS  8 ADDI,     NEXT, END-CODE \ 8+
  CODE: FNAME]  ( vaddr -- vaddr') TOS  9 ADDI,     NEXT, END-CODE \ 9+
 
-\ >8370 contains 'AA' for the TI-99 O/S to identify end of VDP RAM
-\ We can't touch that byte so the pab stack base address starts 2 bytes below
- : RSTPAB  ( -- ) VDPTOP ^PAB ! ;  \ moved to kernel
 
 \ control the PAB stack
 12C CONSTANT: PSZ                             \ size of PAB+BUFFER
 : PSHPAB  ( -- VDPadr) PSZ NEGATE ^PAB +! ;
-: POPPAB  ( -- VDPadr) PSZ ^PAB +! ;
+: POPPAB  ( -- )              PSZ ^PAB +! ;
 
 \ generic file error handler
 : ?FILERR  ( ior -- )
-           ?DUP
-           IF CR T." * File Err "  .
-              RSTPAB ( HONK) ABORT
-           THEN ;
+           ?DUP IF  CR T." * File Err "  .  ABORT THEN ;
 
 : VPLACE   ( $addr len Vaddr -- )  \ like PLACE, but for VDP RAM
            2DUP VC! 1+ SWAP VWRITE ;
@@ -46,7 +43,7 @@ CODE: [PAB   ( -- adr) TOS PUSH,  ^PAB @@ TOS MOV,  NEXT, END-CODE
 \ INITPAB needs ^PAB set to a VDP address. *NO ERROR CHECKING USED*
 \ it inits the pab to DV80 file format
 : INITPAB  ( addr len -- )
-\          [PAB PSZ 0 VFILL           \ erase the PAB. NOT needed
+           [PAB 29 0 VFILL           \ *MUST* erase OLD PAB and file name
            14 [PAB FLG]    VC!       \ mode: input,display,variable
            50 [PAB RECLEN] VC!       \ 80 bytes/rec
            [PAB FNAME] DUP           \ -- addr len Vaddr Vaddr
@@ -57,15 +54,10 @@ CODE: [PAB   ( -- adr) TOS PUSH,  ^PAB @@ TOS MOV,  NEXT, END-CODE
 \ === HI LEVEL FUNCTIONS ====
 [CC] HEX [TC]
 
- 8356 CONSTANT: DSRNAM
-
 : FILEOP  ( opcode -- err)                   \ TI99 O/S call
           [PAB VC!                           \ write opcode byte to VDP PAB
           [PAB FLG] DUP VC@ 1F AND SWAP VC!  \ clear err code bits
-          0 GPLSTAT C!                       \ clear GPL status register
-          [PAB FNAME] DSRNAM !               \ select the PAB
-          DSRLNK ( -- err)                   \ DSRLINK with parameter 8
-          GPLSTAT C@ 20 AND  OR              \ get GPL status, or with err
+          [PAB FNAME] DSRLNK ( -- err)       \ DSRLINK with parameter 8
 ;
 
 \ VARIABLE: LINES                            \ moved to Kernel
@@ -74,22 +66,20 @@ CODE: [PAB   ( -- adr) TOS PUSH,  ^PAB @@ TOS MOV,  NEXT, END-CODE
 
 \ see E/A Manual page 298 for meaning
 : FSTAT ( -- c)  9 FILEOP DROP [PAB STAT] VC@ ;
+: (EOF) ( -- ?)  FSTAT 3 AND ;   \ End of file test, current PAB
 
-CODE: 1+! ( addr -- )  *TOS INC,   TOS POP,  NEXT, END-CODE
+\ CODE: 1+! ( addr -- )  *TOS INC,   TOS POP,  NEXT, END-CODE ( in kernel)
 
-\ This word bootstraps the system on startup.
+\ These word bootstrap the system on startup.
 \ INCLUDED is nestable. Saves all state info
 \ and allocates a new PAB in VDP RAM and a RAM buffer in the HEAP
 \ Usage:   TS" DSK1.START" INCLUDED
+
 : INCLUDED  ( caddr len -- )
            DUP ?FILE
            CR T." Loading: " 2DUP TYPE
            LINES OFF
            SOURCE-ID @ >IN @ 2>R           \ save source-ID, input pointer
-           SOURCE 2>R                      \ save interpreter input source
-           DSRNAM @ >R                     \ save pab DSR name
-
-
            PSHPAB INITPAB                  \ make new PAB on P AB stack
            0 FILEOP ?FILERR                \ open new file (sets new DSRNAM)
            SOURCE-ID 1+!                   \ incr. source ID (1st file is 1)
@@ -107,9 +97,6 @@ CODE: 1+! ( addr -- )  *TOS INC,   TOS POP,  NEXT, END-CODE
            R> DROP                         \ drop buffer address from rstack
      ( 52) MFREE                           \ release the buffer memory
            1 FILEOP ?FILERR                \ close the file
-
            POPPAB                          \ pop back 1 pab on the pabstack
-           R> DSRNAM !                     \ pop the previous DSR name, >IN
-           2R> 'SOURCE 2!                  \ restore interpreter SOURCE
-           2R> >IN ! SOURCE-ID !           \ restore >IN, SOURCE-ID
+           2R> >IN !  SOURCE-ID !          \ restore >IN, SOURCE-ID
 ;

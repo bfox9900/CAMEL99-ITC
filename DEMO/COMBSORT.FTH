@@ -51,8 +51,8 @@ CODE ]Q  ( n -- adr)  \ fast array access
 \ use this to print the array
 : SEEIT   ( -- ) CR  SIZE  0 DO  I ]Q @ U. ?BREAK LOOP ;
 
-: /1.3 ( N -- N ) 10 13 */  1 MAX ;
-
+ : /1.3 ( N -- N ) 10 13  >R UM* R> UM/MOD NIP  1 MAX ;
+\ : /1.3              2/         1 MAX ;
 \ this macro makes the sort faster
 \ 100/135 is the fastest GAP ratio I have found. (versus 10/13)
 \ : /1.3 ( N -- N ) S" 100 135 */  1 MAX " EVALUATE ;  IMMEDIATE
