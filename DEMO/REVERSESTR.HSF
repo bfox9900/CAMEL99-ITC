@@ -1,19 +1,27 @@
 \ reverse a string in place
 
 NEEDS DUMP  FROM DSK1.TOOLS
-\ NEEDS TRACE FROM DSK1.TRACE
-
-: XCHG-BYTES  ( addr addr' -- )
-              OVER C@  OVER C@ SWAP ROT C!  SWAP C! ;
-
-: REVERSE  ( addr len -- addr len )
-           OVER + 1- ( -- start end )
-           BEGIN
-              2DUP -          \ while the address not equal
-           WHILE
-              2DUP XCHG-BYTES \ xchg bytes
-              1- SWAP 1+ SWAP \ move address toward each other
-           REPEAT ;
 
 : A$ S" ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890" ;
+: B$ S" 123" ;
 
+: XCHGBYTES  ( addr addr' -- )
+          2DUP  OVER C@  OVER C@  ( -- addr addr' char char')
+          SWAP ROT C!  SWAP C! ;  \ put the chars in the other address
+
+: MOVEIN  ( addr addr -- addr' addr' )
+          1- SWAP 1+ SWAP ;  \ move addresses toward each other
+
+: MORE?   ( addr addr -- addr addr ? ) 2DUP <  ;
+
+: REVERSE  ( addr len -- addr len )
+           2DUP                        \ keep copy for use later
+           OVER + 1- ( -- start end )
+           BEGIN
+              XCHGBYTES
+              MOVEIN
+              MORE? WHILE
+           REPEAT
+           2DROP ;
+
+\ USAGE:  A$ REVERSE TYPE
