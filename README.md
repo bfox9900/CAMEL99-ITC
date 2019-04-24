@@ -1,4 +1,4 @@
-# CAMEL99 for TI-99 V2.1.G
+# CAMEL99 for TI-99 V2.1.G (2)
 
 ### ABOUT CAMEL99 V2
 ---------------------
@@ -191,3 +191,16 @@ configuration is 9600,8,n,1, hardware handshake.
 simple printing to the VDP screen at a screen address. (no protection!)
 - Library file call XONXOFF.FTH vectors EMIT to provide XON/XOFF protocol
 - File VT100 can be included to provide cursor control for a VT100 terminal.
+
+### April 23 2018
+- CAMEL99.FTH source is a cleaned up code using mostly Forth to create the FORTH
+compiler
+- CAMEL99G has a few cosmetic changes in the source but use DSRLNKA and FILESYSX
+- DSRLNKA is a corrected version of the DSR link program and it also takes a
+filename string VDP address from the top of stack as an input argument.
+- FILESYSX gives us a faster FILEOP word because it passes the argument to DSRLINK
+on the top of the stack and DSRLNKA now does the GPLstatus clearing and reading
+in Assembler for us.
+- THEFLYDEMO is demonstrates how to create BASS frequencies in the TMS9919
+sound chip channel 4 using NOISE MODE 3 and controlling the frequency with
+channel 3.  The BUZZ of the fly is created this way.

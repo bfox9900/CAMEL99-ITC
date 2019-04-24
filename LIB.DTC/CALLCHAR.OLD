@@ -1,0 +1,44 @@
+\ CALLCHAR  for CAMEL99 Forth    BJF  Aug 2018
+
+\ Usage:
+\  DECIMAL
+\  S" FFFF0000FFFF0000" 92 CALLCHAR
+
+ INCLUDE DSK1.TOOLS.F
+ INCLUDE DSK1.GRAFIX.F
+
+: CHOP   ( addr len n -- addr len addr' len' )
+          >R                  \ Rpush n
+          2DUP DROP R@        \ dup $, do left$
+          2SWAP               \ put original $ on top
+          R> /STRING ;        \ cut remainder string
+
+: >UINT32 ( addr len -- d )   \ hex string->unsigned 32 bit integer
+          BASE @ >R
+          HEX
+          0 0 2SWAP >NUMBER ABORT" bad int"
+          DROP
+          R> BASE ! ;
+
+: SHAPE: ( addr len -- addr)  \ S" FFFFFFFFFFFFFFFF" SHAPE: ASQUARE
+\ COMPILE TIME behavioue         
+         CREATE               \ create a name in dictionary
+         8 CHOP 2SWAP         \ chop the stack string into 2 strings
+         >UINT32 , ,          \ convert & compile 1st 2 integers
+         >UINT32 , ,          \ convert & compile 2nd 2 integers
+
+\ RUNTIME behavior
+         DOES> ( char DataAddr -- ) \ CHAR X ASQUARE changes X to a square
+            SWAP ]PDT 8 VWRITE ;  \ compute PDT address of char
+                                  \ write 8 bytes to VDP
+
+: CALLCHAR ( addr len char-- addr )
+          ]PDT >R             \ rpush pat. desc. table address
+          8 CHOP              \ chop string in half
+          >UINT32 R@ 4 + V!   \ convert 8 digits and write to VDP
+                  R@ 6 + V!
+
+          >UINT32 R@     V!   \ convert 8 digits and write to VDP
+                  R> 2+  V! ;
+
+

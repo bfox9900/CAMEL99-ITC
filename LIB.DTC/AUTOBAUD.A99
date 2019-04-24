@@ -1,0 +1,43 @@
+* autobaud for 9902
+* Software Development, Texas Instruments 1981
+
+           LI      R12,BASE
+           SBO     31
+           LI      R1,6200
+           LDCR    R1,8
+           SBZ     13
+           CLR     R3
+
+* wait for start bit
+SBAUD      TB      15
+           JEQ     SBAUD
+
+* wait until rin goes back to space condition
+SBAUD1     INC     R3
+           TB      15
+           JNE     SBAUD1
+
+* FIND THE BAUD RATE
+           LI      R4,BAUDTB=2
+SBAUD2     INCT    R4
+           C       R3 *R4+
+           JH      SBAUD2
+
+* baud rate found - set recieve and transmit data interval
+* read a char and throw it away
+
+           LDCR *R4,12
+SBAUD3     TB   21
+           JNE SBAUD3
+           SBZ 18
+
+
+BAUDTB     DATA >0007,>001A
+           DATA >000E,>0034
+           DATA >001D,>0068
+           DATA >003B,>00D0
+           DATA >0075,>01A0
+           DATA >00EA,>0340
+           DATA >0246,>04D0
+           DATA >7FFF,>0638
+

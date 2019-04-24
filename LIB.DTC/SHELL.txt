@@ -1,0 +1,264 @@
+\ CAMEL99 Forth shell for disk file management
+\ filters:  |STRIP  |DELIMIT  |LOWER  |UPPER ??
+
+\ ** this file can be used to create a binary program with CLASSIC99
+
+\ NEEDS DUMP       FROM DSK1.TOOLS
+NEEDS OPEN-FILE  FROM DSK1.ANSFILES
+NEEDS VALUE      FROM DSK1.VALUES
+NEEDS CASE       FROM DSK1.CASE
+NEEDS BUFFER:    FROM DSK1.BUFFER
+
+HERE
+\ simple spinner to show activity
+VARIABLE S
+CREATE SPNR  CHAR | C, CHAR / C, CHAR - C, CHAR \ C,
+: SPNR[S] ( -- addr) SPNR S @ + ;
+: S++     ( -- )  S @ 1+ 3 AND S ! ;
+: SPIN    ( -- ) SPNR[S] C@ EMIT BS S++ ; \ BS is backspace
+
+\ use for file handles as needed
+HEX
+0 VALUE #1   0 VALUE #2   0 VALUE #3
+
+\ CR if near end of screen
+DECIMAL
+: ?CR     OUT @ 10 + C/L@ > IF CR THEN ;
+
+HEX
+\ print unsigned int, right justified
+: U.R  ( u n --) >R 0 <# #S #> ( adr len) R> OVER - SPACES TYPE ;
+
+: .DEC ( n -- ) BASE @ >R . R> BASE ! ; \ print signed decimal no.
+
+\ string helpers
+
+10 BUFFER: SRC$
+10 BUFFER: DST$
+
+ : LEN      ( $addr -- c ) C@ ;
+ : ARG$     ( -- addr len ) BL PARSE-WORD DUP ?FILE ;
+ : $.       ( $addr -- ) COUNT TYPE ;
+ : $.LEFT   ( $ width -- ) OVER LEN - >R $.  R> SPACES ;
+ : NEXT$    ( addr len -- addr' len') + COUNT ;
+: +PLACE    ( addr n $ -- ) 2DUP 2>R  COUNT +  SWAP CMOVE 2R> C+! ;
+: COMPARE$  ( $1 $2 -- flag) DUP LEN 1+ S= ;
+
+\ file path cutter
+: /.        ( caddr len -- caddr' len' )  [CHAR] . SCAN ;
+: DEV./     ( caddr len -- dev. len' )    2DUP /. NIP - 1+ ;
+: /FILENAME ( caddr len -- filename len') /. 1 /STRING ;
+
+: POS$  ( $1 $2 -- n )  \ return "position" $1 in $2
+           TUCK SWAP OVER  ( -- $2 $2 $1 $2)
+           COUNT BOUNDS    ( -- $2 $2 $1 end start)
+           DO
+             I OVER COUNT S=  \ I steps thru $2 byte by byte
+             0= IF
+                  NIP I SWAP
+                  LEAVE
+             THEN
+           LOOP
+           DROP - ABS ;
+
+\ =============================================
+\ screen control
+: SPACEBAR ( -- ) KEY? IF BEGIN KEY? UNTIL THEN ;
+
+: ?BREAK-FILE ( hndl -- )
+          ?TERMINAL
+          IF CLOSE-FILE
+             CR CR ." *BREAK*" ABORT
+          ELSE
+            DROP
+          THEN ;
+
+\ frequently used phrases
+: OPEN  ( addr len -- ) OPEN-FILE ?FILERR ;
+: CLOSE ( hndl -- )     CLOSE-FILE ?FILERR ;
+: READH ( hndl -- )     READ-LINE ?FILERR 2DROP ;
+
+: OPEN-CATFILE ( adr len -- hndl) RELATIVE 100 FIXED R/O BIN OPEN ;
+
+\ 3 DIGIT BCD to int convertor. Limited to 999
+HEX
+: F>INT   ( addr len -- addr len n)
+          OVER LEN  ( -- mantissa)
+          CASE
+            0 OF  0                    ENDOF
+           40 OF  OVER 1+ C@           ENDOF
+           41 OF  OVER 1+ C@ 64 * >R
+                  OVER 2+ C@  R> +     ENDOF
+           ( default)  -1  \ bad # indicator
+           ENDCASE ;
+
+DECIMAL
+: DIR.TYPE  ( addr -- )
+          F>INT
+          CASE
+             1 OF ." Txt/Fix"  ENDOF
+             2 OF ." Txt/Var"  ENDOF
+             3 OF ." Bin/Fix"  ENDOF
+             4 OF ." Bin/Var"  ENDOF
+             5 OF ." Program"  ENDOF
+             ." ????"
+          ENDCASE ;
+
+: HEAD.REC ( addr -- )
+          DECIMAL
+          DUP  7 $.LEFT SPACE COUNT ( addr len)
+          NEXT$
+          ."  Size " NEXT$ F>INT 5 U.R   ."  Used " NEXT$ F>INT 5 U.R
+          2DROP ;
+
+: DIR.REC ( addr -- )
+          DUP  11 $.LEFT SPACE COUNT ( addr len)
+          NEXT$ DIR.TYPE
+          NEXT$ F>INT 7 U.R
+          NEXT$ F>INT 7 U.R
+          2DROP ;
+
+: .FILE# ( n -- ) DUP .DEC  ." File" 1 <> IF ." s"  THEN ;
+
+\ ========================================
+\ *
+\ * User commands: CAT DIR MORE DEL COPY
+\ *
+
+: CAT  ( <DSK?.> )   \  needs the '.' ONLY shows file name
+          BASE @ >R DECIMAL
+          ARG$ 2DUP DEV./ OPEN-CATFILE >R  \ store file handle
+          /FILENAME SRC$ PLACE
+
+          PAD 80 R@ READH
+          CR PAD HEAD.REC
+          CR 13 SPACES  ." -type-  -sect- -b/rec-"
+
+          LINES OFF
+          BEGIN
+             PAD DUP 80 R@ READH
+           ( PAD) LEN   \ while len > 0
+          WHILE
+             SRC$ PAD POS$
+             IF
+               CR PAD DIR.REC             
+               1 LINES +!
+             THEN
+             SPACEBAR
+             R@ ?BREAK-FILE
+          REPEAT
+          R> CLOSE
+          CR LINES @ .FILE# CR
+          R> BASE ! ;
+
+HEX
+: DIR  ( <DSK?.> )
+          ARG$ 2DUP
+          DEV./ OPEN-CATFILE >R  \ push handle
+          /FILENAME SRC$ PLACE
+          PAD 50 R@ READH
+          CR PAD HEAD.REC CR
+
+          LINES OFF
+          BEGIN
+            PAD DUP 80 R@ READH
+          ( PAD) LEN   \ while len > 0
+          WHILE
+             SRC$ PAD POS$
+             IF
+               PAD 0C $.LEFT ?CR
+               1 LINES +!
+             THEN
+             SPACEBAR
+             R@ ?BREAK-FILE
+          REPEAT
+          R> CLOSE
+          DECIMAL
+          CR LINES @ .FILE# CR
+          HEX ;
+
+: MORE  ( <filename>)
+          ARG$ DV80 R/O OPEN >R
+          BEGIN
+             PAD DUP 50 R@ READ-LINE ?FILERR ( adr len flag)
+          WHILE
+             CR TYPE
+             1 LINES +!
+             SPACEBAR
+             R@ ?BREAK-FILE
+          REPEAT
+          R> CLOSE
+          2DROP
+          CR LINES @ .DEC ." Lines" CR ;
+
+: DEL   ( <filename>) ARG$ DELETE-FILE ?FILERR  ;
+
+: COPY-FILE  ( addr len addr len -- )
+        DV80 W/O OPEN TO #2
+        DV80 R/O OPEN TO #1
+        52 DUP MALLOC >R
+        LINES OFF
+        SPACE
+
+        BEGIN
+          R@  50  #1 READ-LINE ?FILERR ( -- #bytes eof?)
+        WHILE
+          R@ SWAP #2 WRITE-LINE ?FILERR
+          LINES 1+!
+          SPIN
+        REPEAT
+        R> DROP                 \ DROP buffer address from rstack
+      ( 52) MFREE               \ release the buffer memory
+        #2 CLOSE
+        #1 CLOSE
+        DECIMAL
+        CR ." Copy complete. " LINES @ .DEC ." records" ;
+
+: COPY  ( <file1> <file2> ) 
+        ARG$ ARG$ 
+        DST$ PLACE
+        SRC$ PLACE
+        DST$ COUNT /FILENAME NIP
+        0= IF
+           SRC$ COUNT /FILENAME DST$ +PLACE
+        THEN
+        SRC$ DST$ COMPARE$ 0= ABORT" path&file duplication"
+        SRC$ COUNT  DST$ COUNT COPY-FILE ;
+
+: CLOSE-ALL  ( -- ior )
+         0                      \ place holder for error codes
+         #FILES @ 1+  1
+         DO
+           I ]FID @
+           IF  I CLOSE-FILE OR   \ or the errors together
+           THEN
+         LOOP  ?FILERR ;
+
+: CLS   PAGE ;
+
+: HELP  CR
+        CR ." Commands"
+        CR ." --------------------"
+        CR ." DIR  <DSK?.> show file names"
+        CR ." CAT  <DSK?.> show files and types"
+        CR ." MORE <path>  show contents of DV80 file"
+        CR ." DEL  <path>  delete file at path"
+        CR ." COPY <path1> <space> <path2> "
+        CR ."      Copy file at path1 to path2"
+        CR ." CLS  Clear screen"
+        CR ." BYE  Return to E/A Menu"
+        CR ." HELP Show command list" CR
+        CR ." Any key will stop scrolling"
+        CR ." FNCT 4 halts operation"
+;
+
+: SHELL
+    L0 LP !                     \ init LEAVE stack pointer LP
+    RP0 RP!                     \ reset rstack
+    RSTPAB CLOSE-ALL            \ reset PAB stack in VDP RAM
+    POSTPONE [                  \ STATE = 0 (Interpreting mode)
+    BEGIN
+      CR ." >" TIB DUP TIB# ACCEPT SPACE ( -- adr len) \ accept input to TIB, maxlen=TIB#
+      INTERPRET                      \ interpret reads the stack string
+      STATE @ 0= IF  ."  ok"  THEN   \ if we are not compiling print OK
+    AGAIN ;
