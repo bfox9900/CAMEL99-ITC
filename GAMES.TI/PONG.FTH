@@ -83,9 +83,8 @@ DECIMAL
  13 CONSTANT TOPWALL
 177 CONSTANT BOTWALL
 
-: MovePaddle ( paddle# -- )
-           DUP >R SP.Y@ UpDown +
-           TOPWALL BOTWALL CLIP  R> SP.Y! ;
+: MovePaddle ( paddle# -- ) \ text macro used for speed
+S" DUP >R SP.Y@ UpDown + TOPWALL BOTWALL CLIP  R> SP.Y!" EVALUATE ; IMMEDIATE
 
 VARIABLE XVEC
 VARIABLE YVEC
@@ -109,8 +108,8 @@ VARIABLE YVEC
            DROP ;
 
 : MoveBall ( -- ) \ uses direct sprite X,Y read/write
-           0 SP.X DUP VC@ ( -- Xaddr x) XVEC @ + SWAP VC!
-           0 SP.Y DUP VC@ ( -- Yaddr y) YVEC @ + SWAP VC! ;
+        S" 0 SP.X DUP VC@  XVEC @ + SWAP VC!" EVALUATE ( -- Xaddr x)
+        S" 0 SP.Y DUP VC@  YVEC @ + SWAP VC!" EVALUATE ; IMMEDIATE
 
 : BallSpeed ( Yvec Xvec -- )  XVEC !  YVEC ! ;
 
@@ -119,9 +118,10 @@ VARIABLE YVEC
 : NEGATE!  ( addr -- )  DUP @ NEGATE SWAP ! ;
 
 : PaddleHit   ( spr# -- )
+              CLINK
               XVEC NEGATE!
               0 SP.DIST 20 / 1-   -4 4 CLIP YVEC +!
-              MoveBall CLINK ;
+              MoveBall MoveBall ;
 
 : WallBounce ( -- )   YVEC NEGATE!  MoveBall CLUNK ;
 
@@ -131,7 +131,6 @@ VARIABLE YVEC
 : DrawNet  ( -- )      15 2 128 21 VCHAR ;
 
 .( ..)
-
 : FollowBall ( spr# -- ) \ match computer paddle to ball Y coordinate
              0 SP.Y@  SWAP  SP.Y! ;
 
@@ -160,8 +159,7 @@ VARIABLE OFFSET
 .( ..)
 : PlayGame ( -- )
          BEGIN
-            MoveBall
-            WallTest
+            MoveBall WallTest
             0 1 5 COINC IF 1 PaddleHit THEN 1 MovePaddle
             0 2 5 COINC IF 2 PaddleHit THEN ComputerPlayer 1 MovePaddle
             0 SP.X@ OffBoard?
