@@ -30,11 +30,10 @@ NEEDS  LDCR,  FROM DSK1.ASM9900
 \              mov r1,*stack
 \              li r12,_next
 \              mov r12,@>83d6              ; defeat auto screen blanking
-\              mov @bank1_,@retbnk         ; return to bank 1 if interuupts should fire
+\              mov @bank1_,@retbnk         ; return to bank 1 if interrupts should fire
 \              limi 2                      ; briefly enable interrupts
 \              limi 0                      ; and turn 'em off again
 \              b @retb0                    ; return to caller in bank 0
-
 
 
 \ JOYST ( joystick# -- value ) adapted from turbo FORTH
@@ -51,8 +50,8 @@ DECIMAL  TOS R1 MOV,    \ get unit number to R1
          TOS  5 STCR,   \ get 5 bits from joystick
             TOS SWPB,   \ swap byte
             TOS INV,    \ change to positive logic
-HEX    TOS 001F ANDI,  \ mask off the junk
-           83D6 CLR,      \ reset auto screen blanking
-            R12 RPOP,      \ restore R12
+HEX    TOS 001F ANDI,   \ mask off the junk
+           83D6 CLR,    \ reset auto screen blanking
+            R12 RPOP,   \ restore R12
        NEXT,
        ENDCODE
