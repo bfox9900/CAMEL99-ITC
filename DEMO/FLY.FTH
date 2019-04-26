@@ -110,8 +110,17 @@ CREATE MY-XY  0 , 0 ,    \ independant cursor for alpha guy
 : CHANGE-DIR   ( -- )  NEW-VECTORS 2DUP VECTOR 2!  ROTATE-FLY ;
 
 : VECTOR@      ( --  dx dy)  VECTOR 2@ ;
-: VECT+        ( x y dx dy -- x' y' ) ROT +  -ROT + SWAP ;
+\ : VECT+        ( x y dx dy -- x' y' ) ROT +  -ROT + SWAP ;
 
+HEX
+CODE VECT+ ( dx dy x y -- x' y')  \ 6x FASTER than Forth version
+           C236 , \ *SP+ W MOV,
+           A136 , \ *SP+ TOS A,
+           A588 , \  W  *SP  A,
+           NEXT,
+           ENDCODE
+
+DECIMAL
 \ direct memory screen control
 : >VPOS        ( Y X -- vaddr)  C/L@ * + ;
 : GETXY        ( -- x y) MY-XY 2@ ;
@@ -151,7 +160,7 @@ VARIABLE TRYS
             UNTIL
             HAPPY  ;
 
-: ?REST        ( -- ) 200 RND 7 = IF  SILENT  1500 RND MS  THEN ;
+: ?REST        ( -- ) 80 RND 7 = IF  SILENT  800 RND MS  CHANGE-DIR THEN ;
 : CHANGE-SPEED ( -- ) 35 30  RND + DUP SPEED !  MS  ;
 
 : ?HALT        ( -- )
