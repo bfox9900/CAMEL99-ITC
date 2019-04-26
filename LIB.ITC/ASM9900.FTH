@@ -126,12 +126,12 @@ CR .( CAMEL99 special registers & modes)
 : *IP       IP ** ;
 : *IP+      IP *+ ;
 
-: *R10       R10 ** ;
-: *R11       R11 ** ;
+: *R10      R10 ** ;
+: *R11      R11 ** ;
 
 CR .( Pseudo instructions)
 : RT,     ( -- )  R11 ** B, ;
-: NOP,    ( -- )  2 JMP, ;
+: NOP,    ( -- )  0 JMP, ;
 : NEXT,   ( -- )  045A ,  ;  \ CAMEL99 NEXT: B *R10
 
 \ PUSH & POP for both stacks

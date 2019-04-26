@@ -131,7 +131,7 @@ CR .( CAMEL99 special registers & modes)
 
 CR .( Pseudo instructions)
 : RT,     ( -- )  R11 ** B, ;
-: NOP,    ( -- )  2 JMP, ;
+: NOP,    ( -- )  0 JMP, ;
 : NEXT,   ( -- )  045A ,  ;  \ CAMEL99 NEXT: B *R10
 
 \ PUSH & POP for both stacks
@@ -188,7 +188,7 @@ CR .( Structured branching and looping )
 : ELSE,
         ?EXEC
         42 ?PAIRS
-        0  CJMP HERE 2- SWAP                                        
+        0  CJMP HERE 2- SWAP
         42 POSTPONE ENDIF,  42 ; IMMEDIATE
 
 : BEGIN,
