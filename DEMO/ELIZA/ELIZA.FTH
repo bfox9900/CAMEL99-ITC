@@ -8,6 +8,7 @@
 \ we need is a word in the dictionary called ICANT to make something
 \ happen.
 
+
 \ This allows synonyms to be created using a colon definition and adding
 \ the new keyword to the KEYWORDS list.
 \ Example:  : ICANT    ICANNOT  ;
@@ -23,7 +24,7 @@ CHAR , CONSTANT ','
 CHAR . CONSTANT '.'
 
 \ working memory for string processing
-CREATE INPUT$  81 ALLOT  \ holds the "clean" reply from the patient
+\ CREATE INPUT$  81 ALLOT  \ holds the "clean" reply from the patient
 
 \ === string stack in HEAP ====
          VARIABLE SSP     \ the string stack pointer
@@ -35,7 +36,7 @@ SSW 10 * MALLOC CONSTANT $STAK  \ ten strings deep  (2.5 Kbytes!)
 : NEW:     ( -- ) SSW SSP +! ;  \ bump string stack pointer by 256
 : COLLAPSE ( -- ) SSP OFF  ;    \ reset string stack pointer to zero
 
-: TOP$     ( -- $) SSP @ $STAK + ;
+: TOP$     ( -- $) SSP @ $STAK + ; 
 
 \ string stack helpers ====
 : SPUSH    ( addr len -- top$ ) NEW: TOP$ DUP >R PLACE R> ;
@@ -89,7 +90,7 @@ HEX
           BOUNDS DO  I C@ UPPER I C!  LOOP ;
 
 : TOLOWER ( addr len --  ) \  convert STACK$ to uppercase
-          BOUNDS DO  I C@ LOWER I C!  LOOP ;
+            BOUNDS DO  I C@ LOWER I C!  LOOP ;
 
 \ convert counted string copy
 : UPPER$  ( $ -- $') COUNT SPUSH DUP COUNT TOUPPER ;
@@ -386,14 +387,13 @@ VARIABLE ROGERIAN      \ set if Rogerian answer is needed
 \ **************************************************
 \ Eliza replies are separate file for easier editing
 
-S" DSK2.ELIZADATA" INCLUDED
+ S" DSK2.ELIZADATA" INCLUDED
 
 \ **************************************************
 \ ==================================================
 
 .( .)
 : GREETING  ( -- )
-            CR ." ==================================="
             CR
             CR ." Hi! My name is Eliza."
             CR ." Can I help you?" ;
@@ -408,14 +408,14 @@ S" DSK2.ELIZADATA" INCLUDED
 : TRIM     ( addr len -- addr' len')
             BL SKIP -TRAILING ;
 
-: LISTEN   ( -- $ )
+: MASSAGE  ( $ --  addr len)  COUNT 2DUP TOUPPER TRIM ;
+
+: LISTEN   ( -- )
            BEGIN
-             CR BEEP ." >"  INPUT$ DUP $ACCEPT
-             LEN 0>
+             CR BEEP ." >"  TOP$ $ACCEPT
+             PAD LEN
            UNTIL
-           INPUT$ COUNT 2DUP TOUPPER TRIM
-           INPUT$ PLACE
-           INPUT$ ;
+           TOP$ MASSAGE TOP$ PLACE ;
 
 \ cut INPUT$, return everything after the keyword phrase
  : /TAIL  ( keyword input$ -- adr len)   \ "cut tail"
@@ -460,6 +460,52 @@ S" DSK2.ELIZADATA" INCLUDED
 
 DECIMAL
 
+: END_SESSION  TEXT  BYE ;  \  can change this to BYE
+
+: BYE    CR ." OK. Thanks for chatting."
+         CR ." Bye bye!"  700 MS
+         CR ." ...Oh and by the way..."
+         1000 MS
+         CR
+         CR ." My bill is $400.00.
+         CR ." (I accept Paypal) :-)"
+         1500 MS
+         END_SESSION ;
+
+: GOODBYE   BYE ;
+
+: SHUTUP    CR CR ." That's rude!"  1000 MS BYE ;
+
+: CONSOLE   CR
+            CR ." Exiting program..."
+            CR ." CAMEL99 FORTH"
+            CR  QUIT ;
+
+\ The defines the behaviour when Eliza does not understand
+LIST   { " What does that suggest to you?"
+         " I see."
+         " I'm not sure I understand you fully."
+         " Topic shift: How is your love life?"
+         " Can you expand on that a bit?"
+         " That is quite interesting. Tell me more. "
+         " Are you being honest?"
+       } REPLY: TAPDANCE
+
+\ This is the naught word behaviour.
+LIST { " Hey now. we don't use that kind of language here."
+       " I told you to watch your language!"
+       " That's it. I don't have to listen to this!"
+       "   "
+     } REPLY: SHIT
+
+\ all these words cause SHIT to happen :-)
+\ Add words as you see fit
+ : FUCK     SHIT ;
+ : ASS      SHIT ;
+ : BASTARD  SHIT ;
+ : HELL     SHIT ;
+ : DICK     SHIT ;
+
 \ everthing is handled by {MEMBER} which scans $ for any MEMBER of the list
 : ANALYZE   ( $ -- 0 | ndx) KEYWORDS {MEMBER} ;
 
@@ -488,14 +534,23 @@ DECIMAL
           END_SESSION
        THEN ;
 .( .)
+
 DECIMAL
 : ELIZA    ( -- )
+        TMR!   \ start the timer.
         SHIT ->USE# OFF
         TEXT  WHT/BLK
         S" Eliza" BIG.TYPE CR
+        CR ." Standy while I read your file..."
+        CR   1000 MS ." Hmm..." 1000 MS
+        CR ." ==================================="
+        CR  ." ...interesting..."
         GREETING
+        ABORT
         BEGIN
           ?BADWORDS
            COLLAPSE  ( the string stack)
-           LISTEN ( $) ANALYZE ( ndx) REPLY
+           LISTEN
+           TOP$ ANALYZE ( ndx)
+           REPLY
        AGAIN ;
