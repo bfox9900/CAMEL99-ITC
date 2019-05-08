@@ -9,12 +9,13 @@ DECIMAL
 : #INPUT  ( variable -- )   \ made to look/work like TI-BASIC
           BEEP
           BEGIN
-            PAD DUP $ACCEPT ?NUMBER 0=  \ convert the number in PAD
+            PAD $ACCEPT    \ $ACCEPT text into temp buffer PAD
+            PAD ?NUMBER 0=   \ convert the number in PAD
           WHILE              \ while the conversion is bad we do this
              CR HONK ." input error "
              CR DROP
           REPEAT
-          SWAP ! ;     \ store the number in the variable on the stack)
+          SWAP ! ;           \ store the number in the variable on the stack)
 
 
 \ Usage:

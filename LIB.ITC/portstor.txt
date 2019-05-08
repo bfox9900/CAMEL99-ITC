@@ -1,0 +1,15 @@
+\ port fetch port store 
+
+
+HEX
+CODE PC!     ( c -- )
+             3204 ,         \ TOS 8 LDCR,
+             C136 ,         \ TOS POP,
+             NEXT,
+             ENDCODE
+
+CODE PC@     ( -- c )
+             0646 , C585 ,  \ TOS PUSH,
+             3604 ,         \ TOS 8 STCR,
+             NEXT,
+             ENDCODE

@@ -346,7 +346,7 @@ TARGET-COMPILING
       20 USER: TFLAG             \ TASK flag awake/asleep status
       22 USER: JOB               \ Forth word that runs in a task
       24 USER: DP                \ dictionary pointer
-      26 USER: HP                \ hold pointer, for text->number convertion
+      26 USER: HP                \ hold pointer, for text->number conversion
       28 USER: CSP
       2A USER: BASE
       2C USER: >IN
@@ -427,13 +427,35 @@ USEFORTH [IF]
  : ALLOT    ( n --) DP +! ;      \ allocate dictionary space
  : ,       ( n -- ) HERE !   2 ALLOT ;
  : C,      ( c --)  HERE C!  1 ALLOT ;
+ : LATEST@  LATEST @ ;
+ : >IN@     >IN @ ;
 
 [ELSE]
 
 CODE: ALLOT ( n -- )    TOS DP @@ ADD,        TOS POP,  NEXT, END-CODE
 CODE: HERE  ( -- addr)       TOS PUSH,  DP @@ TOS MOV,  NEXT, END-CODE
-CODE: ,     ( n --) DP @@ R1 MOV, TOS *R1 MOV, DP @@ INCT, TOS POP, NEXT, END-CODE
-CODE: C,    ( c --) DP @@ R1 MOV, TOS SWPB, TOS *R1 MOVB, DP @@ INC, TOS POP, NEXT, END-CODE
+
+CODE: ,     ( n --)
+            DP @@ R1 MOV,
+            TOS *R1 MOV,
+            DP @@ INCT,
+            TOS POP,
+            NEXT,
+            END-CODE
+
+CODE: C,    ( c --)
+            DP @@ R1 MOV,
+            TOS SWPB,
+            TOS *R1 MOVB,
+            DP @@ INC,
+            TOS POP,
+            NEXT,
+            END-CODE
+
+\ fast variables
+CODE: LATEST@  ( -- n) TOS PUSH,  LATEST @@ TOS MOV, NEXT, END-CODE
+\ CODE: STATE@   ( -- n) TOS PUSH,  STATE @@ TOS MOV,  NEXT, END-CODE
+CODE: >IN@     ( -- n) TOS PUSH,  >IN @@ TOS MOV,  NEXT,  END-CODE
 
 [THEN]
 
@@ -442,7 +464,7 @@ CODE: C,    ( c --) DP @@ R1 MOV, TOS SWPB, TOS *R1 MOVB, DP @@ INC, TOS POP, NE
 : COMPILE   ( -- )  R> DUP 2+ >R @ , ;  \ append inline execution token
 
 \ set the precedence BIT in the last word defined
-: IMMEDIATE ( --)  01 LATEST @ 1- ( -- imm-fld) C! ;
+: IMMEDIATE ( --)  01 LATEST@ 1- ( -- imm-fld) C! ;
 
 : LITERAL   ( n -- n|~) STATE @ IF  COMPILE LIT ,  THEN ; XIMMEDIATE
 
@@ -612,8 +634,8 @@ TARGET-COMPILING
 : NFA>CFA       ( nfa -- cfa ) COUNT  7F AND + ALIGNED ;
 
 \ smudge bit control in the Camel Forth
-: HIDE          ( -- )  LATEST @ ( nfa) DUP C@ 80 OR  SWAP C! ;
-: REVEAL        ( -- )  LATEST @ ( nfa) DUP C@ 7F AND SWAP C! ;
+: HIDE          ( -- )  LATEST@ ( nfa) DUP C@ 80 OR  SWAP C! ;
+: REVEAL        ( -- )  LATEST@ ( nfa) DUP C@ 7F AND SWAP C! ;
 
 [CC] cr .( Parsing...)
 \ ========================================================================
@@ -657,7 +679,7 @@ USEFORTH [IF]
 
                     [CC] [PUBLIC] [TC]
 : PARSE       ( char -- c-addr n)         \ word delim'd by char
-              SOURCE >IN @ /STRING        \ -- c adr n
+              SOURCE >IN@ /STRING        \ -- c adr n
               OVER >R ROT SCAN
               OVER SWAP
               IF 1+ THEN                  \ skip trailing delim. if any
@@ -665,12 +687,12 @@ USEFORTH [IF]
               R> TUCK - ;
 
 : PARSE-WORD  ( char -- c-addr n)         \ Non-standard. gForth word. Nice factor
-              DUP SOURCE >IN @ /STRING    \ -- c c adr n
+              DUP SOURCE >IN@ /STRING     \ -- c c adr n
               ROT SKIP                    \ -- c adr' n'
               DROP ADR>IN PARSE ;         \ -- adr" n"
 
 USEFORTH [IF]
-: WORD        ( char -- c-addr)           \ word delim'd by char
+: WORD        ( char -- c-addr)          \ word delim'd by char
               PARSE-WORD HERE PLACE
               HERE BL OVER COUNT + C! ;  \ append trailing blank
 [ELSE]
@@ -748,15 +770,6 @@ CODE: DIGIT?   ( char -- n f )
              ELSE  2DROP NIP R>
                 IF NEGATE THEN TRUE       \ -- n -1   (ok)
              THEN ;
-
-\ : ?NUMBER  ( $ -- n ?)  \ convert $ to single, return flag
-\              COUNT  (*NOT CORRECT YET*)
-\              OVER C@ t[CHAR] - =
-\              IF   TRUE >R  1 /STRING
-\              ELSE FALSE >R
-\              THEN 0 0  2SWAP >NUMBER NIP NIP
-\              R> IF SWAP NEGATE SWAP THEN 0= ;
-
 
 \ ========================================================================
 \ S I M P L E   S O U N D  I N T E R F A C E
@@ -901,7 +914,7 @@ CODE: (CR)    ( -- ? )  \ return true if we need to SCROLL
 : CR        ( -- )                       \ Forth's "newline"
             PAUSE                        \ share the CPU wealth
             (CR) ( -- ?)                 \ (CR) returns TRUE if we have to scroll
-            IF  SCROLL  THEN  ;
+            IF  PAUSE SCROLL  THEN  ;
 
 : BS  ( --)  VCOL DUP @ 1- 0 MAX SWAP !  \ move cursor position back
              OUT 1-! ;                   \ decrement output counter
@@ -909,6 +922,7 @@ CODE: (CR)    ( -- ? )  \ return true if we need to SCROLL
 [CC] HEX [TC]
 
 : EMIT      ( char -- )  \ shows how to handle control characters
+            PAUSE
             DUP 0D = IF DROP CR   EXIT THEN  \ ASCII 13 is carriage return
             DUP 08 = IF DROP BS   EXIT THEN  \ ASCII 08 is backspace
   \          DUP 07 = IF DROP BEEP EXIT THEN \ ASCII  7 is BEL
@@ -917,6 +931,7 @@ CODE: (CR)    ( -- ? )  \ return true if we need to SCROLL
             IF CR THEN  ;
 
 : TYPE      ( adr cnt --) PAUSE BOUNDS ?DO  I C@ EMIT  LOOP ;
+
 : SPACE     ( -- )   BL EMIT ;
 : SPACES    ( n -- ) PAUSE 0 MAX  0 ?DO SPACE LOOP ;
 
@@ -942,14 +957,13 @@ T' TYPE  RESOLVES 'TYPE
 \ C H A R A C T E R   I N P U T
 
 TARGET-COMPILING
-
-: KEY       ( -- char)                     \ simple non-repeating KEY
+ : KEY       ( -- char)                     \ simple non-repeating KEY
             BEGIN
               CURS@ VPUT                   \ show the flashing cursor
               PAUSE                        \ multi-tasking switch
               KEY?
+              ?DUP
             UNTIL                          \ wait for key press
-            8375 C@ 7F AND                 \ fetch KSCAN buffer, 7 bits only
             BL VPUT ;                      \ erase cursor character
 
 \ High level: input/output                      (c) 31mar95 bjr
@@ -1008,7 +1022,7 @@ CODE: >DIGIT  ( n -- c)        \ ASM is 9 bytes, 4X faster
 : #      ( ud1 -- ud2)  BASE @ UD/MOD ROT  >DIGIT  HOLD  ;
 
 \ convert all digits in ud1. ud2 will be 0 (the remainder)
-: #S     ( ud1 -- ud2)  BEGIN  # 2DUP OR  WHILE REPEAT ; \ 10% faster with WHILE
+: #S     ( ud1 -- ud2)  BEGIN  # 2DUP OR  WHILE PAUSE REPEAT ; \ 10% faster with WHILE
 
 \ return a stack string (address, length)  of the converted number
 : #>     ( ud1 -- c-addr u) 2DROP HP @ PAD OVER - ;
@@ -1029,7 +1043,7 @@ CODE: >DIGIT  ( n -- c)        \ ASM is 9 bytes, 4X faster
 \ M I S C E L L A N E O U S
 \
 TARGET-COMPILING
-: RECURSE     ( -- ) LATEST @ NFA>CFA ,  ; XIMMEDIATE
+: RECURSE     ( -- ) LATEST@ NFA>CFA ,  ; XIMMEDIATE
 
 : DECIMAL     ( -- ) 0A BASE ! ;
 : HEX         ( -- ) 10 BASE ! ;
@@ -1074,7 +1088,7 @@ TARGET-COMPILING
 : EVALUATE     ( c-addr u -- j*x)          \ interpret a stack string
                SOURCE-ID ON                \ ANS standard says SOURCE-ID = true
                SOURCE 2>R                  \ save the source
-               >IN @ >R                    \ save >IN on the return stack
+               >IN@ >R                    \ save >IN on the return stack
                INTERPRET                   \ interpret the new string
                R> >IN !                    \ restore >IN
                2R> 'SOURCE 2!              \ restore source
@@ -1086,8 +1100,9 @@ TARGET-COMPILING
 : ABORT       ( -- )  SP0 SP!  CR QUIT ;
 
 : ?ABORT  ( f c-addr u --)
-           ROT IF  HONK
-                   CR CR T." ? "  TYPE
+           ROT IF  CR
+                   CR T[CHAR] * EMIT SPACE  TYPE  T[CHAR] ? EMIT
+                   HONK
                    SOURCE-ID @   ( if source is NOT console)
                    IF  T."  Line " LINES @ U.
                        CR CR SOURCE TYPE
@@ -1130,7 +1145,7 @@ TARGET-COMPILING
 : FIND  ( c-addr --  caddr  0  if not found)
 \                    xt  1  if immediate,
 \                    xt -1  if "normal"
-                    LATEST @  (FIND) ;
+                    LATEST@  (FIND) ;
 
 \ ========================================================================
 \ D I C T I O N A R Y   S E A R C H
@@ -1234,7 +1249,7 @@ TARGET-COMPILING
 
 : HEADER, ( addr len --)
             ALIGN
-            LATEST @ ,      \ record the LATEST NFA as the LINK in this new word
+            LATEST@ ,      \ record the LATEST NFA as the LINK in this new word
             0 C,            \ create the immediate field (1 BYTE)
             HERE LATEST !   \ update the LATEST variable to this new definition's NFA
             S, ;
@@ -1260,12 +1275,12 @@ TARGET-COMPILING
 \ D O E S   S U P P O R T
 : (;CODE)
          R>                        \ pop the addr of the code word
-        LATEST @ NFA>CFA           \ get the CFA of the latest word
+        LATEST@ NFA>CFA           \ get the CFA of the latest word
          !  ;                      \ store the machine code address in the Code Field
 
 : DOES>  ( -- )                    \ change action of latest def'n
         COMPILE (;CODE)
-        0460 , T['] DODOES ,       \ compiles machine code for:  B @DODOES
+        06A0 , T['] DODOES ,       \ compiles machine code for:  BL @DODOES
        ; XIMMEDIATE
 
 \ =======================================================================
@@ -1328,7 +1343,7 @@ TARGET-COMPILING
               TS" CAMEL99G FAST" TYPE
               VDPTOP ^PAB !
               TS" DSK1.START" INCLUDED       \ load the start file
-              CR QUIT ;                      \ re-start the interpreter
+              ABORT ;                        \  cold start the interpreter
 
 \ ======================================================================
 \ define target comment words

@@ -15,7 +15,19 @@ VARIABLE HNDL
          HNDL @ CLOSE-FILE ?FILERR
          2R> AT-XY ;                           \ restore screen xy
 
-: CAPTURE  ( <disk-path> ) \ Usage: CAPTURE DSK1.MYSCREEN
-           BL PARSE-WORD
+: CAPTURE  ( <PATH> )
+           BL PARSE-WORD ( -- caddr len ) 
            DV80  W/O OPEN-FILE ?FILERR HNDL !
            (CAPTURE) ;
+
+\ usage:   CAPTURE DSK1.MYSCREEN
+\ Special case for Classic99:
+\          CAPTURE CLIP    ( put screen text into windows clip buffer)
+
+
+
+
+
+
+
+

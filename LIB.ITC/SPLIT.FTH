@@ -21,5 +21,5 @@ INCLUDE DSK1.TOOLS.F
          BL SKIP
          BEGIN  DUP 0>
          WHILE  BL /WORD
-         REPEAT 
-         2DROP ; 
+         REPEAT
+         2DROP ;

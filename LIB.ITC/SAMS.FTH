@@ -1,5 +1,11 @@
 \ SAMS CARD support. 64K segmented memory fetch and store
+
+\ 1 sams page only.  Set to >3000 by PMEM (paged memory)
+
+\ *** You MUST run SAMSINI before using the card ***
+
 \ NEEDS DUMP  FROM DSK1.TOOLS  \ debugging only
+
 HERE
 HEX
      VARIABLE BANK#      \ current mapped bank

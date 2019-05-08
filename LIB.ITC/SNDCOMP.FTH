@@ -1,11 +1,11 @@
 \ TI sound list assembler.
 \ Assembles TI sound lists in VDP RAM that are
-\ compatible with VDP Background sound player
+\ compatible with VDP Background sound player  
 \ (VDPBGSND.F)
 
-INCLUDE DSK1.TOOLS
-INCLUDE DSK1.VDPBGSND
-INCLUDE DSK1.SOUND
+NEEDS DUMP  FROM DSK1.TOOLS
+NEEDS PLAY$ FROM DSK1.VDPBGSND
+NEEDS (HZ)  FROM DSK1.SOUND
 
 \ sound byte "assembler" commands compile values for the
 \ currently selected generator. (GEN1 GEN2 GEN3 GEN4)
@@ -94,3 +94,4 @@ VCREATE EXPLODE
        VBYTE 1,FE,30
        VBYTE 1,FF,0
 /VEND
+

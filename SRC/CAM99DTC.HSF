@@ -377,13 +377,13 @@ CODE: [     ( -- ) STATE @@ CLR,   NEXT, END-CODE  XIMMEDIATE
 \ S T A C K   P R I M I T I V E S
 \ most stack primitives have been implemented in ASSEMBLER for speed
 
- : TUCK  SWAP OVER ;
-\ CODE: TUCK  ( w1 w2 --  w2 w1 w2 ) \ same size as Forth
-\        *SP   R1 MOV,
-\         TOS *SP MOV,
-\              R1 PUSH,
-\         NEXT,
-\         END-CODE
+\  : TUCK  SWAP OVER ;
+ CODE: TUCK  ( w1 w2 --  w2 w1 w2 ) \ same size as Forth
+        *SP   R1 MOV,
+         TOS *SP MOV,
+              R1 PUSH,
+         NEXT,
+         END-CODE
 
  \ these make compiling 1% faster but are 14 bytes bigger
  CODE: 2>R    ( d -- ) ( r-- n n)
@@ -640,6 +640,7 @@ CODE: C/CUT   ( -- n)
             END-CODE
 
 : SCROLL   ( -- )
+            PAUSE
             C/CUT DUP                    \ get chars per cut buffer and dup
             MALLOC ( -- c/s heap)          \ allocate chars per scroll in heap
             C/SCR @     C/L@  VTOP @ +     \ loops from 2nd line, to last line
@@ -709,6 +710,7 @@ CODE: (CR)    ( -- ? )  \ return true if we need to SCROLL
 [CC] HEX [TC]
 
 : EMIT      ( char -- )  \ shows how to handle control characters
+           PAUSE
            DUP 0D = IF DROP CR   EXIT THEN  \ ASCII 13 is carriage return
            DUP 08 = IF DROP BS   EXIT THEN  \ ASCII 08 is backspace
            VPOS (EMIT)                 \ (EMIT) returns TRUE at end of line
@@ -742,14 +744,14 @@ T' TYPE  RESOLVES 'TYPE
 
 TARGET-COMPILING
 
-: KEY        ( -- char)                      \ simple non-repeating KEY
+: KEY        ( -- char)                 \ simple non-repeating KEY
               BEGIN
-                CURS@ VPUT                   \ show the flashing cursor
-                PAUSE                        \ multi-tasking switch
-                KEY?
-              UNTIL                          \ wait for key press
-              8375 C@  7F AND                \ fetch char from KSCAN buffer
-              BL VPUT ;                      \ erase cursor character
+                CURS@ VPUT              \ show the flashing cursor
+                PAUSE                   \ multi-tasking switch
+                KEY? ?DUP
+              UNTIL                     \ wait for key press
+              7F AND                    \ 7 BITS only
+              BL VPUT ;                 \ erase cursor character
 
 \ High level: input/output                      (c) 31mar95 bjr
 : ACCEPT     ( c-addr +n -- +n')            \ get line from terminal
@@ -808,7 +810,7 @@ TARGET-COMPILING
 : #      ( ud1 -- ud2)  BASE @ UD/MOD ROT  >DIGIT  HOLD  ;
 
 \ convert all digits in ud1. ud2 will be 0 (the remainder)
-: #S     ( ud1 -- ud2)  BEGIN   # 2DUP OR    0= UNTIL ;
+: #S     ( ud1 -- ud2)  BEGIN   # 2DUP OR  WHILE REPEAT ;
 
 \ return a stack string (address, length)  of the converted number
 : #>     ( ud1 -- c-addr u) 2DROP HP @ PAD OVER - ;
@@ -1069,6 +1071,7 @@ TARGET-COMPILING
   _DOCON  CONSTANT: 'DOCON  ( A02C)
   _DOUSER CONSTANT: 'DOUSER ( A040)
   _DOVAR  CONSTANT: 'DOVAR  ( A036)
+ _DODOES  CONSTANT: 'DODOES ( A042)
 
 \                   name-creator  runtime-action  parameter(s)
 \                   ------------  --------------  -----------
@@ -1078,7 +1081,7 @@ TARGET-COMPILING
 : VARIABLE  ( -- )   CREATE                           0 , ;  \ variables are set to zero when created
 
 \ from studying gforth. It's a nice factor.
-\ compiles:  BL @>839C   ( docolon)
+\ compiles:  BL @>839C ( docolon)
 : (:NONAME) ( -- )   839C B&L,  HIDE  ]  ;   \ common to ':' and ':NONAME'
 
 \ =======================================================================
@@ -1090,7 +1093,7 @@ TARGET-COMPILING
 
 : DOES>  ( -- )                    \ change action of latest def'n
         COMPILE (;CODE)
-        A042 B&L,               \ branch & link to address  _DODOES
+        06A0 , A042 ,              \ branch & link to address  _DODOES
        ; XIMMEDIATE
 
 \ =======================================================================

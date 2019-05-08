@@ -451,14 +451,15 @@ T' TYPE  RESOLVES 'TYPE
 \ C H A R A C T E R   I N P U T
 
 TARGET-COMPILING
-: KEY       ( -- char)
+
+: KEY       ( -- char)                     \ simple non-repeating KEY
             BEGIN
-              CURS@ VPUT
-              PAUSE         \ Multi-tasking while we wait
-              KEY?          \ call ROM KSCAN
-            UNTIL
-            8375 C@ 7F AND  \ read KSCAN buffer, mask to 7 bits
-            BL VPUT ;
+              CURS@ VPUT                   \ show the flashing cursor
+              PAUSE                        \ multi-tasking switch
+              KEY?
+              ?DUP
+            UNTIL                          \ wait for key press
+            BL VPUT ;                      \ erase cursor character
 
 \ High level: input/output          (c) 31mar95 bjr
 : ACCEPT     ( c-addr +n -- +n')
@@ -533,8 +534,9 @@ TARGET-COMPILING
 : ABORT       ( -- )  SP0 SP!  CR QUIT ;
 
 : ?ABORT  ( f c-addr u --)
-           ROT IF  HONK
-                   CR CR T." ? "  TYPE
+           ROT IF  CR
+                   CR T[CHAR] * EMIT SPACE  TYPE  T[CHAR] ? EMIT
+                   HONK
                    SOURCE-ID @   ( if source is NOT console)
                    IF  T."  Line " LINES @ U.
                        CR CR SOURCE TYPE
@@ -673,7 +675,7 @@ TARGET-COMPILING
 
 : DOES>  ( -- )
         COMPILE (;CODE)
-        0460 , T['] DODOES ,  \ compile machine code:  B @DODOES
+        06A0 , T['] DODOES ,   \ compiles machine code for: BL @DODOES
        ; XIMMEDIATE
 
 \ =======================================================================

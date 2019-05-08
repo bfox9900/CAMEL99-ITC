@@ -21,8 +21,8 @@
 \ make space for a bunch of CONS
 2 CELLS CONSTANT CONSIZE
 
-HEX   400 CONSIZE *  MALLOC CONSTANT CONS[]
-CONSARRAY CONSIZE +         CONSTANT ENDCONS
+HEX   1000 CONSIZE *  MALLOC CONSTANT CONS[]  \ array of CONS data types
+CONSARRAY CONSIZE +          CONSTANT ENDCONS
 
 CONS[] CREATE LP  ,   ( free list pointer init to consarry)
 
@@ -34,10 +34,10 @@ CONS[] CREATE LP  ,   ( free list pointer init to consarry)
 : CDR!  ( v addr - ) CELL+ ! ;  \ store something in CDR
 
 VARIABLE FREELINK    \ Holds the current FREELINK to use
-VARIABLE LASTLINK     \ added lastlink so we can keep track of usage
+VARIABLE LASTLINK    \ added lastlink so we can keep track of usage
 
 : CONS+  ( n -- n') CONSSIZE + ;  \ for clarity in the code
-: ERASE   0 FILL ;
+: ERASE  ( addr  0 FILL ;
 
 : INIT-LISTS ( --)   \ initializes the free list with all cells.
             CONS[] CONSIZE ERASE   \ erase the links buffer

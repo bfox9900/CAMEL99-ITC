@@ -5,7 +5,7 @@
 \ Aug 9 2018 Improved on screen look
 \            *SEE TRACE.FTH for test code
 
-INCLUDE DSK1.TOOLS
+NEEDS .S FROM DSK1.TOOLS
 
 HEX
 \ Camel Forth dictionary needs help to get from an XT (CFA) back to the NFA
@@ -23,7 +23,7 @@ HEX
 : ID.     ( xt -- ) CFA>NFA COUNT 1F AND ?DUP IF TYPE SPACE THEN ;
 
 : ?FREEZE  ( -- )
-           KEY? 
+           KEY?     
            IF 80 MS
               BEGIN  KEY?  UNTIL
            THEN ;

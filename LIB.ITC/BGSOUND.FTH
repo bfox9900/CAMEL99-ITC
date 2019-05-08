@@ -1,6 +1,6 @@
 \ BACKGROUND TI sound list player in CAMEL99 Forth V2
 
-NEEDS FORK  FROM DSK1.MTASK99.F
+NEEDS FORK  FROM DSK1.MTASK99
 
 \ 1. This player uses a final '0' to mark the end of the sound data
 \ 2. It turns off all sounds when the data is ended
@@ -50,7 +50,7 @@ CREATE SOUNDQ   20 CELLS ALLOT
 
 \ BackgroundPlayer
 : BGPLAYER ( -- )   \ play all lists in the Q then goto sleep
-           BEGIN 
+           BEGIN
            Q? WHILE
              SOUNDQ Q@ PLAYLIST
            REPEAT
@@ -76,31 +76,32 @@ CREATE PLAYER USIZE ALLOT  PLAYER FORK
 \ sound list examples
 : ?BYTE ( c -- ) FF00 AND  ABORT" Not a byte" ;
 
+CREATE NUMBUF  10 ALLOT
+
 : BYTE ( -- )
-         BEGIN  
-           [CHAR] , WORD DUP C@
+         BEGIN
+           [CHAR] , PARSE-WORD
+           DUP
          WHILE
-            HERE COUNT EVALUATE  DUP ?BYTE  C,
+            EVALUATE  DUP ?BYTE  C,
          REPEAT
          2DROP ;
 
 : /END   0 C,  ALIGN  ;   \ compile zero, force even memory boundary
 
-HEX
-CREATE MUNCHMAN
-       BYTE 08,85,2A,90,A6,08,B0,CC,1F,12
-       BYTE 08,85,2A,90,A4,1C,B0,C9,0A,12
-/END
+\ HEX
+\ CREATE MUNCHMAN
+\       BYTE 08,85,2A,90,A6,08,B0,CC,1F,12
+\       BYTE 08,85,2A,90,A4,1C,B0,C9,0A,12
+\ /END
 
-CREATE PACMAN
-       BYTE 06,86,0D,97,AC,1A,B7,08
-       BYTE 02,8F,08,02
-       BYTE 02,AB,23,05
-       BYTE 02,86,0D,04
-       BYTE 01,BF,03
-       BYTE 02,8E,0B,08
-       BYTE 02,8A,0A,02
-       BYTE 03,AC,1A,B7,08
-/END
-
-
+\ CREATE PACMAN
+\       BYTE 06,86,0D,97,AC,1A,B7,08
+\       BYTE 02,8F,08,02
+\       BYTE 02,AB,23,05
+\       BYTE 02,86,0D,04
+\       BYTE 01,BF,03
+\       BYTE 02,8E,0B,08
+\       BYTE 02,8A,0A,02
+\       BYTE 03,AC,1A,B7,08
+\ /END

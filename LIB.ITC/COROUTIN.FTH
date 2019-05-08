@@ -20,9 +20,9 @@ HERE CQ# ALLOT CONSTANT START
 : ADJUST   (  -- )   [ CQ# 1- ]LIT AND START + ;
 : PUT      ( n-- )   TAIL @ TUCK ! CELL+ ADJUST TAIL ! ;
 : TAKE 	   ( --n )   HEAD @ DUP @ SWAP CELL+ ADJUST HEAD ! ;
-: 0CQ	   ( --  )   START DUP HEAD ! TAIL ! ; 
+: 0CQ	   ( --  )     START DUP HEAD ! TAIL ! ; 
 
-  0CQ ( initialize co-routine queue) 
+  0CQ ( initialize co-routine queue)
 
 : NOEMPTY? ( --f )   HEAD @ TAIL @ <> ;
 : ;CO      ( --  )   TAKE >R ;
@@ -37,4 +37,3 @@ HERE CQ# ALLOT CONSTANT START
 \ * CHANNELS LEXEME
 \
 : CHAN?  ( a--f )   2@ XOR ;
-

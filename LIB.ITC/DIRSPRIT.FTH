@@ -62,9 +62,9 @@ CR .( .)
 \ The following words are named like Extended BASIC
 \ (remove ?NDX if you need more speed, but you loose protection)
 : POSITION  ( sprt# -- dx dy )  SP.Y V@ SPLIT ;
-: LOCATE    ( dx dy sprt# -- ) ( ?NDX)  >R FUSE R> SP.Y V! ;
-: PATTERN   ( char sprt# -- )  ( ?NDX)  SP.PAT VC! ;
-: SP.COLOR  ( col sprt# -- )   ( ?NDX)  >R 1- R> SP.COLR VC! ;
+: LOCATE    ( dx dy sprt# -- ) ?NDX  >R FUSE R> SP.Y V! ;
+: PATTERN   ( char sprt# -- )  ?NDX  SP.PAT VC! ;
+: SP.COLOR  ( col sprt# -- )   ?NDX  >R 1- R> SP.COLR VC! ;
 
 CODE DUP>R ( n -- ) ( r-- n)
           0647 , C5C4 ,    \ TOS RPUSH,
@@ -80,7 +80,7 @@ CODE DUP>R ( n -- ) ( r-- n)
           R>  SPR# @ MAX  SPR# ! ; \ update last spr#
 
 \ like Extended BASIC Magnify
-: MAGNIFY  ( mag-factor -- )
+: MAGNIFY  ( mag-factor -- ) 
            VDPR1 C@ 0FC AND +  DUP 1 VWTR   VDPR1 C! ;
 .( .)
 HEX
@@ -135,8 +135,9 @@ CODE DXY  ( x2 y2 x1 y1 --- dx dy )   \ use by SP.DIST
 \ 0 means no coincidence
 : COINC     ( sp#1 sp#2 tol -- ? )
             2(X^2) -ROT SP.DIST > ;
-
+            
 : COINCXY   ( dx dy sp# tol -- ? )
             2(X^2) >R    \ convert tolerance  to squares, push to rstack
             SP.DISTXY    \ compute sprite dist from dx dy
             R> <= ;      \ compare dist to tolerance
+

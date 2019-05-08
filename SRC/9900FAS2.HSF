@@ -162,14 +162,12 @@ l: _lit       TOS     PUSH,   \ 28
               @@9 JMP,
 
 l: _@        *TOS TOS MOV,
-              @@9 JMP,
+              NEXT,           \ needed by inline optimizer
 
 l: _DROP      TOS POP,
-              @@9 JMP,
-
+              NEXT,           \ needed by inline optimizer
 
 l: _HSend   \ this label tells the compiler where the high speed code ends.
-
 
 
 \ ==============================================================
@@ -240,21 +238,28 @@ CODE: DOUSER ( -- addr)
 \ defined word:  CFA: doescode
 \                PFA: parameter field
 \
-\ Note: in the TMS9900 implementation we use B @DODOES. (branch to address)
+\ Note: in the NEW TMS9900 implementation we use BL @DODOES. (branch and link)
 \ DODOES is entered with W=PFA (parameter field address)
 \ DODOES moves  W to the TOP of Stack (TOS)
 \ So the high-level Forth code begins with the address of the parameter
 \ field on top of stack. (cached in R4 in this version)
-\
-\ MSP430 version translates to TMS9900 very easily
-CODE: DODOES  ( -- a-addr)
-              TOS PUSH,       \ save TOS reg on data stack
-              W TOS MOV,      \ put defined word's PFA in TOS
-              IP RPUSH,       \ push old IP onto return stack
-             -2 (W) IP MOV,   \ PFA-2=CFA: CFA@ -> IP
-              IP 4 ADDI,      \ move Forth IP past "BL @DODOES" code
-              NEXT,
+\ Using BL means R11 automatically computes the new IP (IP+4)
+ CODE: DODOES  ( -- a-addr)
+              TOS PUSH,       \ save TOS reg on data stack      28
+              W TOS MOV,      \ put defined word's PFA in TOS   14
+              IP RPUSH,       \ push old IP onto return stack   28
+              R11 IP MOV,                             \         14
+              NEXT,                                   \         84
               END-CODE
+
+\ CODE: DODOES  ( -- a-addr) \ *OLD VERSION*
+\              TOS PUSH,       \ save TOS reg on pstack                 28
+\              W TOS MOV,      \ put defined word's PFA in TOS          14
+\              IP RPUSH,       \ push old IP onto return stack          28
+\             -2 (W) IP MOV,   \ PFA-2=CFA: CFA@ -> IP                  22
+\              IP 4 ADDI,      \ move Forth IP past "BL @DODOES" code   14
+\              NEXT,                                                \  106
+\              END-CODE
 
 CODE: EXECUTE ( xt -- )
               TOS W MOV,      \ move the execution token in TOS into temp
@@ -264,11 +269,11 @@ CODE: EXECUTE ( xt -- )
               END-CODE
 
 CODE: ?BRANCH
-             _?BRANCH >HSRAM CFA!      \ put fast address into the CFA
+             _?BRANCH >HSRAM CFA!  \ put fast address into the CFA
               END-CODE
 
 CODE: BRANCH
-             _BRANCH >HSRAM CFA!       \ put fast address into the CFA
+             _BRANCH >HSRAM CFA!   \ put fast address into the CFA
               END-CODE
 
 \ ==========================================================================
@@ -394,10 +399,13 @@ CODE: NIP     ( n n' -- n')
 
 CODE: ?DUP    ( x -- 0 | x x)       \ ?DUP interleaved with DUP to save space
               TOS TOS MOV,          \ test for TOS<>0
-              EQ IF,                \ if TOS<>0 goto DUP
-                   NEXT,            \ goto next word
-+CODE: DUP    ( w -- w w )          \ create a Forth Header for DUP
+              NE IF,                \ if TOS<>0
+                   TOS PUSH,        \ dup it
               ENDIF,
+              NEXT,
+              END-CODE
+
+CODE: DUP    ( w -- w w )          \ create a Forth Header for DUP
               TOS PUSH,
               NEXT,
               END-CODE
@@ -580,8 +588,8 @@ CODE: LSHIFT  ( n bits -- n') \ shift left arithmetic. NOT ANS compliant
               END-CODE
 
 CODE: SRA   ( n bits -- n') \ shift right arithmetic. Very handy for scaling
-              TOS R0  MOV,            \ 14 the shift bits MUST be in R0 to do this
-             *SP+ TOS   MOV,          \ 22
+              TOS R0  MOV,          \ 14 the shift bits MUST be in R0 to do this
+             *SP+ TOS   MOV,        \ 22
               TOS R0 SRA,
               NEXT,
               END-CODE
@@ -778,7 +786,7 @@ CODE: 0=     ( n -- ?)
 +CODE: U>    ( n1 n2 -- flag)
              *SP+ TOS CMP,
               @@9 JH,
-              @@8 JLE,             \ *BUG* had to use JLE not JL
+              @@8 JLE,            \ *BUG* had to use JLE not JL
 +CODE: 0>     ( n -- flag )
               TOS TOS MOV,
               @@9 JGT,
@@ -825,16 +833,17 @@ CODE: CMOVE  ( src dst n -- )  \ forward character move
               END-CODE
 
 CODE: CMOVE>  ( src dst n -- )  \ move chars from end of string and go backwards
-             *SP+ R0 MOV,       \ pop DEST into R0
-             *SP+ R1 MOV,       \ pop source into R1
+             *SP+ R1 MOV,       \ pop DEST into R0
+             *SP+ R2 MOV,       \ pop source into R1
               TOS TOS MOV,
               NE IF,            \ if n<>0 do move
-                 TOS R0 ADD,    \ point to end of src
-                 TOS R1 ADD,    \ point to end of dest
+                 TOS R1 ADD,    \ point to end of src
+                 TOS R2 ADD,    \ point to end of dest
                  BEGIN,
-                   *R1 *R0 MOVB,
+                   *R1 -1 (R1) MOVB,
+                   *R2 *R1 MOVB,
                     R1 DEC,     \ move the pointers back (NO auto decrement, damn)
-                    R0 DEC,
+                    R2 DEC,
                     TOS DEC,    \ decr the counter in TOS (R5)
                  EQ UNTIL,
               ENDIF,
@@ -969,28 +978,28 @@ CODE: SKIP  ( c-addr u char -- c-addr' u')    \ skip matching chars
              *SP+ R1 MOV,                     \ POP count into R1, char is already in TOS
               NE IF,                          \ if r1=0 get out
                   BEGIN,
-                    TOS *W+ CMPB,               \ does character match? &  auto-incr. address
-                    @@2 JNE,                    \ NO MATCH jump out
-                    R1 DEC,                     \ decr loop counter
-                  EQ UNTIL,                     \ loop until R1=0
-@@2:              W DEC,                        \ correct result address after auto-inc.
+                    TOS *W+ CMPB,             \ does character match? &  auto-incr. address
+                    @@2 JNE,                  \ NO MATCH jump out
+                    R1 DEC,                   \ decr loop counter
+                  EQ UNTIL,                   \ loop until R1=0
+@@2:              W DEC,                      \ correct result address after auto-inc.
               ENDIF,
               W *SP  MOV,                     \ store updated address on stack
               R1 TOS MOV,                     \ updated count to TOS
               NEXT,
               END-CODE
 
- CODE: SCAN   ( adr len char -- adr' len' )    \ find matching char
+ CODE: SCAN   ( adr len char -- adr' len' )   \ find matching char
               TOS SWPB,                       \ silly machine needs this to compare memory to register
               2 (SP) W MOV,                   \ get address->w
              *SP+ R1 MOV,                     \ POP count into R1, char is already in TOS
               NE IF,                          \ R1<>0 ?
                   BEGIN,
-                    TOS *W CMPB,               \ does character match?
-                    @@2 JEQ,                   \ YES, we are done, JUMP OUT
-                     W INC,                    \ next character
-                     R1 DEC,                   \ dec. loop counter
-                  EQ UNTIL,                    \ hit end of string, jmp out
+                    TOS *W CMPB,              \ does character match?
+                    @@2 JEQ,                  \ YES, we are done, JUMP OUT
+                     W INC,                   \ next character
+                     R1 DEC,                  \ dec. loop counter
+                  EQ UNTIL,                   \ hit end of string, jmp out
               ENDIF,
 @@2:          W *SP  MOV,                     \ store updated address on stack
               R1 TOS MOV,                     \ updated count to TOS
@@ -1016,7 +1025,6 @@ CODE: S=  ( C-addr1 C-addr2 cnt1+1 -- n )      \ compare counted strings (1st by
                     R0 DEC,                    \ decr. loop counter
                  EQ UNTIL,                     \ loop while R0 > 0
                  NEXT,                         \ match! Return to Forth.
-
 @@2:          LT IF,   TOS INC,                \ R1<R2 set to 1
                  ELSE, TOS DEC,                \ R1>R2 set to -1
                  ENDIF,

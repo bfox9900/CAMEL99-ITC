@@ -38,7 +38,7 @@
 \ The direct threaded version on the 9900 runs empty loops 20% to 30% FASTER
 \ than ITC Forth. However in a real world application of compiling the ASSEMBLER
 \ where the compiler primitives (HERE ','  ALLOT) are code words, the speedup
-\ is almost not measureable.
+\ is almost not measurable.
 
 \ Multi-tasking ready:
 \ CAMEL99 commandeers R13,R14 & R15 to allow the smallest multi-tasker
@@ -49,7 +49,7 @@
 \         Special thanks Mark Wills for giving the world TurboForth
 \         It provided examples of how to deal with the crazy TI-99/4a
 
-\         Also thanks go to to Lee Stewart atariage.com who can spot
+\         Also thanks go to Lee Stewart atariage.com who can spot
 \         a bug a nautical mile away.
 
 \         Big thanks to Dr. Brad Rodriguez for Camel Forth MSP430
@@ -134,13 +134,13 @@ CROSS-ASSEMBLING
 \   (IP) -> W   fetch memory pointed by IP into "W" register
 \   IP+2 -> IP  advance IP (assuming 2-byte addresses)
 \   JP (W)      jump to the address in the W register
-\ TMS9900 does this in 2 instructions
+\               *TMS9900 does this in 2 instructions
 \ ==========================================================
 \
-l: _exit     *RP+ IP MOV,     \ placing EXIT before next saves space and is faster  22+next=60
-l: _next                      \ Forth DTC NEXT routine
-@@9:         *IP+ R5 MOV,    \ move IP to W & auto inc IP                   \ 22
-                 *R5 B,      \ branch to the address in W                   \ 16
+l: _exit     *RP+ IP MOV,    \ placing EXIT before next saves space and is faster  22+next=60
+l: _next                     \ Forth DTC NEXT routine
+@@9:         *IP+ W MOV,    \ move IP to W & auto inc IP                   \ 22
+                 *W B,      \ branch to the address in W                   \ 16
                                                                            \ = 38 vs 56 in ITC
 l: _?branch   \ Faster way to avoid penalty of TOS refill
               TOS DEC,        \ After DEC if tos=0, this will cause a carry flag                        10
@@ -186,9 +186,9 @@ l: _HSend                     \ this label tells the compiler where the high spe
 \   **********************************************************
 
 \ These are NOT Forth words, but code routines I call "EXECUTORS"
-
+CROSS-COMPILING
 \ Executor that executes a "CONSTANT"
-l: _docon    TOS PUSH,      \ make room in TOS
+l: _docon     TOS PUSH,      \ make room in TOS
              *R11 TOS MOV,    \ move PFA into Forth IP register    14
               NEXT,
 
@@ -210,11 +210,12 @@ l: _douser       TOS PUSH,    \ Executor that executes a "USER VARIABLE" (local 
 \          exactly what we want!
 \  NEXT    ; invoke high-level interpreter
 l: _DODOES  ( -- a-addr)
-              IP RPUSH,
-\              TOS PUSH,
-\              R11 TOS MOV,
-              R11 IP MOV,
-              NEXT,
+            TOS PUSH,
+            R11 TOS MOV,    \ pfa -> TOS
+            IP RPUSH,       \ Rpush IP
+            R11 4 ADDI,     \ (PFA+4)
+            R11 IP MOV,     \ move Forth IP past "BL @DODOES" code
+            NEXT,
 
 \ =======================================================================
 \ DTC MACROS are compiled into each FORTH word. NOT needed by CODE words.
@@ -233,8 +234,7 @@ CR .( FORTH PRIMITIVES BEGIN)
 
 CROSS-ASSEMBLING
 
-
-\ *SPECIAL* Forth words to hi-speed RAM routines
+\ *SPECIAL* Forth words BRANCH to hi-speed RAM routines
 
  CODE: EXIT    ( -- )
               EXIT2 @@ B,     \ Branch to fast address
@@ -246,17 +246,17 @@ CROSS-ASSEMBLING
 \              END-CODE
 
 \ CODE: BRANCH
-\              BRANCH2 @@ B,   \ Branch to fast address
+\              BRANCH2 @@ B,  \ Branch to fast address
 \              END-CODE
 
-\ CODE: LIT     LIT2 @@ B,      \ Branch to fast address
+\ CODE: LIT     LIT2 @@ B,    \ Branch to fast address
 \              END-CODE
 
 \ ==========================================================================
 CODE: EXECUTE ( xt -- )
-              TOS W MOV,            \ move the execution token in TOS into temp
-              TOS POP,              \ refill TOS
-             *W   B,                \ branch to the address of the DOER routine
+              TOS W MOV,      \ move the execution token in TOS into temp
+              TOS POP,        \ refill TOS
+             *W   B,          \ branch to the XT
               END-CODE
 
 CR .( MEMORY FETCH & STORE)
@@ -387,7 +387,6 @@ CODE: ?DUP    ( x -- 0 | x x)       \ ?DUP interleaved with DUP to save space
               NEXT,
               END-CODE
 
-
 CODE: SWAP    ( w1 w2 -- w2 w1 )
               TOS   W MOV,          \ 14
              *SP  TOS MOV,          \ 18
@@ -431,20 +430,22 @@ CODE: 2DROP   ( n n -- )
               END-CODE
 
 \ used 10x in the CAMEL Forth Kernel. Provides good speedup on some critical words
+0 [IF]
  CODE: 2DUP   ( n1 n2 -- n1 n2 n1 n2 )
              *SP W MOV,            \ 18 copy n1
               TOS PUSH,            \ 28 copy n2 onto stack
               W PUSH,              \ 28 push onto Stack
               NEXT,                \
              END-CODE             \ 74,  5 instructions, 10 bytes
-
+[ELSE]
 \ faster version is 2 bytes bigger. It's hard to win with the 9900!
-\ CODE: 2DUP   ( n1 n2 -- n1 n2 n1 n2 )
-\              SP -4 ADDI,       \  14   make room for 2 cells
-\              4 (SP) *SP MOV,   \  26   n1->*SP
-\              TOS  2 (SP) MOV,  \  22   n2 -> next stack location
-\              NEXT,            \   62   ,  3 instructions 12 bytes
-\              END-CODE
+CODE: 2DUP   ( n1 n2 -- n1 n2 n1 n2 )
+              SP -4 ADDI,       \  14   make room for 2 cells
+              4 (SP) *SP MOV,   \  26   n1->*SP
+              TOS  2 (SP) MOV,  \  22   n2 -> next stack location
+              NEXT,            \   62   ,  3 instructions 12 bytes
+              END-CODE
+[THEN]
 
 CODE: 2SWAP   ( n1 n2 n3 n4-- n3 n4 n1 n2)
               TOS       R0 MOV,    \ n4  14
@@ -710,17 +711,6 @@ CODE: M/MOD  ( lsb msb n3 -- rem quot)
        END-CODE        \ 72 bytes
 
 \ ==================================================================
-\ array operation nice in theory, but not that important
-0 [IF]
-CODE: *+     ( addr ndx size -- addr')  \ array address calculator
-             *SP+ TOS MPY,              \ 60
-             *SP+ TOS MOV,              \ 22
-              R5  TOS ADD,              \ 14
-              NEXT,                    \ =96
-              END-CODE
-[THEN]
-
-\ ==================================================================
 cr .( COMPARISON)
 
 CODE: 0=     ( n -- ?)
@@ -762,7 +752,7 @@ CODE: 0=     ( n -- ?)
 +CODE: U>    ( n1 n2 -- flag)
              *SP+ TOS CMP,
               @@9 JH,
-              @@8 JLE,             \ *BUG* had to use JLE not JL
+              @@8 JLE,            \ *BUG* had to use JLE not JL
 +CODE: 0>     ( n -- flag )
               TOS TOS MOV,
               @@9 JGT,
@@ -978,6 +968,7 @@ CODE: SCAN   ( adr len char -- adr' len' )    \ find matching char
               R1 TOS MOV,                     \ updated count to TOS
               NEXT,
               END-CODE
+
 \ ===========================================================
 \ adapted from Camel Forth MSP430.
 \ TMS9900 does not have a SUBC instruction. I could not figure out how to do
@@ -1092,8 +1083,8 @@ CODE: (FIND) ( Caddr NFA -- XT ? )
 cr .( CAMEL99 custom primitives)
 
 \ multi-tasking support
-CODE: PAUSE   ( -- )             \ MULTI-TASKER switcher needed by I/O words in Kernel
-            _NEXT @@ B,          \ patch CODE address with NEXT (replaced for multi-tasking)
+CODE: PAUSE   ( -- )       \ MULTI-TASKER switcher needed by I/O words in Kernel
+            _NEXT @@ B,    \ patch CODE address with NEXT (replaced for multi-tasking)
             END-CODE
 
 \ used in sprite control and very handy for byte/cell manipulation

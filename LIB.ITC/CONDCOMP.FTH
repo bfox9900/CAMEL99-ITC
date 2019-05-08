@@ -1,6 +1,6 @@
 \ Conditional compilation
 
-\ INCLUDE DSK1.TOOLS.F
+\ INCLUDE DSK1.TOOLS
 
 : COMPARE ( a1 n1 a2 n2 -- -1|0|1 ) \  0 = match, -1 = a1<a2, 1 = a1>a2
     ROT  2DUP - >R            ( a1 a2 n2 n1)( R: n2-n1)
@@ -18,9 +18,10 @@
 ;
 
 : [ELSE] ( -- )
-       1
- \   BEGIN                                  \ level
-       BEGIN BL WORD COUNT DUP WHILE         \ level adr len
+    1
+\    BEGIN                                  \ level
+       BEGIN BL PARSE-WORD DUP
+       WHILE                                 \ level adr len
          2DUP S" [IF]" COMPARE 0= IF         \ level adr len
              2DROP 1+                        \ level'
           ELSE                               \ level adr len
@@ -36,8 +37,8 @@
              THEN
           THEN ?DUP 0= IF EXIT THEN          \ level'
        REPEAT 2DROP                          \ level
-\   REFILL 0= UNTIL                          \ level
-       DROP
+\     REFILL  0= UNTIL                          \ level
+     DROP
 ; IMMEDIATE
 
 : [IF]   ( flag -- ) 0= IF POSTPONE [ELSE] THEN ; IMMEDIATE

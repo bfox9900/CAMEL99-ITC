@@ -47,10 +47,11 @@ TARGET-COMPILING
            0 ?DO
                  TMR@
                  BEGIN
+                   TMR@ |-| 650 <
+                 WHILE
                    PAUSE
-                   TMR@ |-| 650 >
-                 UNTIL
-                 DROP
+                REPEAT
+                DROP
            LOOP ;
 
 \ MS resolution limited to 1/60 second and minimum is 1/60 sec.

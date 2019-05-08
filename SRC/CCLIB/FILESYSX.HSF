@@ -80,13 +80,13 @@ CODE: [PAB   ( -- adr) TOS PUSH,  ^PAB @@ TOS MOV,  NEXT, END-CODE
            CR T." Loading: " 2DUP TYPE
            LINES OFF
            SOURCE-ID @ >IN @ 2>R           \ save source-ID, input pointer
-           PSHPAB INITPAB                  \ make new PAB on P AB stack
+           PSHPAB INITPAB                  \ make new PAB on PAB stack
            0 FILEOP ?FILERR                \ open new file (sets new DSRNAM)
            SOURCE-ID 1+!                   \ incr. source ID (1st file is 1)
 
            52 DUP MALLOC >R                \ get a buffer pointer & RPUSH
            BEGIN
-             FSTAT 3 AND 0=                \ eof test
+             (EOF) 0=                      \ eof test
            WHILE                           \ while err=0
              2 FILEOP ?FILERR              \ read a record,closes file if EOF
              [PAB CHARS] VC@               \ get the #chars read

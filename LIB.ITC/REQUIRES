@@ -1,0 +1,11 @@
+\ REQUIRED  REQUIRES   Forth 2012
+
+: REQUIRED  ( adr len -- )
+      PAD FIND NIP
+      IF  2DROP
+      ELSE
+        2DUP HEADER, COMPILE DOCON TRUE , 
+        INCLUDED
+      THEN ;
+
+: REQUIRES  ( <DSK1.FILENAME> )  BL PARSE-WORD REQUIRED ;

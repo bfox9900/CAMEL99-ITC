@@ -9,8 +9,6 @@
 \ =================================================================
 \ *** SET MEMTOP FOR YOUR SYSTEM ***
 
-
-
 \ ERROR constants
         69 CONSTANT ALLOCATE_ERR
         79 CONSTANT HEAP_OVERFLOW
@@ -27,7 +25,7 @@ VARIABLE LASTNODE
 : HALLOT      ( n -- )    HP +! ;
 : HEAP,       ( n -- )    HEAP ! CELL HALLOT ;
 : HEND        ( -- n )    HERE HEAP + ;
-: ?EOH        ( u -- ? )  HEND  U<  ;
+: ?EOH        ( u -- ? )  HEND  U< ;
 : HLINK       ( addr --)  LASTNODE @ HEAP, NODE_SIZE + LASTNODE ! ;
 : LASTNODE?   ( addr -- ?) LASTNODE @ = ;
 : HEAP-SIZE   ( -- u )     HEAP HEND  - ;
@@ -35,10 +33,10 @@ VARIABLE LASTNODE
 : ALLOCATED   ( node --  u )   ALLOCATION @ ;
 : >PREV       ( node -- addr') NODE_SIZE - ;
 
-: INIT-HEHP   ( --)
+: INIT-HEAP   ( --)
                MEMTOP HP !
-               0 HEAP,                       \ ROOT NODE SIZE
-               0 HEAP,                       \ root node link
+               0 HEAP,                  \ root node size
+               0 HEAP,                  \ root node link
                ROOTNODE LASTNODE ! ;
 
 : ALLOCATE    ( u -- a-addr ior )
@@ -47,9 +45,9 @@ VARIABLE LASTNODE
               if
                   ALLOCATE_ERR
               ELSE
-              ( u ) DUP HALLOT HEAP,         \ allot & record size in the node
-                   HEAP hlink                \ link back to the old NODE
-                   LASTNODE @ 0              \ return the HEAP pointer and 0
+              ( u) DUP HALLOT HEAP,     \ allot & record size in the node
+                   HEAP hlink           \ link back to the old NODE
+                   LASTNODE @ 0         \ return the HEAP pointer and 0
               THEN ;
 
 : RESIZE    ( addr u -- addr ior)
@@ -58,7 +56,7 @@ VARIABLE LASTNODE
             IF 2DUP -  ?EOH
                IF  DROP RESIZE_ERROR
                ELSE
-                  OVER ALLOCATED OVER - hp +!
+                  OVER ALLOCATED OVER - HP +!
                   OVER ALLOCATION !
                   FALSE
                THEN
@@ -115,8 +113,6 @@ TRUE [if]
 \ ==============================================================
 \ test code
 
-
-
 : .HEAP    ( -- ) cr ." HEAP free= " HEAP-SIZE U. ;
 
 INIT-HEAP
@@ -128,7 +124,6 @@ INIT-HEAP
 : calloc    ( #elements size -- addr )
             * allocate abort" Calloc failed"
             dup dup ALLOCATED erase ;
-
 
 2000 malloc value q
 2000 malloc value w

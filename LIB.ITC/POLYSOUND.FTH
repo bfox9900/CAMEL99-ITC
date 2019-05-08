@@ -1,14 +1,16 @@
 \ TMS9919 SOUND CHIP DRIVER and CONTROL LEXICON     Jan 2017 BJF
 \ Modified to use ISR timers to control durations   Mar 2 2019 BJF
- 
+
  NEEDS DUMP FROM DSK1.TOOLS   \ debugging
  NEEDS MOV, FROM DSK1.ASM9900
+
+HERE
 
 \ frequency code must be ORed with these numbers to create a sound
 HEX
   8000 CONSTANT OSC1      A000 CONSTANT OSC2   ( oscillators take 2 nibbles)
   C000 CONSTANT OSC3        E0 CONSTANT OSC4   ( noise takes 1 nibble)
- 
+
 \ Attenuation values are ORed with these values to change volume
 ( 0= max, 15 = off)
     90 CONSTANT ATT1         B0 CONSTANT ATT2
@@ -30,7 +32,7 @@ T3 CELL+ CONSTANT T4
 
 DECIMAL
 S" 111861" >DOUBLE CREATE f(clk) ( -- d)  ,  ,  \ 32 bit int.
- 
+
 \ >FCODE re-arranges freq. value nibbles (4bits) for the TMS9919
 HEX
  CODE >FCODE ( 0abc -- 0cab) \ version by Farmer Potato Atariage
@@ -39,7 +41,7 @@ HEX
             0948 ,  \   W 4  SRL,   \ 0C0A
             D108 ,  \  W TOS MOVB, \ 0CAB
             NEXT,
-            ENDCODE   
+            ENDCODE
 
 \ we set the "ACTIVE CHANNEL" with these variables
  VARIABLE OSC       \ holds the active OSC value
@@ -60,7 +62,7 @@ CODE SND! ( c -- )
            TOS SWPB,
            TOS 8400 @@ MOVB,
            TOS POP,
-           NEXT, 
+           NEXT,
            ENDCODE
 
 \ Set the sound "GENerator that is active by assigning
@@ -155,7 +157,7 @@ HEX
 
 : NOISE ( dur freq vol  -- ) VOX4 SWAP 07 AND NOISETYPE PLAY ;
 
-DECIMAL 
+DECIMAL
 : >BASS ( n -- n') 14777 1000 */ ;
 
 : BASS ( dur freq vol -- ) \ steal VOX3 & VOX4 to play low freq
@@ -166,4 +168,4 @@ DECIMAL
          VOX3 SWAP 4* HZ MUTE
          VOX4 7 NOISETYPE  PLAY ;
 
-
+HERE SWAP - .

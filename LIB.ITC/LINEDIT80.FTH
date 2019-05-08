@@ -1,7 +1,7 @@
 \ Simple line editor for Blocks
 
 NEEDS BUFFER FROM DSK1.BLOCKS
-NEEDS 80COLS FROM DSK1.80COL
+\ NEEDS 80COLS FROM DSK1.80COL
 
 VARIABLE SCR
 
@@ -9,8 +9,8 @@ DECIMAL
 64 CONSTANT LWIDTH
 
 : (LINE) ( lin# -- addr) SCR @ BLOCK SWAP  LWIDTH * + ;
-\ : .LINE  ( lin# --) (LINE) LWIDTH TYPE ; ( slow version)
-: .LINE  ( lin# - ) (LINE) VPOS  LWIDTH VWRITE ;
+: .LINE  ( lin# --) (LINE) LWIDTH TYPE ; ( slow version)
+\ : .LINE  ( lin# - ) (LINE) VPOS  LWIDTH VWRITE ;
 : (CP) ( L1 L2 -- ) (LINE) SWAP (LINE) SWAP LWIDTH CMOVE ;
 
 \ Line editor commands

@@ -8,14 +8,14 @@ HEX
             [PAB FNAME] VPLACE  \ set file name
           0 [PAB RECLEN] VC!    \ set reclen
             [PAB REC#]  V!      \ set #bytes to save (int)
-            [PAB FBUFF] V!  ;   \ set start address in VDP Ram (int)
+            [PAB FBUFF] V!      \ set start address in VDP Ram (int) ;
 
 : SAVE-FILE ( VDPaddr count file$ len mode -- )
            PSHPAB SETPAB  6 FILEOP ?FILERR  POPPAB ;
 
 : LOAD-FILE ( VDPaddr count file$ len mode -- )
            PSHPAB SETPAB  5 FILEOP ?FILERR  POPPAB ;
-
+           
 400 CONSTANT 1K
 800 CONSTANT 2K
 

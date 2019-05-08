@@ -2,8 +2,8 @@ CR .( VT100 terminal control)
 DECIMAL
 \ type a number in base 10, with no space
 : <ARG>   ( n -- )
-           BASE @ >R
-           0 <#  DECIMAL #S  #> TYPE
+           BASE @ >R  
+           0 <#  DECIMAL #S  #> TYPE 
            R> BASE ! ;
 
 \ markup language for terminal control codes
@@ -17,7 +17,7 @@ DECIMAL
 : <CLRLN> ( -- )   <ESC>[ ." K" ;
 
 \ redefine Forth words using markup words
-: AT-XY   ( col row --)
+: AT-XY   ( col row --) 
           2DUP VROW 2!
           SWAP <ESC>[ <ARG> ." ;" <ARG> ." f" ;
 

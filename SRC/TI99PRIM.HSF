@@ -60,11 +60,11 @@ CR ." V D P   W R I T E"
 
 \ VMBW in Forth style
 CODE: VWRITE  ( RAM-addr VDP-addr cnt -- )
-              R0 POP,              \ vaddr to R0
-              R1 POP,              \ cpu addr to R1
-              TOS TOS MOV,
-              NE IF,               \ protect from cnt=0 like CMOVE
-                 WMODE @@ BL,      \ setup VDP write address
+             R0 POP,              \ vaddr to R0
+             R1 POP,              \ cpu addr to R1
+             TOS TOS MOV,         \ protect from cnt=0 like CMOVE
+             NE IF,
+                 WMODE @@ BL,
                  R3 VDPWD LI,      \ vdp addr. in a reg. makes this 12.9% faster
                  BEGIN,
                    *R1+ *R3 MOVB,  \ write byte to vdp write port
@@ -76,9 +76,11 @@ CODE: VWRITE  ( RAM-addr VDP-addr cnt -- )
               END-CODE
 
 \ VSBW in Forth style  pronounced "Vee-Cee-store"
+\ *NOTE:  There is no SPEED-UP from putting the WMODE sub-routine inline
+
 CODE: VC!     ( char Vaddr  -- )   \ Video CHAR store
-              TOS R0 MOV,          \ need address in R0
-              WMODE @@ BL,         \ branch to setup VDP write address
+              TOS R0 MOV,
+              WMODE @@ BL,
               TOS POP,             \ get char into TOS register
               TOS SWPB,
               TOS VDPWD @@ MOVB,   \ write char to vdp data port
@@ -148,8 +150,8 @@ CROSS-ASSEMBLING
 CODE: >VPOS ( col row -- vaddr) \ compute video address
              R1         STWP,
              TOS     R3  MOV,   \ this move to make best use of MPY
-             2E (R1) R3  MPY,   \ multply by chars/line. result goes to R4 ie: TOS
-            *SP+     TOS ADD,   \ add col value to tos
+             2E (R1) R3  MPY,   \ multiply by chars/line. result goes to R4 ie: TOS
+            *SP+     TOS ADD,   \ add col value to TOS
              NEXT,
              END-CODE
 
@@ -173,20 +175,23 @@ CODE: VCLIP  ( lim char addr -- lim char addr)
 
 \ ===================================================================
 CR .( KEY?  and  ?TERMINAL)
-\ Camel99 interface to KSCAN.
-\ We used the ROM routine to test if a KEY was pressed only.
-\ We read the character value from RAM with Forth code. See: KEY
+\ Camel99 interface to KSCAN. **CHANGED APR 29 2019**
+\ It makes more sense to return false or the KEY value
+\ See: KEY
 CODE: KEY? ( -- ?)  \ *WARNING* it takes 1,128uS for KEY? scan to run
-             TOS PUSH,
-             TOS CLR,            \ TOS will be our true/false flag
-             0 LIMI,
-             83E0 LWPI,          \ switch to GPL workspace
-             000E @@ BL,         \ call ROM keyboard scanning routine
-             8300 LWPI,          \ return to Forth's workspace , interrupts are restored
-             2 LIMI,
-             837C @@ TOS MOVB,   \ read GPL status byte (=2000 if key pressed)
-             NEXT,               \ return
-             END-CODE
+            TOS PUSH,
+            TOS CLR,            \ TOS will be our true/false flag
+            0 LIMI,
+            83E0 LWPI,          \ switch to GPL workspace
+            000E @@ BL,         \ call ROM keyboard scanning routine
+            8300 LWPI,          \ return to Forth's workspace , interrupts are restored
+            2 LIMI,
+            837C @@ R0 MOVB,    \ read GPL status byte (=2000 if key pressed)
+            NE IF,
+                8374 @@ TOS MOV, \ read the key
+            ENDIF,
+            NEXT,               \ return
+            END-CODE
 
 \ *---------------------------------------------
 \ * Call very fast built-in Fctn-4 test in console ROM
