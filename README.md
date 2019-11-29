@@ -95,6 +95,11 @@ Indirect Threaded Version
 - DSK1.AUTOMOTION provides Automatic sprite motion like Extended BASIC
 
 
+### Know BUG
+- When INCLUDE is used for a file on a disk other than DSK1, the library files will try to load from that same disk.  Investigating our FILESYSX for the problem.
+- Temporary fix is to keep programs on disk one or load libraries manually before loading a program from DSK2 or DSK3.
+
+
 
 
 
