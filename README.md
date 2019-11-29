@@ -1,4 +1,4 @@
-# CAMEL99 for TI-99 V2.1.G (2)
+# CAMEL99 for TI-99 V2.5
 
 ### ABOUT CAMEL99 V2.5
 -----------------------
