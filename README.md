@@ -56,11 +56,11 @@ Select the run program file option from the menu and enter "DSK1.CAMEL99"
 
 ## Loading Source Code Files
 Wait for the SYSTEM file to compile.
-At the console type: INCLUDE DSK1.TOOLS  -or- S" DSK1.TOOLS.F" INCLUDED
+At the console type: INCLUDE DSK1.TOOLS -or- S" DSK1.TOOLS" INCLUDED
 
-When Forth returns to you type "WORDS" and press enter and you will see all the words in the Forth dictionary.
+When Forth returns with "ok" type "WORDS" and press enter and you will see all the words in the Forth dictionary.
 
-Press FNCT 4 (BREAK) to stop the display.
+Press FNCT 4 (BREAK) to stop the display at any time.
 
 It's that easy.
 
