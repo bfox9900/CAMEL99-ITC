@@ -1,9 +1,19 @@
 # CAMEL99 for TI-99 V2.5
 
+<<<<<<< HEAD
 ### ABOUT CAMEL99 V2.5
 ------------------------
 CAMEL99 Forth has been built as an educational tool for those who are interested in how you could cross-compile Forth to a different CPU using an existing Forth system. Rather than starting from scratch it uses CAMEL Forth by Dr. Brad Rodriguez for the hi-level Forth code.
 This has been "tweeked" and dare I say improved a little to better fit the very slow TI-99 computer. (More things written in Assembler was the answer)
+=======
+### ABOUT CAMEL99 V2
+---------------------
+CAMEL99 Forth began as an educational tool to demonstrate how to cross-compile Forth to a different CPU using an existing Forth system.
+
+The result is a Multi-tasking Forth for the TI-99/4a that is based on the ANS/ISO Forth Standard. CAMEL99 uses text files rather than disk blocks for your programs. It includes a large number of library files and demonstration programs to help the BASIC programmer with Forth. A 160 page manual is part of the package.  Full source code for the system and the cross-compiler are provided to allow full customization. 
+
+Rather than starting from scratch it uses CAMEL Forth by Dr. Brad Rodriguez for the hi-level Forth code. This has been "tweeked" and dare I say improved a little to better fit the very slow TI-99 computer. (More things written in Assembler was the answer)
+>>>>>>> 1c507ca4d49494728ad5d05834c2ac69f84cef41
 
 The low level primitives are written in Forth Assembler. The file 9900FAST.HSF also contains the low level drivers for TI-99 Keyboard and Video display I/O. The final console interfaces are written in Forth including the screen scrolling code, just to demonstrate how it can be done in hi-level Forth.
 
