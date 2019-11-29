@@ -55,9 +55,10 @@ Start the TI-99 computer with the Editor/Assembler cartridge.  The folder DSK1 m
 Select the run program file option from the menu and enter "DSK1.CAMEL99"
 
 ## Loading Source Code Files
-At the console type: INCLUDE DSK1.TOOLS.F  -or- S" DSK1.TOOLS.F" INCLUDED
+Wait for the SYSTEM file to compile.
+At the console type: INCLUDE DSK1.TOOLS  -or- S" DSK1.TOOLS.F" INCLUDED
 
-When Forth returns to you type "WORDS" and press enter and you will see all the words in the Forth dictionary.  
+When Forth returns to you type "WORDS" and press enter and you will see all the words in the Forth dictionary.
 
 Press FNCT 4 (BREAK) to stop the display.
 
