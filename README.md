@@ -1,10 +1,11 @@
 # CAMEL99 for TI-99 V2.5
 
-<<<<<<< HEAD
 ### ABOUT CAMEL99 V2.5
 ------------------------
-CAMEL99 Forth has been built as an educational tool for those who are interested in how you could cross-compile Forth to a different CPU using an existing Forth system. Rather than starting from scratch it uses CAMEL Forth by Dr. Brad Rodriguez for the hi-level Forth code.
-This has been "tweeked" and dare I say improved a little to better fit the very slow TI-99 computer. (More things written in Assembler was the answer)
+CAMEL99 Forth was built as an educational exercise to learn how to cross-compile Forth to a different CPU using an existing Forth system. It has become a functional ISO/Forth system for the TI-99 computer that implements all of the CORE wordset, much of the EXTENDED wordset. It also includes libraries to aid in programming the TMS9918 graphics chip in the TI-99.
+
+Rather than starting from scratch CAMEL99 uses CAMEL Forth by Dr. Brad Rodriguez for the hi-level Forth code. This has been "tweeked" and dare I say improved a little to better fit the very slow TI-99 computer. (More things written in Assembler was the answer)   
+
 =======
 ### ABOUT CAMEL99 V2
 ---------------------
