@@ -1,6 +1,9 @@
 \
 \ ==========================================================
 \      TI-99  FORTH  DIRECT THREADED  PRIMITIVES
+
+\              **** using branch & link ****
+
 \ ==========================================================
 \
 \ This code, compiled with a cross compiler built on HSF2012
@@ -28,11 +31,11 @@
 \ -----------------------------------------------------------
 
 \ Overview:
-\ This implementation creates a DIRECT-Threaded Code System with the
-\ Top of stack (TOS) cached in Register 4 for a speed increase.
-\ We have also tried to use less space where possible. Some primitives
-\ are smaller in Assembly language but some are smaller in Forth.
-\ We chose smaller is better except where performance would really suffer.
+\ *** uses BRANCH & LINK to call direct threaded words.
+\ The advantage of this version is the by using BL instruction in each
+\ Forth word, R11 contains the PFA of the word ie: where the Forth threaded
+\ code begins !!!    
+\ This reduces the overhead of most words by about 10%.  see: DOVAR
 
 \ PERFORMANCE:
 \ The direct threaded version on the 9900 runs empty loops 20% to 30% FASTER
@@ -155,7 +158,7 @@ l: _docol     IP RPUSH,       \                                                 
               R11 IP MOV,     \ move PFA into Forth IP register                   14
               @@9 JMP,        \                                                =  56 vs 42 ITC
 
- l: _lit      TOS PUSH,       \ 28
+l: _lit       TOS PUSH,       \ 28
              *IP+ TOS MOV,    \ 22
               @@9 JMP,
 
@@ -198,23 +201,40 @@ l: _dovar     TOS    PUSH,   \ make room in TOS                   28
               NEXT,
 
 \ In CAMEL99 the 9900 WP register doubles as User pointer
-l: _douser       TOS PUSH,    \ Executor that executes a "USER VARIABLE" (local to each task)
-                 TOS STWP,    \ store workspace register WP in TOS
-            *R11 TOS ADD,     \ add contents of PFA to workspace address
+l: _douser   TOS PUSH,       \ Executor that executes a "USER VARIABLE" (local to each task)
+             TOS STWP,       \ store workspace register WP in TOS
+            *R11 TOS ADD,    \ add contents of PFA to workspace address
              NEXT,
 
-\ ; push old IP onto the Return Stack
-\ ; pop new IP from the CPU stack
-\   note: the CPU stack is the Parameter Stack, and the
-\          topmost element is now the PFA of the word...
-\          exactly what we want!
-\  NEXT    ; invoke high-level interpreter
+\ This took a while to figure out :-)
+\ Example:
+\     : CONS    CREATE , DOES> @ ;   This is the "defining word"
+\    99 CONS X                       This is the "defined word"
+
+\ Step by Step:
+\ - When the defined word (X) is invoked is does a BL to the DOES> part of CONS
+\ - The Forth IP has not moved.
+\ - After X runs via BL instruction , R11 points to the address just past the
+\   BL instruction and address. (X's PFA )
+\ - We just push that onto the Forth stack (just like _dovar)
+\ - We dect R11 to get the address that BL was branching to, (DOES> part of CONS)
+\ - We push the current IP
+\ - We decrement R11 by 2 to point to the address of DOES> in CONS
+\ - Make that address our new IP
+\ - Advance the new IP past the branch instruction in DOES> which points to "payload"
+\   in DOES>  which is the execution token of '@'
+\ - Now we run next which runs fetch (@) which takes the value of the address on the TOS.
+
+\   easy peasy :-)
+
 l: _DODOES  ( -- a-addr)
-            TOS PUSH,
-            R11 TOS MOV,    \ pfa -> TOS
-            IP RPUSH,       \ Rpush IP
-            R11 4 ADDI,     \ (PFA+4)
-            R11 IP MOV,     \ move Forth IP past "BL @DODOES" code
+            TOS PUSH,       \ save TOS reg on data stack
+            R11 TOS MOV,    \ After BL R11 has defined word's PFA. Move to TOS
+            IP  RPUSH,      \ save current IP on return stack
+ 
+ \   R11-2 points to defining word code: B @@ _dodoes
+           -2 (R11) IP MOV, \ move pointer to Forth IP
+            IP  4 ADDI,     \ advance past branch to defining word's PFA
             NEXT,
 
 \ =======================================================================
@@ -747,7 +767,7 @@ CODE: 0=     ( n -- ?)
               @@9 JLT,
               @@8 JMP,
 
-0 [IF]   \ saves 14 bytes if Forth versions are used
+-1 [IF]   \ saves 14 bytes if Forth versions are used
 
 +CODE: U>    ( n1 n2 -- flag)
              *SP+ TOS CMP,
@@ -779,6 +799,22 @@ CODE: MIN     ( n1 n2 -- n)
 @@1: @@2:     TOS POP,       \ pop n1 into TOS
               NEXT,
 END-CODE   \ for MIN
+
+\ In DTC we save space by using more code words
+CODE: UMIN     ( n1 n2 -- n)
+             *SP TOS CMP,    \ compare n1 & n2
+              @@1 JL,        \ if n1 < n2 goto @@1:
+              SP INCT,       \ otherwise NIP n1
+              NEXT,
++CODE: UMAX   ( n1 n2 -- n)
+             *SP  TOS CMP,   \ compare n1 & n2
+              @@2 JH,       \ if n1 > n2 goto @@1:
+              SP INCT,       \ otherwise DROP n1
+              NEXT,
+@@1: @@2:     TOS POP,       \ pop n1 into TOS
+              NEXT,
+END-CODE   \ for MIN
+
 
 \ ==================================================================
 CR .(  MOVE CMOVE CMOVE>  FILL )

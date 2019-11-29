@@ -1,18 +1,18 @@
 \ Mini-OOF   Bernd Paysan                            12apr98py
+\ a VERY small object oriented language extension 
+\ https://www.complang.tuwien.ac.at/forth/gforth/Docs-html/Mini_002dOOF.html#Mini_002dOOF
 
-\ INCLUDE INLIN99.FTH 
-
-: COMPILE, ( n -- ) , ;  \ not in CAMEL99 Kernel
+\ : COMPILE, ( n -- ) , ;
 
 : NOOP ; 
 
 : METHOD ( m v "name" -- m' v )
          CREATE  OVER , SWAP CELL+ SWAP
-         DOES> ( ... O -- ... ) INLINE[ @ OVER @ + @ ] EXECUTE ;
+         DOES> ( ... O -- ... )  @ OVER @ + @ EXECUTE ;
 
 : VAR    ( m v size "name" -- m v' )
          CREATE  OVER , +
-         DOES> ( O -- ADDR ) INLINE[ @ + ]  ;
+         DOES> ( O -- ADDR )  @ +  ;
 
 : CLASS  ( class -- class methods vars ) DUP 2@ ;
 
@@ -27,4 +27,5 @@
 
 : :: ( class "name" -- ) ' >BODY @ + @ COMPILE, ;
 
+\ The "root" object". All new objects are a child of OBJECT
 CREATE OBJECT  1 CELLS , 2 CELLS ,

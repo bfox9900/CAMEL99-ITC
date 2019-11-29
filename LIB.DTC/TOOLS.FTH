@@ -1,9 +1,9 @@
-CR .( TOOLS for Camel99 Forth V2)
+CR .( TOOLS for Camel99 Forth DTC)
 
-NEEDS DEFER FROM DSK1.DEFER
+\ NEEDS DEFER FROM DSK1.DEFER
 
-DEFER MEM@
-DEFER MEMC@
+\ DEFER MEM@
+\ DEFER MEMC@
 
 .( ..)
 : ?      ( adr -- ) @ . ;
@@ -45,7 +45,7 @@ DEFER MEMC@
 : .ASCII  ( adr n --)
           BOUNDS
           DO
-            I MEMC@ DUP
+            I C@ DUP
             BL 1-  80 WITHIN
             0= IF DROP  '.'
             THEN EMIT
@@ -57,21 +57,21 @@ DECIMAL
 
 .( ..)
 HEX
-: (DUMP)   ( offset n -- )
+: DUMP   ( offset n -- )
          BASE @ >R
          HEX
          BOUNDS   ( -- endadr startadr)
          DO PAUSE
          CR  I  .####  ':' EMIT
-             I  ?80  BOUNDS DO  SPACE I MEM@ .####  2 +LOOP SPACE
+             I  ?80  BOUNDS DO  SPACE I @ .####  2 +LOOP SPACE
              I  ?80  .ASCII
              ?BREAK
           ?80 +LOOP
           CR
           R> BASE ! ;
 
-: DUMP    ['] @  IS MEM@    ['] C@  IS MEMC@   (DUMP) ;
-: VDUMP   ['] V@ IS MEM@    ['] VC@ IS MEMC@  (DUMP) ;
+\ : DUMP    ['] @  IS MEM@    ['] C@  IS MEMC@   (DUMP) ;
+\ : VDUMP   ['] V@ IS MEM@    ['] VC@ IS MEMC@  (DUMP) ;
 \ : SDUMP   ['] @P IS MEM@    ['] C@P IS MEMC@  (DUMP) ;
 
 .( ..)

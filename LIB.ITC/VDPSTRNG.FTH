@@ -47,9 +47,10 @@
 \ Replicate TI-BASIC string functions
 : VASC     ( vaddr len -- c) NIP VC@ ;
 : VLEN     ( vaddr len -- vaddr len len)  DUP ; \ makes a copy of length
+
 : VAL$     ( vaddr len - # )
             20 MALLOC >R         \ get a temp buffer 32 bytes
-            R@ VGET$             \ move string to CPU buff
+            R@ V@$             \ move string to CPU buff
             R> ?NUMBER           \ test if buffer is number
             0= ABORT" VAL$ err"  \ ABORT if it fails
             20 MFREE ;           \ free the buffer
@@ -70,23 +71,23 @@
 \ ===============================
 \ string functions not in BASIC
 : V-TRAILING  ( adr len char -- adr len') \ remove trailing chars
+             1-
              BEGIN
-               2DUP + 1- VC@         \ fetch last character
-        BL = WHILE                   \ test for match.
-               1-                    \ while char is a match, decrement length
-             REPEAT ;
+               2DUP + VC@         \ fetch last character
+             BL = WHILE           \ test for match.
+               1-                 \ while char is a match, decrement length
+             REPEAT
+             1+ ;
 
-: VSKIP  ( adr len char -- adr len') \ remove leading chars
-             >R                      \ push CHAR to return stack
+: V-LEADING  ( adr len -- adr' len') \ remove leading chars
              BEGIN
                OVER VC@              \ fetch 1st char
-        R@ = WHILE                   \ test for match
+             BL = WHILE                   \ test for match
                 1 /STRING            \ while char is a match, cut 1st char
              REPEAT
-             R> DROP ;               \ clean up rstack
+;
 
-: VCLEAN$ ( V$ len  -- v$' len')
-            BL SKIP  V-TRAILING ;
+: VCLEAN$ ( V$ len  -- v$' len') V-LEADING  V-TRAILING ;
 
 \ add a char onto the end of a VDP stack string
 : V+CHAR  ( char addr len -- )

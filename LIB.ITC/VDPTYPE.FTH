@@ -7,6 +7,6 @@
           >VPOS DUP >R       \ keep screen pos copy
           OVER + C/SCR @ > ABORT" Off screen"
           R> SWAP VWRITE ;
-          
-          
-: VTYPE   VPOS SWAP VWRITE ;           
+
+
+: VTYPE   ( addr len -- ) VPOS SWAP VWRITE ;

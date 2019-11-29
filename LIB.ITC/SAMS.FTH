@@ -2,7 +2,9 @@
 
 \ 1 sams page only.  Set to >3000 by PMEM (paged memory)
 
-\ *** You MUST run SAMSINI before using the card ***
+\ ******************************************************
+\ *** RUN SAMSINI before using the card ON REAL TI99 ***
+\ ******************************************************
 
 \ NEEDS DUMP  FROM DSK1.TOOLS  \ debugging only
 
@@ -19,6 +21,7 @@ HEX
        SEG ! ;  \ don't allow segment 0
 
 1 SEGMENT
+
 \ using machine code so we don't need the CRU library
 CODE SAMS-OFF  ( --) \ disable mapped memory
        020C , 1E00 , \ R12 1E00 LI,
@@ -81,7 +84,7 @@ CODE ?MAP ( offset bank# -- )
 : @P     ( 32addr -- n)  PAGED @ ;    \ fetch an int
 : !P     ( n 32addr -- ) PAGED ! ;    \ store an int
 
-SAMSINI
+\ SAMSINI  (only on real iron)
 CR .( SAMS card initialized)
 CR HERE SWAP - DECIMAL . .( bytes) HEX
          

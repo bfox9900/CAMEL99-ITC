@@ -48,6 +48,7 @@ ENDCODE
        THEN SWAP 2/ ROT 1 RSHIFT ROT + SWAP ;
 
 : D<   ( d d -- ?) ROT >  IF 2DROP -1  ELSE U<  THEN ;
+: D>               D< 0= ;
 : DU<  ( d d -- ?) ROT U> IF 2DROP -1  ELSE U<  THEN ;
 : D0=  ( d -- ?)   OR 0= ;
 : D=   ( d d -- ?) ROT = -ROT = AND ;

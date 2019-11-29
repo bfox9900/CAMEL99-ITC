@@ -183,7 +183,7 @@ l: _HSend   \ this label tells the compiler where the high speed code ends.
 \ ==============================================================
 \   ********  C O M P I L E R   C O N T R O L ****************
 
-    FALSE VALUE REGISTERS  \ TRUE -> use registers for do loop
+  FALSE VALUE REGISTERS \ TRUE -> use registers for do loop
 
 \   **********************************************************
 \ ==============================================================
@@ -881,7 +881,7 @@ REGISTERS [IF]
 \ Using 2 registers makes DO LOOPs about 14% faster
 \ BUT it is NOT COMPATIBLE with the workspace based multi-tasker
 
-  INCLUDE CC9900\CCLIB\DOFAST.HSF
+  INCLUDE CC9900\CCLIB\DO-R15.HSF
 CR .( *** NOT MULTI-TASKER COMPATIBLE!! ***)
 
 [ELSE]
@@ -1008,29 +1008,26 @@ CODE: SKIP  ( c-addr u char -- c-addr' u')    \ skip matching chars
 
 \ ===========================================================
 \ adapted from Camel Forth MSP430.
-\ TMS9900 does not have a SUBC instruction. I could not figure out how to do
-\ the clever SUB with carry trick that Brad used on MSP430 so Old fashioned
-\ jumps had to suffice.
 
-CODE: S=  ( C-addr1 C-addr2 cnt1+1 -- n )      \ compare counted strings (1st byte is the length)
-\      s1<s2 : n=-1:, s1=s2: n=0,  s1>s2 : n=1 \ slightly different than MSP430 version
+ CODE: S=  ( C-addr1 C-addr2 cnt1+1 -- n )      \ compare counted strings (1st byte is the length)
               R2 POP,                          \ adrs2 -> R2
               R1 POP,                          \ adrs1 -> R1
               TOS R0 MOV,                      \ cnt -> R0
+              TOS CLR,
               NE IF,                           \ if count<>0 do search
-                 TOS CLR,                      \ TOS=0 means we have a match
                  BEGIN,
                    *R1+ *R2+ CMPB,             \ compare char by char with 2 register auto incrementing
                     @@2 JNE,                   \ mismatch found, goto @@2
                     R0 DEC,                    \ decr. loop counter
                  EQ UNTIL,                     \ loop while R0 > 0
                  NEXT,                         \ match! Return to Forth.
-@@2:          LT IF,   TOS INC,                \ R1<R2 set to 1
-                 ELSE, TOS DEC,                \ R1>R2 set to -1
+ @@2:            LT IF, TOS DEC,               \ corrected logic, Nov 20, 2019 OOPS!
+                 ELSE,  TOS INC,
                  ENDIF,
               ENDIF,
               NEXT,                            \ Return to Forth
               END-CODE                         \ 30 BYTES
+
 
 \ ===========================================================
 \ D I C T I O N A R Y   S E A R C H

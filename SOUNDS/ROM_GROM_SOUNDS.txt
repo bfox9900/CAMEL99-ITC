@@ -1,0 +1,244 @@
+Searching...
+
+Found possible list at start >1baa end >1ca5 length 252 frames 51 ticks 229
+
+S$1BAA BYTE 3,>89,>3F,>90,9
+       BYTE 2,>87,>32,9
+       BYTE 2,>87,>2A,3
+       BYTE 3,>A9,>3F,>B2,6
+       BYTE 2,>8D,>1F,3
+       BYTE 2,>A7,>32,6
+       BYTE 2,>84,>19,3
+       BYTE 2,>A7,>2A,3
+       BYTE 3,>C9,>3F,>D4,3
+       BYTE 2,>83,>15,3
+       BYTE 2,>AD,>1F,3
+       BYTE 2,>C7,>32,3
+       BYTE 2,>8E,>0F,3
+       BYTE 2,>A4,>19,3
+       BYTE 2,>C7,>2A,3
+       BYTE 2,>8A,>0C,3
+       BYTE 2,>A3,>15,3
+       BYTE 2,>CD,>1F,3
+       BYTE 2,>8A,>0A,3
+       BYTE 2,>AE,>0F,3
+       BYTE 2,>C4,>19,3
+       BYTE 2,>8F,>07,3
+       BYTE 2,>AA,>0C,3
+       BYTE 2,>C3,>15,3
+       BYTE 2,>85,>06,3
+       BYTE 2,>AA,>0A,3
+       BYTE 2,>CE,>0F,3
+       BYTE 2,>85,>05,3
+       BYTE 2,>AF,>07,3
+       BYTE 2,>CA,>0C,3
+       BYTE 2,>80,>04,3
+       BYTE 2,>A5,>06,3
+       BYTE 2,>CA,>0A,6
+       BYTE 2,>A5,>05,3
+       BYTE 2,>CF,>07,6
+       BYTE 1,>BF,3
+       BYTE 2,>C5,>06,9
+       BYTE 2,>C5,>05,9
+       BYTE 1,>DF,9
+       BYTE 1,>9F,0
+       BYTE 9,>8B,>06,>90,>AA,>0A,>B3,>CD,>11,>D3,5
+       BYTE 3,>9F,>BF,>DF,5
+       BYTE 9,>8F,>08,>90,>AD,>11,>B3,>CB,>23,>D3,5
+       BYTE 6,>8F,>07,>AE,>0F,>CD,>1F,5
+       BYTE 3,>9F,>BF,>DF,5
+       BYTE 9,>8F,>08,>90,>AD,>11,>B3,>CB,>23,>D3,5
+       BYTE 6,>8A,>0A,>A3,>15,>C7,>2A,5
+       BYTE 3,>9F,>BF,>DF,5
+       BYTE 9,>86,>0D,>90,>AC,>1A,>B3,>C7,>35,>D3,10
+       BYTE 3,>9F,>BF,>DF,10
+       BYTE 9,>8B,>06,>90,>AA,>0A,>B3,>CD,>11,>D3,10
+       BYTE 0
+
+Found possible list at start >1ca8 end >1cf7 length 80 frames 11 ticks 360
+M$1CA6 BYTE >7E,>82
+
+S$1CA8 BYTE 6,>8E,>0F,>90,>A0,>14,>B2,40
+       BYTE 4,>83,>0E,>AD,>11,20
+       BYTE 4,>86,>0D,>AE,>0F,40
+       BYTE 2,>9F,>BF,20
+       BYTE 9,>8E,>0B,>90,>AD,>10,>B2,>C0,>14,>D4,40
+       BYTE 3,>9F,>BF,>DF,20
+       BYTE 9,>8A,>0A,>90,>A6,>0D,>B2,>C7,>35,>D4,20
+       BYTE 3,>9F,>BF,>DF,10
+       BYTE 7,>80,>0A,>90,>AE,>0B,>B2,>D4,20
+       BYTE 3,>9F,>BF,>DF,10
+       BYTE 7,>8F,>08,>90,>AA,>0A,>B2,>D4,120
+       BYTE 0
+
+Found possible list at start >1ce2 end >1cf7 length 22 frames 2 ticks 130
+Warning: Overlaps preceding list by 22 bytes
+
+S$1CE2 BYTE 10,>90,>AE,>0B,>B2,>D4,>14,>03,>9F,>BF,>DF,10
+       BYTE 7,>8F,>08,>90,>AA,>0A,>B2,>D4,120
+       BYTE 0
+
+Found possible list at start >1cf0 end >1d2a length 59 frames 9 ticks 210
+Warning: Overlaps preceding list by 8 bytes
+
+S$1CF0 BYTE 8,>90,>AA,>0A,>B2,>D4,>78,>00,>7E,130
+       BYTE 6,>8F,>08,>90,>AF,>08,>B3,15
+       BYTE 2,>9F,>BF,5
+       BYTE 6,>8F,>07,>90,>A0,>0A,>B3,15
+       BYTE 2,>9F,>BF,5
+       BYTE 6,>88,>07,>90,>AA,>0A,>B3,15
+       BYTE 2,>9F,>BF,5
+       BYTE 6,>81,>07,>90,>AE,>0B,>B3,15
+       BYTE 2,>9F,>BF,5
+       BYTE 0
+
+Found possible list at start >1cfc end >1d2a length 47 frames 7 ticks 65
+Warning: Overlaps preceding list by 47 bytes
+
+S$1CFC BYTE 8,>90,>AF,>08,>B3,>0F,>02,>9F,>BF,5
+       BYTE 6,>8F,>07,>90,>A0,>0A,>B3,15
+       BYTE 2,>9F,>BF,5
+       BYTE 6,>88,>07,>90,>AA,>0A,>B3,15
+       BYTE 2,>9F,>BF,5
+       BYTE 6,>81,>07,>90,>AE,>0B,>B3,15
+       BYTE 2,>9F,>BF,5
+       BYTE 0
+
+Found possible list at start >1d2d end >1d54 length 40 frames 6 ticks 350
+M$1D2B BYTE >7C,>4a
+
+S$1D2D BYTE 3,>8C,>1A,>90,60
+       BYTE 3,>AD,>11,>B0,60
+       BYTE 3,>C6,>0D,>D0,90
+       BYTE 3,>9F,>BF,>DF,10
+       BYTE 9,>8E,>12,>90,>A3,>0E,>B0,>C4,>0B,>D0,10
+       BYTE 6,>8D,>11,>A6,>0D,>CA,>0A,120
+       BYTE 0
+
+Found possible list at start >1d57 end >1d8e length 56 frames 13 ticks 65
+M$1D55 BYTE >7E,>82
+
+S$1D57 BYTE 5,>80,>03,>90,>BF,>DF,5
+       BYTE 2,>80,>02,5
+       BYTE 2,>85,>03,5
+       BYTE 2,>88,>02,5
+       BYTE 2,>8D,>02,5
+       BYTE 2,>82,>03,5
+       BYTE 2,>8C,>01,5
+       BYTE 2,>86,>02,5
+       BYTE 2,>82,>02,5
+       BYTE 2,>8B,>01,5
+       BYTE 2,>8A,>02,5
+       BYTE 2,>84,>02,5
+       BYTE 2,>8E,>01,5
+       BYTE 0
+
+Found possible list at start >1d59 end >1d8e length 54 frames 13 ticks 65
+Warning: Overlaps preceding list by 54 bytes
+
+S$1D59 BYTE 3,>90,>BF,>DF,5
+       BYTE 2,>80,>02,5
+       BYTE 2,>85,>03,5
+       BYTE 2,>88,>02,5
+       BYTE 2,>8D,>02,5
+       BYTE 2,>82,>03,5
+       BYTE 2,>8C,>01,5
+       BYTE 2,>86,>02,5
+       BYTE 2,>82,>02,5
+       BYTE 2,>8B,>01,5
+       BYTE 2,>8A,>02,5
+       BYTE 2,>84,>02,5
+       BYTE 2,>8E,>01,5
+       BYTE 0
+
+Found possible list at start >1d91 end >1e13 length 131 frames 25 ticks 225
+M$1D8F BYTE >7E,>82
+
+S$1D91 BYTE 7,>8A,>0A,>90,>AC,>1A,>B0,>DF,12
+       BYTE 2,>9F,>BF,3
+       BYTE 6,>8A,>0A,>90,>AC,>1A,>B0,15
+       BYTE 4,>8F,>08,>A5,>1C,10
+       BYTE 2,>8A,>0A,5
+       BYTE 4,>84,>0B,>A0,>1E,10
+       BYTE 2,>8A,>0A,5
+       BYTE 4,>81,>07,>AD,>1F,10
+       BYTE 2,>8F,>07,5
+       BYTE 4,>87,>08,>A5,>1C,10
+       BYTE 2,>8F,>07,5
+       BYTE 2,>AC,>1A,10
+       BYTE 2,>8F,>08,5
+       BYTE 4,>8A,>0A,>A4,>19,10
+       BYTE 1,>9F,5
+       BYTE 5,>8A,>0A,>90,>AD,>17,10
+       BYTE 2,>84,>0B,5
+       BYTE 2,>8A,>0A,10
+       BYTE 2,>8F,>08,5
+       BYTE 2,>AB,>23,10
+       BYTE 2,>8A,>0A,5
+       BYTE 2,>8E,>0B,15
+       BYTE 4,>86,>0D,>AC,>1A,15
+       BYTE 2,>9F,>BF,15
+       BYTE 9,>8B,>06,>90,>AF,>08,>B0,>CA,>0A,>D0,15
+       BYTE 0
+
+Found possible list at start >1da0 end >1e13 length 116 frames 22 ticks 195
+Warning: Overlaps preceding list by 116 bytes
+
+S$1DA0 BYTE 10,>90,>AC,>1A,>B0,>0F,>04,>8F,>08,>A5,>1C,10
+       BYTE 2,>8A,>0A,5
+       BYTE 4,>84,>0B,>A0,>1E,10
+       BYTE 2,>8A,>0A,5
+       BYTE 4,>81,>07,>AD,>1F,10
+       BYTE 2,>8F,>07,5
+       BYTE 4,>87,>08,>A5,>1C,10
+       BYTE 2,>8F,>07,5
+       BYTE 2,>AC,>1A,10
+       BYTE 2,>8F,>08,5
+       BYTE 4,>8A,>0A,>A4,>19,10
+       BYTE 1,>9F,5
+       BYTE 5,>8A,>0A,>90,>AD,>17,10
+       BYTE 2,>84,>0B,5
+       BYTE 2,>8A,>0A,10
+       BYTE 2,>8F,>08,5
+       BYTE 2,>AB,>23,10
+       BYTE 2,>8A,>0A,5
+       BYTE 2,>8E,>0B,15
+       BYTE 4,>86,>0D,>AC,>1A,15
+       BYTE 2,>9F,>BF,15
+       BYTE 9,>8B,>06,>90,>AF,>08,>B0,>CA,>0A,>D0,15
+       BYTE 0
+
+Found possible list at start >1e16 end >1e7f length 106 frames 15 ticks 226
+M$1E14 BYTE >7E,>82
+
+S$1E16 BYTE 7,>8E,>12,>90,>A8,>16,>B0,>DF,40
+       BYTE 2,>9F,>BF,30
+       BYTE 6,>8E,>12,>90,>A8,>16,>B0,60
+       BYTE 4,>82,>13,>AD,>16,8
+       BYTE 6,>87,>13,>91,>A2,>17,>B1,8
+       BYTE 4,>8B,>13,>A7,>17,8
+       BYTE 6,>80,>14,>92,>AD,>17,>B2,8
+       BYTE 4,>85,>14,>A3,>18,8
+       BYTE 6,>89,>14,>94,>A9,>18,>B4,8
+       BYTE 4,>8E,>14,>AF,>18,8
+       BYTE 6,>83,>15,>96,>A4,>19,>B6,8
+       BYTE 4,>88,>15,>AA,>19,8
+       BYTE 6,>8D,>15,>99,>A0,>1A,>B9,8
+       BYTE 4,>82,>16,>A6,>1A,8
+       BYTE 6,>88,>16,>9C,>AC,>1A,>BC,8
+       BYTE 0
+
+Found possible list at start >1e82 end >1e8c length 11 frames 2 ticks 10
+M$1E80 BYTE >7E,>82
+
+S$1E82 BYTE 3,>9F,>BF,>DF,0
+       BYTE 3,>86,>0D,>93,10
+       BYTE 0
+
+Found possible list at start >1f07 end >1f21 length 27 frames 4 ticks 85
+
+S$1F07 BYTE 3,>86,>0D,>97,15
+       BYTE 3,>AA,>0A,>B5,15
+       BYTE 3,>CF,>08,>D3,15
+       BYTE 9,>8B,>06,>95,>A6,>0D,>B0,>CF,>08,>D0,40
+       BYTE 0

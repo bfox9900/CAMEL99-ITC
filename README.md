@@ -1,7 +1,7 @@
 # CAMEL99 for TI-99 V2.1.G (2)
 
-### ABOUT CAMEL99 V2
----------------------
+### ABOUT CAMEL99 V2.5
+-----------------------
 CAMEL99 Forth has been built as an educational tool for those who are interested in how you could cross-compile Forth to a different CPU using an existing Forth system. Rather than starting from scratch it uses CAMEL Forth by Dr. Brad Rodriguez for the hi-level Forth code.
 This has been "tweeked" and dare I say improved a little to better fit the very slow TI-99 computer. (More things written in Assembler was the answer)
 
@@ -204,3 +204,28 @@ in Assembler for us.
 - THEFLYDEMO is demonstrates how to create BASS frequencies in the TMS9919
 sound chip channel 4 using NOISE MODE 3 and controlling the frequency with
 channel 3.  The BUZZ of the fly is created this way.
+
+### Nov 28, 2019  V2.5
+Indirect Threaded Version
+- Settled on one build of CAMEL99 Forth. All variations are removed.
+- 25% speed up of CREATE DOES> structures by using BRANCH & LINK instruction
+- Fixed DSK1.ANSFILES file handle bug. Errors did not release current file handle.
+- Improved VDP screen driver using 1+@ code word
+- Improved DSK1.VALUES. Faster TO and +TO
+- Cleaned up LIB.ITC. TI99 versions are in DSK1.
+- Added DSK1.TRAILING. (-TRAILING -LEADING TRIM)
+- Added DSK1.HEXNUMBER. H# is a prefix word to interpret numbers as radix 16.
+- DSK1.TOOLS now includes VDUMP for VDP ram and SDUMP code for SAMS card.
+  (HEX and BINARY numbers alway print unsigned after tools are loaded.)
+- DSK1.CODEMACROS provides native 9900 indexed addressing arrays.
+- DSK1.VTYPE improved VTYPE updates VCOL. AT" ( x,y) placing text.
+- DSK1.AUTOMOTION provides Automatic sprite motion like Extended BASIC
+
+
+
+
+
+
+
+
+

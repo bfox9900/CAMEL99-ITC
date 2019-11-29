@@ -5,6 +5,9 @@
 \ then restore it when returning to Forth.
 \ This supports accessing other I/O devices while using the serial port.
 
+\ Jul 30/2019  added CTS control in CKEY? for hardware handshaking
+\ - CKEY
+
 [CC] HEX [TC]
                    1300 CONSTANT: RS232/1     \ card address
 [CC] RS232/1 40 +  [TC] CONSTANT: /TTY1       \ 40= uart#1,
@@ -66,17 +69,19 @@ CODE: CEMIT ( c -- )  \ 'com-emit"
          BEGIN,
            27 TB, EQ    \ test -DSR bit =0
          UNTIL,
+
          16 SBO,        \ set RTS
          BEGIN,
            22 TB, EQ    \ wait XBRE empty
          UNTIL,
+
          TOS SWPB,      \ put byte on the other side
          TOS 8 LDCR,    \ send 8 bits
          16 SBZ,        \ reset RTS
-\ houskeeping on USER VARIABLES...
+\ housekeeping on USER VARIABLES...
          R1      STWP,  \ get current user area address
-         30 (R1) INC,   \ inc  OUT
-         34 (R1) INC,   \ inc  VCOL
+         48 (R1) INC,   \ inc  OUT *bug* **DECIMAL OFFSET VALUES**
+         52 (R1) INC,   \ inc  VCOL      **DECIMAL OFFSET VALUES**
          LEDOFF @@ BL,
          R12 RPOP,
          TOS POP,
@@ -96,12 +101,12 @@ CODE: CKEY? ( -- n )         \  "com-key"
          EQ IF,
              TOS 8 STCR,      \ read the char
              18 SBZ,          \ reset 9902 rcv buffer
-             TOS 8 SRL,       \ shift to other byte
-  \            TOS KBUFF @@ MOV,
-          ENDIF,
-          R12 RPOP,
-          2 LIMI,
-          NEXT,
-          END-CODE
+             TOS SWPB,        \ shift to other byte
+\            TOS KBUFF @@ MOV,
+         ENDIF,
+         R12 RPOP,
+         2 LIMI,
+         NEXT,
+         END-CODE
 
 [CC] HEX [TC]

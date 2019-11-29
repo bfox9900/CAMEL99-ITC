@@ -1,3 +1,9 @@
-
 \ Forth 2012 word BUFFER:
-: BUFFER: ( n --)  CREATE ALLOT ;
+
+\ Standard definition
+ : BUFFER: ( n --)  CREATE ALLOT ;
+
+\ TI-99 specific Low RAM buffer creator
+: LOWBUFFER: ( n -- )
+             DUP H @ + 3FFF > ABORT" "
+             MALLOC CONSTANT ;        

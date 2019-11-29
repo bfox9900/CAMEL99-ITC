@@ -69,6 +69,7 @@ CODE PAGED  ( addr -- offset bank# )
 : @P     ( 32addr -- n)  PAGED @ ;    \ fetch an int
 : !P     ( n 32addr -- ) PAGED ! ;    \ store an int
 
+10 SEG ! 
 SAMSINI
 CR .( SAMS card initialized)
 CR HERE SWAP - DECIMAL . .( bytes) HEX

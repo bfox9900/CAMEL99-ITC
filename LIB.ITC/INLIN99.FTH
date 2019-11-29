@@ -80,7 +80,7 @@ HEX
 
 \ : *+       INLINE[ * + ]    ;
 
-\ : DUPC@    INLINE[ DUP C@ ] ;
+ : DUPC@    INLINE[ DUP C@ ] ;
 \ : DUP>R    INLINE[ DUP >R ] ;
 \ : ^2       INLINE[ DUP *  ] ;
 

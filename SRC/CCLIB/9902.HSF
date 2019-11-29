@@ -1,0 +1,135 @@
+\ CAMEL99 FORTH TMS9902 RS232/1 direct CRU communication 07DEC18 BJF
+\ FOR XFCC99  CROSS-COMPILER
+
+[CC] HEX [TC]
+               1300 CONSTANT: RS232    \ card address
+[CC] 1300 40 + [TC] CONSTANT: PORT1    \ 40= 9902#1,
+\ [CC] 1300 80 + [TC] CONSTANT: PORT2    \ 80= 9902#2
+
+\ 9902 control bits
+[CC] DECIMAL [TC]
+      13 CONSTANT: LDIR     \ load interval register
+\      16 CONSTANT: RTSON    \ request to send
+\      18 CONSTANT: RIENB    \ rcv interrupt enable
+\      21 CONSTANT: RXRL     \ receive register loaded bit
+\      22 CONSTANT: TXRE     \ transmit register empty bit
+\      27 CONSTANT: -DSR     \ NOT data set ready
+\      28 CONSTANT: -CTS     \ NOT clear to send
+      31 CONSTANT: RESET    \ RESET the UART
+
+\ configuration VARIABLE:s
+      VARIABLE: PCB         \ printed circuit board in use
+      VARIABLE: PORT        \ cru port in use
+      VARIABLE: BPS         \ bits per sec
+      VARIABLE: PROTOCOL    \ 8 BITS ODD PARITY
+
+[CC] DECIMAL [TC]
+: 499200. ( -- d) 40488 7 ;   \ double precision literal
+
+: BAUD   ( n -- )
+\         DUP 600 < ABORT" BAUD rate!"       \ 600..19200 only
+         499200. ROT UM/MOD NIP  BPS ! ;
+
+: PROTOCOL! ( n -- ) PROTOCOL @ OR PROTOCOL ! ;
+
+: STOPS  ( n -- ) \ bits 7 & 6
+          3 - ABS
+          \ 2 OVER U< ABORT" stop bits!"
+          6 LSHIFT  PROTOCOL! ;
+
+: BITS  ( n -- ) \ bits 1 & 0
+        5 -  \ 4 OVER U< ABORT" data bits!"
+        PROTOCOL!  ;
+
+[CC] 2 BASE ! [TC]
+00010000 CONSTANT: NO
+00100000 CONSTANT: EVEN
+00110000 CONSTANT: ODD
+
+[CC] HEX [TC]
+: PARITY  ( n -- ) \ bit 5 & 4
+         \ DUP NO ODD 1+ WITHIN 0= ABORT" Bad parity!"
+          PROTOCOL! ;
+
+: CARD    ( cru -- )
+          CRU@ OVER <>  \ is this a new card?
+          IF   0SBZ     \ yes, turn off current card
+          THEN CRU! ;   \ then select new card
+
+\ : RS232-ON  ( -- ) RS232 CRU!  7 SBO ;
+: RS232-OFF ( -- ) RS232 CRU!  7 SBZ ;
+
+: OPEN-TTY ( -- )   \ Use: PORT1 OPEN-TTY
+          RS232 CRU!  7 SBO
+          PORT @ CRU!               \ chip is base address
+          31 SBO  10 MS          \ 31 9902 chip & wait
+          PROTOCOL @ 8 PORT @ LDCR  \ 8 bits, Odd, 1 stop
+          LDIR SBZ                  \ interval timer off
+          BPS @  0C PORT @ LDCR ;   \ set RX/TX baud (12 bits)
+
+
+\ : ?TTYBRK  ( -- ) ?TERMINAL ABORT" TTY stopped" ;
+
+
+: TTYEMIT  ( c -- ) \ *YOU MUST SET CRU PORT*
+     PORT @ CRU!
+     BEGIN
+       BEGIN
+         16 SBO
+         27 TB INVERT
+       WHILE
+  \       ?TTYBRK
+       REPEAT
+       22 TB      \ TX buffer empty?
+     UNTIL
+     8 PORT @ LDCR  \ send byte
+     16 SBZ      \ clear tx buffer
+     1 OUT +! ;     \ count character
+
+
+
+VARIABLE: ECHO
+
+: ?ECHO ( c --) ECHO @ IF DUP TTYEMIT  THEN ;
+
+
+\ "PORT C FETCH" read 8 bits from IO address in R12, set by CRU!
+CODE: PC@ ( -- c)
+        TOS PUSH,
+        TOS 8 STCR,
+        TOS 8 SRL,
+        NEXT,
+        END-CODE
+
+
+\ CODE TKEY ( -- n )   \ fastest tty read
+\     \     0 LIMI,
+\           PCB @@ R12 MOV,
+\           7 SBO,              \ LED on
+\           PORT @@ R12 MOV,    \ select the 9902
+\           TOS PUSH,
+\           BEGIN,
+\             21 TB,          \ test if char ready
+\           EQ UNTIL,
+\           TOS 8 STCR,         \ read the char
+\           TOS 8 SRL,          \ shift to other byte
+\           18 SBZ,          \ 31 21
+\           PCB @@ R12 MOV,
+\           7 SBZ,              \ LED off
+       \   2 LIMI,
+\           NEXT,
+\           ENDCODE
+
+: TTYKEY ( -- n)    \ slow but muli-tasking ready
+          PORT @ CRU!
+          BEGIN
+            21 TB
+          UNTIL
+          PC@
+          18 SBZ ;
+
+: TTY1:  ( -- )
+         RS232 PCB !
+         PORT1 PORT !
+         PROTOCOL OFF
+         BPS OFF ;

@@ -1,6 +1,7 @@
 \ ANSFILES  for CAMEL99 V2 BJF 02APR2018)
 \ A subset of ANS Forth files wordset with TI-99 specific file control words
 \ Apr 10, 2018 re-write for DSRLINK9 saves space.
+\ Oct 13, 2019 changed ?FILERR to automatically release the current handle
 
 \ Dependancy:
 \ TI-99 file system is record oriented not byte oriented
@@ -12,25 +13,18 @@
 \  fam -  file access mode. see code for details
 
 \ O/S file system commands for reference (removed to save space)
-\ : OPEN    ( -- ior)  0 FILEOP ;
-\ : CLOSE   ( -- ior)  1 FILEOP ;
-\ : READ    ( -- ior)  2 FILEOP ;
-\ : WRITE   ( -- ior)  3 FILEOP ;
-\ : REWIND  ( -- ior)  4 FILEOP ;
-\ : LOAD    ( -- ior)  5 FILEOP ;
-\ : SAVE    ( -- ior)  6 FILEOP ;
-\ : DELETE  ( -- ior)  7 FILEOP ;
-\ : SCRATCH ( -- ior)  8 FILEOP ;
-\ : STATUS  ( -- stat) 9 FILEOP ;
-
-\ NEEDS .S   FROM DSK1.TOOLS   \ for debugging
+\ : OPEN    ( -- ior)  0 FILEOP ;  : CLOSE   ( -- ior)  1 FILEOP ;
+\ : READ    ( -- ior)  2 FILEOP ;  : WRITE   ( -- ior)  3 FILEOP ;
+\ : REWIND  ( -- ior)  4 FILEOP ;  : LOAD    ( -- ior)  5 FILEOP ;
+\ : SAVE    ( -- ior)  6 FILEOP ;  : DELETE  ( -- ior)  7 FILEOP ;
+\ : SCRATCH ( -- ior)  8 FILEOP ;  : STATUS  ( -- stat) 9 FILEOP ;
 
 HERE      \ for size calculation
-
 .(  ..)
 \ File handle server
 HEX
 VARIABLE #FILES
+VARIABLE LASTH
 
 \ File ID array holds VDP PAB address of an open file.
 CREATE FIDS ( -- addr) 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,
@@ -47,7 +41,8 @@ CREATE FIDS ( -- addr) 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,
            1+
            DUP #FILES @ > ABORT" no free handle"
            DUP ]FID @    \ fetch pab table contents
-         0= UNTIL ;      \ loop until we find an empty location
+         WHILE REPEAT    \ loop until we find an empty location
+;
 
 : NEWPAB ( hndl -- )
          DUP >PABADR  SWAP ]FID !    \ calc. PAB, record in FID array
@@ -55,11 +50,20 @@ CREATE FIDS ( -- addr) 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,
 
 : SELECT ( hndl -- )
         DUP 1 #FILES @ 1+ WITHIN  0= ABORT" Bad handle"
-        ]FID @ ^PAB !
+        DUP ]FID @ ^PAB !
+        LASTH !
        ( [PAB FNAME] 8356 !)  \ DSRLNK9 does this now in FILEOP
 ;
 
 : RELEASE ( hndl -- ) ]FID OFF  ;
+
+\ *new* file error handler that releases handle
+: ?FILERR  ( ior -- )
+           ?DUP IF
+              CR ." * File Err "  .
+              LASTH @ RELEASE
+              ABORT
+           THEN ;
 
 \ user level command.
 : FILES   ( n -- )
@@ -95,12 +99,12 @@ VARIABLE B/REC    \ bytes per record
 .( ..)
  HEX
 \ These ANS word adjust and return the FAM variable
- : R/W   ( -- fam)  11111001 FAM AND!  FAM @ ;
+ : R/W   ( -- fam)  UPDATE  FAM @ ;
  : R/O   ( -- fam)  INPUT   FAM @ ;
  : W/O   ( -- fam)  OUTPUT  FAM @ ;
 
- \ ANS Forth BIN replaces TI-99 "INTERNAL"
-  : BIN         ( fam -- fam') 8 OR ;  \ modify FAM to "INTERNAL"
+\ ANS Forth BIN replaces TI-99 "INTERNAL"
+: BIN         ( fam -- fam') 8 OR ;  \ modify FAM to "INTERNAL"
 
 \ system default to this file format
 : DV80   ( -- ) UPDATE DISPLAY SEQUENTIAL 50 VARI ;
@@ -111,7 +115,7 @@ HEX
 : OPEN-FILE ( $addr len fam -- fid ior)
             ( fam) DUP FF00 AND OVER  0=  OR ABORT" Bad file mode"
              -ROT             \ tuck the FAM away for now
-             SP0 SP@ 2+ - 6 < ABORT" OPEN-FILE args"
+             DEPTH 3 < ABORT" OPEN-FILE args"
              NEWHNDL DUP >R          \ copy handle to Rstack
              DUP NEWPAB              \ compute the new PAB
            ( hndl) SELECT            \ select the pab
@@ -133,7 +137,7 @@ HEX
 : CREATE-FILE     ( caddr len fam -- fid ior ) F9 AND  OPEN-FILE ;
 : FILE-POSITION   ( fid -- rec# ior) SELECT  [PAB REC#] V@  [PAB FLG] VC@ ;
 : REPOSITION-FILE ( rec# fid -- ior) SELECT  [PAB REC#] V!  4 FILEOP ;
-: DELETE-FILE     ( caddr len -- ior ) R/W OPEN-FILE ?FILERR 7 FILEOP ;
+: DELETE-FILE     ( caddr len -- ior) OPEN-FILE  7 FILEOP SWAP CLOSE-FILE OR ;
 
 .( ..)
 : READ-LINE ( c-addr u1 fid -- u2 flag ior )

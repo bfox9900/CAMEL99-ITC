@@ -22,22 +22,24 @@ HEX
 : ?BREAK  ( -- ) ?TERMINAL ABORT" *BREAK*" ;
 .( ..)
 : .ID     ( NFAaddr --) COUNT 1F AND TYPE ;
+
 : WORDS   ( -- )
            CR
-           0         ( word counter on stack)
+           0 >R        ( word counter on stack)
            LATEST @
            BEGIN
              DUP   ( -- nfa) .ID SPACE
-             SWAP 1+ SWAP        \ inc. the counter
+             R> 1+ >R       \ inc. the counter
              NFA>LFA @ DUP
              ?BREAK
            0= UNTIL
            DROP
-           CR  U. SPACE ." words" ;
+           CR R> U. SPACE ." words" ;
 
 \ BFox DUMP looks like dos debug, but without segment address
 2E CONSTANT '.'
 3A CONSTANT ':'
+
 
 : .####   ( n --) 0 <# # # # # #> TYPE ;
 
@@ -51,8 +53,8 @@ HEX
           LOOP ;
 
 DECIMAL
-: ?80    ( -- 16 | 8)  \ test for 80 or 40 column mode
-          VMODE @ 80 = IF 16 ELSE 8 THEN ;
+: ?80    ( -- 16 | 8)  \ test for 80 col, set width of dump 
+          C/L @ 80 = IF 16 ELSE 8 THEN ;
 
 .( ..)
 HEX

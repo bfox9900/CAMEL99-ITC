@@ -16,6 +16,10 @@
 \ Floating point numbers are handled like double length numbers
 \ with respect to stack operations, storage etc.
 
+NEEDS .S   FROM DSK1.TOOLS
+NEEDS D>   FROM DSK1.DOUBLE
+NEEDS ROLL FROM DSK1.ROLL
+
 \ constants                                  hhh 17:05 20.07.98
 4 CONSTANT FPSIZE
 
@@ -37,7 +41,7 @@ CREATE FSWAP ( f1 f2 -- f2 f1)     ' 2SWAP @  ' FSWAP !
 
 : FROT ( f1 f2 f3 -- f2 f3 f1)  5 ROLL  5 ROLL ;
 
-: FLITERAL  ( f -- )  ?COMP  COMPILE dlit  SWAP , , ; IMMEDIATE
+\ : FLITERAL  ( f -- )  ?COMP  COMPILE dlit  SWAP , , ; IMMEDIATE
 : FCONSTANT ( f -- )  CREATE  , ,  ( -- f) DOES> 2@ ;
 : FVARIABLE ( -- )    CREATE  0 , 0 , ;
 \ normalize and shift /1/                    hhh 17:05 20.07.98

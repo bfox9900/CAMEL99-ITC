@@ -214,7 +214,7 @@ CR .( Structured branching and looping )
         ?EXEC
         POSTPONE IF,  CELL+ ; IMMEDIATE
 
-
+\ V2 these are in DSK1.SYSTEM
 \ : CODE      ( -- )  HEADER  HERE >BODY , !CSP ;
 \ : ENDCODE   ( -- )  ?CSP  ;
 

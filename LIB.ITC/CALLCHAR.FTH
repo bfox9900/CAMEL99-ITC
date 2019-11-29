@@ -1,6 +1,6 @@
 \ CALLCHAR FONT COMPILER  ~10 seconds to load font source code into RAM
 
-: pdt[]  ( ascii -- Vaddr) 8* 800 + ;  \ Compute pattern address of ascii
+: ]pdt  ( ascii -- Vaddr) 8* 800 + ;  \ Compute pattern address of ascii
 
 : CHOP   ( addr len n -- addr len addr' len' )
           >R                  \ Rpush n
@@ -21,7 +21,7 @@
          HERE >R              \ save dictionary position "HERE"
          >UINT32 , ,          \ convert & compile 1st 2 integers
          >UINT32 , ,          \ convert & compile 2nd 2 integers
-          R@ SWAP pdt[] 8 VWRITE   \ write data from HERE to PDT
+          R@ SWAP ]pdt 8 VWRITE   \ write data from HERE to PDT
           R> DP ! ;           \ restore dictionary position
 
 \ Explanation for the Forth student:

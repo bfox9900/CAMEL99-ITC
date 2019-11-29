@@ -1,0 +1,36 @@
+\ ========================================================
+\ VDP sound lists
+HEX
+VCREATE MUNCHMAN
+       VBYTE 08,85,2A,90,A6,08,B0,CC,1F,12
+       VBYTE 08,85,2A,90,A4,1C,B0,C9,0A,12
+/VEND
+
+VCREATE PACMAN
+       VBYTE 06,86,0D,97,AC,1A,B7,08
+       VBYTE 02,8F,08,02
+       VBYTE 02,AB,23,05
+       VBYTE 02,86,0D,04
+       VBYTE 01,BF,03
+       VBYTE 02,8E,0B,08
+       VBYTE 02,8A,0A,02
+       VBYTE 03,AC,1A,B7,08
+/VEND
+
+VCREATE NOKIA
+       VBYTE 01,9F,20
+       VBYTE 03,90,85,05,09
+       VBYTE 02,8F,05,09
+       VBYTE 02,87,09,12
+       VBYTE 02,87,08,12
+       VBYTE 02,85,06,09
+       VBYTE 02,81,07,09
+       VBYTE 02,8E,0B,12
+       VBYTE 02,8A,0A,12
+       VBYTE 02,81,07,09
+       VBYTE 02,8F,07,09
+       VBYTE 02,8A,0C,12
+       VBYTE 02,8A,0A,12
+       VBYTE 02,8F,07,24
+       VBYTE 01,9F,00
+/VEND

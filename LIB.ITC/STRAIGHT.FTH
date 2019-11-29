@@ -11,6 +11,7 @@ CREATE ALLDONE     \ branch here to exit readcom
       2 LIMI,
       R1 TOS MOV,  \ get the char count to Forth TOS
       NEXT,
+      
 DECIMAL
 CODE READCOM ( addr n -- n' )
          0 LIMI,                \ we need the entire machine

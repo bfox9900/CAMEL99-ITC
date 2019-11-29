@@ -14,5 +14,5 @@ HEX
 : 64KERASE    FFFF 0 DO  I PAGED 4K ERASE  4K +LOOP ;
 
  \ fill sams mem segment with char
-: SFILL  ( addr len char -- )
+: FILLSAM  ( addr len char -- )
         -ROT BOUNDS DO   DUP I C!P  LOOP DROP ;

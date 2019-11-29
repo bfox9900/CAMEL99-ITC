@@ -89,4 +89,31 @@ CODE: VC!     ( char Vaddr  -- )   \ Video CHAR store
               NEXT,
               END-CODE
 
+CODE: VFILL   ( VDP-addr count char-- )  \ USED IN ANSFILES.FTH to erase pabs
+              TOS SWPB,            \ fix the TMS9900 byte order
+              R2 POP,              \ R2=count
+              R0 POP,              \ VDP-addr popped into R0
+              WMODE @@ BL,         \ setup VDP write address IN R0
+              R3 VDPWD LI,         \ vdp addr. in a reg. makes this 12.9% faster
+              BEGIN,
+                TOS *R3 MOVB,      \ write byte to vdp ram
+                R2 DEC,            \ dec the byte counter
+              EQ UNTIL,            \ jump back if not done
+              TOS POP,
+              NEXT,
+              END-CODE
+
+\ * VDP write to register. Kept the TI name
+CODE: VWTR    ( c reg -- )         \ Usage: 5 7 VWTR
+              TOS R0 MOV,
+              R0 8 SLA,            \ register goes to left side
+             *SP+ TOS MOV,
+              TOS 00FF ANDI,
+              TOS R0 SOC,          \ 'OR' this bytes together
+              R0 8000 ORI,         \ set "write to register" mode bit
+              RMODE @@ BL,
+              TOS POP,
+              NEXT,
+              END-CODE
+
 TALIGN

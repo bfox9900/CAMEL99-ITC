@@ -48,7 +48,6 @@ CODE: VREAD   ( VDP-adr RAM-addr cnt  -- )
 
 \ ===================================================================
 CR ." V D P   W R I T E"
-
 \ VMBW in Forth style
 CODE: VWRITE  ( RAM-addr VDP-addr cnt -- )
               R0 POP,              \ vaddr to R0
@@ -77,7 +76,7 @@ CODE: VC!     ( char Vaddr  -- )   \ Video CHAR store
               NEXT,
               END-CODE
 
- CODE: V!     ( n Vaddr  -- )       \ Video store 16BIT int
+ CODE: V!     ( n Vaddr  -- )      \ Video store 16BIT int
               TOS R0 MOV,          \ need address in R0 to call WMODE
               WMODE @@ BL,         \ branch to setup VDP write address
               TOS POP,             \ get char into TOS register
@@ -88,7 +87,7 @@ CODE: VC!     ( char Vaddr  -- )   \ Video CHAR store
               TOS POP,             \ refill TOS
               NEXT,
               END-CODE
-TALIGN
+
 CODE: VFILL   ( VDP-addr count char-- )  \ USED IN ANSFILES.FTH to erase pabs
               TOS SWPB,            \ fix the TMS9900 byte order
               R2 POP,              \ R2=count
@@ -116,30 +115,4 @@ CODE: VWTR    ( c reg -- )         \ Usage: 5 7 VWTR
               NEXT,
               END-CODE
 
-CODE: >VPOS ( col row -- vaddr) \ compute video address
-             R1         STWP,
-             TOS     R3  MOV,   \ this move to make best use of MPY
-             2E (R1) R3  MPY,   \ multply by chars/line. result goes to R4 ie: TOS
-            *SP+     TOS ADD,   \ add col value to tos
-             NEXT,
-             END-CODE
-
-\ FAST user variable for screen driver
-CROSS-ASSEMBLING
-CODE: C/L@   ( -- n )             \ this is used 8 times in the KERNEL. Saves 14 bytes
-             TOS        PUSH,     \ and is 50% faster than C/L @
-             R1         STWP,
-             2E (R1) TOS MOV,
-             NEXT,
-             END-CODE
-
-\ make VCHAR go faster. clip vertical address value in VCHAR
-CODE: VCLIP  ( lim char addr -- lim char addr)
-             2 (SP) TOS CMP,
-             LO IF,
-                2 (SP) TOS SUB,
-             ENDIF,
-             NEXT,
-             END-CODE
-             
 TALIGN

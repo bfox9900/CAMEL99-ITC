@@ -158,7 +158,7 @@ HEX
 : NOISE ( dur freq vol  -- ) VOX4 SWAP 07 AND NOISETYPE PLAY ;
 
 DECIMAL
-: >BASS ( n -- n') 14777 1000 */ ;
+: >BASS ( n -- n') S" 15 *" EVALUATE ; IMMEDIATE
 
 : BASS ( dur freq vol -- ) \ steal VOX3 & VOX4 to play low freq
          VOX3 SWAP >BASS HZ MUTE
@@ -168,4 +168,4 @@ DECIMAL
          VOX3 SWAP 4* HZ MUTE
          VOX4 7 NOISETYPE  PLAY ;
 
-HERE SWAP - .
+HERE SWAP - .  .( bytes)

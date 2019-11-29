@@ -14,7 +14,7 @@ HEX
           DUP 01 10 WITHIN 0= ABORT" BAD segment selected"
           SEG ! ;  \ don't allow segment 0
 
-1 SEGMENT
+  1 SEGMENT
 
 : SAMS-OFF ( --) 1E00 CRU! 1 SBZ ;
 : SAMS-ON  ( --) 1E00 CRU! 1 SBO ;
@@ -56,7 +56,7 @@ HEX
 : @P     ( 32addr -- n)  PAGED @ ;    \ fetch an int
 : !P     ( n 32addr -- ) PAGED ! ;    \ store an int
 
-SAMSINI
-CR .( SAMS card initialized)
+\ SAMSINI
+\ CR .( SAMS card initialized)
 CR HERE SWAP - DECIMAL . .( bytes) HEX
          

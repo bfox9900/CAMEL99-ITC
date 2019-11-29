@@ -1,10 +1,13 @@
 \ EXPERIMENTAL MACHINE FORTH PRIMITIVES
 
-\ This macros are used to create CODE words that run at near hand coded speed
+\ This macros are created by stealing code from the KERNEL very much like
+\ a conventional compiler would emit code.
+\ Use these words to create CODE words that are like Forth but run faster.
 \ The biggest speed up is when used with structured assembler loops.
 \ Forth loops is always 5X slower than native code loops
 
-NEEDS  BEGIN,   FROM DSK1.ASM9900
+NEEDS BEGIN,   FROM DSK1.ASM9900
+NEEDS INLINE   FROM DSK1.INLINE
 
  : CALL,     ( dst -- )   \ 6 bytes per call
               R11 RPUSH,       \ 28 save R11 on forth return stack
@@ -25,57 +28,38 @@ NEEDS  BEGIN,   FROM DSK1.ASM9900
 \ ==========================================================================
 CR .( M E M O R Y  F E T C H  &  S T O R E)
 
-\ ** colon words ill be compiled inline unless  **
-\ ** SUB: / END-SUB words create run-time code  **
+\ ** colon words  compile inline code in a CODE word
 
-: !,      ( n addr -- )
-             *SP+ *TOS MOV,                        \ 20
-              TOS POP,                             \ 22
-              ;
-
-: @,      ( a -- w )
-             *TOS  TOS MOV,
-             ;
-
-: 2!,     ( d addr -- )
-             *SP+ *TOS  MOV,    \ the top # of D is stored at the lower adrs
-             *SP+ 2 (TOS) MOV,  \ next # stored 1 cell higher (addr+2)
-              TOS POP,
-              ;
-
-: 2@,     ( addr -- d)
-              2 (TOS) PUSH,         \ 36
-             *TOS TOS MOV,          \ 28
-              ;
-
-: C!,       ( c addr -- )
+: !,      ( n addr -- ) S" INLINE[ ! ]" EVALUATE ;
+: @,      ( a -- w )    S" INLINE[ @ ]" EVALUATE ;
+: 2!,     ( d addr -- ) S" INLINE[ 2! ]" EVALUATE ;
+: 2@,     ( addr -- d)  S" INLINE[ 2@ ]" EVALUATE ;
+: C!,     ( c addr -- )
              *SP+  W MOV,
               W SWPB,
               W *TOS MOVB,
               TOS POP,
               ;
 
-: C@,      ( addr -- c )                         \ this is code for C@ interleaved with COUNT (saves 2 bytes)
+: C@,      ( addr -- c )            \ this is code for C@ interleaved with COUNT (saves 2 bytes)
             *TOS TOS MOVB,
              TOS 8 SRL,
              ;
 
 : COUNT,  ( addr -- addr' u)
-             TOS PUSH,                             \ make a copy of addr
-             *SP INC,                              \ inc. past the count byte
-             C@                                   \ compile code for C@ here
+             TOS PUSH,              \ make a copy of addr
+             *SP INC,               \ inc. past the count byte
+             C@                     \ compile code for C@ here
              ;
-
 : +!,      ( n addr --)
-             *SP+ *TOS ADD,                        \ 14+8+4 = 26 cycles
-              TOS POP,                             \          22 cycles
+             *SP+ *TOS ADD,         \ 14+8+4 = 26 cycles
+              TOS POP,              \          22 cycles
               ;
 
 : 1+!,      ( addr -- ) *TOS INC, ;
 : 2+!,      ( addr -- ) *TOS INCT, ;
 : 1-!,      ( addr -- ) *TOS DEC, ;
 : 2-!,      ( addr -- ) *TOS DECT, ;
-
 
 : @@?       ( var var -- ) \ compare 2 variables
              @@ SWAP @@ SWAP CMP, ;
@@ -122,7 +106,6 @@ CR .( D A T A   S T A C K)
               TOS     *SP MOV,      \ n3 moves to second                 14+4   = 18
               W       TOS MOV,      \ n1 goes to top of stack register   14+0   = 14
               ;
-
 
 : ><,      ( n -- n )            \ swap bytes in n
               TOS SWPB,             \ handy and only 1 instruction
@@ -194,7 +177,6 @@ CR .( R E T U R N   S T A C K)
               TOS PUSH,             \ 28
              *RP+ TOS MOV,          \ 22
               ;              \ 50 vs 36 in TurboForth
-
 
 : R@,      ( -- w )
               TOS PUSH,

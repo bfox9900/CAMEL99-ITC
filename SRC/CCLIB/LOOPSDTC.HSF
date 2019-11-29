@@ -7,9 +7,7 @@
 \ making constants for these hi-speed RAM addresses so Forth can
 \ compile them as inline routines uses 36 extra bytes!
 
-\ I used the literal addresses instead. ***DANGER*** if you move the ROUTINES
-\ at 8388 IN ANY WAY!!
-
+\ Convert cross-compiler EQUATES to Target Forth constants
  ?branch2 CONSTANT: '?branch  ( 838E)
  branch2  CONSTANT: 'branch   ( 8394)
 

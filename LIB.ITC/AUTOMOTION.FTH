@@ -1,0 +1,33 @@
+\ Interrupt Driven Sprite motion (like Extended BASIC)  BJF July 21 2019
+
+ NEEDS HCHAR    FROM DSK1.GRAFIX
+ NEEDS SPRITE   FROM DSK1.DIRSPRIT
+
+HEX
+0780 CONSTANT SMT       \ SPRITE motion table VDP address
+83C2 CONSTANT AMSQ      \ interrupt software DISABLE bits
+
+\ AMSQ bit meaning:
+\ 80 all interrupts disabled
+\ 40 motion disabled
+\ 20 Sound disabled
+\ 10 quit key disabled
+
+\ access the sprite tables in VDP like arrays
+: ]SMT       ( spr# -- VDP-addr) 4* SMT + ;
+: MOVING     ( n -- ) 837A C! ;   \ # of sprites moving automatically
+: INITMOTION ( -- ) 0 MOVING   SMT 20 4* 0 VFILL ; \ no moving sprites
+: STOPMOTION ( -- ) AMSQ C@ 40 OR  AMSQ C! ;       \ stop all sprite motion
+: AUTOMOTION ( -- ) SPR# @ 1+ MOVING   AMSQ C@  30 AND  AMSQ C! ;
+\ : >SCHAR  ( c -- c') FF AND  ;  \ convert c to signed CHAR
+: MOTION  ( spx spy spr# -- ) >R ( >SCHAR) SWAP ( >SCHAR) FUSE   R> ]SMT V! ;
+
+\ NOTE: There is bug when you clear the screen with AUTOMOTION RUNNING.
+\       Always STOPMOTION before clearing screen and then run AUTOMOTION
+\ -- OR --    *UNCOMMENT THIS VERSION OF CLEAR*
+\ : CLEAR    AMSQ C@ 0=
+\           IF STOPMOTION CLEAR AUTOMOTION
+\           ELSE CLEAR
+\           THEN ;
+
+ INITMOTION

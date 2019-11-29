@@ -1,32 +1,32 @@
 \ TICKTOCK.HSF  TMS9901 hardware timer interface for Camel 99 Forth
 
 \ credit to: http://www.unige.ch/medecine/nouspikel/ti99/tms9901.htm#Timer
+\ impovements based on code from Tursi Atariage
+\ TMR! now loads from the Forth stack
 
 \ timer resolution:  64 clock periods, thus 64*333 = 21.3 microseconds
 \ Max Duration    :  ($3FFF) 16383 *64*333 ns = 349.2 milliseconds
 
 CROSS-ASSEMBLING
-CODE: TMR!   (  -- )         \ load TMS9901 timer to max value 3FFF
-             W 3FFF LI,      \ load scratch register W with MAXIMUM timer value
-             R12 CLR,        \ CRU addr of TMS9901 = 0
+CODE: TMR!   ( n -- )         \ load TMS9901 timer from stack
              0 LIMI,
+             R12 CLR,        \ CRU addr of TMS9901 = 0
              0   SBO,        \ SET bit 0 to 1, Enter timer mode
              R12 INCT,       \ CRU Address of bit 1 = 2 , I'm not kidding
-             W 0E LDCR,      \ Load 14 BITs from R1 into timer
-             R12  DECT,      \ go back to address 0
-             0    SBZ,       \ reset bit 0, Exits clock mode, starts decrementer
+             TOS 0E LDCR,    \ Load 14 BITs from TOS into timer
+            -1  SBZ,         \ reset bit 0, Exits clock mode, starts decrementer
              2 LIMI,
-             NEXT,           \ 16 bytes
+             TOS POP,
+             NEXT,
              END-CODE
 
 CODE: TMR@   ( -- n)         \ read the TMS9901 timer
              TOS PUSH,
-             R12 CLR,
              0 LIMI,
-             0 SBO,          \ SET bit 0 TO 1, ie: Enter timer mode
-             TOS 0F STCR,    \ READ TIMER (14 bits plus mode bit) into W
-             TOS  1 SRL,     \ Get rid of mode bit
-             0 SBZ,          \ SET bit 1 to zero
+             R12 2 LI,      \ cru = 1 (honest, 2=1)
+            -1 SBO,         \ SET bit 0 TO 1, Enter timer mode
+             TOS 0E STCR,   \ READ TIMER (14 bits)
+            -1 SBZ,         \ RESET bit 1, exit timer mode
              2 LIMI,
              NEXT,
              END-CODE
@@ -45,17 +45,16 @@ TARGET-COMPILING
 \ JIFFS give finest resolution for delays
 : JIFFS    ( n -- )
            0 ?DO
-                 TMR@
-                 BEGIN
-                   TMR@ |-| 650 <
-                 WHILE
-                   PAUSE
-                REPEAT
-                DROP
+               TMR@
+               BEGIN
+                 TMR@ |-| 650 <
+               WHILE
+                 PAUSE
+               REPEAT
+               DROP
            LOOP ;
 
 \ MS resolution limited to 1/60 second and minimum is 1/60 sec.
 : MS  ( n -- )  4 RSHIFT  PAUSE JIFFS ;  \ MS/16 = JIFFS
-
 
 [CC] HEX [TC]

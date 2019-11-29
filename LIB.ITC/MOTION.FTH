@@ -10,7 +10,7 @@
 \   -  2@ 2! were made ANS Compliant in 2.0.21
 \   -  improved speed of SP.MOVE
 
-NEEDS SP.Y  FROM DSK1.DIRSPRIT.F
+NEEDS SP.Y  FROM DSK1.DIRSPRIT
 
 \ create array of direction vectors in dictionary
 \ to hold x y vectors for each sprite (64 BYTES)
@@ -46,7 +46,7 @@ CODE VECT+ ( dx dy x y -- x' y')  \ 6x FASTER than Forth version
 \ - FUSE puts them back together as 1 cell
 \ - V! puts the single cell back into VDP ram
 : SP.MOVE ( spr# -- )  ( DUP>R is defined in DIRSPRIT.F)
-          DUP SP.Y DUP>R V@ SPLIT ( -- spr# x y ) ( r-- vaddr)
+          DUP SP.Y DUP >R V@ SPLIT ( -- spr# x y ) ( r-- vaddr)
           ROT ]VECTOR 2@          ( -- x y dx dy) ( r-- vaddr)
           VECT+                   ( --  x' y')    ( r-- vaddr)
           FUSE R> V!
@@ -57,9 +57,11 @@ CODE VECT+ ( dx dy x y -- x' y')  \ 6x FASTER than Forth version
 \ translate in the mathematical sense
 : TRANSLATE ( 1st last  -- ) 1+ SWAP DO  I SP.MOVE  LOOP ;
 
-\ this works like motion in BASIC. It stores SIGNED chars
+\ This works like motion in BASIC. It stores SIGNED chars
+\ The difference is that that dx dy values will be added to
+\ the sprite's position each time you call SP.MOVE
  : MOTION ( dy dx spr# -- ) ]VECTOR 2! ;
 
-\ *NEW* Plural version defines motion for a range of sprites
-: MOTIONS ( dy dx first last -- ) 1+ SWAP DO   2DUP I MOTION   LOOP 2DROP ;
+\ *NEW* Plural version defines same motion for a range of sprites
+: MOTIONS ( dy dx first last -- )  1+ SWAP DO   2DUP I MOTION   LOOP 2DROP ;
 

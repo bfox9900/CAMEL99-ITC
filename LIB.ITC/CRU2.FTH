@@ -63,7 +63,7 @@ CODE LDCR ( data bits -- ) \ cru base must be set with CRU!
 
 \ Performs the TMS9900 STCR instruction. The bit count is n1.
 \ The CRU base is set first with CRU! The returned value is n2.
-CODE STCR ( bits --- n )
+CODE STCR ( n1 --- n2 )
      R0 CLR,       \
      TOS 000F ANDI,
      TOS R2 MOV,

@@ -33,35 +33,40 @@ CROSS-COMPILING XASSEMBLER DEFINITIONS
 TARGET-COMPILING
 l: HEX20   20 BYTE,
 l: HEXAA   AA BYTE,
-l: PERIOD  2E BYTE,    \ '.'
+l: PERIOD  2E BYTE,      \ '.'
           .EVEN
 
 l: H2000   DATA 2000
 l: CYC1    DATA 0000
 l: H1300   DATA 1300
 
-[CC] RP0 80 -    [TC] EQU DREGS     \ use memory below Forth RETURN stack for workspace
+\ Allocate a small buffer to parse the device name
+l: NAMBUF   BSS 6 \ TALLOT
+
+
+[CC] RP0 80 -     [TC] EQU DREGS    \ use memory below Forth RETURN stack for workspace
 [CC] 5 2* DREGS + [TC] EQU DREG(5)  \ compute address of DREGS register 5
 
 CLR-JMPTABLE
 \ === DSR ENTRY POINT ===
-l: DSR1                      \ headless code
-      *R14+     R5  MOV,    \ get '8'->R5, auto inc for return
+l: DSR1                     \ headless code
+      *R14+     R5  MOV,    \ fetch '8' from program ->R5, auto inc PC for return
        HEX20 @@ R15 SZCB,   \ >20 eq flag=0
        8356 @@  R0  MOV,    \ [PAB FNAME] to R0
        R0       R9  MOV,    \ dup R0 to R9
        R9       -8  ADDI,   \ R9-8 = [PAB FLG]
        R0          VDPWA,   \ set the VDP address to use
-       VDPRD @@ R1  MOVB,   \ R1= length of FNAME
+       VDPRD @@ R1  MOVB,   \ read length of FNAME -> R1
 
 \ setup to copy VDP FNAME ->namebuf to '.' character
        R1       R3  MOVB,   \ DUP length byte to R3
        R3       08  SRL,    \ swap the byte to other side
        R4           SETO,   \ R4 = -1
-       H @@      R2 MOV,     \ unused heap becomes temp. namebuf
+\       H @@     R2  MOV,
+       R2   NAMBUF  LI,     \ R2 is ^namebuf
        BEGIN,
          R0            INC,    \ point to next fname VDP address
-         R4            INC,    \ counter starts at 0
+         R4            INC,    \ counter starts at -1
          R4       R3   CMP,    \ is counter = fnamelength
          @@1           JEQ,    \ if true goto @@1:
          R0          VDPWA,    \ set VDP address
@@ -81,7 +86,7 @@ l: DSR1                      \ headless code
 
 \ ==== GPL WORKSPACE ====
        83E0         LWPI,    \ SROM (search ROM device list)
-       R1           CLR,     \ MAGIC GPL REGISTER=0
+       R1           CLR,     \ MAGIC GPL REG. 1 to call DSR, returns error
        H2000 @@ CYC1 @@ MOV, \ init the CYC1 variable ??
        R12     0F00 LI,      \ init CRU base to 0F00
        @@A          JMP,
@@ -108,7 +113,7 @@ l: DSR1                      \ headless code
        EQ UNTIL,             \ loop until card is found
 
        DREG(5) @@ R2 ADD,    \ add '8'+4000= >4008 DSR ROM list
-       @@B          JMP,
+       @@B           JMP,
 
 @@3: \ scan ROM linked list for code address
       BEGIN,
@@ -124,19 +129,20 @@ l: DSR1                      \ headless code
            8355 @@  R5  MOVB,  \ dev length->R5
            @@4          JEQ,   \ if 0 we have a string match
            R5      *R2+ CMPB,
-        EQ UNTIL,
+         EQ UNTIL,
 
 \ find dev string match
          R5       08  SRL,     \ shift length byte
-         H @@     R6  MOV,     \ heap ->R6 is NAMEBUF
+\        H @@     R6  MOV,     \ heap ->R6 is NAMEBUF
+         R6   NAMBUF  LI,      \ R6 hold ^nambuf
          BEGIN,
            *R6+   *R2+ CMPB,   \ compare namebuf to ROM string
             @@3        JNE,    \ if mismatch goto @@3
             R5         DEC,    \ dec the counter register
          EQ UNTIL,
 @@4: \ run DSR code
-         R1        INC,    \ count entries into the DSR ?
-        *R9         BL,     \ call the DSR code
+         R1        INC,        \ count entries into the DSR ?
+        *R9         BL,        \ call the DSR code
       AGAIN,                   \ try next card
 
 \   -- DSR returns here if we are done --
@@ -163,6 +169,7 @@ l: DSR1                      \ headless code
                  R0 SWPB,
       R0       0020 ANDI, \ mask to get GPL error bit
       R0      [TOS] OR,   \ combine GPL & DSR error codes
+      HEX20 @@ R15  SOCB, \ set Forth's workspace 'EQ' flag to 1
                     RTWP, \ return to Forth
 
 \    ====== DSR LINK ENDS======
@@ -172,14 +179,13 @@ l: DSR1                      \ headless code
 l: DLNK      DREGS DATA,   \ the workspace
              DSR1  DATA,   \ entry address of the code
 
-
 CODE: DSRLNK  ( [pab_fname] -- ior)
       TOS  8356 @@ MOV,
                TOS CLR,
                  0 LIMI,   \ disable interrupts here
     TOS GPLSTAT @@ MOVB,   \ clear GPL status register
            DLNK @@ BLWP,
-                 8 DATA,
+                 8 DATA,   \ Offset to DSR linked list in card ROM
                  2 LIMI,
                    NEXT,
 END-CODE

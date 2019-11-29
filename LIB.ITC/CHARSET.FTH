@@ -13,17 +13,14 @@ HEX
 \ 9C02 CONSTANT GRMWA                \ GROM set write address
 
 HEX
-: GROM   ( addr -- ) SPLIT 9C02 C! 9C02 C! ;    \ set the GROM address
-: GC@+   ( -- c)     9800 C@ ;                  \ read & auto-increment address
+: GROM   ( addr -- ) DUP 9C02 ! 9C02 C! ;       \ set the GROM address
+: GC@+   ( -- c)   S" 9800 C@" EVALUATE ; IMMEDIATE \ read & auto-increment address
 : ]PDT   ( char# -- 'pdt[n] )  8* 800 + ;       \ VDP pattern Descriptor table
 : ]GFONT ( ascii -- grom_adr) BL -  7 * 6B4 + ; \ GROM array of TIFont data
 
 \ transfer directly from GROM to VDP
 : GVMOVE  ( grom_addr vdp_addr cnt -- )
           ROT GROM   BOUNDS DO  GC@+ I VC!  LOOP ;
-
-: INVERSE  ( grom_addr vdp_addr cnt -- )
-          ROT GROM   BOUNDS DO  GC@+ INVERT I VC!  LOOP ;
 
 : CHARSET ( -- )
         [CHAR] ~ 1+  BL                \ all ASCII chars
@@ -35,26 +32,32 @@ HEX
            7 GVMOVE                     \ write 7 bytes GROM->VDP
         LOOP ;
 
-: HICHARSET ( -- )
+: HICHARSET ( -- ) \ duplicate current charset in upper ASCII range
           [CHAR] ~ 1+  BL                \ all ASCII chars
           DO
             I ]GFONT                     \ get GROM address for char I
-            I 100 + ]PDT                 \ get PDT address for char I+100
+            I 80 + ]PDT                 \ get PDT address for char I+100
             0 OVER VC!                   \ store 1st zero in VDP
             1+                           \ inc PDT address
             7 GVMOVE                     \ write 7 bytes GROM->VDP
           LOOP ;
 
 
+HEX
+
+: INVERSE  ( grom_addr vdp_addr cnt -- )
+          ROT GROM   BOUNDS DO  GC@+ INVERT I VC!  LOOP ;
+
 : INVERSESET ( -- )
-            [CHAR] ~ 1+  BL                \ all ASCII chars
+            [CHAR] ~ 80 + 1+ ]PDT  BL 80 + ]PDT               \ all ASCII chars
             DO
-              I ]GFONT                     \ get GROM address for char I
-              I 100 + ]PDT                 \ get PDT address for char I+100
-              0 OVER VC!                   \ store 1st zero in VDP
-              1+                           \ inc PDT address
-              7 GVMOVE                     \ write 7 bytes GROM->VDP
+              I DUP VC@ FFF XOR SWAP VC!
             LOOP ;
+
+: .HICHARS  FF 80 DO I EMIT LOOP ;
+
+: INVERT$   BOUNDS DO I C@ 80 + I C! LOOP ;
+
 
 
 \ BONUS WORD: loads the TITLE screen font from GROM

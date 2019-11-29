@@ -1,5 +1,7 @@
 \ LIFO.FTH   for CAMEL99 Forth
 
+INCLUDE DSK1.TOOLS
+
 : LIFO: ( #items -- )
          CREATE
             CELLS DUP , ( # of cells in the stack)
@@ -8,13 +10,16 @@
 ;
 
 : CELL+@   ( addr -- addr' n )  CELL+ DUP @ ;
-: CELL-    ( n -- n') 2- ; 
+: CELL-    ( n -- n') 2- ;
 : STACK-SIZE  ( 'stack -- n ) @ ;
 : STACK-DEPTH ( 'stack -- n ) CELL+@ ;
 
-: 2+!         ( addr -- ) DUP @ 2+ SWAP ! ;
-: 2-!         ( addr -- ) DUP @ 2- SWAP ! ;
+\ 9900 can do these in 1 instruction ( *TOS INCT, *TOS DECT)
+CODE 2+!  ( addr -- ) 05D4 , NEXT, ENDCODE
+CODE 2-!  ( addr -- ) 0654 , NEXT, ENDCODE
 
+\ : 2+!         ( addr -- ) DUP @ 2+ SWAP ! ;
+\ : 2-!         ( addr -- ) DUP @ 2- SWAP ! ;
 : ?UNDERFLOW  ( stack-addr -- ) DUP 2@ = ABORT" user stack empty" ;
 
 : PUSH  ( n stack-adr - )

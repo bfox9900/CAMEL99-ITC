@@ -33,8 +33,8 @@ FFFF CONSTANT 64K
 : 64KTEST     64K 0 DO  3000 4K BLANKS    4K +LOOP ; ( 1.5 secs)
  
 : SEE32K      64K 0 DO  I @P . 2+ LOOP ;
- 
+
 : 64KERASE    64K 0 DO I PAGED 4K ERASE   4K +LOOP ;
- 
+
 : ERASE960K  10 1 DO  I SEG !   64KERASE   LOOP ;  ( 20.7 secs)
  

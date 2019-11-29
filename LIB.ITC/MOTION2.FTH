@@ -1,13 +1,9 @@
 \ Direct Sprite motion control  BJF Jun 15 2018
 \ This version uses separate X and Y values, not a vectors
 
-INCLUDE DSK1.TOOLS.F
-INCLUDE DSK1.ASM9900.F
-INCLUDE DSK1.DIRSPRIT.F
-
-
-' SP.Y DROP  \ test that DIRSPRIT.F is loaded
-
+INCLUDE DSK1.TOOLS
+INCLUDE DSK1.ASM9900
+INCLUDE DSK1.DIRSPRIT
 
 \ create a motion array in HEAP memory
 \ to hold x and y vector for each sprite (64 CELLS)

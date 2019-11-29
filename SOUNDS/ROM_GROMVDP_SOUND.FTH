@@ -1,0 +1,221 @@
+\ Found sound lists from :
+\ https://github.com/olsone/forti/blob/master/advertsnds.txt
+
+\ slightly modifed to compile to VDP ram and play
+\ in background with VDP Background Sound
+
+NEEDS VBYTE FROM  DSK1.VDPBGSND
+
+: GO  ( soundlist -- ) >SNDQ PLAYQ ;  \ fast command for listening
+
+\ don't forget to start multi-tasker with MULTI command
+
+VCREATE 2001INTRO
+       VBYTE 3,8C,1A,90,60
+       VBYTE 3,AD,11,B0,60
+       VBYTE 3,C6,0D,D0,90
+       VBYTE 3,9F,BF,DF,10
+       VBYTE 9,8E,12,90,A3,0E,B0,C4,0B,D0,10
+       VBYTE 6,8D,11,A6,0D,CA,0A,40
+/VEND
+
+VCREATE 2001THEME
+       VBYTE 6,8E,0F,90,A0,14,B2,40
+       VBYTE 4,83,0E,AD,11,20
+       VBYTE 4,86,0D,AE,0F,40
+       VBYTE 2,9F,BF,20
+       VBYTE 9,8E,0B,90,AD,10,B2,C0,14,D4,40
+       VBYTE 3,9F,BF,DF,20
+       VBYTE 9,8A,0A,90,A6,0D,B2,C7,35,D4,20
+       VBYTE 3,9F,BF,DF,10
+       VBYTE 7,80,0A,90,AE,0B,B2,D4,20
+       VBYTE 3,9F,BF,DF,10
+       VBYTE 7,8F,08,90,AA,0A,B2,D4,78
+/VEND
+
+VCREATE FANFARE
+       VBYTE 3,89,3F,90,9
+       VBYTE 2,87,32,9
+       VBYTE 2,87,2A,3
+       VBYTE 3,A9,3F,B2,6
+       VBYTE 2,8D,1F,3
+       VBYTE 2,A7,32,6
+       VBYTE 2,84,19,3
+       VBYTE 2,A7,2A,3
+       VBYTE 3,C9,3F,D4,3
+       VBYTE 2,83,15,3
+       VBYTE 2,AD,1F,3
+       VBYTE 2,C7,32,3
+       VBYTE 2,8E,0F,3
+       VBYTE 2,A4,19,3
+       VBYTE 2,C7,2A,3
+       VBYTE 2,8A,0C,3
+       VBYTE 2,A3,15,3
+       VBYTE 2,CD,1F,3
+       VBYTE 2,8A,0A,3
+       VBYTE 2,AE,0F,3
+       VBYTE 2,C4,19,3
+       VBYTE 2,8F,07,3
+       VBYTE 2,AA,0C,3
+       VBYTE 2,C3,15,3
+       VBYTE 2,85,06,3
+       VBYTE 2,AA,0A,3
+       VBYTE 2,CE,0F,3
+       VBYTE 2,85,05,3
+       VBYTE 2,AF,07,3
+       VBYTE 2,CA,0C,3
+       VBYTE 2,80,04,3
+       VBYTE 2,A5,06,3
+       VBYTE 2,CA,0A,6
+       VBYTE 2,A5,05,3
+       VBYTE 2,CF,07,6
+       VBYTE 1,BF,3
+       VBYTE 2,C5,06,9
+       VBYTE 2,C5,05,9
+       VBYTE 1,DF,9
+       VBYTE 1,9F,0
+       VBYTE 9,8B,06,90,AA,0A,B3,CD,11,D3,5
+       VBYTE 3,9F,BF,DF,5
+       VBYTE 9,8F,08,90,AD,11,B3,CB,23,D3,5
+       VBYTE 6,8F,07,AE,0F,CD,1F,5
+       VBYTE 3,9F,BF,DF,5
+       VBYTE 9,8F,08,90,AD,11,B3,CB,23,D3,5
+       VBYTE 6,8A,0A,A3,15,C7,2A,5
+       VBYTE 3,9F,BF,DF,5
+       VBYTE 9,86,0D,90,AC,1A,B3,C7,35,D3,10
+       VBYTE 3,9F,BF,DF,10
+       VBYTE 9,8B,06,90,AA,0A,B3,CD,11,D3,40
+/VEND
+
+VCREATE MOVING1
+       VBYTE 8,90,AA,0A,B2,D4,78,00,7E,13
+       VBYTE 6,8F,08,90,AF,08,B3,15
+       VBYTE 2,9F,BF,5
+       VBYTE 6,8F,07,90,A0,0A,B3,15
+       VBYTE 2,9F,BF,5
+       VBYTE 6,88,07,90,AA,0A,B3,15
+       VBYTE 2,9F,BF,5
+       VBYTE 6,81,07,90,AE,0B,B3,15
+       VBYTE 2,9F,BF,15
+/VEND
+
+VCREATE 1/2MOVING
+       VBYTE 8,90,AF,08,B3,0F,02,9F,BF,5
+       VBYTE 6,8F,07,90,A0,0A,B3,15
+       VBYTE 2,9F,BF,5
+       VBYTE 6,88,07,90,AA,0A,B3,15
+       VBYTE 2,9F,BF,5
+       VBYTE 6,81,07,90,AE,0B,B3,15
+       VBYTE 2,9F,BF,15
+/VEND
+
+VCREATE COMPUTER1
+       VBYTE 5,80,03,90,BF,DF,5
+       VBYTE 2,80,02,5
+       VBYTE 2,85,03,5
+       VBYTE 2,88,02,5
+       VBYTE 2,8D,02,5
+       VBYTE 2,82,03,5
+       VBYTE 2,8C,01,5
+       VBYTE 2,86,02,5
+       VBYTE 2,82,02,5
+       VBYTE 2,8B,01,5
+       VBYTE 2,8A,02,5
+       VBYTE 2,84,02,5
+       VBYTE 2,8E,01,5
+/VEND
+
+VCREATE COMPUTER2
+       VBYTE 3,90,BF,DF,5
+       VBYTE 2,80,02,5
+       VBYTE 2,85,03,5
+       VBYTE 2,88,02,5
+       VBYTE 2,8D,02,5
+       VBYTE 2,82,03,5
+       VBYTE 2,8C,01,5
+       VBYTE 2,86,02,5
+       VBYTE 2,82,02,5
+       VBYTE 2,8B,01,5
+       VBYTE 2,8A,02,5
+       VBYTE 2,84,02,5
+       VBYTE 2,8E,01,5
+/VEND
+
+VCREATE RAGTIME
+       VBYTE 7,8A,0A,90,AC,1A,B0,DF,12
+       VBYTE 2,9F,BF,3
+       VBYTE 6,8A,0A,90,AC,1A,B0,15
+       VBYTE 4,8F,08,A5,1C,10
+       VBYTE 2,8A,0A,5
+       VBYTE 4,84,0B,A0,1E,10
+       VBYTE 2,8A,0A,5
+       VBYTE 4,81,07,AD,1F,10
+       VBYTE 2,8F,07,5
+       VBYTE 4,87,08,A5,1C,10
+       VBYTE 2,8F,07,5
+       VBYTE 2,AC,1A,10
+       VBYTE 2,8F,08,5
+       VBYTE 4,8A,0A,A4,19,10
+       VBYTE 1,9F,5
+       VBYTE 5,8A,0A,90,AD,17,10
+       VBYTE 2,84,0B,5
+       VBYTE 2,8A,0A,10
+       VBYTE 2,8F,08,5
+       VBYTE 2,AB,23,10
+       VBYTE 2,8A,0A,5
+       VBYTE 2,8E,0B,15
+       VBYTE 4,86,0D,AC,1A,15
+       VBYTE 2,9F,BF,15
+       VBYTE 9,8B,06,90,AF,08,B0,CA,0A,D0,15
+/VEND
+
+VCREATE S$1DA0
+       VBYTE 10,90,AC,1A,B0,0F,04,8F,08,A5,1C,10
+       VBYTE 2,8A,0A,5
+       VBYTE 4,84,0B,A0,1E,10
+       VBYTE 2,8A,0A,5
+       VBYTE 4,81,07,AD,1F,10
+       VBYTE 2,8F,07,5
+       VBYTE 4,87,08,A5,1C,10
+       VBYTE 2,8F,07,5
+       VBYTE 2,AC,1A,10
+       VBYTE 2,8F,08,5
+       VBYTE 4,8A,0A,A4,19,10
+       VBYTE 1,9F,5
+       VBYTE 5,8A,0A,90,AD,17,10
+       VBYTE 2,84,0B,5
+       VBYTE 2,8A,0A,10
+       VBYTE 2,8F,08,5
+       VBYTE 2,AB,23,10
+       VBYTE 2,8A,0A,5
+       VBYTE 2,8E,0B,15
+       VBYTE 4,86,0D,AC,1A,15
+       VBYTE 2,9F,BF,15
+       VBYTE 9,8B,06,90,AF,08,B0,CA,0A,D0,80
+/VEND
+
+VCREATE TRAINWHISTLE
+       VBYTE 7,8E,12,90,A8,16,B0,DF,40
+       VBYTE 2,9F,BF,30
+       VBYTE 6,8E,12,90,A8,16,B0,60
+       VBYTE 4,82,13,AD,16,8
+       VBYTE 6,87,13,91,A2,17,B1,8
+       VBYTE 4,8B,13,A7,17,8
+       VBYTE 6,80,14,92,AD,17,B2,8
+       VBYTE 4,85,14,A3,18,8
+       VBYTE 6,89,14,94,A9,18,B4,8
+       VBYTE 4,8E,14,AF,18,8
+       VBYTE 6,83,15,96,A4,19,B6,8
+       VBYTE 4,88,15,AA,19,8
+       VBYTE 6,8D,15,99,A0,1A,B9,8
+       VBYTE 4,82,16,A6,1A,8
+       VBYTE 6,88,16,9C,AC,1A,BC,8
+/VEND
+
+VCREATE ACHORD
+       VBYTE 3,86,0D,95,15
+       VBYTE 3,AA,0A,B5,15
+       VBYTE 3,CF,08,D3,15
+       VBYTE 9,8B,06,95,A6,0D,B0,CF,08,D0,40
+/VEND
+

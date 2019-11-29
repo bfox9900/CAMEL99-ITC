@@ -1,11 +1,13 @@
-\ inline.fth  a simple speedup for ITC FORTH July 2017  B Fox
-\ **not portable Forth code**  Uses TMS9900/CAMEL99 CARNAL Knowledge
-
-\ INCLUDE DSK1.CODE.F   \ now part of the KERNEL
-
+\ inline.fth  a simple speedup for DTC FORTH Oct 2019  B Fox
+\    **************************************
+\    **** DIRECT THREADED CODE VERSION ****
+\    **************************************
+\ NEEDS DUMP FROM DSK1.TOOLS      ( debugging)
+ 
 HEX
-\ CFA of a code word contains the address of the next cell
-: ?CODE ( cfa -- ) DUP @ 2- - ABORT" Not code word" ;
+\ CFA of Version 2 DTC Forth word contains a BRANCH and link instruction
+\ 06A0 CONSTANT B&L
+: ?CODE ( cfa -- ) 06A0 = ABORT" Not code word" ;
 
 \ scan MACHINE code looking for the NEXT, routine.
 \ abort if NEXT is not found after 256 bytes. This is an arbitrary size
@@ -21,25 +23,28 @@ HEX
              THEN
            2 +LOOP
            DUP 0= ABORT" no NEXT" ;
-
+ 
 \ create code words using primitives
-: INLINE[   ( <TEXT>)
-            BEGIN
-              BL PARSE-WORD PAD PLACE
-              PAD CHAR+ C@ [CHAR] ] <>
-            WHILE
-              PAD FIND 0= ABORT" INLINE err"
-              DUP ?CODE
-              >BODY DUP TONEXT OVER  -     \ calc. start and len. of code
-              HERE OVER ALLOT SWAP CMOVE   \ transcribe the code to HERE
+: INLINE[   BEGIN
+             BL PARSE-WORD PAD PLACE
+            PAD CHAR+ C@ [CHAR] ] <>
+           WHILE
+             PAD FIND 0= ABORT" INLINE FIND err"
+             DUP ?CODE
+           ( >BODY) DUP TONEXT OVER  -     \ calc. start and len. of code
+             HERE OVER ALLOT SWAP CMOVE   \ transcribe the code to HERE
            REPEAT ;
-
+ 
+\ embed  a literal number as machine code  *HUGE* 8 bytes!!
+\ equivalent: TOS PUSH,  LI TOS ( n ) , ;
+: #,   ( n -- ) 0646 , C584 , 0204 , ( n) ,  ;  IMMEDIATE
+ 
 \ ===================================
 
 \ EXAMPLES
 \ CODE ^2      INLINE[  DUP *  ] NEXT, ENDCODE
 \ CODE DUPC@   INLINE[  DUP C@ ] NEXT, ENDCODE
 \ CODE DUP>R   INLINE[  DUP >R ] NEXT, ENDCODE
-\ CODE X@      X @,              NEXT, ENDCODE
-
-
+ 
+ 
+ 

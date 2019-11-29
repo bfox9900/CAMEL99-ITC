@@ -13,13 +13,23 @@ DECIMAL
 
 : BLANK      ( addr len ) BL FILL ;
 
+\ : -TRAILING  ( adr len -- adr len') \ remove trailing blanks (spaces)
+\               BEGIN
+\                 1-           \ shorten length
+\                 DUP 0= IF EXIT THEN
+\                 2DUP + C@    \ get last char
+\                 BL <>        \ test for blank
+\               UNTIL          \ until TRUE
+\               1+ ;
+
 : -TRAILING  ( adr len -- adr len') \ remove trailing blanks (spaces)
                BEGIN
-                 1-           \ shorten length
-                 DUP 0= IF EXIT THEN
                  2DUP + C@    \ get last char
-                 BL <>        \ test for blank
-               UNTIL          \ until TRUE
+                 BL =         \ test for blank
+               WHILE
+                  1-           \ shorten length
+                  DUP 0= IF EXIT THEN
+               REPEAT          \ until TRUE
                1+ ;
 
 : (LINE) ( lin# -- addr) LWIDTH * SCR @ BLOCK +  ;
@@ -27,21 +37,21 @@ DECIMAL
 
 \ : .LINE  ( lin# --) (LINE) SOL @ + SWID @ TYPE ; ( 40 COL version)
 : .LINE  ( lin# --) (LINE) LWIDTH  -TRAILING TYPE ;
-: LIST ( blk# -- ) SCR ! 16 0 ?DO   CR I 2 .R  I .LINE   LOOP  ;
+: LIST ( blk# -- ) SCR ! 16 0 ?DO   CR I 2 .R  I .LINE   LOOP CR ;
 
 \ Line editor commands
-: LS ( blk# --) PAGE DUP ." SCR# "  3 U.R  LIST ;
-: ED ( -- ) SCR @ LS ;    \ list current block
-: >> ( -- ) 1 SCR +! ED ; \ list next block
-: << ( -- ) SCR @ 1- 0 MAX  SCR ! ED ;  \ list previous block
+: L  ( blk# --) PAGE DUP ." SCR# "  3 U.R  LIST ;
+: EDIT ( -- ) SCR @ L ;  \ list current block
+: >> ( -- ) 1 SCR +! EDIT ; \ list next block
+: << ( -- ) SCR @ 1- 0 MAX  SCR ! EDIT ;  \ list previous block
 : EL ( line# -- ) (LINE) LWIDTH BLANK ; \ erase line
-: P  ( line# -- ) DUP EL  0 PARSE ROT (LINE) SWAP CMOVE UPDATE  ED ;
-: DL ( line# -- )  EL  UPDATE ED ;      \ delete line & refresh
-: CP ( L1 L2 -- ) (CP) UPDATE ED ;      \ copy line & refresh
+: P  ( line# -- ) DUP EL  0 PARSE ROT (LINE) SWAP CMOVE UPDATE  EDIT ;
+: DL ( line# -- )  EL  UPDATE EDIT ;      \ delete line & refresh
+: CP ( L1 L2 -- ) (CP) UPDATE EDIT ;      \ copy line & refresh
 : ML  ( L1 L2 -- ) OVER >R (CP) R> DL ; \ move line & refresh
 
-\ : R  ( -- ) 28 SOL !  ED ;   \ list right side of block
-\ : L  ( -- ) SOL OFF   ED ;   \ list left side of block
+\ : R  ( -- ) 28 SOL !  EDIT ;   \ list right side of block
+\ : L  ( -- ) SOL OFF   EDIT ;   \ list left side of block
 
 : LOAD  ( n -- )
         SCR !

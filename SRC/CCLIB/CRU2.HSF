@@ -1,9 +1,10 @@
 \ CRU support for CAMEL99   BJFOX 6FEB2018
 \ FOR XFCC99 CROSS-COMPILER
 
+[cc] HEX
+
 TARGET-COMPILING
 
-HEX
 CODE: CRU! ( CRUaddr -- )   \ load CRU adr to R12
         TOS R12 MOV,
         TOS POP,

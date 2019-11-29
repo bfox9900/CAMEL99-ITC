@@ -1,0 +1,57 @@
+
+[CC] HEX [TC]
+CODE: (CR)    ( -- ? )  \ return true if we need to SCROLL
+              TOS      PUSH,
+              TOS      CLR,
+              R1       STWP,   \ store current workspace pointer in R1
+              30 (R1)  CLR,    \ CLR USER 30 OUT
+              34 (R1)  CLR,    \ CLR USER 34 VCOL
+              32 (R1)  INC,    \ inc. USER 32 VROW
+              W _L/SCR  LI,    \ load W with "lines per screen" (should be a user)
+              32 (R1) W CMP,   \ compare USER 32 with W
+              EQ IF,           \ if VROW=l/scr we will need to scroll.
+                   TOS SETO,   \ TOS=TRUE
+              ENDIF,
+              NEXT,
+              END-CODE  \ 32 bytes
+-1 [IF]
+ CODE: (EMIT) ( char vaddr -- ?)  \ (emit) returns true if we need to CR
+              TOS R0 MOV,          \ cursoradr->R0
+              WMODE @@ BL,         \ call: setup VDP address in "write mode"
+              TOS POP,             \ get char from stack
+              TOS SWPB,
+              TOS VDPWD @@ MOVB,   \ write char to vdp data port
+            \ houskeeping...
+              R1      STWP,
+              30 (R1) INC,         \ inc USER 30 ( OUT)
+              34 (R1) INC,         \ inc USER 4C ( VCOL)
+              TOS CLR,             \ clear TOS. It's the output flag
+              2E (R1) 34 (R1) CMP, \ compare USER 2E & USER 34 (C/L , VCOL)
+              EQ IF,
+                  TOS SETO,        \ set TOS to true, we need a new line
+              ENDIF,
+              NEXT,
+              END-CODE
+[ELSE]
+
+ CODE: VADDR! ( vaddr -- ) TOS R0 MOV,   WMODE @@ BL,  TOS POP,  NEXT, END-CODE
+
+\ write to VDP, let 9918 auto-increment move the address.
+ CODE: EMIT++ ( char -- ?)  \ emit++ returns true if we need to CR
+              TOS SWPB,
+              TOS VDPWD @@ MOVB,   \ write char to vdp data port
+            \ houskeeping...
+              R1      STWP,
+              30 (R1) INC,         \ inc USER 30 ( OUT)
+              34 (R1) INC,         \ inc USER 4C ( VCOL)
+              TOS CLR,             \ clear TOS. It's the output flag
+              2E (R1) 34 (R1) CMP, \ compare USER 2E & USER 34 (C/L , VCOL)
+              EQ IF,
+                  TOS SETO,        \ set TOS to true, we need a new line
+              ENDIF,
+              NEXT,
+              END-CODE
+
+: (EMIT)    ( char -- ?) VADDR! EMIT++ ;        \ set VDP address then emit
+
+[THEN]

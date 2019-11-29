@@ -1,12 +1,10 @@
 \ inline.fth  a simple speedup for ITC FORTH July 2017  B Fox
 \ **not portable Forth code**  Uses TMS9900/CAMEL99 CARNAL Knowledge
-INCLUDE DSK1.TOOLS
-NEEDS MOV, FROM DSK1.ASM9900
 
 HEX
 \ CFA of a code word contains the address of the next cell
-: ?CODE ( cfa -- ? ) DUP @ 2- - 0= ;
-
+: ?CODE ( cfa -- ) DUP @ 2- - ABORT" Not code word" ;
+ 
 \ scan MACHINE code looking for the NEXT, routine.
 \ abort if NEXT is not found after 256 bytes. This is an arbitrary size
 \ but most Forth code words are much smaller than 256 bytes.
@@ -22,39 +20,28 @@ HEX
            2 +LOOP
            DUP 0= ABORT" no NEXT" ;
 
-: TRANSCRIBE  ( cfa -- )
-              >BODY DUP TONEXT OVER  -     \ calc. start and len. of code
-              HERE OVER ALLOT SWAP CMOVE ;  \ transcribe the code to HERE
-              
-\ compile assembler code to push arguments into TOS register
-: PUSH_VAR ( cfa -- )  TOS PUSH,  TOS SWAP >BODY LI, ;
-: PUSH_CON ( cfa -- )  TOS PUSH,  TOS SWAP >BODY @ LI, ;
-
-: INLINE, ( $addr -- )    \ compile code for $addr word
-           FIND 0= ABORT" INLINE, can't find"
-           DUP ?CODE          IF TRANSCRIBE       ELSE
-           DUP @ ['] DOVAR = IF PUSH_VAR         ELSE
-           DUP @ ['] DOCON = IF PUSH_CON         ELSE
-           TRUE ABORT" INLINE: unknown type"
-           THEN THEN THEN ;
-
 \ create code words using primitives
-: INLINE[   ( <TEXT>)
-            BEGIN
-              BL PARSE-WORD PAD PLACE
-              PAD 1+  C@ [CHAR] ] <>
-              PAD C@ 0= OR
-            WHILE
-              PAD INLINE,
-            REPEAT ;                                              
-
+: INLINE[   BEGIN
+             BL PARSE-WORD PAD PLACE
+             PAD CHAR+ C@ [CHAR] ] <>
+           WHILE
+             PAD FIND 0= ABORT" INLINE err"
+             DUP ?CODE
+             >BODY DUP TONEXT OVER  -     \ calc. start and len. of code
+             HERE OVER ALLOT SWAP CMOVE   \ transcribe the code to HERE
+           REPEAT ;
+ 
+ 
+\ embed  a literal number as machine code  *HUGE* 8 bytes!!
+\ equivalent: TOS PUSH,  LI TOS ( n ) , ;
+: #,   ( n -- ) 0646 , C584 , 0204 , ( n) ,  ;  IMMEDIATE
+ 
 \ ===================================
+
 \ EXAMPLES
- CODE ^2      INLINE[  DUP *  ] NEXT, ENDCODE
- CODE DUPC@   INLINE[  DUP C@ ] NEXT, ENDCODE
- CODE DUP>R   INLINE[  DUP >R ] NEXT, ENDCODE
-
-VARIABLE X
- CODE X@      INLINE[ X @ ]     NEXT, ENDCODE
-
-
+\ CODE ^2      INLINE[  DUP *  ] NEXT, ENDCODE
+\ CODE DUPC@   INLINE[  DUP C@ ] NEXT, ENDCODE
+\ CODE DUP>R   INLINE[  DUP >R ] NEXT, ENDCODE
+ 
+ 
+ 

@@ -11,13 +11,16 @@
 TARGET-COMPILING
 : ?          ( adr -- ) @ . ;
 
-: DEPTH      ( -- n )   SP0 SP@ 2+ - 2/  ;
+\ : DEPTH      ( -- n )   SP0 SP@ 2+ - 2/  ; \ in kernel
 
 \ .s is ccmplicated with TOS in a register
-: .S         ( -- ) T." |" DEPTH IF   0 DEPTH 2-  DO   I PICK  U.   -1 +LOOP   THEN ;
+: .S        ( -- )  
+            T." Top>" 
+            DEPTH 0 ?DO   I PICK  U.   LOOP ;
+            
+            
 
-: ?BREAK    ( -- )
-            ?TERMINAL  TS" *BREAK*" ?ABORT  ;
+: ?BREAK    ( -- )  ?TERMINAL  TS" *BREAK*" ?ABORT  ;
 
 : WORDS     ( -- )
              CR
@@ -62,7 +65,7 @@ TARGET-COMPILING
                   I  ?80  BOUNDS DO  SPACE I @ .#### 2 +LOOP SPACE  \ print 8 bytes of memory
                   I  ?80  .ASCII                                    \ print 8 ascii format BYTES
                   ?BREAK
-               8 +LOOP                                            \ increment the offset address by 8
+               ?80 +LOOP                                            \ increment the offset address by 8
                CR
                R> BASE ! ;
 [then]
@@ -87,7 +90,7 @@ TARGET-COMPILING
                   I  ?80  BOUNDS DO  SPACE I V@ .#### 2 +LOOP SPACE  \ print 8 bytes of memory
                   I  ?80  .ASCII                                    \ print 8 ascii format BYTES
                   ?BREAK
-               8 +LOOP                                            \ increment the offset address by 8
+               ?80 +LOOP                                            \ increment the offset address by 8
                CR
                R> BASE ! ;
 [THEN]

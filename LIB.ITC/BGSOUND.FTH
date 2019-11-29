@@ -13,13 +13,11 @@ NEEDS FORK  FROM DSK1.MTASK99
 \ sound list player
 
 HEX
-: >MS    ( n -- n')  4 LSHIFT ;  \ n*16, converts ISR delay value to milliseconds
-
-: SILENT ( --)  9F SND!  BF SND!  DF SND! FF SND! ;  \ turn off all sounds
+: SILENT ( --) 9F SND!  BF SND!  DF SND! FF SND! ;  \ turn off all sounds
 
 : PLAY$ ( caddr -- )        \ play 1 sound string
         COUNT               \ -- addr len
-        2DUP + C@  >R       \ get duration at end of string, to milli-secs & Rpush
+        2DUP + C@  >R       \ get duration at end of string, Rpush
         BOUNDS              \ convert addr/len to end-addr. start-addr.
         DO  I C@ SND! LOOP  \ feed bytes to sound chip
         R> JIFFS ;          \ use the delay from Rstack
@@ -50,12 +48,13 @@ CREATE SOUNDQ   20 CELLS ALLOT
 
 \ BackgroundPlayer
 : BGPLAYER ( -- )   \ play all lists in the Q then goto sleep
-           BEGIN
-           Q? WHILE
-             SOUNDQ Q@ PLAYLIST
+           BEGIN Q? 
+           WHILE
+              SOUNDQ Q@ PLAYLIST
            REPEAT
+           SILENT
            MYSELF SLEEP
-           PAUSE ;      \ hand-off to next task
+           PAUSE ;  \ hand-off to next task
 
 
 \ === MULTI-TASKING SET-UP ===
@@ -93,15 +92,4 @@ CREATE NUMBUF  10 ALLOT
 \ CREATE MUNCHMAN
 \       BYTE 08,85,2A,90,A6,08,B0,CC,1F,12
 \       BYTE 08,85,2A,90,A4,1C,B0,C9,0A,12
-\ /END
-
-\ CREATE PACMAN
-\       BYTE 06,86,0D,97,AC,1A,B7,08
-\       BYTE 02,8F,08,02
-\       BYTE 02,AB,23,05
-\       BYTE 02,86,0D,04
-\       BYTE 01,BF,03
-\       BYTE 02,8E,0B,08
-\       BYTE 02,8A,0A,02
-\       BYTE 03,AC,1A,B7,08
 \ /END

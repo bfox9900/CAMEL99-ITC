@@ -19,7 +19,7 @@ MXLEN 1+ CONSTANT SSW     \ width of string stack items
 \ ==== From Wil Baden's Tool Belt [R.I.P. Wil] ====
 \ : PLACE     ( addr n dst$ -- ) 2DUP C! 1+ SWAP CMOVE ;  \ in CAMEL99 Kernel
 \ : C+!       ( n addr -- )      DUP >R  C@ +  R> C! ;  \ MOVED TO CODE
-: APPEND      ( adr n adr -- )   2DUP 2>R  COUNT +  SWAP CMOVE 2R> C+! ;
+: +PLACE      ( adr n adr -- )   2DUP 2>R  COUNT +  SWAP CMOVE 2R> C+! ;
 
 \ ==== string stack helpers ====
 : SPUSH    ( addr len -- adr' len ) NEW: TOP$ DUP >R PLACE R> COUNT ;
