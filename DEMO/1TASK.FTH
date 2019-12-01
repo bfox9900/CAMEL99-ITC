@@ -40,10 +40,11 @@ HEX
 
 ' STKTHING TASK1 ASSIGN
 
-\ To start:
-\ MULTI <ENTER>
-\ TASK1 WAKE <ENTER>
-\ (look at memory address >2000..2100 in debugger to see TASK1 stack
+CR .( To start: )
+CR .( MULTI <ENTER> )
+CR .( TASK1 WAKE <ENTER> )
+CR .( look at memory address >2000..2100)
+CR .( in debugger to see TASK1 stack)
 
 
 

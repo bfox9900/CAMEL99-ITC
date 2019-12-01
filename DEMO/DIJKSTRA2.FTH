@@ -110,11 +110,11 @@ SQUARE PTR1   CHARDEF
 
 VARIABLE X
 
-: XCHG  ( adr1 adr2 -- )
-      OVER VC@ OVER VC@        \ read the chars in VDP RAM
-      SWAP ROT VC! SWAP VC! ;  \ exchange the characters
+\ : XCHG  ( adr1 adr2 -- )
+\      OVER VC@ OVER VC@        \ read the chars in VDP RAM
+\      SWAP ROT VC! SWAP VC! ;  \ exchange the characters
 
-CODE XCHG2   \ this is 150 bytes! Not really worth the space
+CODE XCHG2   \ this is 150 bytes! But its a little faster
      INLINE[ OVER VC@ OVER VC@ SWAP ROT VC! SWAP VC! ]
      NEXT,
      ENDCODE
@@ -156,12 +156,12 @@ CODE >=     ( n1 n2 -- flag) \ 2% faster than 1- >
            WHILE
               *W VC@
               CASE
-                 REDSQR OF *R *W XCHG
+                 REDSQR OF *R *W XCHG2
                             R++           ENDOF
 
                  WHTSQR OF  W--           ENDOF
 
-                 BLUSQR OF *W *B XCHG
+                 BLUSQR OF *W *B XCHG2
                             W--
                             B--          ENDOF
               ENDCASE

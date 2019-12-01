@@ -1,12 +1,13 @@
 \ magic eight ball Rosetta Code
 
 INCLUDE DSK1.RANDOM
+INCLUDE DSK1.FASTCASE
 
 DECIMAL
-: CASE:  ( -- -7)   CREATE   ;
-: ;CASE   ( n -- )  DOES>  SWAP CELLS +  @ EXECUTE ;
-
-: VECTORS  0  DO  , LOOP ;
+\ : CASE:  ( -- -7)   CREATE   ;
+\ : ;CASE   ( n -- )  DOES>  SWAP CELLS +  @ EXECUTE ;
+\
+: VECTORS  0  DO  COMPILE, LOOP ;
 
 :NONAME   ." It is certain" ;
 :NONAME   ." It is decidedly so" ;
@@ -28,10 +29,11 @@ DECIMAL
 :NONAME   ." My sources say no" ;
 :NONAME   ." Outlook not so good" ;
 :NONAME   ." Very doubtful" ;
+( VECTORS for the previous 20 definitions are sitting on the stack ...)
 
-CASE: MAGIC8BALL  20 VECTORS  ;CASE
+CASE: MAGIC8BALL  20 VECTORS  ;CASE  \ make the case table
 
-: GO   
+: GO   PAGE
        CR ." Please enter your question or a blank line to quit."
        BEGIN CR ." ? :" PAD 80 ACCEPT 0>
        WHILE CR 19 RND MAGIC8BALL CR

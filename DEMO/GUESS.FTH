@@ -39,16 +39,14 @@ DECIMAL
           CR ;
 
 : Y/N?   ( -- flag)
-          KEY [CHAR] Y =    \ wait for a key, compare to "Y"
-          IF   FALSE        \ if it is 'Y' put FALSE on stack
-          ELSE TRUE         \ any other key, put TRUE on the stack
-          THEN ;            \ then end the sub-routine
+          KEY [CHAR] Y =  \ wait for a key, compare to "Y"
+          0=  ;           \ If it's 0 return true
 
 : PLAYAGAIN? ( -- flag)
           CR ." Want to play again? (Y/N)"  Y/N?  ;
 
 HEX
-: BLK/YEL   1B 7 VWTR ;  \ CLEAR, yellow bg
+: BLK/YEL   1B 7 VWTR ;  \ BLACK (1) with yellow (B) bg
 
 DECIMAL
 : RUN ( -- )

@@ -99,8 +99,8 @@ DECIMAL
      CR
      CR ." Forth console will be active."
      CR ." You have: TASK1 TASK2 TASK3 TASK4"
-     CR ." When counters stop use RESTART to"
-     CR ." run them again. WAKE will crash!"
+     CR ." When counters stop use TASK1 RESTART"
+     CR ." to run them again. WAKE will crash!"
      CR ." Press a key to enable mulit-tasker" KEY DROP
      MULTI
      RUN-TASKS  ;

@@ -1,7 +1,7 @@
 \ mtask spawn tasks demo
 
 \ commands to RUN  the demo
-\ DECIMAL 30 TASKS ( 30 is the maximum safe number)
+\ DECIMAL 42 TASKS ( 42 is the maximum safe number)
 \ MULTI
 \ .TASKS
 \ X ? ( test if the variable is incrementing)
@@ -45,6 +45,6 @@ VARIABLE #TASKS
 : KILLALL
          SINGLE
          USIZE #TASKS @ *  MFREE
-         INIT-MULTI  ;
+         INIT-MULTI ;
 
 DECIMAL

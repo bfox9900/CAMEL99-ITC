@@ -34,7 +34,7 @@ CREATE V1    1 ,  0 ,
           DUP 2@ NEGATE SWAP NEGATE SWAP ROT 2! ;
 
 : SP.POS+ ( dx dy spr# -- )  \ add dx dy sprite's position
-          DUP>R  SP.Y@ + R@ SP.Y!
+          DUP >R  SP.Y@ + R@ SP.Y!
               R@ SP.X@ + R> SP.X! ;
 
 : MAKE-FACE

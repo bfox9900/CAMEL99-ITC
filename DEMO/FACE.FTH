@@ -1,4 +1,3 @@
-
 \ Exploring Forth programming from a BASIC perspective
 \ adding READ and RESTORE to Forth for demonstration
 
@@ -14,9 +13,9 @@
 
 \ DATA simply returns the base address of all these numbers
 
-INCLUDE DSK1.GRAFIX.F
-INCLUDE DSK1.VDPTYPE.F
-INCLUDE DSK1.CHARSET.F
+INCLUDE DSK1.GRAFIX
+INCLUDE DSK1.VTYPE
+INCLUDE DSK1.CHARSET
 
 HEX
 CREATE DATA  ( -- addr)
@@ -106,39 +105,36 @@ DECIMAL
 : NEW-PATTERNS  ( -- )  DATA   40 ]PDT   64 8*   VWRITE ;
 
 \ this is a very BASIC way to write to the screen
-: SHOW-FACE
+: SLOW-FACE
      8 0 DO                \ 150 FOR R=0 TO 7
        8 0 DO              \ 160 FOR C=0 TO 7
                            \ 170 CALL HCHAR(R+8,C+12,40+R*8+C)
-            I 12 +   J 8 +   J 8* 40 + I +  1 HCHAR  
+            I 12 +   J 8 +   J 8* 40 + I +  1 HCHAR
        LOOP                \ 180 NEXT C
      LOOP ;                \ 190 NEXT R
 
 
-\ We made our own very fast "DISPLAY-AT"
-\ called VDPTYPE
-
-
+\ Version with fast "DISPLAY-AT" called  AT"
 \ Here is the Forth way to DRAW the face without loops. 20x FASTER
 : FAST-FACE  ( -- )
-         S" ()*+,-./"  0  8 VDPTYPE
-         S" 01234567"  0  9 VDPTYPE
-         S" 89:;<=>?"  0 10 VDPTYPE
-         S" @ABCDEFG"  0 11 VDPTYPE
-         S" HIJKLMNO"  0 12 VDPTYPE
-         S" PQRSTUVW"  0 13 VDPTYPE
-         S" XYZ[\]^_"  0 14 VDPTYPE
-         S" `abcdefg"  0 15 VDPTYPE ;
+         0  8 AT" ()*+,-./"
+         0  9 AT" 01234567"
+         0 10 AT" 89:;<=>?"
+         0 11 AT" @ABCDEFG"
+         0 12 AT" HIJKLMNO"
+         0 13 AT" PQRSTUVW"
+         0 14 AT" XYZ[\]^_"
+         0 15 AT" `abcdefg" ;
 
-: COLOR-SCR
+DECIMAL
+: DO-FACES
       17 3 DO              \ 200 FOR A=3 TO 16
-          PAGE             \ added so you can see FAST-FACE write to screen
           I SCREEN         \ 210 CALL SCREEN(A)
+          PAGE
           500 MS
-          SHOW-FACE        \ this is the slow method
+          SLOW-FACE        \ this is the slow method
           FAST-FACE        \ This is the fast way
-          500 MS           \ 220 CALL SOUND(2000,44733,0)  
-                           ( sound used for delay in BASIC)
+          500 MS           \ 220 CALL SOUND(2000,44733,0)
           *BREAK*          \ Forth has no automatic BREAK key
       LOOP  ;              \ 230 NEXT A
 
@@ -146,15 +142,18 @@ DECIMAL
 
 : RUN
      GRAPHICS              \ we have to change to 32 col graphics mode
-     S" VDPTYPE   DO/LOOP HCHAR" 1 7 VDPTYPE
      500 MS
      BEGIN
+       CHARSET
+       PAGE
        RESTORE             \ we need RESTORE if we run more than once
+       0 0 AT" VTYPE vs DO/LOOP,HCHAR"
+       CR 4 1 DO I .  BEEP 900 MS LOOP
        READ-DATA
-       SHOW-FACE  500 MS
-       COLOR-SCR
+       DO-FACES
        ?TERMINAL
      UNTIL
-     8 SCREEN         \ restore default stuff
+     8 SCREEN             \ restore default stuff
      4 19 2 1 COLORS
      CHARSET ;
+
