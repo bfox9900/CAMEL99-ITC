@@ -19,7 +19,7 @@ INIT-MULTI
          R@ ASSIGN
          R> WAKE ;
 
-HEX 10 CONSTANT STKSIZE  \ each task has ONLY 20 cells for each stack
+HEX 10 CONSTANT STKSIZE
 
 VARIABLE X   \ used to test if tasks are running
 
