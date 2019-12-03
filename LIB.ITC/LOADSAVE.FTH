@@ -15,7 +15,6 @@ HEX
           -30 ^PAB +!          \ create new pab in VDP RAM with NO buffer
            [PAB 30 0 VFILL     \ erase PAB and file name
          0 [PAB RECLEN] VC!    \ set reclen (0 means >100 (256) bytes)
-
 \ pulls params from the stack to init the PAB
            [PAB FLG] VC!       \ set file access mode byte
            [PAB REC#]  V!      \ set #bytes to save (integer)
@@ -25,21 +24,17 @@ HEX
 
 : POPPAB  ( -- ) 30 ^PAB +! ;
 
-: SAVE-FILE ( file$ len VDPaddr count mode -- )
+: SAVE-FILE ( file$ len VDPaddr size mode -- )
           NEWPAB  6 FILEOP ?FILERR  POPPAB ;
 
-: LOAD-FILE ( file$ len VDPaddr count mode -- )
+: LOAD-FILE ( file$ len VDPaddr size mode -- )
           NEWPAB  5 FILEOP ?FILERR  POPPAB ;
 
 \ Use SAVE-FILE LOAD-FILE for fast FONT LOADING
-400 CONSTANT 1K
-800 CONSTANT 2K
+\ Usage:  S" DSK3.FONT0000" SAVE-FONT
+\         S" DSK3.FONT0000" LOAD-FONT
 
-: SAVE-FONT ( file$ len size --)  2K SWAP W/O100 SAVE-FILE ;
-: LOAD-FONT ( file$ len size --)  2K SWAP R/O100 LOAD-FILE ;
-
-\ Usage:  S" DSK3.FONT0000" 1K SAVE-FONT
-\         S" DSK3.FONT0000" 1K LOAD-FONT
-\  *DON'T FORGET the size argument or it will crash*
-\
+\                            pdt size  mode
+: SAVE-FONT ( file$ len --)  800 400  W/O100 SAVE-FILE ;
+: LOAD-FONT ( file$ len --)  800 400  R/O100 LOAD-FILE ;
 

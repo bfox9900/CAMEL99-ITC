@@ -76,8 +76,8 @@ DECIMAL
 : SIREN
         110 HZ 0 DB
         BEGIN
-            1100  111 DO   I HZ   2 +LOOP
-            110  1100 DO   I HZ  -2 +LOOP
+            1100  251 DO   I HZ   LOOP
+            250  1100 DO   I HZ  -1 +LOOP
             ?TERMINAL
         UNTIL
         MUTE
