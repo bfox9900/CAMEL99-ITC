@@ -60,11 +60,11 @@ CODE >BANK  ( addr -- offset bank# )
        ENDCODE
 
 CODE ?MAP ( offset bank# -- )
-       8804 , CD90 ,  \ TOS BANK# @@ CMP,
+       8804 , BANK# ,  \ TOS BANK# @@ CMP,
        1602 ,         \ EQ IF,
        C136 ,         \     TOS POP,
        100A ,         \ ELSE, ( *THE MAPPER* )
-       C804 , CD90 ,  \    TOS BANK# @@ MOV,
+       C804 , BANK# ,  \    TOS BANK# @@ MOV,
        06C4 ,         \    TOS SWPB,
        020C , 1E00 ,  \    R12 1E00 LI,
        1D00 ,         \    0 SBO,
