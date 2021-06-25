@@ -2,28 +2,36 @@ Apr 15, 2018
 
 Version 2.0.8
 
-For this update we have changed some key low level words to CODE words. (HERE ALLOT)
-This has improved compilation speed. 
+For this update we have changed some key low level words to CODE words.
+(HERE ALLOT) This has improved compilation speed.
 
-We changed >DIGIT and HOLD to CODE words and number output to the screen is over 50% faster.
+We changed >DIGIT and HOLD to CODE words and number output to the screen is
+over 50% faster.
 
-For better consistency with the Original CAMEL Forth code we put /STRING back into the HI level source file CAMEL2.HSF.
+For better consistency with the Original CAMEL Forth code we put /STRING back 
+into the HI level source file CAMEL2.HSF.
 It is still a CODE word as it was in V1.9 but it is no longer in 9900FAST.HSF.
 
 
 Nov 2 2019  Version 2.5
-Made final decisions on balance of CODE words and High Level Forth for the Kernel trading off size and speed. There is now only 1 version of CAMEL99 Forth. (Indirect threaded)
+Made final decisions on balance of CODE words and High Level Forth for the
+Kernel trading off size and speed. There is now only 1 version of CAMEL99 Forth.
+(Indirect threaded)
 
 - General cleanup of the library
 - Improved CREATE/DOES> uses branch and link instruction
 - Addition of CODEMACROS file to demonstrate how to add machine Forth words
 - Implemented CREATE/DOES> in Direct Threaded version.
-- Added Automotion for Sprites that uses the same motion system used by TI Extended BASIC. (SEE: Demo folder for usage examples)
+- Added Automotion for Sprites that uses the same motion system used by
+  TI Extended BASIC. (SEE: Demo folder for usage examples)
 - Speed improvements to DIRECT sprite control library.
 
 Bugs:
-- You cannot clear the screen while automotion is running. Re-define the word CLEAR to STOPMOTION CLEAR AUTOMOTION if you need to erase the screen with automotion running.
+- You cannot clear the screen while automotion is running. Re-define the word
+CLEAR to STOPMOTION CLEAR AUTOMOTION if you need to erase the screen with
+automotion running.
 
 Note on DTC Version:
-DTC CAMEL99 was created for analysis. This has shown that although there is 14% average speed increase in general over the ITC version the extra code size is not advantageous for the memory constrained TI-99.
-
+DTC CAMEL99 was created for analysis. This has shown that although there is
+14% average speed increase in general over the ITC version the extra code size
+is not advantageous for the memory constrained TI-99.
