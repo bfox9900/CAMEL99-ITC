@@ -3,24 +3,16 @@ HEX
 11 CONSTANT ^Q
 13 CONSTANT ^S
 
-: XEMIT  ( c -- )   \ * XON/XOFF version*
-         KEY? ^S =
-         IF  BEGIN
-               PAUSE
-               KEY? DUP 3 = ABORT" ^C"
-               ^Q =
-             UNTIL
-         THEN CEMIT ;   \ send c to TTY1
+: WAIT^Q ( -- )
+          BEGIN
+             PAUSE
+             CKEY? ^Q =
+          UNTIL
+;
 
-: XKEY
-         BEGIN
-            PAUSE
-            CKEY?
-            ?DUP
+\ * XON/XOFF version*
+: XEMIT  ( c -- ) CKEY? ^S = IF   WAIT^Q  THEN CEMIT ;
+: XON/XOFF   ( -- ) ['] XEMIT  'EMIT ! ;
+: STD-OUT    ( -- ) ['] CEMIT  'EMIT ! ;
 
 
-
-: XON/XOFF   ( -- ) ['] (XEMIT)  'EMIT ! ;
-: STD-IO     ( -- ) ['] (EMIT)   'EMIT ! ;
-
-ABORT

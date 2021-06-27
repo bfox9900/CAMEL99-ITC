@@ -15,7 +15,7 @@ HEX
          WHILE
             EVALUATE  DUP FF00 AND  ABORT" Not a byte"
             C,
-         REPEAT 
+         REPEAT
          2DROP ;
 
 : DATA ( -- )
@@ -23,5 +23,5 @@ HEX
             [CHAR] , PARSE-WORD  DUP
          WHILE
             EVALUATE ,
-         REPEAT 
+         REPEAT
          2DROP ;

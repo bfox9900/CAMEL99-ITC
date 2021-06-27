@@ -23,4 +23,4 @@
         DROP                  ( a1)
     LOOP DROP                 ( )
     R>  DUP IF  0> 1 OR  THEN   \  2's complement arith.
-    ;
+;

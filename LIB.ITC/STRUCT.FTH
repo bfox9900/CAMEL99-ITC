@@ -9,8 +9,8 @@
 \     SFFIELD: a 32 bit float
 \     DFFIELD: a 64 bit float
 
-INCLUDE DSK1.TOOLS.F  \ for debugging only
-INCLUDE DSK1.BUFFER.F
+INCLUDE DSK1.TOOLS \ for debugging only
+INCLUDE DSK1.BUFFER
 
 \ these 2012 Forth words are not necessary, but people like them
 : BEGIN-STRUCTURE  \ -- addr 0 ; -- size

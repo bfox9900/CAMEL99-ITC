@@ -1,9 +1,9 @@
 \ Dr. C. H. Ting's Simplest Line Drawing Algorithm
 \ Draw a straight line between (x1, y1) and (x2,y2).
-\ Determine the end condition, where (x1,y1) and (x2,y2) 
+\ Determine the end condition, where (x1,y1) and (x2,y2)
 \ are within one pixel distance.
 \ Find the aid point between (x1,y1) and (x2,y2).
-\ Insert mid point between 1 and 2, then recurse twice 
+\ Insert mid point between 1 and 2, then recurse twice
 \ to draw the two segments.
 
 \     HEX
@@ -30,9 +30,9 @@ CHAR * CONSTANT pen
 
 HERE
 : 2ROT   ( d1 d2 d3 -- d2 d3 d1) 2>R 2SWAP 2R> 2SWAP ;
-: 2OVER  ( d1 d2 -- d1 d2 d1) 2>R 2DUP  2R> 2SWAP ;
+: 2OVER  ( d1 d2 -- d1 d2 d1) 4TH 4TH ;
 
-: DRAW ( X1 Y1 X2 Y2 -- ) \ ANS version of Ting's code
+: TINGLINE ( X1 Y1 X2 Y2 -- ) \ ANS version of Ting's code
      2OVER 2OVER  ROT - ABS >R
      - ABS R>
      MAX  2 <
@@ -61,10 +61,7 @@ HERE
      + 1+ 2/ ( X3) R>
      2DUP 2ROT
      RECURSE RECURSE ;
+
 HERE SWAP - .   ( 206 BYTES)
 
 : TEST2  PAGE  23 0 DO   0 I  39 23 I -  FDRAW  2 +LOOP ;
-
-
-
-

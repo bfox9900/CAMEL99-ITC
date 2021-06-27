@@ -1,4 +1,5 @@
-\
+\ PRINT strings in your program that reside in VDP RAM.
+
 NEEDS VHERE  FROM DSK1.VDPMEM
 
 \ compile stack string into VDP memory

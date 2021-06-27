@@ -1,5 +1,6 @@
 \ DEFER with Forth 2012 extensions
 \ taken from  http://forth-standard.org/standard/core/IS
+\ Optimized for 9900 CPU
 
 : DEFER!  ( xt2 xt1 -- )  >BODY ! ;
 
@@ -7,16 +8,14 @@
 
 : IS      ( xt "<spaces>name" -- )
           STATE @
-           IF    POSTPONE ['] POSTPONE DEFER!
-           ELSE  ' ( -- XT) DEFER!
+          IF    POSTPONE ['] POSTPONE DEFER!
+          ELSE  ' ( -- XT) DEFER!
           THEN ; IMMEDIATE
 
 \ CAMEL99 ABORTs if defered word is not defined using 'IS'
 : ?DEFER  ( -- ) TRUE ABORT" Undefined DEFER"  ;
 
-\ : DEFER   ( -- <text>)
-\          CREATE ['] ?DEFER ,  ( ?defer is the default action)
-\          DOES> @ EXECUTE ;
+
 : ;CODE
            POSTPONE (;CODE)     \ compiles (;CODE) into definition
            ?CSP POSTPONE [      \ turns off the Forth compiler
@@ -24,7 +23,12 @@
 \           ASSEMBLER            \ expose assembler wordlist
            ; IMMEDIATE          \ this is an IMMEDIATE word
 
-\ much faster version
+\ Standard Forth version
+\ : DEFER   ( -- <text>)
+\          CREATE ['] ?DEFER ,
+\          DOES> @ EXECUTE ;
+
+\ faster version
  : DEFER ( xt -- )
               CREATE  ['] ?DEFER ,  ( ?defer is the default action)
               ;CODE  C218 , \ *W  W  MOV,  \ fetch address in W->W

@@ -68,7 +68,7 @@ CODE ->COLR  ( addr -- addr') TOS 3 AI, NEXT, ENDCODE
           SDT  MAX.SP 4* 0 VFILL  \ init the sprite desc. table with 0
           STAB MAX.SP 4* ERASE    \ erase sprite table in CPU ram
           SPR# OFF ;            \ #sprites=0
-          
+
 
 : SP.DEL    ( # -- )  DUP ]STAB 4 ERASE
                           ]SDT  4 0 VFILL ;
@@ -106,7 +106,7 @@ CODE DUP>R ( -- )
 : MAGNIFY  ( mag-factor -- ) 83D4 C@ 0FC AND + DUP 83D4 C!  1 VWTR ;
 
 HEX
-\ text macro improves speed 
+\ text macro improves speed
 : <=       ( n n -- ? )  S" 1- <" EVALUATE ; IMMEDIATE
 
 \ simple machine code optimizers for DIST
@@ -116,8 +116,8 @@ CODE RDROP ( -- )
           ENDCODE
 
 CODE RANGE? ( n n n -- n') \ FORTH: OR OR 8000 AND
-          E136 ,          \ *SP+ TOS SOC,
-          E136 ,          \ *SP+ TOS SOC,
+          0E136 ,         \ *SP+ TOS SOC,
+          0E136 ,         \ *SP+ TOS SOC,
           0244 , 8000 ,   \ TOS 8000 ANDI,
           NEXT,
           ENDCODE

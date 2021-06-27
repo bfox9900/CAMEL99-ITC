@@ -1,22 +1,19 @@
-( ORIGINAL TI-FORTH ASSEMBLER modified by Mark Wills, Turboforth)
-( and more changes for CAMEL99 Forth by Brian Fox     )
-( *NOTE:                                              )
-(        compare instruction has been changed to CMP, )
-(        to remove name conflict with C,              )
-(        change A, and S, to ADD, SUB,                )
+\ ORIGINAL TI-FORTH ASSEMBLER modified by Mark Wills, Turboforth
+\  Dec 23,2020
+\    Huge simplification with ANS style branching & looping. Brian Fox
 
-NEEDS CASE  FROM DSK1.CASE
+\ *NOTES:
+\     Compare instruction has been changed to CMP,
+\     Changed  A, and S, to ADD, SUB,
 
-CR .( TI-99 Assembler V2 ...)
+MARKER /ASM
 
-HERE   \ save the dictionary pointer on stack
+CR .( CAMEL99 Assembler V2.2 Dec 2020)
+
+HERE   \ save the dictionary pointer for size calc. at end
 
 HEX
-CR .( Loading Assembler @) DP @ U.
-
-( VOCABULARY ASSEMBLER )
-( ASSEMBLER DEFINITIONS)
-
+CR .( Loading Assembler @ ) HERE U.
 DECIMAL
  0 CONSTANT  R0    1 CONSTANT  R1
  2 CONSTANT  R2    3 CONSTANT  R3
@@ -28,12 +25,14 @@ DECIMAL
 14 CONSTANT R14   15 CONSTANT R15
 
 HEX
-: GOP'     OVER DUP 1F > SWAP 30 < AND   \ address or register?
-           IF   + , ,                    \ compile instruction & address
-           ELSE + ,                      \ compile register
-           THEN ;
+: ADR? ( n -- ? ) DUP 1F > SWAP 30 < AND ;  \ address or register?
+: GOP' ( arg instr --)
+       OVER ADR?
+       IF   + , ,                    \ compile instruction & address
+       ELSE + ,                      \ compile register
+       THEN ;
 
-: GOP      CREATE , DOES> @ GOP' ;
+: GOP ( instr --) CREATE , DOES> @ GOP' ;
 
 0440 GOP B,    0680 GOP BL,   0400 GOP BLWP,
 04C0 GOP CLR,  0700 GOP SETO, 0540 GOP INV,
@@ -47,7 +46,7 @@ HEX
 3800 GROP MPY,  3C00 GROP DIV,  2C00 GROP XOP,
 
 : GGOP     CREATE ,
-           DOES> @ SWAP DUP DUP 1F > SWAP 30 < AND
+           DOES> @ SWAP DUP ADR?
                  IF   40 * + SWAP >R GOP' R> ,
                  ELSE 40 * + GOP'  THEN ;
 HEX
@@ -83,15 +82,35 @@ A000 GGOP ADD,  B000 GGOP ADDB, 8000 GGOP CMP, 9000 GGOP CMPB,
 
 CR .( jump instructions)
 : DOP     CREATE , DOES> @ SWAP 00FF AND OR , ;
-1300 DOP JEQ,  1500 DOP JGT,  1B00 DOP JH,   1400 DOP JHE,
-1A00 DOP JL,   1200 DOP JLE,  1100 DOP JLT,  1000 DOP JMP,
-1700 DOP JNC,  1600 DOP JNE,  1900 DOP JNO,  1800 DOP JOC,
-1C00 DOP JOP,  1D00 DOP SBO,  1E00 DOP SBZ,  1F00 DOP TB,
+ 1000 DOP JMP,  1100 DOP JLT,  1200 DOP JLE,  1300 DOP JEQ,
+ 1400 DOP JHE,  1500 DOP JGT,  1600 DOP JNE,  1700 DOP JNC,
+ 1800 DOP JOC,  1900 DOP JNO,  1A00 DOP JL,   1B00 DOP JH,
+ 1C00 DOP JOP,
+
+ \ cru bit instructions
+ 1D00 DOP SBO,
+ 1E00 DOP SBZ,
+ 1F00 DOP TB,
+
+CR .( Jump tokens)
+HEX                  \ Action if TRUE
+ 01 CONSTANT GTE     \ JLT to ENDIF, *signed
+ 02 CONSTANT HI      \ JLE to ENDIF,
+ 03 CONSTANT NE      \ JEQ to ENDIF,
+ 04 CONSTANT LO      \ JHE to ENDIF,
+ 05 CONSTANT LTE     \ JGT to ENDIF, *signed
+ 06 CONSTANT EQ      \ JNE to ENDIF,
+ 07 CONSTANT OC      \ JNC to ENDIF,
+ 08 CONSTANT NC      \ JOC to ENDIF,
+ 09 CONSTANT OO      \ JNO to ENDIF,
+ 0A CONSTANT HE      \ JLO to ENDIF,
+ 0B CONSTANT LE      \ JH  to ENDIF,
+ 0C CONSTANT NP      \ JOP to ENDIF,
 
 : GCOP    CREATE , DOES> @ SWAP 000F AND 40 * + GOP' ;
-
 3000 GCOP LDCR,
 3400 GCOP STCR,
+
 HEX
 \ Wycove assembler register syntax:
 : @@        020    ;  \ symbolic addressing
@@ -99,8 +118,29 @@ HEX
 : *+        030 +  ;  \ indirect addressing, auto-increment
 : ()        20  +  ;  \ indexed addressing
 
-CR .( CAMEL99 special registers & modes)
+CR .( Simplified branching and looping)
+: AJUMP,  ( token --) >< 1000 + , ;   \ >1000+token makes a jump instruction
+: RESOLVE ( 'jmp offset --)  2- 2/ SWAP 1+ C! ; \ compile offset into 'jmp'
+: <BACK   ( addr addr' -- ) TUCK -  RESOLVE ;
 
+: IF,     ( addr token -- 'jmp') HERE SWAP AJUMP, ;
+: ENDIF,  ( 'jmp addr --)  HERE OVER -  RESOLVE ;
+: ELSE,   ( -- addr ) HERE 0 JMP, SWAP ENDIF, ;
+
+: BEGIN,  ( -- addr)  HERE ;
+: WHILE,  ( token -- *while *begin) IF, SWAP ;
+: AGAIN,  ( *begin --)  HERE  0 JMP, <BACK ;
+: UNTIL,  ( *begin token --) HERE SWAP AJUMP, <BACK ;
+: REPEAT, ( *while *begin -- ) AGAIN, ENDIF, ;
+
+: ;CODE
+            POSTPONE (;CODE)   \ compiles (;CODE) into definition
+            ?CSP POSTPONE [    \ turns off the Forth compiler
+            REVEAL             \ (just like ";" does)
+           ; IMMEDIATE         \ this is an IMMEDIATE word
+
+\ ============================================================
+CR .( CAMEL99 Forth customization)
 4 CONSTANT TOS
 : (TOS)     TOS () ;
 : *TOS      TOS ** ;
@@ -135,95 +175,12 @@ CR .( Pseudo instructions)
 : NEXT,   ( -- )  045A ,  ;  \ CAMEL99 NEXT: B *R10
 
 \ PUSH & POP for both stacks
-: PUSH,         ( src -- )  SP DECT,  *SP  MOV, ;    \ 10+18 = 28  cycles
-: POP,          ( dst -- )  *SP+      SWAP MOV, ;    \ 22 cycles
+: PUSH,   ( src -- )  SP DECT,  *SP  MOV, ;  \ 10+18 = 28  cycles
+: POP,    ( dst -- ) *SP+       SWAP MOV, ;  \ 22 cycles
 
-: RPUSH,        ( src -- ) RP DECT,  *RP   MOV, ;
-: RPOP,         ( dst -- ) *RP+      SWAP  MOV, ;
+: RPUSH,  ( src -- ) RP DECT,  *RP   MOV, ;
+: RPOP,   ( dst -- ) *RP+      SWAP  MOV, ;
 
-
-CR .( Jump tokens) \ for use with CJMP
-HEX
- 1 CONSTANT GTE     \ GT OR EQUAL
- 2 CONSTANT HI      \ JMP IF HI
- 3 CONSTANT NE      \ NOT equal
- 4 CONSTANT LO      \ jmp if low
- 5 CONSTANT LTE     \ jmp if less than or equal
- 6 CONSTANT EQ      \ jmp if equal
- 7 CONSTANT OC      \ jmp on carry flag set
- 8 CONSTANT NC      \ jmp if no carry flag set
- 9 CONSTANT OO      \ jmp on overflow
- A CONSTANT HE      \ jmp high or equal
- B CONSTANT LE      \ jmp if low or equal
- C CONSTANT NP      \ jmp if no parity ?
- D CONSTANT LT      \ jmp if less than
- E CONSTANT GT      \ jmp if greater than
- F CONSTANT NO      \ jmp if no overflow
-10 CONSTANT OP      \ jmp if ODD parity
-
-: CJMP CASE
-         LT OF 1101 , 0 ENDOF
-         GT OF 1501 , 0 ENDOF
-         NO OF 1901 , 0 ENDOF
-         OP OF 1C01 , 0 ENDOF
-         DUP 0< OVER 10 > ABORT" IF, BAD jump token"
-       ENDCASE >< 1000 + , ;
-
-CR .( Structured branching and looping )
-\ *These words do compile time matching*
-\ 42 the meaning of life the universe and everything
-\ is use to check that if, else, endif, are used properly
-\ each word leaves 42 or checks for it's presence as neeeded
-\ using the word ?pairs to test for completeness
-
-: IF,
-        ?EXEC ( only useable in immediate mode)
-         CJMP HERE  2-  42 ; IMMEDIATE
-
-: ENDIF,
-        ?EXEC
-        42 ?PAIRS
-        HERE OVER - 2- 2/ SWAP CHAR+ C! ; IMMEDIATE
-
-: ELSE,
-        ?EXEC
-        42 ?PAIRS
-        0  CJMP HERE 2- SWAP
-        42 POSTPONE ENDIF,  42 ; IMMEDIATE
-
-: BEGIN,
-        ?EXEC
-        HERE 41 ; IMMEDIATE
-
-: UNTIL,
-        ?EXEC
-        SWAP 41 ?PAIRS
-        CJMP HERE - 2/ 00FF AND
-        HERE 1- C! ; IMMEDIATE
-
-: AGAIN,
-        ?EXEC
-        0 POSTPONE UNTIL, ; IMMEDIATE
-
-: REPEAT,
-        ?EXEC
-        >R >R    POSTPONE AGAIN,
-        R> R> 2- POSTPONE ENDIF, ; IMMEDIATE
-
-: WHILE,
-        ?EXEC
-        POSTPONE IF,  CELL+ ; IMMEDIATE
-
-\ V2 these are in DSK1.SYSTEM
-\ : CODE      ( -- )  HEADER  HERE >BODY , !CSP ;
-\ : ENDCODE   ( -- )  ?CSP  ;
-
-: ;CODE
-            POSTPONE (;CODE)     \ compiles (;CODE) into definition
-            ?CSP POSTPONE [      \ turns off the Forth compiler
-            REVEAL               \ (just like ";" does)
-\           ASSEMBLER            \ expose assembler wordlist
-            ; IMMEDIATE          \ this is an IMMEDIATE word
 
 CR CR .( Assembler loaded)
 CR HERE SWAP - DECIMAL .  .( BYTES used)

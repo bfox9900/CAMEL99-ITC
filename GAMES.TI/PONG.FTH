@@ -1,11 +1,19 @@
 \ simple pong DEMO for CAMEL99      Dec 30 2017 B Fox
+\ Improved Aug 4 2020
 
-INCLUDE DSK1.RANDOM
-INCLUDE DSK1.DIRSPRIT     \ this loads GRAFIX.F first
-INCLUDE DSK1.SMPLSND      \ 1 voice, decay control
-INCLUDE DSK1.CASE
+NEEDS RND    FROM DSK1.RANDOM
+NEEDS SPRITE FROM DSK1.DIRSPRIT     \ this loads GRAFIX.F first
+NEEDS ]HZ    FROM DSK1.SMPLSND      \ 1 voice, decay control
+NEEDS CASE   FROM DSK1.CASE
 \ ===============================================================
 CR .( Compiling PONG)
+
+\ removed from DIRSPRIT library
+: SP.Y@   SP.Y VC@ ;
+: SP.Y!   SP.Y VC! ;
+
+: SP.X@   SP.X VC@ ;
+: SP.X!   SP.X VC! ;
 
 HEX 8375 CONSTANT KVAL
 
@@ -63,10 +71,10 @@ DECIMAL
 HEX
 : ?KEY   ( -- c|0)  \ repeating key scanner
          0 83C8 !   \ clear previous scan codes
-         KEY?       \ call KSCAN
-         IF KVAL C@ \ read key value at >8375
-         ELSE 0     \ else return zero
-         THEN ;
+         KEY? ;      \ call KSCAN
+\         IF KVAL C@ \ read key value at >8375
+\         ELSE 0     \ else return zero
+\         THEN ;
 
 : UpDown ( -- -3,0,3 ) \ return a value to move the paddle
          ?KEY CASE
@@ -80,8 +88,8 @@ HEX
 .( ..)
 
 DECIMAL
- 13 CONSTANT TOPWALL
-177 CONSTANT BOTWALL
+ 14 CONSTANT TOPWALL
+176 CONSTANT BOTWALL
 
 : MovePaddle ( paddle# -- ) \ text macro used for speed
 S" DUP >R SP.Y@ UpDown + TOPWALL BOTWALL CLIP  R> SP.Y!" EVALUATE ; IMMEDIATE
@@ -137,30 +145,31 @@ VARIABLE YVEC
 : ?    ( variable -- ) @ . ;
 
 : ScoreBoard ( -- )
-       2 0 AT-XY ." Human      " HUMAN ?
-       ." | "  COMPUTER ? ."     TI-99" ;
+ 2 0 AT-XY ." Human      " HUMAN ? ." | "  COMPUTER ? ."     TI-99" ;
 
 : Opening ( -- )
          BEGIN
             MoveBall WallTest
-            0 1 4 COINC IF 1 PaddleHit THEN 2 FollowBall
-            0 2 4 COINC IF 2 PaddleHit THEN 1 FollowBall
+            0 1 7 COINC IF 1 PaddleHit THEN 2 FollowBall
+            0 2 7 COINC IF 2 PaddleHit THEN 1 FollowBall
             KEY?
+            10 MS
           UNTIL ;
 
 VARIABLE OFFSET
-: RandUpDown  ( -- -10 .. 10 )   50 RND 25 - ;
+: RandUpDown  ( -- -10 .. 10 ) 50 RND 25 - ;
 
 : ComputerPlayer ( -- )
          0 SP.Y@  RandUpDown +  TOPWALL BOTWALL CLIP 2 SP.Y! ;
 
-: OffBoard? ( ballX -- ?) 1  253 WITHIN 0= ;
+: OffBoard? ( ballX -- ?) 253 1  WITHIN ; \ uses reverse logic feature
 
 .( ..)
 : PlayGame ( -- )
          BEGIN
             MoveBall WallTest
             0 1 5 COINC IF 1 PaddleHit THEN 1 MovePaddle
+            WallTest
             0 2 5 COINC IF 2 PaddleHit THEN ComputerPlayer 1 MovePaddle
             0 SP.X@ OffBoard?
          UNTIL

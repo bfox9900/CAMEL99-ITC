@@ -1,0 +1,14 @@
+
+: CRU,   SWAP 00FF AND OR , ;
+
+: TEST:     CREATE  1F00  CRU, NEXT, 
+            ;CODE  *W B, 
+            ENDCODE
+
+: SETTER:   CREATE  1D00 CRU, NEXT,
+            ;CODE  *W X, ENDCODE
+
+: RE-SETTER: ( bit# -- )
+            CREATE  1D00 CRU, NEXT,
+            ;CODE  *W B, 
+            ENDCODE

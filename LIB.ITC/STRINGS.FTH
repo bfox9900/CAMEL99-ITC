@@ -10,9 +10,11 @@
 \   - HDIM uses MALLOC to create static string in HEAP
 \ Aug 21 2018 - fixed bug in POS$
 \ Nov 25, 2018 - MOVED string stack to top of HEAP (un-allocated)
+\ Apr 15, 2020 - added NEEDS/FROM for V2.59
+NEEDS S=     FROM DSK1.COMPARE
+NEEDS MALLOC FROM DSK1.MALLOC
 
 HERE
-
 DECIMAL
 \ === string stack in high heap ====
             255 CONSTANT MXLEN   \ 255 bytes is longest string
@@ -40,7 +42,7 @@ HEX 3FFF SSW +  CONSTANT $STACK
 : LEN      ( $ -- n )  C@ ;
 : SEG$     ( $ n1 n2 -- top$) >R >R COUNT R> 1- /STRING DROP R> SPUSH ;
 : STR$     ( n -- top$)  DUP ABS 0 <# #S ROT SIGN #> SPUSH ;
-: VAL$     ( adr$ - # )  ?NUMBER 0= ABORT" VAL$ err"  ;
+: VAL$     ( adr$ - # )  COUNT NUMBER? ABORT" VAL$ err"  ;
 : CHR$     ( ascii# -- top$ ) NEW: TOP$ 1 OVER C! SWAP OVER 1+ C! ;
 : ASC      ( $ -- c)   1+ C@ ;
 
@@ -48,8 +50,7 @@ HEX 3FFF SSW +  CONSTANT $STACK
 : &        ( $1 $2 -- top$)   \ concatenate operator
            SWAP COUNT SPUSH >R COUNT R@ +PLACE R>  ;
 
-: POS$  ( $1 $2 -- n )  \ return "position" $1 in $2
-\           DUP -ROT DUP -ROT
+: POS$     ( $1 $2 -- n )  \ return "position" $1 in $2
            TUCK SWAP OVER       ( $2 $2 $1 $2)
            COUNT BOUNDS         \ step $2 char by char
            DO
@@ -65,8 +66,6 @@ HEX 3FFF SSW +  CONSTANT $STACK
 : CPOS     ( $ char -- n) >R COUNT 2DUP R> SCAN NIP - NIP ;
 
 : COPY$    ( $1 $2 -- )  >R COUNT R> PLACE ;
- \           NEW: TOP$ COUNT PLACE
- \           COUNT TOP$ PLACE ;
 
 \ compare strings also use S=
 : COMPARE$ ( $1 $2 -- flag) DUP C@ 1+ S= ;
@@ -78,7 +77,8 @@ HEX 3FFF SSW +  CONSTANT $STACK
 : <$       ( $1 $2 -- flag)  COMPARE$ 0< ;  \ $1 < $2
 
 ( compile time string assignment)
-: ="       ( $addr -- <text> ) ?EXEC [CHAR] " PARSE ROT PLACE ;
+: ="       ( $addr -- <text> ) ?EXEC [CHAR] " PARSE  ROT PLACE ;
+
 : =""      ( $addr -- ) ?EXEC  0 SWAP C! ;   \ sets string length to zero
 
 : ?$IZE    ( n -- ) MXLEN > ABORT" $>255 bytes" ;
@@ -90,7 +90,7 @@ HEX 3FFF SSW +  CONSTANT $STACK
 : HDIM    ( n -- ) DUP ?$IZE  1+ ALIGNED MALLOC CONSTANT ;
 
 : PUT      ( $1 $2 -- ) COPY$ COLLAPSE ;
-.( ...)
+.( ..)
 \ print a string, but do NOT collapse string stack
 : PRINT$   ( $ -- )  COUNT TYPE ;
 
@@ -113,4 +113,3 @@ HERE SWAP - DECIMAL .  .( Bytes)
 \ 20 DIM A$  A$ =" This is A$"
 \ 20 DIM B$  B$ =" This is B$."
 \ 50 DIM C$  A$ B$ & C$ PUT
-

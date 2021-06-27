@@ -7,8 +7,8 @@
 \     string is on top, the remaining part is underneath. The
 \     remaining part begins with the scanned-for character.
 
-INCLUDE DSK1.TOOLS.F
-\ INCLUDE DSK1.3RD4TH.F                    \ 50% faster but 2X larger
+INCLUDE DSK1.TOOLS
+\ INCLUDE DSK1.3RD4TH                      \ 50% faster but 2X larger
 
 : 3RD  ( a b c -- a b c a ) 2 PICK ;       \ Changed name from Niels' THIRD
 
@@ -28,7 +28,7 @@ INCLUDE DSK1.TOOLS.F
 
 : '"'    [CHAR] " EMIT ;
 
-: {CHARS}( addr len -- addr len .... addr len count  )
+: {CHARS} ( addr len -- addr len .... addr len count  )
           0 >R
           BEGIN
              1 CHOP
@@ -47,10 +47,10 @@ INCLUDE DSK1.TOOLS.F
          REPEAT
          2DROP
          R> ;
-         
+
 :
 
-: .{LIST}  ( addr n   n -- )  
+: .{LIST}  ( addr n   n -- )
           2* N>R
           0 ?DO  '"' TYPE '"' SPACE  LOOP ;
 
@@ -61,4 +61,3 @@ INCLUDE DSK1.TOOLS.F
  A$ BL SPLIT CR TYPE CR TYPE
  A$ BL /WORD CR TYPE CR TYPE
  A$  5 CHOP CR TYPE CR TYPE
-

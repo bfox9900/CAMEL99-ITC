@@ -1,16 +1,19 @@
-\ search dictionary in Forth
+\ findname.fth
+NEEDS S=     FROM DSK1.COMPARE
 
-NEEDS .S     FROM DSK1.TOOLS
-NEEDS ELAPSE FROM DSK1.ELAPSE
+: 2OVER    ( a b c d -- a b c d a b) 3 PICK  3 PICK ;
+: 2NIP     ( a b c -- c)  NIP NIP ;
 
-: COMPARE$ ( $1 $2 -- flag) S" DUP C@ 1+ S=" EVALUATE ; IMMEDIATE
+: FIND-NAME ( addr len -- nfa ) \ nfa is "name field address"
+           LATEST @
+           BEGIN
+              DUP 1+ 2OVER S=
+              0= IF  2NIP  EXIT THEN
+              NFA>LFA @   ( next name in dictionary)
+              DUP
+           0= UNTIL
+           2NIP  ;
 
-: FIND-NAME  ( addr len -- nfa )  \ 4.4x SLOWER than ASM (FIND)
-             PAD PLACE        \ store string we are looking for
-             LATEST @
-             BEGIN
-                DUP PAD COMPARE$
-             WHILE
-                NFA>LFA @     \ follow the links
-                DUP 0= IF EXIT THEN
-             REPEAT ;
+: NFA>XT ( addr -- XT -1|0|1)
+          DUP 1- C@ 0= IF TRUE ELSE 1 THEN
+          SWAP NFA>CFA SWAP ;

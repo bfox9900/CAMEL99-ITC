@@ -1,6 +1,6 @@
 \ CAMEL99 SAMS card support
 HEX
- INCLUDE DSK1.TOOLS  \ debugging
+\ INCLUDE DSK1.TOOLS  \ debugging
 \ INCLUDE DSK1.ASM9900
 
 HEX
@@ -22,14 +22,10 @@ HEX
          NEXT,
          ENDCODE
 
-\ paging takes place in cartridge space at >6000
+\ paging takes place at this address
 HEX 3000 CONSTANT PAGEMEM
+\ returns address of a 4K block starting at PAGEMEM
+: SBLOCK  ( n -- addr )  PAGEMEM MAP PAGEMEM ;
 
- : CHANGEPAGE
-         100 0
-         DO
-            I PAGEMEM MAP
-         LOOP
-         2 PAGEMEM MAP ;  \ return to default value
-         
-: BLOCK  ( n -- addr )  PAGEMEM MAP PAGEMEM ;
+\ : TEST    0 DO  I BLOCK 1000 I FILL LOOP ;
+\ : CHANGEPAGE  100 0 DO I PAGEMEM MAP LOOP  2 PAGEMEM MAP ;

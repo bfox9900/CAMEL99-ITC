@@ -1,171 +1,139 @@
-\ ANSFILES  for CAMEL99 V2 BJF 02APR2018)
-\ A subset of ANS Forth files wordset with TI-99 specific file control words
-\ Apr 10, 2018 re-write for DSRLINK9 saves space.
-\ Oct 13, 2019 changed ?FILERR to automatically release the current handle
-
-\ Dependancy:
-\ TI-99 file system is record oriented not byte oriented
-\ therefore READ-FILE and WRITE-FILE are not part of this lexicon.
-
-\ ANS/ISO Forth Definitions:
-\  fid -  file identifier (a file handle)
-\  ior -  input/output response (the error number)
-\  fam -  file access mode. see code for details
-
-\ O/S file system commands for reference (removed to save space)
-\ : OPEN    ( -- ior)  0 FILEOP ;  : CLOSE   ( -- ior)  1 FILEOP ;
-\ : READ    ( -- ior)  2 FILEOP ;  : WRITE   ( -- ior)  3 FILEOP ;
-\ : REWIND  ( -- ior)  4 FILEOP ;  : LOAD    ( -- ior)  5 FILEOP ;
-\ : SAVE    ( -- ior)  6 FILEOP ;  : DELETE  ( -- ior)  7 FILEOP ;
-\ : SCRATCH ( -- ior)  8 FILEOP ;  : STATUS  ( -- stat) 9 FILEOP ;
-
-HERE      \ for size calculation
-.(  ..)
-\ File handle server
+\ ANSFILES for Camel99 v2.1                 Brian Fox  Feb 2020
+\ V2.24 removed file length and FAM=0 error test from OPEN-FILE
+\ *G V2.25  Uses FOPEN to simplify OPEN-FILE, FREAD for READ-FILE
+\ ** V2.26  Removed UPDATE INPUT OUTPUT APPEND. Use R/W R/O W/O W/A
+\ ** Forced CREATE-FILE to erase previous file by using in W/O mode
+CR .( ANS Files V2.26 May 2021..)
 HEX
-VARIABLE #FILES
-VARIABLE LASTH
+HERE
+03 CONSTANT #FILES  \ ** this is locked at 3 in Camel99 Forth
+VARIABLE LASTH      \ ** last handle that was selected ie:  CURRENT handle
 
-\ File ID array holds VDP PAB address of an open file.
-CREATE FIDS ( -- addr) 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,
+CREATE FIDS ( -- addr) 0 , 0 , 0 , 0 , 0 , 0 ,
 
-\ FIDS as an array
-: ]FID   ( hndl -- PAB_addr ) CELLS FIDS + ;
+: FATAL   ( -- true)
+          FIDS #FILES CELLS  0 FILL  \ erase all file IDs
+          TRUE ;
 
-\ compute the VDP address for any PAB(n)
-: >PABADR   ( n -- VDPadr) PSZ * VDPTOP SWAP - ;
+: ?HNDL   ( n -- )  #FILES 1+ 1 WITHIN IF FATAL ABORT" Bad handle" THEN  ;
+: ]FID    ( hndl -- PAB_addr ) DUP ?HNDL  CELLS FIDS + ;
 
-: NEWHNDL ( -- hndl) \ returns first free handle
-         0           \ start at handle=0
-         BEGIN
-           1+
-           DUP #FILES @ > ABORT" no free handle"
-           DUP ]FID @    \ fetch pab table contents
-         WHILE REPEAT    \ loop until we find an empty location
-;
+: NEWHNDL ( -- hndl) \ *G Handle server: Looks for available file handle.
+  0  BEGIN  1+ DUP ]FID @  WHILE REPEAT DUP ?HNDL ;
 
-: NEWPAB ( hndl -- )
-         DUP >PABADR  SWAP ]FID !    \ calc. PAB, record in FID array
-;
+: RELEASE ( hndl -- ) ]FID OFF ;  \ *G release handle back to the pool
+: SELECT  ( hndl -- )
+\ *G make hndl the active PAB. Record as last handle in use
+  DUP ]FID @  ^PAB !  LASTH  ! ;
 
-: SELECT ( hndl -- )
-        DUP 1 #FILES @ 1+ WITHIN  0= ABORT" Bad handle"
-        DUP ]FID @ ^PAB !
-        LASTH !
-       ( [PAB FNAME] 8356 !)  \ DSRLNK9 does this now in FILEOP
-;
+: VCOUNT  ( vdp$adr -- vdpadr len )
+\ *G COUNT for VDP strings
+  DUP 1+ SWAP VC@ ;
 
-: RELEASE ( hndl -- ) ]FID OFF  ;
+: .FNAME  ( padaddr -- ) FNAME] VCOUNT 10 MAX BOUNDS DO  I VC@ EMIT LOOP ;
 
-\ *new* file error handler that releases handle
+: DUMP]   ( vaddr -- ) \ dump contents of a PAB
+\ *G PAB dump utility used by ANSFILES error handler.
+\ ** It can be expanded by uncommenting two lines in source code.
+\ ** This will add REC# and file status fields to the output.
+         DUP >R
+         HEX
+         CR ." PAB:" .  ." FAM=" R@ FLG] VC@ 1F AND .
+\           ."  Rec#="   R@ REC#]  V@ .
+\           ."  Fstat= " R@ STAT] VC@ .
+         CR ." Dev:" R> .FNAME ;
+
 : ?FILERR  ( ior -- )
-           ?DUP IF
-              CR ." * File Err "  .
-              LASTH @ RELEASE
-              ABORT
-           THEN ;
+\ *G Enhanced file error handler for use with ANS/ISO file words.
+\ ** Runs [PAB DUMP] for displaying error no., file handle, flag status
+\ ** and file name. See: DUMP]
+       ?DUP IF
+           CR
+           CR ." Err# " .   ."  Hndl=" LASTH @ .
+           [PAB DUMP]
+           FATAL ABORT" Handles reset"
+       THEN ;
 
-\ user level command.
-: FILES   ( n -- )
-          DUP 3 > ABORT" too many files"
-          #FILES ! ;
 .( ..)
-\ ===================================
-\ file access mode configuration
+VARIABLE FAM   \ ** file access mode is built in this variable
 
-VARIABLE FAM  \ we build the file access mode in a variable
+CODE AND!  ( mask addr -- )  \ *SP INV, *SP+ *TOS SZC, TOS POP,
+    0556 ,   4536 ,  C136 ,  NEXT,  ENDCODE
 
-\ and/or the contents of a variable with mask
- : AND!   ( mask addr -- ) TUCK @ AND SWAP ! ;
- : OR!    ( mask addr -- ) TUCK @  OR SWAP ! ;
+CODE OR! ( mask addr -- )  \ *SP+ *TOS SOC,  TOS POP,
+     E536 ,  C136 , NEXT, ENDCODE
 
 \ TI-99 file access mode modifiers
  2 BASE !  \        *ctrl bits*
- : DISPLAY    ( -- ) 11110111 FAM AND! ;
- : SEQUENTIAL ( -- ) 11111110 FAM AND! ;
- : RELATIVE   ( -- ) 00000001 FAM OR! ;
+: DISPLAY    ( -- ) 11110111 FAM AND! ; \ ** Same as BASIC ie: TEXT file
+: SEQUENTIAL ( -- ) 11111110 FAM AND! ; \ ** Same as BASIC
+: RELATIVE   ( -- ) 00000001 FAM OR! ;  \ ** Same as BASIC
 
- : UPDATE     ( -- )        11111001 FAM AND! ;
- : INPUT      ( -- ) UPDATE 00000100 FAM OR! ;
- : OUTPUT     ( -- ) UPDATE 00000010 FAM OR! ;
- : APPEND     ( -- )        00000110 FAM OR! ;
+VARIABLE B/REC
+: VARI  ( size -- fam) B/REC ! 00010000 FAM  OR! ;
+\ *G Used to open or create a file with variable record size.
 
-VARIABLE B/REC    \ bytes per record
- : VARI  ( size -- fam) B/REC ! 00010000 FAM  OR! ;
- : FIXED ( size -- fam) B/REC ! 11101111 FAM AND! ;
-
-\ set fam on stack to default file format
-\ (in case the op forgets to set it up)
+: FIXED ( size -- fam) B/REC ! 11101111 FAM AND! ;
+\ *G Used to open or create a file with fixed record size.
 .( ..)
- HEX
-\ These ANS word adjust and return the FAM variable
- : R/W   ( -- fam)  UPDATE  FAM @ ;
- : R/O   ( -- fam)  INPUT   FAM @ ;
- : W/O   ( -- fam)  OUTPUT  FAM @ ;
+: R/W   ( -- fam)  11111001 FAM AND! FAM @ ;    \ ** TI UPDATE mode
+: R/O   ( -- fam)  R/W 00000100 FAM OR! FAM @ ; \ ** TI INPUT mode
+: W/O   ( -- fam)  R/W 00000010 FAM OR! FAM @ ; \ ** TI OUTPUT mode
+: W/A   ( -- fam)  R/W 00000110 FAM OR! FAM @ ; \ ** TI APPEND mode
 
+HEX
 \ ANS Forth BIN replaces TI-99 "INTERNAL"
-: BIN         ( fam -- fam') 8 OR ;  \ modify FAM to "INTERNAL"
+: BIN   ( fam -- fam') 08 OR ;  \ ** TI INTERNAL file ie: binary file
 
-\ system default to this file format
-: DV80   ( -- ) UPDATE DISPLAY SEQUENTIAL 50 VARI ;
-
+DECIMAL
+: DV80  ( -- )
+\ *G Sets default TI-99 text file mode
+  DISPLAY SEQUENTIAL 80 VARI ;
 .( ..)
 HEX
-\ build the PAB from all the pieces, with error checking
 : OPEN-FILE ( $addr len fam -- fid ior)
-            ( fam) DUP FF00 AND OVER  0=  OR ABORT" Bad file mode"
-             -ROT             \ tuck the FAM away for now
-             DEPTH 3 < ABORT" OPEN-FILE args"
-             NEWHNDL DUP >R          \ copy handle to Rstack
-             DUP NEWPAB              \ compute the new PAB
-           ( hndl) SELECT            \ select the pab
-           ( fam $adr len) INITPAB
-           ( fam) [PAB FLG] VC!      \ write file access mode to PAB
-            B/REC @ [PAB RECLEN] VC! \ store reclen in PAB
-            B/REC OFF                \ reset the B/REC variable
-            0 FILEOP ( -- err#)      \ call O/S OPEN
-            DUP                      \ test for error
-            IF   R> RELEASE 0 SWAP   \ release hndl, return (0,ior)
-            ELSE R> SWAP             \ return (fid,ior)
-            THEN ;
-
-: CLOSE-FILE ( fid -- ior) DUP SELECT  1 FILEOP  SWAP RELEASE ;
-: EOF        ( fid -- c) SELECT (EOF) ;
+\ *G ANS/ISO Forth compliant open-file. Requires error handler or ior
+\ ** See: ?FILERR for simplest error handler
+       DEPTH 3 < ABORT" OPEN-FILE args"
+       B/REC @ SWAP ( -- $addr len b/rec fam)
+       VDPTOP NEWHNDL DUP>R PSZ * -  \ new PAB = VDPTOP-(PABSIZE*HNDL)
+       ( -- addr ) R@ ]FID !         \ store PAB in FID array
+       R@ SELECT FOPEN               \ select handle & open
+       B/REC OFF
+       DUP ( -- ior ior )
+       IF   R> RELEASE 0 SWAP
+       ELSE R> SWAP
+       THEN ;
 
 .( ..)
-\ F9 AND forces 'fam' bits to UPDATE mode
-: CREATE-FILE     ( caddr len fam -- fid ior ) F9 AND  OPEN-FILE ;
+: CLOSE-FILE      ( fid -- ior)
+       DUP ]FID @ 0= ABORT" Hndl not open"
+       DUP SELECT  1 FILEOP  SWAP RELEASE ;
+
+: EOF             ( fid -- c) SELECT  FSTAT 3 AND ;
+: CREATE-FILE     ( caddr len fam -- fid ior ) DROP W/O OPEN-FILE ;
 : FILE-POSITION   ( fid -- rec# ior) SELECT  [PAB REC#] V@  [PAB FLG] VC@ ;
 : REPOSITION-FILE ( rec# fid -- ior) SELECT  [PAB REC#] V!  4 FILEOP ;
-: DELETE-FILE     ( caddr len -- ior) OPEN-FILE  7 FILEOP SWAP CLOSE-FILE OR ;
+: DELETE-FILE     ( caddr len fam -- ior)
+  OPEN-FILE ?FILERR   7 FILEOP ?FILERR CLOSE-FILE  ;
 
 .( ..)
-: READ-LINE ( c-addr u1 fid -- u2 flag ior )
-            SELECT
-            2 FILEOP DUP >R               \ read operation, rpush error#
-            IF                            \ if err#<>0
-               0 0 R>                     \ error, return err# only
-            ELSE
-               ( -- adr u1)
-               [PAB CHARS] VC@            \ get no. chars actually read
-               MIN >R                     \ MIN(u1,chars)= u2, rpush
-               [PAB FBUFF] V@ SWAP R@ VREAD  \ move VDP fbuff to c-addr
+: READ-LINE ( addr u1 fid -- u2 flag ior|0 )
+\ *G Read one record into addr, expecting u1 bytes.
+\ ** Return bytes read in U2, TRUE if data was recieved and error no,
+  NIP SELECT 2 FILEOP ( addr ior)
+  SWAP FGET ( -- ior u2)
+  DUP 0= INVERT ROT ;
 
-               R>                         \ get u2 (chars actually read)
-               (EOF) 0=                   \ test for EOF
-               R>                         \ get error#.
-            THEN ;
+: WRITE-LINE ( caddr u fileid -- ior|0 ) \ ** zero means no errors
+\ *G write string defined by caddr u to handle fileid. Return ior.
+  SELECT
+  DUP [PAB CHARS] VC!
+  [PAB FBUFF] V@ SWAP VWRITE
+  3 FILEOP ; ( -- ior)
 
-: WRITE-LINE ( c-addr u fileid -- ior )
-             SELECT
-             DUP [PAB CHARS] VC!        \ # chars to write ->PAB
-             [PAB FBUFF] V@ SWAP VWRITE \ write CPU RAM to VDP file buffer
-             3 FILEOP ( -- ior)         \ call write operation
-;
-
-\ ===================================
-3 FILES             \ set the #FILES now
+\ =======================================
 DECIMAL
-CR .( Max files set to ) #FILES @ .
+CR .( Max files set to ) #FILES .
 CR HERE SWAP - . .( bytes used)
 HEX

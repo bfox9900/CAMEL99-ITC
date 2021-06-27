@@ -3,7 +3,7 @@
 
 ( Apr 5 2017   complete re-think             )
 ( Jan 26, 2018 fixed FREE, better factoring  )
-
+HERE
 HEX
 3F10 CONSTANT HEND  \ end of HEAP
 
@@ -14,21 +14,15 @@ VARIABLE HLAST ( retains last allocated node address)
 : HEAP        ( - adr) H @ ;   ( next free HEAP address)
 : HALLOT      ( n - )  H +! ;
 : H,          ( n - )  HEAP ! 2 HALLOT ;
-
 : NLINK       ( node -- addr) CELL-  ;
 : NSIZE       ( node -- addr) [ 2 CELLS ] LITERAL - ;
-
 : INIT-HEAP   ( - )
               2000 H !
 \              HEAP 1000 FF FILL ( for debugging)
-              0 H,
-              HEAP H,
-              HEAP HLAST ! ;
+              0 H,  HEAP H,  HEAP HLAST ! ;
 
 : HFITS?      ( n - ) HEAP + HEND < ;
-
-: NODE,       ( n -- addr)  \ create new node, return addr
-              H, HLAST @ H,  HEAP ;
+: NODE,       ( n -- addr) H, HLAST @ H,  HEAP ; \ create new node, return addr
 
 : (ALLOC)     ( n -- addr ?) \ un-conditional allocate primitive
               DUP NODE,      \ create node of n bytes
@@ -36,11 +30,7 @@ VARIABLE HLAST ( retains last allocated node address)
               SWAP HALLOT    \ allocate n bytes
               TRUE ;         \ return true always
 
-: ALLOCATE ( N -- addr ?)
-            DUP HFITS?       \ test for size
-            IF   (ALLOC)
-            ELSE  HEAP FALSE
-            THEN ;
+: ALLOCATE ( N -- addr ?) DUP HFITS? IF (ALLOC)   ELSE HEAP FALSE  THEN ;
 
 : ?NODE    ( node -- ) HLAST @ <> ABORT" Not last node" ;
 
@@ -60,13 +50,14 @@ VARIABLE HLAST ( retains last allocated node address)
             THEN ;
 
 : HFREE   ( -- n ) HEND HEAP - ;
+HERE SWAP - DECIMAL .
 
 \ ==== Test code ====
 DECIMAL
-INIT-HEAP  
+INIT-HEAP
 
 : .HEAP   ( -- ) CR  ." Free heap= "  HFREE U. ."  bytes" ;
- 
+
  .HEAP
 : MALLOC ( n -- addr) ALLOCATE 0= ABORT" Malloc fail!"  ;
 
@@ -83,4 +74,3 @@ X ?   X NSIZE ?   A$ NSIZE ?
 
 S" Now is the time for all good men to come to the aid of their country." A$ PLACE
 CR  A$ PRINT
-

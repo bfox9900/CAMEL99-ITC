@@ -1,19 +1,9 @@
-\ Neil Baud's toolbelt: COMPARE in Forth
-\ NOTE: this 40% faster in CAMEL99 than using Benschop version
+\ FAST compare using S= from Camel Forth
 
-: COMPARE                     ( a1 n1 a2 n2 -- -1|0|1 )
-    ROT  2DUP - >R            ( a1 a2 n2 n1)( R: n2-n1)
-    MIN                       ( a1 a2 n3)
-    BOUNDS ?DO                ( a1)
-        COUNT  I C@  -        ( a1 diff)
-        DUP 
-        IF
-            NIP  0< 1 OR      ( -1|1)
-            UNLOOP
-            R> DROP
-            EXIT              ( a1 diff)
-         THEN  DROP           ( a1)
-    LOOP 
-    DROP                      ( )
-    R>  DUP IF  0> 1 OR  THEN   \  2's complement arith.
- ;
+CODE S= ( addr1 addr2 len)
+    C0B6 , C076 , C004 , 04C4 , 130A , 9CB1 ,
+    1306 , 1101 , 1002 , 0604 , 1001 , 0584 ,
+    045A , 0600 , 16F6 , 045A , ENDCODE
+
+: COMPARE ( addr n addr2 n2 -- -1|0|1) 
+          ROT MAX S= ;

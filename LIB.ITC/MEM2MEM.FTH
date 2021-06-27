@@ -5,8 +5,8 @@
 
 \ * THESE ARE EXAMPLES. DO NOT LOAD THEM ALL UNLESS YOU NEED THEM ALL *
 
-INCLUDE DSK1.TOOLS.F
-INCLUDE DSK1.ASM9900.F
+NEEDS .S   FROM DSK1.TOOLS
+NEEDS MOV, FROM DSK1.ASM9900
 
 CR
 CR .( ** MEMORY TO MEMORY OPERATIONS ** )
@@ -26,16 +26,16 @@ CODE 1-!    ( addr -- )
               TOS POP,
               NEXT,
               ENDCODE
-              
+
 CODE @+!   ( addr addr2 -- ) \ Forth: X @ Y +!
             *SP+ R1 MOV,     \ only 9% speedup :-(
             *R1 *TOS ADD,
              TOS POP,
              NEXT,
              ENDCODE
-             
+
 CODE @-!   ( addr addr2 -- )  \ *addr2==*addr2-*addr
-             *SP+  R1 MOV,    
+             *SP+  R1 MOV,
              *R1 *TOS SUB,
               TOS POP,
               NEXT,

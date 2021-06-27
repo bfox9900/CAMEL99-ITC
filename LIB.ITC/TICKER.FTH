@@ -30,7 +30,6 @@ DECIMAL
 : 1SEC  ( n -- )
           t @
           BEGIN
-
                t @ 60 + OVER - ABS
           0= UNTIL
           DROP ;

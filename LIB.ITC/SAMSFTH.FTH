@@ -1,62 +1,70 @@
-\ SAMS CARD support. 64K segmented memory fetch and store
-\ NEEDS DUMP  FROM DSK1.TOOLS  \ debugging only
+\ SAMS CARD support for CAMEL99 Forth   May 2020  B Fox
+\ 64K segmented memory model for DATA
+\
 HERE
- NEEDS SBO   FROM DSK1.CRU2
-
+DECIMAL
+  24 USER 'R12  \ address of R12 in any Forth workspace
 HEX
-     VARIABLE BANK#      \ current mapped bank
-1000 CONSTANT 4K         \ bytes per bank = 4K
-3000 CONSTANT PMEM       \ paged memory block location
-     VARIABLE SEG        \ holds current 64K segment
+: SAMSCARD  ( -- ) 1E00 'R12 ! ;   \ select sams card
+
+3000 CONSTANT DMEM    \ CPU RAM memory block location
+\ Legal values: 2000,3000,A000,B000,C000,D000,E000,F000
+
+     VARIABLE SEG     \ holds current 64K segment
+     VARIABLE BANK#   \ current mapped bank
+
+\ using machine code so we don't need the CRU library
+HEX
+\ *set the CRU address in 'R12 before using these words*
+  CODE 0SBO  ( -- ) 1D00 ,  NEXT, ENDCODE
+  CODE 0SBZ  ( -- ) 1E00 ,  NEXT, ENDCODE
+  CODE 1SBO  ( -- ) 1D01 ,  NEXT, ENDCODE
+  CODE 1SBZ  ( -- ) 1E01 ,  NEXT, ENDCODE
+
+: SAMS-ON   ( -- ) SAMSCARD 1SBO ;  \ enable mapper
+: SAMS-OFF  ( -- ) SAMSCARD 1SBZ ;  \ disable mapper
 
 \ safely set the 64K segment that you want to use
-: SEGMENT ( 1..F -- )
-          DUP 01 10 WITHIN 0= ABORT" BAD segment selected"
-          SEG ! ;  \ don't allow segment 0
-
-  1 SEGMENT
-
-: SAMS-OFF ( --) 1E00 CRU! 1 SBZ ;
-: SAMS-ON  ( --) 1E00 CRU! 1 SBO ;
+: SEGMENT ( 1..F -- ) \ don't allow segment 0
+         DUP 01 10 WITHIN 0= ABORT" SAMS segment err"
+         SEG ! ;
+ 1 SEGMENT
 
 \ * SAMSINI sets card to "power-up" condition
 : SAMSINI
-       1E00 CRU! 0SBO    \ turn on card
+       1E00 'R12 !       \ select SAMS card CRU address
+       0SBO              \ turn card on
        0                 \ 1st value
-       4000 20           \ register address, #regs
-       BOUNDS
+       4000 20           \ register address, # SAMS regs
+       BOUNDS ( -- 4100 4000)
        DO
            DUP I !       \ I is reg. address
-           0101 +        \ next value
+           I @ OVER <> ABORT" SAMSINI err"
+           0100 +        \ next value 0101 for 1MB card, 0100 Classic99
        2 +LOOP
        0SBZ              \ turn off card
        DROP
 ;
 
-: PAGED  ( addr -- addr')
-         SEG @ 4K UM/MOD  ( -- offset bank#)
-         DUP BANK# @ =            \ are we using the same PAGE
-         IF
-             DROP                 \ Yes! Drop bank# and get out
-         ELSE
-             DUP FF00 AND ABORT" SAMS Err!"
-             DUP BANK# !           \ update bank# variable
-             ><                    \ swap bytes, bank# must be in left byte
-            1E00 CRU! 0SBO         \ enable SAMS card
-           ( bank#) 4006 !         \ store bank in 3K SAMS register
-             0SBZ                  \ disable SAMS card
-
-        THEN  PMEM +               \ then add offset to paged mem block
+: DMAP ( bank# -- )   \ map a DATA page at PMEM address
+      DUP BANK# !
+      ><              \ swap bytes, bank# must be in left byte
+      SAMSCARD 0SBO   \ turn on the card
+    ( bank#)
+\ compute the SAMS card register based on DMEM at compile time
+    [ 4000  DMEM 0B RSHIFT + ] LITERAL ! \ store bank in SAMS register
+      0SBZ            \ turn off card
+;
+HEX
+: PAGED  ( virtual-addr -- real-addr)
+      SEG @ 1000 UM/MOD  ( -- offset bank#)
+      DUP BANK# @ -     \ different page?
+      IF   DMAP
+      ELSE DROP
+      THEN DMEM +       \ then add offset to paged mem block
 ;
 
-\ paged memory fetch and store
-: C@P    ( addr -- n)    PAGED C@ ;   \ fetch a byte
-: C!P    ( n 32addr -- ) PAGED C! ;   \ store a byte
+CR HERE SWAP - DECIMAL . .( bytes)
 
-: @P     ( 32addr -- n)  PAGED @ ;    \ fetch an int
-: !P     ( n 32addr -- ) PAGED ! ;    \ store an int
-
-\ SAMSINI
-\ CR .( SAMS card initialized)
-CR HERE SWAP - DECIMAL . .( bytes) HEX
-         
+SAMS-OFF SAMSINI SAMS-ON
+CR .( SAMS card activated)

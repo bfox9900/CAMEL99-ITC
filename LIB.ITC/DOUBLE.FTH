@@ -1,6 +1,6 @@
 \ The optional Double-Number word set
 
-  INCLUDE DSK1.TOOLS  \ for debugging
+\ INCLUDE DSK1.TOOLS  \ for debugging
 
 HERE
 \    D2/   D2*   DU<  D0=   D0<  D.  D<   D>S  M+ 2ROT
@@ -10,7 +10,7 @@ HERE
 \    2VALUE ( not implemented)
 
 HEX
- CODE D+   ( lo hi lo' hi' -- d)  \ hi'is in TOS register  *TESTED*
+ CODE D+   ( lo hi lo' hi' -- d)  \ hi'is in TOS register *TESTED*
       C084 ,   \  TOS R2 MOV,   \ hi'->r2
       C076 ,   \ *SP+ R1 MOV,   \ lo'->R1
       C136 ,   \ *SP+ TOS MOV,  \ hi ->tos
@@ -71,7 +71,7 @@ CODE 2OVER ( d1 d2 -- d1 d2 d1)   \ 2x faster
 : 4DUP   ( d d -- d d d d ) 2OVER 2OVER ;
 : 2NIP   ( d d' -- d')      2SWAP 2DROP ;
 : DMAX   ( d d -- d)  4DUP D< IF 2DROP ELSE 2NIP THEN ;
-: DMIN   ( d d -- d)  4DUP D< IF 2NIP ELSE 2DROP THEN ;
+: DMIN   ( d d -- d)  4DUP D< IF 2NIP  ELSE 2DROP THEN ;
 
 \ : ?NEGATE  ( n1 n2 -- n3) 0< IF NEGATE THEN ;
 : DNEGATE  ( d1 -- d2 )  SWAP INVERT SWAP INVERT 1 M+ ;
@@ -108,17 +108,18 @@ CODE 2OVER ( d1 d2 -- d1 d2 d1)   \ 2x faster
   : D.R  ( d n --) >R TUCK DABS <# #S ROT SIGN #> R> OVER - SPACES TYPE ;
   : D.   ( d  -- ) 0 D.R SPACE ;
 
-\ non-standard: convert stack string to double number (Like ?NUMBER in CAMEL Forth)
-: ?DNUMBER ( addr len -- d ?)
+\ non-standard: convert stack string to double number
+( Like new NUMBER? in CAMEL99 Forth)
+: DNUMBER? ( addr len -- d ?)
             OVER C@ [CHAR] - = DUP >R      \ test for minus, push result
             IF 1 /STRING THEN
-            0 0 2SWAP >NUMBER NIP 0=       \ convert return success flag
-            R> IF >R DNEGATE R> THEN  ;    \ if minus, dnegate
+            0 0 2SWAP >NUMBER NIP       \ convert return success flag
+            R> IF SWAP DNEGATE SWAP THEN  ;    \ if minus, dnegate
 
 \ examples
 DECIMAL
- S" 1" ?DNUMBER       DROP 2CONSTANT 1.
- S" 3141262" ?DNUMBER DROP 2CONSTANT PI
+ S" 1" DNUMBER?       DROP 2CONSTANT 1.
+ S" 3141262" DNUMBER? DROP 2CONSTANT PI
 
 HERE SWAP - DECIMAL  CR . .(  bytes)
 HEX

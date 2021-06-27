@@ -13,7 +13,7 @@
 
 \ **not portable Forth code**  Uses TMS9900/CAMEL99 CARNAL Knowledge
 
-INCLUDE DSK1.CODE.F
+\ INCLUDE DSK1.CODE
 
 HEX
 \ TEST for CODE word
@@ -47,7 +47,7 @@ HEX
 : ]ASM     0209 ,  HERE 2 CELLS + , \ macro:  LI R9,HERE+4
                                     \ moves Forth IP reg.)
            NEXT,
-           ] ;   IMMEDIATE          \ switch ON compiler
+           ] ;    IMMEDIATE          \ switch ON compiler
 
 \ create code words using primitives
 : CODE[    BEGIN
@@ -78,10 +78,10 @@ HEX
 \ CREATE Q  20 ALLOT
 \ CODE ]Q    CODE[ 2* ]  Q :ARG  CODE[ + ] NEXT, END-CODE
 
-\ : *+       INLINE[ * + ]    ;
+ : *+       INLINE[ * + ]    ;
 
  : DUPC@    INLINE[ DUP C@ ] ;
 \ : DUP>R    INLINE[ DUP >R ] ;
-\ : ^2       INLINE[ DUP *  ] ;
+ : ^2       INLINE[ DUP *  ] ;
 
 

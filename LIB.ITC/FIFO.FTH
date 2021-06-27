@@ -1,18 +1,60 @@
-\ QUEUES    Sep 14 2019  B Fox
-
-NEEDS DUMP   FROM DSK1.TOOLS
+( Circular byte queue for general purpose stuff  21MAR94 FOX )
+( Ported to Camel99 forth  11JUN2020 )
+\ fifo "first in, first out"
 
 HEX
+: QUEUE: ( n -- <text>)
+    CREATE
+        DUP 10 MOD ABORT" Queue size must be power of 2"
+        0 ,          ( write pointer {TAIL} )
+        0 ,          ( read  pointer {HEAD} )
+        DUP 1- ,     ( mask value    )
+        ALLOT        ( data          )
+;
 
-: BYTEQ:  ( n -- )   \ must be power of 2
-\               TAIL  HEAD
-         CREATE  0 ,   0 ,  ALLOT  ;
+( Pointers to the Queue data structure )
+: ->HEAD ( q -- adr )      ;  \ syntax sugar
+: ->TAIL ( q -- adr ) 2+   ;
+: ->MSK  ( q -- adr ) 4 +  ;
+: ->DATA ( q -- adr ) 6 +  ;
 
+\ Circular pointer incrementing
+: HEAD++ ( q -- )  DUP >R  ->HEAD @ 1+  R@ ->MSK @ AND R> ->HEAD ! ;
+: TAIL++ ( q -- )  DUP >R  ->TAIL @ 1+  R@ ->MSK @ AND R> ->TAIL ! ;
 
+: QC@    ( q -- c )
+       DUP >R TAIL++
+       R@ ->DATA
+       R> ->TAIL @ +       \ [data+tail]= adr
+       C@ ;                \ fetch the byte
 
-\ circular BYTE Q access words
-: Q+!    ( fifo -- n)  DUP @ 2+ 1F AND DUP ROT ! ;
-: QC@     ( fifo -- n) DUP Q+! + C@ ;  \ bump tail and fetch data
-: QC!     ( n fifo --) SHEAD Q+! + C! ;  \ bump head and add to FIFO
-: Q?     ( fifo -- ?) 2@ <> ;              \ is data ready?
+: QC!    ( c q -- )
+       DUP >R HEAD++
+       R@ ->DATA
+       R> ->HEAD @ +       \ [data+head]= adr
+       C! ;                \ store the byte
 
+: WRITEQ  ( addr len queue -- )
+          -ROT BOUNDS
+          ?DO
+             I C@ OVER QC!
+          LOOP
+          DROP ;
+
+: PRINTQ  ( queue -- )
+        BEGIN
+           DUP 2@ <>   \ 2@ reads head & tail. If not = we have data
+        WHILE
+           DUP QC@ EMIT
+        REPEAT
+        DROP ;
+
+\ DEMO code
+100 QUEUE: QX
+
+: TEST
+      BEGIN
+        S" Now is the time for all good men..." QX WRITEQ
+        QX PRINTQ 3 SPACES
+        ?TERMINAL
+      UNTIL ;

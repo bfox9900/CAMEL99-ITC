@@ -1,0 +1,291 @@
+[CC] CR ." V D P  C H I P  I N T E R F A C E"
+\ We took a Forth approach to naming VDP memory routines.
+\ So TI name, VSBR, becomes VC@  and VSBW becomes VC!.
+\ VMBW and VMBR become VWRITE AND VREAD.
+\ We also added a new one V! and V@ that load and store 16 bit numbers to VDP.
+
+\ I embraced the Forth paradigm so these routines are created as
+\ Forth words with stack based parameter passing. This gives us the freedom
+\ to call these fast routines directly from Forth.
+\ With these fast primitives we can write most of the VDP driver
+\ in Forth and still get excellent performance.
+
+\ April 2020  On advice of Tursi, Atariage, I disable interrupts when VDP
+\             address is set then restore them at the end of the routine.
+\ Feb 2021    This version exposes VMBR and VMBW as callable sub-routines
+\             that are used in a CODE word SCRL for faster scrolling.
+
+TARGET-COMPILING
+\ factored sub-routines. Set up VDP address for write or read modes
+l: RMODE    R0 SWPB,            \ R0= VDP-adr we are using. Set up 1st byte to send
+            0 LIMI,             \ disable interrupts
+            R0 8C02 @@ MOVB,    \ send low byte of vdp ram write address
+            R0 SWPB,
+            R0 8C02 @@ MOVB,    \ send high byte of vdp ram write address
+            RT,
+
+l: WMODE    0 LIMI,
+            R3 STWP,
+            1 (R3) 8C02 @@ MOVB,   \ write odd byte from R0
+            R0 4000 ORI,
+            R0 8C02 @@ MOVB,
+            RT,
+
+\ VSBR Forth style, on the stack
+CODE: VC@   ( VDP-adr -- char )  \ Video CHAR fetch
+            TOS R0 MOV,          \ VDP address into R0
+            RMODE @@ BL,         \ set address in read mode
+            VDPRD @@ TOS MOVB,   \ READ char from VDP RAM into TOS
+            TOS 8 SRL,           \ move the damned byte to correct half of the word
+            2 LIMI,
+            NEXT,
+            END-CODE
+
+CODE: V@   ( VDPadr -- n)        \ video fetch 16bit int
+            TOS R0 MOV,          \ VDP address into R0
+            RMODE @@ BL,         \ set address in read mode
+            R3 VDPRD LI,         \ put the VDP read port address in R3. 12.9% faster
+           *R3  TOS MOVB,        \ READ char from VDP RAM into TOS
+            TOS SWPB,            \ move byte to other side
+           *R3  TOS MOVB,        \ READ 2nd char from VDP RAM into TOS
+            TOS SWPB,            \ put bytes in correct order for an integer
+            2 LIMI,
+            NEXT,
+            END-CODE
+
+\ VMBR  *This version reads 2 bytes at a time for speed
+\ R0  VDP address
+\ R1  CPU RAM address
+\ R4  byte count
+L: VMBR     TOS INC,
+            TOS -2 ANDI,
+            R3 VDPRD LI,        \ put the VDP read port address in R3. 12.9% faster
+            BEGIN,
+              *R3 *R1+ MOVB,     \ READ char from VDP RAM into CPU RAM , autoINC
+              *R3 *R1+ MOVB,     \ READ char from VDP RAM into CPU RAM , autoINC
+              TOS DECT,
+            EQ UNTIL,
+            2 LIMI,
+            RT,
+
+CODE: VREAD   ( VDP-adr RAM-addr cnt  -- )
+            R1 POP,              \ pop buffer addr. to R1
+            R0 POP,              \ pop VDP addr. to R0
+            TOS TOS MOV,
+            NE IF,
+               RMODE @@ BL,         \ set VDP address for Reading
+               VMBR  @@ BL,
+            ENDIF,
+            TOS POP,             \ refill TOS
+            NEXT,
+            END-CODE
+
+\ ===================================================================
+CR ." V D P   W R I T E"  ( VMBW )
+\ R0  VDP address
+\ R1  CPU RAM address
+\ R4  byte count
+l: VMBW   R3 VDPWD LI,        \ vdp addr. in a reg. makes this 12.9% faster
+          BEGIN,
+            *R1+ *R3 MOVB,     \ write byte to vdp write port
+            TOS DEC,
+          EQ UNTIL,
+          2 LIMI,
+          RT,
+
+CODE: VWRITE  ( RAM-addr VDP-addr cnt -- )
+           R0 POP,             \ vaddr to R0
+           R1 POP,             \ cpu addr to R1
+           TOS TOS MOV,
+           NE IF,
+              WMODE @@ BL,
+              VMBW @@ BL,
+           ENDIF,
+           TOS POP,            \ refill top of stack cache register
+           NEXT,               \ return to Forth
+           END-CODE
+
+CODE: VC! ( char vaddr --)
+          TOS R0 MOV,
+          WMODE @@ BL,
+         *SP SWPB,
+         *SP+ VDPWD @@ MOV,   \ write char & POP
+          TOS POP,            \ refill TOS
+          2 LIMI,
+          NEXT,
+          END-CODE
+
+\ For reference, these are the offset values of the user vars.
+\      2E USER: C/L
+\      30 USER: OUT
+\      32 USER: VROW
+\      34 USER: VCOL
+
+83BC constant: VPG  \ open space in scratchpad RAM used for VDP page#
+
+CODE: CPUT ( char -- ?)  \ put a char at cursor position, return eol flag
+            TOS R2 MOV,         \ char -> R2
+            R1         STWP,    \ workspace is USER area base address
+            32 (R1) R3  MOV,    \ vrow->r3
+            2E (R1) R3  MPY,    \ vrow*c/l->tos
+            34 (R1) TOS ADD,    \ add vcol
+            VPG @@  TOS ADD,    \ add video page address
+            0 LIMI,
+            9 (R1) 8C02 @@ MOVB,   \ write odd byte from R4
+            TOS 4000 ORI,
+            TOS 8C02 @@ MOVB,
+            5 (R1) VDPWD @@ MOVB,  \ Odd byte R2, write to screen
+            2 LIMI,
+            TOS CLR,
+            34 (R1)  INC,          \ bump VCOL
+            34 (R1)  2E (R1) CMP,  \ compare VCOL = C/L
+            EQ IF,
+                TOS SETO,          \ set true flag
+            ENDIF,
+            NEXT,
+            END-CODE
+
+CODE: (CR) ( -- n)   \ inc VROW , return value
+           TOS PUSH,
+           R1 STWP,
+           34 (R1) CLR,     \ VCOL OFF
+           32 (R1) INC,     \ VROW 1+!
+           32 (R1) TOS MOV,
+           NEXT,
+           END-CODE
+
+CODE: V!    ( n Vaddr  -- )       \ Video store 16BIT int
+           TOS R0 MOV,          \ need address in R0 to call WMODE
+           WMODE @@ BL,         \ branch to setup VDP write address
+           R3 VDPWD LI,
+          *SP *R3 MOVB,         \ write hi byte to vdp data port
+          *SP SWPB,             \ swap bytes
+          *SP+ *R3 MOV,         \ write lo byte to vdp data port
+           TOS POP,             \ refill TOS
+           2 LIMI,
+           NEXT,
+           END-CODE
+
+\ VDP FILL
+\ R0  VDP address
+\ R2  byte count
+\ R4  ascii char
+L: _VFILL  R3 VDPWD LI,         \ vdp addr. in a reg. makes this 12.9% faster
+           BEGIN,
+             TOS *R3 MOVB,      \ write byte to vdp ram
+             R2 DEC,            \ dec the byte counter
+           EQ UNTIL,            \ jump back if not done
+           2 LIMI,
+           RT,
+
+CODE: VFILL ( VDP-addr count char-- )
+           TOS SWPB,            \ fix the TMS9900 byte order
+           R2 POP,              \ R2=count
+           R0 POP,              \ VDP-addr popped into R0
+           WMODE @@ BL,         \ setup VDP write address IN R0
+           _VFILL @@ BL,
+           TOS POP,
+           NEXT,
+           END-CODE
+
+\ * VDP write to register. Kept the TI name
+CODE: VWTR   ( c reg -- )         \ Usage: 5 7 VWTR
+           TOS R0 MOV,
+           R0 SWPB,            \ register goes to left side
+          *SP+ TOS MOV,
+           TOS 00FF ANDI,
+           TOS R0 SOC,          \ 'OR' these bytes together
+           R0 8000 ORI,         \ set "write to register" mode bit
+           RMODE @@ BL,
+           TOS POP,
+           2 LIMI,
+           NEXT,
+           END-CODE
+
+\ ===================================================================
+\ T I - 9 9   S C R E E N   C O N T R O L  P R I M I T I V E S
+
+CROSS-ASSEMBLING
+\ These assembler routines manage the screen math at machine speed.
+\ They are smaller and faster in ASM while still easy to understand.
+\ Using these primitives and the VDP words CAMEL99 creates the rest of
+\ video screen control in Forth.
+
+\ Aug 31 2018,
+\ CHANGED to read user variables correctly, via the workspace pointer WP.
+\ 9900 Indexed addressing mode makes this almost as fast as indirect addressing
+\ the variables.  It's all Multi-tasking friendly now
+
+CROSS-ASSEMBLING
+\ CODE: GET-XY  ( -- col row )
+\             TOS          PUSH,
+\             TOS          STWP,
+\             34 (TOS)     PUSH, \ vcol user variable
+\             32 (TOS) TOS MOV,  \ vrow user variable
+\             NEXT,
+\            END-CODE
+
+CODE: >VPOS ( col row -- vaddr) \ compute a VDP screen address
+           R1         STWP,
+           TOS     R3  MOV,   \ this move to make best use of MPY
+           2E (R1) R3  MPY,   \ multiply by chars/line. result goes to R4 ie: TOS
+          *SP+     TOS ADD,   \ add col value to TOS
+           VPG @@  TOS ADD,   \ add Video page offset
+           NEXT,
+           END-CODE
+
+\ FAST user variable for screen driver
+CROSS-ASSEMBLING
+CODE: C/L@   ( -- n )            \ this is used 8 times in the KERNEL. Saves 24 bytes
+          TOS         PUSH,   \ and is 50% faster than C/L @
+          TOS         STWP,
+          2E (TOS) TOS MOV,
+          NEXT,
+          END-CODE
+
+\ ===================================================================
+CR .( KSCAN KEY?  and  ?TERMINAL)
+\ Camel99 interface to KSCAN. *Modified 13Jun2020 to save/restore GPL R11
+\ See: KEY  in the Camel99 Kernel
+CODE: KEY? ( -- ?)  \ *WARNING* it takes 1,128uS for KEY? scan to run
+          TOS PUSH,
+          TOS CLR,            \ TOS will be our true/false flag
+          0 LIMI,
+          TOS 837C @@ MOVB,   \ clear GPL flags
+          83E0 LWPI,          \ switch to GPL workspace
+          R11 83BE @@ MOV,    \ save in empty scratch PAD location
+          000E @@ BL,         \ call ROM keyboard scanning routine
+          83BE @@ R11 MOV,
+          WRKSP0 LWPI,        \ return to Forth's workspace , interrupts are restored
+          837C @@ R1 MOVB,    \ read GPL status byte (=2000 if key pressed)
+          R1  3 SLA,          \ check the key bit
+          OC IF,              \ if carry flag set
+             8374 @@ TOS MOV, \ read the key
+          ENDIF,
+          2 LIMI,
+          NEXT,               \ return
+          END-CODE
+
+\ *---------------------------------------------
+\ * Call very fast built-in Fctn-4 test in console ROM
+\   http://www.unige.ch/medecine/nouspikel/ti99/keyboard.htm
+\ *---------------------------------------------
+CODE: ?TERMINAL ( -- ?)    \ ~200uS, 16 bit ROM speed. Same name as TI-Forth
+          R12     RPUSH,       \ save CRU address makes life simpler
+          TOS     PUSH,
+          TOS     CLR,
+          0020 @@ BL,          \ Call ROM code, test FNCT 4 key press
+          EQ IF,               \ if flag=0
+             TOS  SETO,        \ KEY is pressed, TOS = -1
+             BEGIN,
+                0020 @@ BL,    \ call rom routine
+             NE UNTIL,         \ until key is released
+          ENDIF,
+          R12     RPOP,        \ Restore CRU address used by CAMEL Forth
+          NEXT,
+          END-CODE
+
+CODE: BYE   ( -- )              \ From TI-Forth 1984 :-)
+          83C4 @@ CLR,        \ clear interrupt vector
+          0000 @@ BLWP,       \ ROM reset vector is at 0000
+          END-CODE

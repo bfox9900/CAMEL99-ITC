@@ -1,10 +1,5 @@
-\ BREAK    simple word to exit a program to Forth
-
-\ Changed to work with V2.1.E
-
-\ you can put this word in any loop and stop it 
-\ by pressing FNCT 4 (BREAK)
+\ ?BREAK   word to exit a program to Forth        2018 Brian Fox
 \ ?TERMINAL is in TI ROM and smaller code so it's faster than KEY?
-\ so Program runs quicker while scanning for the break key.
+\ Put this word anywhere you want to test for the break key FNCT 4 (BREAK)
 
 : ?BREAK    ( -- )  ?TERMINAL ABORT" *BREAK*" ;

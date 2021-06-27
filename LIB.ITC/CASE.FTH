@@ -1,23 +1,23 @@
 \ ANS-Forth CASE statement
-\ Originalky by Chuck E. Eaker 9/80 FORTH DIMENSIONS II/3 PG 37
+\ Original by Chuck E. Eaker
+\ 9/80 FORTH DIMENSIONS II/3 PG 37
 \ Ported to CAMEL99 Mar 7 2017
 HERE
 : CASE    ( -- 0 ) 0 ; IMMEDIATE
+
 : OF      ( -- )
-          POSTPONE OVER   POSTPONE =
-          POSTPONE IF POSTPONE DROP ; IMMEDIATE
-\ MPE Forth extension. Use with compare operations
-: ?OF    ( flag -- here )
-          POSTPONE OVER
-          POSTPONE IF
-          POSTPONE DROP ; IMMEDIATE
-: ENDOF   ( -- )
-          POSTPONE ELSE ; IMMEDIATE
+   POSTPONE OVER   POSTPONE =
+   POSTPONE IF POSTPONE DROP ; IMMEDIATE
+
+\ MPE Forth extension
+: ?OF     ( flag -- here )
+      POSTPONE OVER  POSTPONE IF   POSTPONE DROP ; IMMEDIATE
+
+: ENDOF   ( -- ) POSTPONE ELSE ; IMMEDIATE
+
 : ENDCASE ( -- )
-          POSTPONE DROP
-          BEGIN ?DUP
-          WHILE POSTPONE THEN
-          REPEAT ; IMMEDIATE
-DECIMAL
- SPACE HERE SWAP -  .  .( bytes)
+   POSTPONE DROP
+   BEGIN ?DUP  WHILE  POSTPONE THEN  REPEAT ; IMMEDIATE
+
+SPACE HERE SWAP -  DECIMAL . .( bytes)
 HEX

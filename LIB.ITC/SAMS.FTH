@@ -11,13 +11,16 @@
 HERE
 HEX
      VARIABLE BANK#      \ current mapped bank
-1000 CONSTANT 4K         \ bytes per bank = 4K
-3000 CONSTANT PMEM       \ paged memory block location
+\ 1000 CONSTANT 4K         \ bytes per bank = 4K
      VARIABLE SEG        \ holds current 64K segment
+
+3000 CONSTANT PMEM       \ paged memory block location
+\ compute SAMS register based on PMEM address
+PMEM 0B RSHIFT 4000 + CONSTANT SREG
 
 \ safely set the 64K segment that you want to use
 : SEGMENT ( 1..F -- )
-       DUP 01 10 WITHIN 0= ABORT" BAD segment selected"
+       DUP 01 10 WITHIN 0= ABORT" SAMS segment err"
        SEG ! ;  \ don't allow segment 0
 
 1 SEGMENT
@@ -49,42 +52,32 @@ CODE SAMSINI
        1E00 ,        \ 0 SBZ,       ( turn off SAMS card)
        NEXT,         \ return
        ENDCODE
-
-CODE >BANK  ( addr -- offset bank# )
-       0200 , 4K ,    \ R0  4K LI,      \ 4K divisor ->R0
-       C144 ,         \ TOS R5 MOV,     \ address to r5
-       C120 , SEG ,   \ SEG @@ TOS MOV, \ segment to TOS
-       3D00 ,         \ R0 TOS DIV,     \ unsigned division
-       0646 , C585 ,  \ R5 PUSH,
-       NEXT,          \ 16 bytes, 204 cycles
-       ENDCODE
-
-CODE ?MAP ( offset bank# -- )
-       8804 , BANK# ,  \ TOS BANK# @@ CMP,
-       1602 ,         \ EQ IF,
-       C136 ,         \     TOS POP,
-       100A ,         \ ELSE, ( *THE MAPPER* )
-       C804 , BANK# ,  \    TOS BANK# @@ MOV,
-       06C4 ,         \    TOS SWPB,
-       020C , 1E00 ,  \    R12 1E00 LI,
-       1D00 ,         \    0 SBO,
-       C804 , 4006 ,  \    TOS 4006 @@ MOV,
-       1E00 ,         \    0 SBZ,
-       C136 ,         \    TOS POP,
-                      \ ENDIF,
-       0224 , PMEM ,  \ TOS PMEM AI,
-       NEXT,
-       ENDCODE
-
-: PAGED  ( addr -- addr') >BANK ?MAP ;
+HEX
+CODE PAGED  ( addr -- paged_address )
+     0200 , 1000 ,  \ R0  4K LI,         \ 4K divisor ->R0
+     C144 ,         \ TOS R5 MOV,        \ address to r5
+     C120 , SEG ,   \ SEG @@ TOS MOV,    \ segment# to R4,
+     3D00 ,         \ R0 TOS DIV,        \ TOS=bank#, R5=offset
+     8804 , BANK# , \ TOS BANK# @@ CMP,  \ switch page ?
+     1309 ,         \ NE IF,
+     C804 , BANK# , \    TOS BANK# @@ MOV, \ YES, update BANK#
+     06C4 ,         \    TOS SWPB,
+     020C , 1E00 ,  \    R12 1E00 LI,      \ select SAMS
+     1D00 ,         \    0 SBO,            \ card on
+     C804 , SREG ,  \    TOS 4006 @@ MOV,  \ map the page
+     1E00 ,         \    0 SBZ,            \ card off
+                    \ ENDIF,
+     0204 , PMEM ,  \ TOS PMEM LI,         \ page_mem->tos
+     A105 ,         \ R5  TOS ADD,         \ add computed offset to page
+     NEXT,
+     ENDCODE
 
 \ paged memory fetch and store
-: C@P    ( addr -- n)    PAGED C@ ;   \ fetch a byte
-: C!P    ( n 32addr -- ) PAGED C! ;   \ store a byte
-: @P     ( 32addr -- n)  PAGED @ ;    \ fetch an int
-: !P     ( n 32addr -- ) PAGED ! ;    \ store an int
+\ : C@P    ( addr -- n)    PAGED C@ ;   \ fetch a byte
+\ : C!P    ( n addr -- )   PAGED C! ;   \ store a byte
+\ : @P     ( addr -- n)    PAGED @ ;    \ fetch an int
+\ : !P     ( n 32addr -- ) PAGED ! ;    \ store an int
 
-\ SAMSINI  (only on real iron)
+\ SAMSINI  SAMS-ON ( only on real iron)
 CR .( SAMS card initialized)
-CR HERE SWAP - DECIMAL . .( bytes) HEX
-         
+CR HERE SWAP - DECIMAL . .( bytes)  \  314 BYTES

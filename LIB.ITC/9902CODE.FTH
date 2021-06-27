@@ -74,13 +74,13 @@ DECIMAL
          R12 RPUSH,
          LEDON @@ BL,
          PORT @@ R12 MOV,
-         BEGIN,
-           27 TB, EQ    \ test -DSR bit =0
-         UNTIL,
-         16 SBO,        \ set RTS
-         BEGIN,
-           22 TB, EQ    \ wait XBRE empty
-         UNTIL,
+       \ HARDWARE hardshaking
+         BEGIN, 27 TB, EQ  UNTIL, \ wait for -DSR bit =0
+
+         16 SBO,        \ set TI-99 RTS line
+         BEGIN, 28 TB, EQ UNTIL,  \ wait for rcvr CTS line
+       \ good to go!
+         BEGIN, 22 TB, EQ UNTIL,  \ wait xmit buffer=empty
          TOS SWPB,      \ put byte on the other side
          TOS 8 LDCR,    \ send 8 bits
          16 SBZ,        \ reset RTS
@@ -104,7 +104,8 @@ DECIMAL
          EQ IF,
              TOS 8 STCR,      \ read the char
              18 SBZ,          \ reset 9902 rcv buffer
-             TOS 8 SRL,       \ shift to other byte
+\             TOS 8 SRL,       \ shift to other byte
+             TOS SWPB,      \ *this should work*
           ENDIF,
           R12 RPOP,
           2 LIMI,

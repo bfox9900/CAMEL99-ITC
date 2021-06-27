@@ -33,29 +33,11 @@ HEX
 HEX
 : SILENT ( -- ) 9F SND!  BF SND!  DF SND! FF SND! ;
 
-CODE VDPRDA ( Vaddr -- ) \ set vdp address to read
-       C004 ,         \ TOS R0 MOV,
-       06A0 , RMODE , \ RMODE @@ BL,
-       C136 ,         \ TOS POP,
-       NEXT,
-       ENDCODE
-
-CODE MVDP>SND ( n -- ) \ multiple VDP to sound write
-                            \ BEGIN,
-       D820 , 8800 , 8400 , \   8800 @@ 8400 @@ MOVB,
-       0604 ,               \   TOS DEC,
-       16FB ,               \ EQ UNTIL,
-       C136 ,               \ TOS POP,
-       NEXT,
-       ENDCODE
-
 \ play 1 string with
 : VPLAY$ ( VDP_sound_string -- )  \ play 1 sound string from VDP memory
        PAUSE                   \ give somebody else some time
        DUP VCOUNT + VC@  >R    \ get duration at end of string, Rpush
-       DUP 1+ VDPRDA           \ set vdp address to read, 1 past count
-\       VC@ 0 DO  8800 C@ 8400 C! LOOP
-       VC@ MVDP>SND
+       VC@ 0 DO  8800 C@ SND! LOOP
        R> JIFFS ;              \ use the delay from Rstack (JIFF=1/60)
 
 : VPLAYLIST   ( Vaddr -- )     \ play a TI sound list from VDP memory
@@ -89,7 +71,6 @@ CREATE SOUNDQ   20 CELLS ALLOT
            REPEAT
            MYSELF SLEEP
            PAUSE ;      \ hand-off to next task
-
 
 \ === MULTI-TASKING SET-UP ===
 INIT-MULTI

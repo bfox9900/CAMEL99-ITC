@@ -1,0 +1,87 @@
+\ DISK only DSRLINK   VERSION 2                BJF MAR 20 2018
+
+\ Overview:
+\ This file provides a way to CALL code in the DSR ROM.
+\ R9 of the GPL workspace is loaded directly with the entry address
+\ for the DSR code that you are calling.
+\ USAGE:   DSKLNK BLWP  **notice DSK LNK not  DSR LNK**
+
+
+\ This 32 byte workspace is only needed to give us
+\ a way to return to Forth.  Sad :-(
+
+TARGET-COMPILING
+
+2000 VALUE: DSRWKSP \ workspace in LOW RAM
+
+\ ========================================================
+               [CC] [PUBLIC] [TC]
+
+\ This is the code used to CALL the DSR ROM code
+CODE: CALLDSR ( -- )         \ *called with Forth word BLWP
+             83E0 LWPI,      \ change to GPL workspace
+            *R9 BL,          \ GPL R9 already has the entry address
+             0BF0 DATA,      \ This normally has DATA 8 in it. :-)
+             DSRWKSP LWPI,   \ back to the dummy workspace
+             RTWP,           \ Return to Forth
+             NEXT,
+END-CODE
+
+
+\ Create the VECTOR that we call with BLWP.
+\               workspace    compile program address
+\               ---------    -----------------------
+CREATE: DSKLNK   DSRWKSP T,  T' CALLDSR [CC] >BODY T, [TC]
+
+
+\ ========================================================
+
+                 [CC] [PRIVATE] [TC]
+ \ Define PAB constants
+[CC] HEX [TC]
+ 1100 CONSTANT: DSKCARD   \ No need to scan for the Floppy DISK CARD. It's here
+ 4000 CONSTANT: 'ID       \ DSR ROM header addresses
+ 4008 CONSTANT: 'DSRLIST
+
+\ Create the DSR card scanner
+[CC] HEX [TC]
+
+CREATE: DEV$   [CC] 08 TALLOT  [TC]  \ holds the device name: RS232 DSK3
+
+: /DOT    ( caddr len -- caddr len')  \ cut string at the dot
+           2DUP T[CHAR] . SCAN NIP -  ;
+
+\ : >DSR$   ( link -- $) 4 +  ;     \ add 4 to the link gets to the DSR$
+
+: =$ ( $1 $2 -- flag) OVER C@ 1+ S= 0= ; \ compare 2 counted strings
+
+\ DSRFIND searches for a matching device NAME in the DSR ROM
+\ It returns the link-address. Link-address+2 = runnable code address
+: DSRFIND ( addr len -- link_addr)
+           /DOT DEV$ PLACE
+           'DSRLIST                    \ 1st LINK in ROM linked list
+           BEGIN
+              @                        \ fetch the next link
+              DUP 0=                   \ test for end of list
+              SWAP DEV$ OVER 4 +  =$   \ test string match in ROM
+              ROT OR                   \ if either is true we're done.
+           UNTIL ;
+
+                [CC] [PUBLIC] [TC]
+
+\ card control lexicon
+: Enable   ( CRU -- )
+           CRU@ OVER <>               \ is this a different card?
+           IF   0SBZ                  \ if so, turn it off
+           THEN CRU! 0SBO ;           \ then turn on the requested card
+
+: Disable  ( CRU -- )  CRU! 0SBZ ;
+
+\ hi level commands
+: DiskON  ( -- ) DSKCARD  DUP 83D0 ! Enable ;  \ 99-4A needs CRU copied to 83D0 (magic)
+: DiskOFF ( -- ) DSKCARD  Disable ;
+
+
+           
+
+

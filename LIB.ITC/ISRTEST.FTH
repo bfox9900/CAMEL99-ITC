@@ -4,9 +4,9 @@ NEEDS DUMP FROM DSK1.TOOLS
 NEEDS MOV, FROM DSK1.ASM9900
 
 \ ****************************************************************************
-\ *      Adaptation of Jeff Brown / Thierry Nouspikel (sp) idea to leverage
-\ *      the ROM-based ISR to service external interrupts (RS232 in our case)
-\ *      within the VDP interrupt framework.
+\ *  Adaptation of Jeff Brown / Thierry Nouspikel (sp) idea to leverage
+\ *  the ROM-based ISR to service external interrupts (RS232 in our case)
+\ *  within the VDP interrupt framework.
 \ *
 
 HEX

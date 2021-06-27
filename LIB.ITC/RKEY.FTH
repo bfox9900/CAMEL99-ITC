@@ -1,38 +1,44 @@
-\ Repeating key based on Nouspikel TI-99 tech pages
+\ Repeating key based on Nouspikel TI-99 tech pages, V1.7 BFox
+\ Improved Jan 18, 2021
+
 DECIMAL
-\ set LONG & SHORT to your preferences
-\ 65 CONSTANT LONG      \ delay before auto-repeat kicks in
-\  4 CONSTANT SHORT     \ Delay between repeats
-
-VARIABLE NEWKEY        \ key buffer
-VARIABLE OLDKEY        \ previous key buffer
-
-CREATE DLY  41 ,       \ Initialized long delay
-
+ 68 CONSTANT LD
+  4 CONSTANT SD
+VARIABLE OUTKEY     \ key buffer
+VARIABLE OLDKEY     \ previous key buffer
+VARIABLE RPT
+\ CREATE DLY LD ,     \ delay var MUST be initiaized to LONG
 HEX
-: (RKEY) ( -- )
-    DLY @ 0
+: RKEY?   ( -- char)
+    RPT @
+    IF   SD
+    ELSE LD
+    THEN ( dly) 0
     DO
-        83C8 ON         \ force repeating KSCAN
-        KEY? DUP NEWKEY !
-        OLDKEY @  <>    \ different than before?
-        IF
-          NEWKEY @  OLDKEY !  \ Memorize current key (=0 if no key)
-          41 DLY !      \ reload waiting delay
-          UNLOOP  EXIT  \ jump out of the routine (to the semi-colon )
-        THEN
+       FF 83C8 C!
+       KEY?
+       OLDKEY @ OVER <>   \ different key?
+       IF DUP OUTKEY !
+          DUP OLDKEY !
+          RPT OFF
+          UNLOOP EXIT     \ jump out
+       THEN
+       DROP
     LOOP
-    4 DLY !             \ Wait expired: load repeat delay
+    RPT ON
+    OUTKEY @  DUP OLDKEY !
 ;
 
-: RKEY   ( -- char)
-         VPOS VC@ >R    \ store char under cursor
-         BEGIN
-           TMR@ 1FFF >   \ read 9901 timer. compare to >2000
-           IF CURS @     \ true? fetch cursor char
-           ELSE R@       \ false? fetch screen char
-           THEN VPUT     \ multi-tasking friendly screen write
-          (RKEY) NEWKEY @ \ get the newkey value
-          ?DUP
-         UNTIL
-         R> VPUT ;       \ put the char back
+: RKEY ( -- char)
+   VPOS VC@ >R
+   BEGIN
+     TMR@ 1FFF > IF CURS @ ELSE R@  THEN VPUT
+     PAUSE
+     RKEY?
+     ?DUP
+     CURS @ VPUT
+   UNTIL
+   R> VPUT
+;
+
+\ : TEST BEGIN  RKEY DUP EMIT  83 = UNTIL ;

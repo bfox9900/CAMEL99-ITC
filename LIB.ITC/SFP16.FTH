@@ -18,7 +18,9 @@
 
 NEEDS .S   FROM DSK1.TOOLS
 NEEDS D>   FROM DSK1.DOUBLE
-NEEDS ROLL FROM DSK1.ROLL
+
+ : ROLL ( [n]..[0] +n -- [n-1]..[0][n] )
+        ?DUP IF  1- SWAP >R  RECURSE    R>  SWAP   THEN ;
 
 \ constants                                  hhh 17:05 20.07.98
 4 CONSTANT FPSIZE
@@ -330,6 +332,3 @@ CREATE alogtable
 \ EXCISE arg SQRT
 \ EXCISE logtable LOG
 \ EXCISE alogtable ALOG
-
-
-

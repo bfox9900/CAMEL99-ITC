@@ -17,8 +17,8 @@ MXLEN 1+ CONSTANT SSW     \ width of string stack items
 
 
 \ ==== From Wil Baden's Tool Belt [R.I.P. Wil] ====
-\ : PLACE     ( addr n dst$ -- ) 2DUP C! 1+ SWAP CMOVE ;  \ in CAMEL99 Kernel
-\ : C+!       ( n addr -- )      DUP >R  C@ +  R> C! ;  \ MOVED TO CODE
+\ : PLACE     ( addr n dst$ -- ) 2DUP C! 1+ SWAP CMOVE ; \ in CAMEL99 Kernel
+\ : C+!       ( n addr -- )      DUP >R  C@ +  R> C! ;   \ moved to kernel
 : +PLACE      ( adr n adr -- )   2DUP 2>R  COUNT +  SWAP CMOVE 2R> C+! ;
 
 \ ==== string stack helpers ====
@@ -53,16 +53,16 @@ MXLEN 1+ CONSTANT SSW     \ width of string stack items
 
 : ?$IZE    ( n -- ) MXLEN > ABORT" $ too big!" ;
 \ DIM creates a named string of n size in the Dictionary
-: DIM      ( n -- ) 
+: DIM      ( n -- )
            DUP ?$IZE
            CREATE 0 C, ALLOT ;
 
-\ STRING: creates a named string of n size in the HEAP (low mem)
-: STRING:  ( n -- )
-           DUP ?$IZE
-           CREATE H @ DUP , 0 C!   \ record heap address and init length
-                  1+ ALIGNED  H +! \ allot Heap memory to EVEN address
-           DOES>  @  ;
+\ Alternative: creates a named string of n size in the HEAP (low mem)
+\ : DIM     ( n -- )
+\           DUP ?$IZE
+\           CREATE H @ DUP , 0 C!   \ record heap address and init length
+\                  1+ ALIGNED  H +! \ allot Heap memory to EVEN address
+\           DOES>  @  ;
 
 : PUT      ( $1 $2 -- ) COPY$ COLLAPSE ;
 : PRINT$   ( $ -- )   COUNT TYPE ;

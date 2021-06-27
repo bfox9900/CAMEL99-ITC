@@ -56,10 +56,10 @@ HEX
 
 \ The following words are named like Extended BASIC
 \ (remove ?NDX if you need more speed, but you loose protection)
-: POSITION  ( sprt# -- dx dy ) ?NDX  ]SDT V@ SPLIT  ;
-: LOCATE    ( dx dy sprt# -- ) ?NDX  >R FUSE R> ]SDT V! ;
-: PATTERN   ( char sprt# -- )  ?NDX  ]SDT ->PAT VC! ;
-: SP.COLOR  ( col sprt# -- )   ?NDX  >R 1- R> ]SDT ->COLR VC! ;
+: POSITION  ( sprt# -- dx dy ) ( ?NDX)  ]SDT V@ SPLIT  ;
+: LOCATE    ( dx dy sprt# -- ) ( ?NDX)  >R FUSE R> ]SDT V! ;
+: PATTERN   ( char sprt# -- )  ( ?NDX)  ]SDT ->PAT VC! ;
+: SP.COLOR  ( col sprt# -- )   ( ?NDX)  >R 1- R> ]SDT ->COLR VC! ;
 
 : SPRITE    ( char colr x y sp# -- ) \ create a SPRITE, sp# = 0..31
              ?NDX
@@ -75,16 +75,23 @@ HEX
 : MAGNIFY  ( mag-factor -- ) 83D4 C@ 0FC AND + DUP 83D4 C!  1 VWTR ;
 
 HEX
-\ text macros improve speed of coicidence detection
-: 2(X^2)   ( n -- 2(n^2) S" DUP * 2* " EVALUATE ;  IMMEDIATE
-: <=       ( n n -- ? )  S" 1- <" EVALUATE ; IMMEDIATE
-
 \ simple machine code optimizers for DIST
 CODE RDROP ( -- )
           05C7 ,    \ RP INCT,
           NEXT,
           ENDCODE
 
+CODE DXY  ( x2 y2 x1 y1 --- dx dy )   \ Common factor for SP.DIST,SP.DISTXY
+          C036 ,  \ *SP+ R0 MOV,      \ pop x1->R0
+          6136 ,  \ *SP+ TOS SUB,     \ pop y1-y2->tos
+          6016 ,  \ *SP  R0 SUB,      \ x1-x2->R0, keep stack location
+          C0C4 ,  \  TOS R3 MOV,      \ dup tos in r3, MPY goes into R4
+          38C4 ,  \  TOS R3 MPY,      \ r3^2, result->r4 (tos)
+          C080 ,  \  R0  R2  MOV,     \ dup R0
+          3802 ,  \  R2  R0  MPY,     \ RO^2
+          C581 ,  \  R1 *SP  MOV,     \ result to stack
+          NEXT,                       \ 16 bytes
+         ENDCODE
 
 ( factored DIST out from SPRDISTXY in TI-Forth)
 : DIST     ( x2 y2 x1 y1 -- distance^2) \ distance between 2 coordinates
@@ -101,7 +108,21 @@ CODE RDROP ( -- )
 : SP.DISTXY ( x y # -- dist^2 ) POSITION DIST ;
 
 ( 0 means no coinc  )
-: COINC     ( sp#1 sp#2 tol -- ? ) 2(X^2) >R SP.DIST  R> <= ;
+
+: COINC ( spr#1 spr#2 tol -- ?)  \ 1.4 mS, 1.1 mS optimized
+     >R  SP.Y V@ SPLIT
+      ROT SP.Y V@ SPLIT
+       ( -- col row  col row)
+      ROT - ABS R@  <
+     -ROT - ABS R>  <
+      AND ;
+
+: COINC.NEW ( sp#1 sp#2 tol -- ? ) DUP * 2* -ROT SP.DIST >= ;
+
+: COINC.TI  ( spr#1 spr#2 tol  --- f ) ( 0= no coinc  1= coinc )
+    DUP * DUP + >R        ( STACK: spr#1 spr#2 R: tol*tol+tol*tol)
+    SP.DIST R>            ( STACK: dist^2 2*tol^2)
+    > 0=   ;              ( within tolerance? STACK: flag)
 
 : COINCXY   ( dx dy sp# tol -- ? )
             2(X^2) >R    \ convert tolerance  to squares, push to rstack
@@ -110,4 +131,3 @@ CODE RDROP ( -- )
 
 \ bit set if any two sprites overlap
 : COINCALL  ( -- ? ) VDPSTS C@ 20 AND ;
-

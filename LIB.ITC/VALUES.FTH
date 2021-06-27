@@ -1,26 +1,20 @@
 \ VALUEs for CAMEL99
-\ see: DEFER99.FTH  DEFER! and (TO) are the same code
-\      so you could replace one for the other and save space
-
 \ Usage:  0 VALUE W
-\        99 TO W
-
-: VALUE   CONSTANT ;   CR .( VALUE  )
-
-: (TO)    ( n <text> -- ) >BODY ! ; 
-
-: TO      ( n -- )
+\           99 TO W   1 +TO W
+HERE
+ .( .)
+: VALUE   CONSTANT ;
+: TO  ( n -- )
+           '  >BODY   \ compute PFA at compile time
            STATE @
-           IF   POSTPONE [']  POSTPONE (TO) \ compiling action
-           ELSE '  (TO)                     \ interpret action
-           THEN ; IMMEDIATE  .( TO )
-
-\ un-comment these if you need them
-\ : (+TO)   ( n <text> -- ) >BODY +! ;
-
-\ : +TO      ( n -- )
-\           STATE @
-\           IF   POSTPONE [']  POSTPONE (+TO) \ compiling action
-\           ELSE '  (+TO)                     \ interpret action
-\           THEN ; IMMEDIATE
-
+           IF   POSTPONE LITERAL  POSTPONE !  EXIT
+           THEN  ! ; IMMEDIATE
+ .( .)
+\ comment these if you don't need them
+: +TO      ( n -- )
+           ' >BODY
+           STATE @
+           IF   POSTPONE LITERAL  POSTPONE +!  EXIT
+           THEN  +! ; IMMEDIATE
+ .( .)
+HERE SWAP -  SPACE DECIMAL . .( bytes) HEX

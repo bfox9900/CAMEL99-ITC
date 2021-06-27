@@ -1,7 +1,7 @@
 \ TI-FORTH RANDOM NUMBER GENERATOR
 
-INCLUDE DSK1.TOOLS.F
-INCLUDE DSK1.ASM9900.F
+INCLUDE DSK1.TOOLS
+INCLUDE DSK1.ASM9900
 
 HEX
 83C0 CONSTANT SEED   \ TI O/S has a number incrementing in main menu
@@ -9,7 +9,7 @@ HEX
 \ : RNDW    ( -- n)
 \          SEED @ 6FE5 * 7AB9 + 5 SRC DUP SEED ! ; \ 24+4=28 bytes
 
- CODE RNDW    ( -- n)    \ Forth version if you need speed
+ CODE RNDW    ( -- n)    \ Code version if you need speed
               TOS PUSH,
               SEED @@ R3 MOV,
               R2 6FE5 LI,
@@ -21,4 +21,3 @@ HEX
               ENDCODE   \ 24 bytes
 
 : RND     ( n -- n') RNDW ABS SWAP MOD ;
-

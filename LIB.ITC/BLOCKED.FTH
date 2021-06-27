@@ -1,50 +1,43 @@
 \ simple block editor words based on HsForth circa 1992
+\ ported and heavily modified for CAMEL99 Forth Mar 2021 Fox
 
-NEEDS $ACCEPT FROM DSK1.INPUT
+NEEDS DUMP  FROM DSK1.TOOLS
+NEEDS BLOCK FROM DSK1.BLOCKS
+NEEDS .R    FROM DSK1.UDOTR
+NEEDS -TRAILING FROM DSK1.TRAILING
+NEEDS 80COLS FROM DSK1.80COL
+
+80COLS
 
 VARIABLE #LINE
+VARIABLE SCR
 
-HEX
-: <LINE>  ( l# s# - addr #c )
-        BLOCK  SWAP  C/L @ *  + 40  C/L @ ;
-
-: .LINE   ( l# s# - )
-        <LINE> -TRAILING  TYPE  #LINE 1+! ;
+DECIMAL
+: LINE  ( l# -- addr n)  64 *  SCR @ BLOCK + 64 -TRAILING  ;
+: .LINE   ( l# -- addr) LINE TYPE ;
 
 : LIST  ( s# - )
         CR
         DUP SCR ! ." SCR#"  U.
-        10 0
-         DO
-             CR  I 3 .R SPACE   I SCR @ .LINE
-         LOOP
-         CR ;
+        16 0
+        DO
+          CR  I 3 .R  SPACE  I .LINE
+        LOOP
+        CR ;
 
-: PP
-        0 TEXT PAD 1+ SWAP  SCR @ <LINE> CMOVE UPDATE ;
+S" DSK3.MYBLOCKS" OPEN-BLOCKS
+
+: PP  ( --    1 PARSE  PAD PLACE
+         PAD COUNT LINE SWAP CMOVE UPDATE ;
 
 : PL
-        0D EMIT OUT OFF
-        C/L @ SPACES
-        0D EMIT
-        ." ?"
-        0D EMIT
         DUP SCR @ <LINE> PAD 2DUP C! 1+ SWAP CMOVE $ACCEPT
         1+ SWAP scr @ <LINE> CMOVE UPDATE ;
 
-: .INDEX   0 SWAP .LINE ;                              \      scr -
+: .INDEX ( blk# --)   0 SWAP .LINE ;
+: CLEAR ( n -- ) BUFFER B/BUF BLANK  UPDATE ;
 
-: CLEAR ( n -- )
-        BUFFER B/BUF BLANK  UPDATE ;                   \  scr -
-
-: COPY  ( n -- )
-        SAVE-BUFFERS    SWAP  BLOCK  2-  !  UPDATE ;   \  from to -
-
-: THRU  ( 1st-block last-block -- )
-        1+ SWAP
-        DO
-            I U. I LOAD
-        LOOP ;
+: COPY  ( src dst -- ) FLUSH SWAP  BLOCK  2- !  UPDATE ;
 
 : CR'S  ( n -- )
         0 DO

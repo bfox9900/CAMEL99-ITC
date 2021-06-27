@@ -15,14 +15,17 @@ DECIMAL
 : SEXTAL   6 BASE ! ;
 : <:>     [CHAR] : HOLD ;
 : <.>     [CHAR] . HOLD ;
-: ##:     # SEXTAL # DECIMAL <:> ;
-
-: .TIME   ( n -- )
+: TIME$   ( n -- addr len) \ string output is more flexible
           BASE @ >R
-          0 <#  DECIMAL # #  <.> ##:  #S  #> TYPE
+          \         100ths        secs           minutes
+          0 <#  DECIMAL # # <.> # SEXTAL # <:> DECIMAL #S  #>
           R> BASE ! ;
 
-: .ELAPSED ( -- )  CR ." Elapsed time =" TICKER @ 5 6 */ .TIME ;
+: .ELAPSED ( -- ) 
+           TICKER @ 5 6 */ TIME$
+           CR ." Elapsed time ="  TYPE ;
 
 : ELAPSE   ( -- <text> ) 1 PARSE  TICKER OFF  EVALUATE .ELAPSED ;
+
+
 

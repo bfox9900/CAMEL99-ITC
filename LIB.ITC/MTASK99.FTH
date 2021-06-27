@@ -1,9 +1,8 @@
-
 \ MTASK99.HSF for CAMEL99                              06JAN2017 Brian Fox
 \ SEE: Manual "CAMEL99 for TI-BASIC Programmers" for full explanation
 
 \ May 15 2017  RE-wrote for use with new Kernel that includes USER variables
-\ Jan 31 2018 -big cleanup. Simplified stack location code. 
+\ Jan 31 2018 -big cleanup. Simplified stack location code.
 \             - USIZE now 152 bytes
 \             -RESTART command now POPs local Rstack. It was overflowing
 \             -with repeated RESTARTs.
@@ -11,30 +10,25 @@
 \ May 17, 2018  fixed RESTART, BYE, COLD.
 \ Jun  8. 2018  replaced assembler with machine code to ease of use.
 
-\ INCLUDE DSK1.ASM9900.F
-\ INCLUDE DSK1.TOOLS.F
-
-' CODE  DROP   \ test if we have CODE ENDCODE
-
 \ Each task has a Process ID (PID)
 \ In this system we use the workspace address as the PID
 HEX
 CODE MYSELF  ( -- pid)
-             0646 , \    *SP DECT,  ( make room on stack)
-             C584 , \ TOS *SP MOV,  ( push TOS reg.)
-             02A4 , \    TOS STWP,  (fetch the cpu WP register to Forth TOS)
-             NEXT,
-             ENDCODE
+     0646 , \    *SP DECT,  ( make room on stack)
+    0C584 , \ TOS *SP MOV,  ( push TOS reg.)
+     02A4 , \    TOS STWP,  (fetch the cpu WP register to Forth TOS)
+     NEXT,
+    ENDCODE
 
 MYSELF CONSTANT USER0      \ USER0 is the main Forth task workspace (>8300)
 
 \ calc. size of task memory block (152 bytes)
-DECIMAL                                                        
-     16 CELLS              \ register space
-     40 CELLS +            \ 40 USER VARIABLE spaces
-     20 CELLS +            \ 20 cells for parameter stack
-     20 CELLS +            \ 20 cells return stack
-     CONSTANT USIZE        \ "user area" size
+DECIMAL
+  16 CELLS              \ register space
+  40 CELLS +            \ 40 USER VARIABLE spaces
+  20 CELLS +            \ 20 cells for parameter stack
+  20 CELLS +            \ 20 cells return stack
+  CONSTANT USIZE        \ "user area" size
 
 \ name the CPU register addresses in a task's USER VARIABLE space
   12 USER 'SP             \ the task's Forth SP register ( R6)
@@ -74,9 +68,9 @@ HERE  02A1 ,         \ R1 STWP,             \ HERE on stack for later
 
 ( *** YOU  M U S T  use INIT-MULTI before multi-tasking ***)
 : INIT-MULTI ( -- )
-                MYSELF TLINK !    \ Set my TLINK to my own WKSP
-                'TSTAT TPC !      \ set my task PC reg. to TSTAT
-                MYSELF WAKE  ;    \ mark myself awake
+        MYSELF TLINK !    \ Set my TLINK to my own WKSP
+       'TSTAT TPC !       \ set my task PC reg. to TSTAT
+        MYSELF WAKE  ;    \ mark myself awake
 
 \ FORK
 \ - copy the the calling task's USER area into a new workspace.
@@ -104,23 +98,21 @@ HERE  02A1 ,         \ R1 STWP,             \ HERE on stack for later
        R> SLEEP ;                           \ mark this new task as asleep
 
 .( ..)
-
-: JOB->IP ( xt pid -- xt pid)  \ local JOB->local IP register
-           DUP JOB LOCAL  OVER 'IP LOCAL ! ;
+: JOB->IP ( xt pid -- xt pid)     \ XT -> task's IP register
+       DUP JOB LOCAL  OVER 'IP LOCAL ! ;
 
 : ASSIGN ( xt pid -- )
-           JOB->IP  JOB LOCAL ! ; \ store the XT in the PID's JOB user var.
+       JOB->IP  JOB LOCAL ! ; \ store the XT in the PID's JOB user var.
 
 : RESTART ( pid -- )
-           JOB->IP
-           DUP USIZE +  OVER 'RP LOCAL !  \ reset local Rstack
-           WAKE ;                         \ pid wake
+       JOB->IP
+       DUP USIZE +  OVER 'RP LOCAL !  \ reset local Rstack
+       WAKE ;                         \ pid wake
 
-: COLD  ( -- ) SINGLE  COLD ;  \ gotta stop multi-tasker before quitting Forth
+: COLD  ( -- ) SINGLE  COLD ;  \ stop multi-tasker before quitting Forth
 : BYE   ( -- ) SINGLE  BYE ;
 
 INIT-MULTI
 CR .( Multi-tasker initialized)
 
 HEX
-

@@ -1,32 +1,27 @@
 \ TMS9919 SOUND CHIP DRIVER and CONTROL LEXICON     Jan 2017 BJF
-
 \ TMS9919 is a memory mapped device on the TI-99 @ >8400
 \ SND! is in the CAMEL99 Kernel as  : SND!     8400 C! ;
- 
+
 \ frequency code must be ORed with these numbers to create a sound
 HEX
   8000 CONSTANT OSC1      A000 CONSTANT OSC2   ( oscillators take 2 nibbles)
   C000 CONSTANT OSC3        E0 CONSTANT OSC4   ( noise takes 1 nibble)
- 
+
 \ Attenuation values are ORed with these values to change volume
 ( 0= max, 15 = off)
     90 CONSTANT ATT1         B0 CONSTANT ATT2
     D0 CONSTANT ATT3         F0 CONSTANT ATT4  ( OSC4 volume adjust)
- 
-\ f(clk) for sound chip is 111,760.8 Hz.
-\ we round it up to 111,761 Hz. Seems to work ok.
-\ To compute the value of a 32bit integer we can use:
-\ DECIMAL  0 0 S" 111761" >NUMBER 2DROP
+
+\ f(clk) for sound chip is 111,860.8 Hz.
+\ we round it up to 111,861 Hz. Seems to work ok.
 DECIMAL
- : f(clk) ( -- d)  46225 1  ;   \ this is 111,761 as 32 bit int.
- 
+\ create a 32bit variable from primitives
+0 0  S" 111861" >NUMBER 2DROP CREATE (CLK)  ,  ,
+
+: f(clk) ( -- d)  (CLK) 2@  ;  \ fetch the clk variable, 32 bit integer
+
 \ >FCODE re-arranges freq. value nibbles (4bits) for the TMS9919
 HEX
-\ : >FCODE   ( 0abc -- 0cab)    \ ASM would make this much faster
-\           DUP 4 RSHIFT       ( -- 000c 00ab)
-\           SWAP 0F AND        ( -- 00ab 000c)
-\           FUSE ;
-
  CODE >FCODE ( 0abc -- 0cab) \ version by Farmer Potato Atariage
              0B44 , \ TOS 4 SRC,    \ C0AB
              C204 , \ TOS W MOV,    \ DUP
@@ -46,10 +41,10 @@ DECIMAL
 HEX
 \ **for testing**  print sound data to screen AND make sound
 \ : SND!  ( c -- )  ." >"  BASE @ >R  HEX DUP U. 8400 C! R> BASE ! ;
- 
+
 \ Set the sound "GENerator that is active.
 : GEN! ( osc att -- )  ATT !  OSC ! ;
- 
+
 \ ================================================================
 \ S C I E N T I F I C   S O U N D   C O N T R O L   L E X I C O N
 \ sound generator selectors
@@ -57,12 +52,12 @@ HEX
 : GEN2    ( -- )  OSC2  ATT2  GEN! ;
 : GEN3    ( -- )  OSC3  ATT3  GEN! ;
 : GEN4    ( -- )  OSC4  ATT4  GEN! ;
- 
+
 : NOISE   ( n -- ) 0F AND  GEN4  OSC @ OR  SND! ;
- 
-: (HZ)    ( f -- c c)   HZ>CODE  OSC @ OR  ;        \ convert freq. add OSC
+
+: (HZ)    ( f -- n)   HZ>CODE  OSC @ OR  ;          \ convert freq. add OSC
 : (DB)    ( level -- c)  ABS 2/  0F MIN  ATT @ OR ; \ DB to attenuation
- 
+
 : HZ      ( f -- ) (HZ) SPLIT SND!  SND! ;
 : DB      ( level -- ) (DB)  SND! ; \ Usage: -6 DB
 : MUTE    ( -- )  -30 DB ;
@@ -73,17 +68,14 @@ GEN1
 DECIMAL
 : WOOP   110 HZ 0 DB 500 111 DO  I HZ  LOOP MUTE ;
 
+: SWEEP  SWAP ?DO  I HZ  LOOP MUTE ;
+
 : SIREN
         110 HZ 0 DB
         BEGIN
-            1100  251 DO   I HZ   LOOP
-            250  1100 DO   I HZ  -1 +LOOP
+            1100  111 DO   I HZ   2 +LOOP
+            110  1100 DO   I HZ  -2 +LOOP
             ?TERMINAL
         UNTIL
         MUTE
 ;
-
-
-
-
-

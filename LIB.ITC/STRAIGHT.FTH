@@ -1,126 +1,66 @@
-\ STRAIGHT a word from PolyForth
-\ Accept chars into a buffer with no echo
-\ capable of reading continuous data at 9600 bps
+\ STRAIGHT a word from PolyForth to accept chars fast, no echo
+\ reads continuous data at 9600/19.2K bps
 
-NEEDS MOV, FROM DSK1.ASM9900
+MARKER REMOVE
 
-CREATE ALLDONE     \ branch here to exit readcom
-      R12 RS232/1 LI,
-      7 SBZ,       \ turn off LED
-      R12 RPOP,
-      2 LIMI,
-      R1 TOS MOV,  \ get the char count to Forth TOS
-      NEXT,
-      
-DECIMAL
-CODE READCOM ( addr n -- n' )
-         0 LIMI,                \ we need the entire machine
-         R12 RPUSH,
-         R12 RS232/1 LI,
-         7 SBO,                 \ turn on LED
-         PORT @@ R12 MOV,       \ select the 9902
-        *SP+ W MOV,             \ addr ->W   (ie: R8)
-         W TOS ADD,             \ calc last address ->TOS
-         R0 SETO,               \ set timeout register >FFFF
-         R1 CLR,                \ reset char counter
-         BEGIN,
-            21 TB,
-            EQ IF,
-               *W+ 8 STCR,    \ put char in buf & inc
-                18 SBO,       \ clr rcv buffer
-                R0 SETO,      \ reset timeout to 0FFFF
-                R1 INC,       \ count char
-            ELSE,
-                R0 DEC,       \ no char, dec TIMEDOUT
-                EQ IF,
-                    ALLDONE @@ B,
-                ENDIF,
-            ENDIF,
-            W TOS CMP,        \ W =   end of buffer ?
-         EQ UNTIL,
-         ALLDONE @@ B,
-         ENDCODE
+HEX  .( .)
+CREATE ALLDONE \ branch here to exit readcom
+ 020C , 1300 , \  R12 RS232/1 LI,
+ 1E07 ,        \ 7 SBZ,  \ turn off LED
+ C337 ,        \ R12 RPOP,
+ 0300 , 0002 , \ 2 LIMI, \ interrupts on
+ C101 ,        \ R1 TOS MOV, \ count to Forth TOS
+ NEXT,
 
-: STRAIGHT   ( addr len -- n)
-       SWAP 1+ TUCK 1-   ( addr+1 n addr)
-       CR ." Send file now..."
-       KEY SWAP C!     \ store first Char
-       READCOM
-       CR ;
-
+.( .)
+\  DECIMAL ** decimal numbers used in Assembler code
+\ CODE READCOM ( addr n -- n' )
+\ 0 LIMI,           \ full attention
+\ R12 RPUSH,
+\ R12 RS232/1 LI,
+\ 7 SBO,            \ turn on LED
+\ PORT @@ R12 MOV,  \ select the 9902
+\ *SP+ W MOV,       \ addr ->W   (ie: R8)
+\ W TOS ADD,        \ calc last address ->TOS
+\ R0 SETO,          \ set timeout register >FFFF
+\ R1 CLR,           \ reset char counter
+\ BEGIN,
+\  21 TB,         \ test if char in uart
+\  EQ IF,
+\    *W+ 8 STCR,     \ put char in buf & inc W
+\    18 SBO,         \ clr rcv buffer
+\    R0 SETO,      \ reset timeout to 0FFFF
+\    R1 INC,        \ count char
+\ ELSE,
+\      R0 DEC,    \ no char, dec TIMEDOUT
+\       EQ IF,
+\   ALLDONE @@ B,
+\    ENDIF,
+\  ENDIF,
+\  W TOS CMP,        \ W =   end of buffer ?
+\  EQ UNTIL,
+\ ALLDONE @@ B,
+\ ENDCODE
+.( .)
 HEX
-0D CONSTANT ^M
+CODE READCOM ( addr n -- n' )
+ 0300 , 0000 ,
+ 0647 , C5CC ,
+ 020C , 1300 ,
+ 1D07 ,
+ C320 , PORT ,
+ C236 , A108 , 0700 ,
+ 04C1 , 1F15 , 1605 , 3638 ,
+ 1D12 , 0700 , 0581 , 1004 ,
+ 0600 , 1602 ,
+ 0460 , ALLDONE ,
+ 8108 , 16F3 ,
+ 0460 , ALLDONE ,
 
-: 3RD  ( a b c -- a b c a ) 2 PICK ;
-
-\ extract a line from buffer delimited by ^M (0D)
-: /LINE ( addr len -- str1 len1 str2 len2)
-         2DUP ^M SCAN  2SWAP  3RD - ;
-
-: NEXTLINE ( addr len -- remainder len line len )
-         /LINE 2SWAP 1 /STRING  2SWAP ;
-
-: SEE-BUFF ( addr len -- )
-          LINES OFF
-          BEGIN
-             DUP -1 <>
-          WHILE
-            NEXTLINE CR TYPE
-            LINES 1+!
-          REPEAT
-         2DROP ;
-
-: LOAD-BUFF ( addr len -- )
-         LINES OFF
-         BEGIN
-           DUP -1 <>
-         WHILE
-            NEXTLINE PAD PLACE
-            PAD COUNT INTERPRET ." ."
-            LINES 1+!
-         REPEAT
-         2DROP ;
-
-: STRIP^M ( adr len -- )
-       BOUNDS
-       DO
-         I C@ 0D =
-         IF BL I C! THEN
-       LOOP ;
-
-
-VARIABLE MYBUFF
-VARIABLE BSIZE
-VARIABLE FHNDL
-
-: SAVE-BUFF ( addr len -- )
-      DV80 R/W OPEN-FILE FHNDL !
-      MYBUFF @  BSIZE @
-      LINES OFF
-      BEGIN
-        DUP -1 <>
-      WHILE
-        NEXTLINE FHNDL @ WRITE-LINE
-        LINES 1+!
-      REPEAT
-      FHNDL DUP @  CLOSE-FILE
-      OFF
-      DROP ;
-
-: SEE-BUFF ( addr len -- )
-          MYBUFF @  BSIZE @
-            LINES OFF
-            BEGIN
-              DUP -1 <>
-            WHILE
-              NEXTLINE CR TYPE
-              LINES 1+!
-            REPEAT
-            DROP ;
-
-: SAVE-FILE ( addr len -- )
-       2000 DUP MALLOC DUP MYBUFF !   \ take the entire heap (8k)
-       OVER BSIZE !
-      ( buff size ) STRAIGHT
-      CR ." Complete. Press Enter to save"
-      KEY DROP
+ .( .)
+DECIMAL
+\ STRAIGHT from PolyForth. Read n chars into addr or timeout
+: STRAIGHT ( addr len -- n)
+       1 /STRING OVER 1- ( -- addr+1 len' addr)
+       KEY SWAP C!      \ WAIT for 1st Char & store
+       READCOM ;

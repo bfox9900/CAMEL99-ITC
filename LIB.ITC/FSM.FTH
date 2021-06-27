@@ -1,6 +1,6 @@
 \ A Finite State Machine  Dr. Julian Nobel  (R.I.P)
 
-: PERFORM    POSTPONE @   POSTPONE EXECUTE  ; IMMEDIATE 
+\ : PERFORM    POSTPONE @   POSTPONE EXECUTE  ; IMMEDIATE
 
 : CASE:      CREATE   ;
 
@@ -24,3 +24,4 @@
           PERFORM              ( -- ? state')
 
           R> !   ;  ( ? )      \ update state
+

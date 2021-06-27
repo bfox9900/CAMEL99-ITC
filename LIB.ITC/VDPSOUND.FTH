@@ -1,9 +1,7 @@
 \ TI sound list player using VDP RAM    CAMEL99 Forth V2
-\ ========================================================
-INCLUDE DSK1.TOOLS
+\ INCLUDE DSK1.TOOLS
 INCLUDE DSK1.VDPMEM
 
-\ ========================================================
 \ sound list player
 HEX
 : SILENT ( --)  9F SND!  BF SND!  DF SND! FF SND! ;  \ turn off all sounds
@@ -24,7 +22,7 @@ HEX
          REPEAT
          SILENT
          DROP ;
-\ ========================================================
+
 \ VDP byte string compiler
 : ?BYTE ( n -- ) FF00 AND  ABORT" Not a byte" ;
 

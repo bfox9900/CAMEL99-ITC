@@ -1,22 +1,17 @@
 \ CLOCK.MAX    access realtime clock in maxforth cpu           21DEC92 FOX
-\ Ported from MaxForth ot ANS/ISO Forth for CAMEL99 Forth      27MAR19 BFox
-\ Tested with MK48T18 8K battery ram with CLOCK and calendar
+\ Ported from MaxForth to ANS/ISO Forth for CAMEL99 Forth      30MAY2020 BFox
+\ MK48T18 8K battery ram with CLOCK and calendar in SUPER CART (>6000)
 
+HERE
 HEX
- E000    CONSTANT ctrl     ( base address of real time clock with 8K RAM)
-( 3FF8     CONSTANT ctrl   ( base address of real time clock with Hi ram )
-ctrl 1 + CONSTANT sec
-ctrl 2 + CONSTANT min
-ctrl 3 + CONSTANT hr
-ctrl 4 + CONSTANT day
-ctrl 5 + CONSTANT date
-ctrl 6 + CONSTANT month
-ctrl 7 + CONSTANT yr
-
-2 BASE !
- 10000000 CONSTANT wrtmsk
- 01000000 CONSTANT rdmsk
- 00100000 CONSTANT dwnmsk
+    6FF8   CONSTANT ctrl ( base address & control register of clock)
+  ctrl 1 + CONSTANT sec
+\ ctrl 2 + CONSTANT min
+\ ctrl 3 + CONSTANT hr
+  ctrl 4 + CONSTANT day
+  ctrl 5 + CONSTANT date
+\ ctrl 6 + CONSTANT month
+\ ctrl 7 + CONSTANT yr
 
 .( bcd conversions)
 HEX
@@ -30,45 +25,43 @@ DECIMAL
 
 : BCD@  ( adr -- c)   C@ BCD>S ;      \ fetches BCD # and converts it
 
-: clkwrt ( --) wrtmsk ctrl C! ;
-: clkrd  ( --) rdmsk ctrl C! ;        \ stop updates
-: clkon  ( --) 0 ctrl C! ;            \ resume updates
-
-: DAY@  ( -- c )   clkrd day C@  07 AND clkon ;
-
-: TIME@  ( -- sec min hr)
-       clkrd
-       sec BCD@  min BCD@  hr BCD@    \ read the bytes
-       clkon ;
-HEX
-: TIME! ( hr min sec -- )
-       clkwrt                         \ enable write-thru
-       S>BCD 7F AND sec C!            \ prevent writing the STOP  bit
-       S>BCD min C!
-       S>BCD hr C!                    \ store values
-       clkon ;                        \ disable writes
-
+: clkwrt ( --) 80 ctrl C! ;    \ set write bit
+: clkrd  ( --) 40 ctrl C! ;    \ set read bit stops updates
+: clkon  ( --)  0 ctrl C! ;    \ clr R/W, resume updates
+: ##  ( n -- ) 0 <# # # #> TYPE ;
 DECIMAL
-: ##  ( n -- )  0 <# # # #> TYPE ;
-: :## ( n -- )  0 <# # # 58 HOLD #> TYPE ;
+: DAY@  ( -- c ) clkrd day C@  07 AND clkon ;
 
-: TIME. ( c c c -- )  ## :## :## ;
-
-: .TIME  ( -- )   TIME@  TIME. ;
-
+: TIME@  ( -- sec min hr) \ can be used to compute total seconds
+       clkrd
+       sec BCD@
+       sec 1+ BCD@
+       sec 2+ BCD@    \ read the bytes
+       clkon ;
 
 : DATE@  ( -- date month yr)
        clkrd                           ( stop updates )
-       date BCD@  month BCD@  yr BCD@  ( read the bytes )
+       date BCD@  date 1+ BCD@  date 2+ BCD@  ( read the bytes )
        clkon ;
+
+: .TIME  ( -- ) TIME@  ## ." :" ## ." :" ## ;
+HEX
+: TIME! ( hr min sec -- )
+       clkwrt               \ enable write-thru
+       S>BCD 7F AND sec C!  \ store sec. & protect the STOP  bit
+       S>BCD sec 1+ C!      \ store minutes
+       S>BCD sec 2+ C!      \ store hours
+       clkon ;              \ disable writes
 
 : DATE! ( yr month date  -- )
        clkwrt
-       0 day C!                        ( starts the oscillator)
+       0 day C!             \ starts the oscillator
        S>BCD date C!
-       S>BCD month C!
-       S>BCD yr C!                     ( store values )
-       clkon ;                         ( disable writes )
+       S>BCD date 1+ C!
+       S>BCD date 2+ C!     \ store values
+       clkon ;
 
-: DATE.  ( c c c -- )   ## ." /" ## ." /" ## ;
+                 \      YR       MM       DD
 : .DATE  ( -- )  DATE@  ## ." /" ## ." /" ## ;
+
+HERE SWAP - DECIMAL . .( bytes)

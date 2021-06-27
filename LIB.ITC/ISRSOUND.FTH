@@ -1,41 +1,49 @@
 \ ISR Sound player for Camel99 Forth   Jan 10, 2019 BJF
+\ Play TI sound lists in VDP RAM as a background task
+\ VBYTE directive used to compile sound lists into VDP RAM
+\ Changed to use VDPMEM library Nov 10, 2020 BJF
 
-\ VDP RAM manager
-VARIABLE VP    \ VDP memory pointer (4K block)
+NEEDS VHERE  FROM DSK1.VDPMEM
+HEX
+ 83C2 CONSTANT AMSQ      \ interrupt DISABLE bits
+\ AMSQ bit meaning:
+\ 80 all interrupts disabled
+\ 40 motion disabled
+\ 20 Sound disabled
+\ 10 quit key disabled
 
-HEX 1000 VP !   \ start of free VDP RAM
+\ VDP byte string compiler
+: ?BYTE ( n -- ) FF00 AND  ABORT" Not a byte" ;
 
-: VHERE   ( -- addr) VP @ ;   \ FETCH the value in VDP pointer
-: VALLOT ( n -- )    VP +! ;  \ add n to the value in VDP pointer
-
-\ Compile a byte in the next available VDP memory location
-: VC,    ( n -- )  VHERE VC!  1 VALLOT ;
-
-: VCREATE  ( -- <text>)
-            CREATE VHERE ,   \ compile VDP address in CPU RAM
-            DOES> @  ;       \ run time: fetch the VDP address
-
-\ setup ISR sound
-: ISRPLAY ( vaddr -- )
-            LIMI0                     \ interrupts off
-            83CC !                    \ load sound table address
-            01 83CE C!                \ trigger sound processing
-            83FD C@  01 OR 83FD C!    \ set VDP flag
-            LIMI2 ;                   \ interrupts on
-
-\ VDP BYTE directive: read bytes and compile into VDP RAM
-: VBYTE ( -- )  \ read input stream of bytes and compile to VDP mem.
-         BEGIN
-           [CHAR] , PARSE-NAME  DUP  ( -- adr len len )
+: VBYTE ( -- )
+         BEGIN  [CHAR] , PARSE-WORD DUP
          WHILE
-            EVALUATE  DUP FF00 AND ABORT" Not a byte"
+            EVALUATE DUP ?BYTE
             VC,
          REPEAT
          2DROP ;
 
-: /END   ( -- )  0 VC,  ;              \ compile a zero BYTE into VDP RAM
+: /VEND   0 VC, 0 VC, ;   \ end the list with 2 bytes
 
-VCREATE PACMAN
+CODE 0LIMI ( -- )  0300 , 0000 , NEXT, ENDCODE
+CODE 2LIMI ( -- )  0300 , 0002 , NEXT, ENDCODE
+
+\ ........................................
+\  ISR Sound List Player
+HEX
+: ISRPLAY ( vaddr -- )
+            0LIMI                     \ interrupts off
+            83CC !                    \ Vaddr -> sound table
+            AMSQ C@  5 AND AMSQ C!    \ enable sound interrupts
+            01 83CE C!                \ trigger sound list processing
+            83FD C@  01 OR 83FD C!    \ set "VRAM is source" flag
+            2LIMI ;                   \ interrupts on
+
+1000 VP !    \ reset VDP memory heap
+\ example list
+\ USAGE:  PACMAN ISRPLAY   ( plays as background task)
+HEX
+ VCREATE PACMAN
        VBYTE 6,86,0D,97,AC,1A,B7,8
        VBYTE 2,8F,08,2
        VBYTE 2,AB,23,5
@@ -44,7 +52,5 @@ VCREATE PACMAN
        VBYTE 2,8E,0B,8
        VBYTE 2,8A,0A,2
        VBYTE 3,AC,1A,B7,8
-/END
-
-
-
+       VBYTE 2,9F,BF
+ /VEND

@@ -150,7 +150,7 @@ HEX
 \          1 0 0 : 4 low freq white noise
 \          1 0 1 : 5 med freq white noise
 \          1 1 0 : 6 hi  freq white noise
-\          0 : Periodic noise
+\          0 : Periodic noise                                
 \          1 : White noise    7 = tracking white noise
 
 : NOISETYPE ( n -- ) OSC4 OR SND! ;   \ faster create for noise byte
@@ -162,10 +162,11 @@ DECIMAL
 
 : BASS ( dur freq vol -- ) \ steal VOX3 & VOX4 to play low freq
          VOX3 SWAP >BASS HZ MUTE
-         VOX4 3 NOISETYPE  PLAY ;
+         VOX4 3 NOISETYPE  DB  MS  ;
 
 : WHITE ( dur freq vol -- ) \ steal VOX3 & VOX4. Pitched white noise
          VOX3 SWAP 4* HZ MUTE
          VOX4 7 NOISETYPE  PLAY ;
 
 HERE SWAP - .  .( bytes)
+BG-ON CR .( Background interrupt installed)

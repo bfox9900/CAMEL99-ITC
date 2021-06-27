@@ -2,6 +2,8 @@
 \ forth-94 version of klaus schleisiek's dynamic memory allocation
 \ (forml'88) uh 2016-10-28
 
+NEEDS MALLOC FROM DSK1.MALLOC
+
 VARIABLE ANCHOR  0 ANCHOR !
 
 DECIMAL 050 CONSTANT WASTE

@@ -1,0 +1,34 @@
+\ wait for vertical blanking interval on TMS9918 VDP chip
+
+NEEDS .S   FROM DSK1.LOWTOOLS
+
+MARKER /REMOVE
+
+HEX
+ CODE WAITVBI ( -- )
+   0 LIMI,
+   8802 @@ R0 MOVB,
+   BEGIN,
+     8802 @@ R0 MOVB,
+     R0 8000 ANDI,
+   NE UNTIL,
+   NEXT,
+ ENDCODE
+
+: FILLA  0 3C0 41 VFILL ;
+
+: TEST1
+    BEGIN
+      WAITVBI
+      FILLA
+\      WAITVBI
+      PAGE
+      ?TERMINAL
+    UNTIL ;
+
+: TEST2
+        BEGIN
+          FILLA
+          PAGE
+          ?TERMINAL
+        UNTIL ;

@@ -13,13 +13,7 @@
 \     fussy saving & restoring, and you always know where you are."
 \     -- Elizabeth D. Rather
 
-: H#  ( "hexnumber" -- u )  \  Simplified for easy porting.
-    0 0 BL PARSE-WORD  ( -- 0 0 str len)  \ changed WORD to PARSE-WORD
-    BASE @ >R  HEX  >NUMBER  R> BASE !
-        ABORT" not Hex#" 2DROP ( -- u)
-    STATE @ IF  POSTPONE LITERAL  THEN
-    ; IMMEDIATE
-
-\ Example:
-\ DECIMAL                  \ BASE is now decimal
-\ : TEST   H# 0FF AND ;    \ but we can use 0FF as a mask :-)
+: H#  ( "hexnumber" -- u )
+      BASE @ >R HEX
+      PARSE-NAME NUMBER?  ABORT" Not HEX#"
+      R> BASE ! ;

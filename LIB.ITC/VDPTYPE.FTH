@@ -1,12 +1,13 @@
-\ 5x faster type to screen with x,y placement
-\ **WARNING** it does not scroll
+\ faster type to screen with x,y placement
+\ **WARNING** it only scrolls 1 line
 
-\ Usage:  S" VDPTYPE is very fast."  0 10 VDPTYPE
+\ Usage:  S" VDPTYPE is very fast." VDPTYPE
 
-: VDPTYPE ( adr len x y )
-          >VPOS DUP >R       \ keep screen pos copy
-          OVER + C/SCR @ > ABORT" Off screen"
-          R> SWAP VWRITE ;
-
-
-: VTYPE   ( addr len -- ) VPOS SWAP VWRITE ;
+: VDPTYPE ( adr len  )
+          DUP>R               \ keep screen length
+          VPOS OVER + C/SCR @ >
+          IF
+             SCROLL
+          THEN
+          VPOS SWAP VWRITE
+          R> VCOL +! ;

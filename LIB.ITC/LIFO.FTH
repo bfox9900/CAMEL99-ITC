@@ -10,28 +10,23 @@ INCLUDE DSK1.TOOLS
 ;
 
 : CELL+@   ( addr -- addr' n )  CELL+ DUP @ ;
-: CELL-    ( n -- n') 2- ;
+\ : CELL-    ( n -- n') 2- ;
 : STACK-PTR  ( 'stack -- n ) 2+ DUP @ ;
 : STACK-DEPTH ( 'stack -- n ) 2@ - ABS 2/  ;
 
 \ 9900 can do these in 1 instruction ( *TOS INCT, *TOS DECT)
 CODE 2+!  ( addr -- ) 05D4 , NEXT, ENDCODE
 CODE 2-!  ( addr -- ) 0654 , NEXT, ENDCODE
-
 \ : 2+!         ( addr -- ) DUP @ 2+ SWAP ! ;
 \ : 2-!         ( addr -- ) DUP @ 2- SWAP ! ;
 
-: ?UNDERFLOW  ( stack-addr -- ) DUP 2@ = ABORT" user stack empty" ;
-
 : PUSH  ( n stack-adr - )
-        stack-ptr CELL- DUP 0= ABORT" User stack full"
+        STACK-PTR 2- DUP 0= ABORT" User stack full"
         OVER 2-! + ! ;
-\ : push  ( n stack-adr - )
-\        stack-ptr cell- DUP 0= ABORT" Argument stack full"
-\        OVER 2-! I! ;
 
-: POP   ( stack-adr -- n ) ?UNDERFLOW STACK-PTR OVER 2+! + @  ;
-\ : pop   ( stack-adr -- n ) ?underflow stack-ptr over 2+! i@ ;
+: POP   ( stack-adr -- n )
+        DUP 2@ = ABORT" user stack empty"
+        STACK-PTR OVER 2+! + @  ;
 
 \ test code ........................
        CR ." CREATE STACK CALL 'QQ'"
@@ -49,4 +44,3 @@ CODE 2-!  ( addr -- ) 0654 , NEXT, ENDCODE
        KEY DROP
 
        CR QQ POP
-

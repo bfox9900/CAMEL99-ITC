@@ -1,48 +1,37 @@
-\ LIFO.FTH   for CAMEL99 Forth
-
-INCLUDE DSK1.TOOLS
-
-: LIFO: ( #items -- )
+\ STACKS.FTH  for Camel99 Forth   B Fox 2019
+HEX
+: LIFO: ( #items -- )  \ "last in first out" creates a stack
          CREATE
-            CELLS DUP , ( # of cells in the stack)
-            CELL+ DUP , ( max items on stack )
-            ALLOT   0 , ( stack pointer)
+            CELLS DUP , ( # of bytes in the stack)
+            DUP       , ( stack offset )
+            ALLOT  0  , ( safety cell  )
 ;
 
 : CELL+@   ( addr -- addr' n )  CELL+ DUP @ ;
-: CELL-    ( n -- n') 2- ;
+: CELL-    ( n -- n') [ 1 CELLS ] LITERAL - ;
 : STACK-SIZE  ( 'stack -- n ) @ ;
-: STACK-DEPTH ( 'stack -- n ) CELL+@ ;
+: STACK-DEPTH ( stack-addr -- n ) 2@ - 2/ ABS ;
 
-\ 9900 can do these in 1 instruction ( *TOS INCT, *TOS DECT)
-CODE 2+!  ( addr -- ) 05D4 , NEXT, ENDCODE
-CODE 2-!  ( addr -- ) 0654 , NEXT, ENDCODE
+\ ANS Forth versions
+\ : CELL+!  ( addr -- ) DUP @ [ 1 CELLS ] LITERAL + SWAP ! ;
+\ : CELL-!  ( addr -- ) DUP @ [ 1 CELLS ] LITERAL - SWAP ! ;
 
-\ : 2+!         ( addr -- ) DUP @ 2+ SWAP ! ;
-\ : 2-!         ( addr -- ) DUP @ 2- SWAP ! ;
-: ?UNDERFLOW  ( stack-addr -- ) DUP 2@ = ABORT" user stack empty" ;
+\ Faster Camel99 Forth versions
+ CODE CELL+!  ( addr -- ) 05D4 , C136 , NEXT, ENDCODE ( *TOS INCT, DROP, )
+ CODE CELL-!  ( addr -- ) 0654 , C136 , NEXT, ENDCODE ( *TOS DECT, DROP, )
 
 : PUSH  ( n stack-adr - )
         CELL+@ CELL- DUP 0= ABORT" User stack full"
-        OVER 2-! + ! ;
+        OVER CELL-! + ! ;
 
-: POP   ( stack-adr -- n ) ?UNDERFLOW CELL+@ OVER 2+!  ;
+: POP   ( stack-adr -- n )
+        DUP 2@ = ABORT" User stack empty"
+        CELL+@ OVER CELL+! + @ ;
 
-
-\ test code ........................
-       CR ." CREATE STACK CALL 'QQ'"
-       100 LIFO: QQ
-
-       99 QQ PUSH
-       100 QQ PUSH
-       101 QQ PUSH
-       CR ." STACK QQ DEPTH = " QQ STACK-DEPTH .
-       CR ." POP 3 ITEMS"
-       
-       CR QQ POP . QQ POP . QQ POP .
-
-       CR ." PRESS ANY KEY TO SHOW UNDERFLOW ERROR"
-       KEY DROP
-
-       CR QQ POP
-
+\ test code ...................
+\ HEX
+\  5 LIFO: Q
+\  99 Q PUSH  100 Q PUSH   101 Q PUSH
+\  Q STACK-DEPTH .
+\  Q POP . Q POP . Q POP .
+\  Q POP

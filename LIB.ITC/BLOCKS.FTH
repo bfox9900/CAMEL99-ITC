@@ -1,17 +1,19 @@
 \ blocks.fth  for CAMEL99 Forth     Dec 17 2018 BJFox
 \ Based on ideas from HsForth by Jim Kalihan (RIP)
-\ Oct 9 2019 reduced compiled size from 930 bytes to 860 (-13%)
+\ Oct 9 2019 reduced compiled size from 930 bytes to 890
 \            OPEN-BLOCKS sets active only if successful
-\            Added DF128 word, Make blocks uses CREATE-FILE
+\            Added DF128 word, MAKE-BLOCKS uses CREATE-FILE
+\ Feb 2021   Added MASK to replace "7FFF AND" 4x. Same size, faster
+\            Used DUP>R cuz it's now in Kernel 2.66
 
 NEEDS OPEN-FILE  FROM DSK1.ANSFILES
 NEEDS .R         FROM DSK1.UDOTR
 
 HERE
 HEX
-3                CONSTANT #BUFF     \ # of active buffers
+3                CONSTANT #BUFF       \ # of active buffers
 400              CONSTANT B/BUF
-B/BUF 2 CELLS +  CONSTANT B/REC     \ block-record has a 4 byte header
+B/BUF 2 CELLS +  CONSTANT B/REC       \ block-record has a 4 byte header
 
 3FFF 1-          CONSTANT LIMIT       \ end of buffer memory
 LIMIT B/REC #BUFF * - CONSTANT FIRST  \ first buffer record address
@@ -21,8 +23,8 @@ DECIMAL
 
 VARIABLE PREV      FIRST  PREV !
 VARIABLE USE       FIRST  USE  !
-VARIABLE LOWBLK
-VARIABLE HIGHBLK    78 HIGHBLK !  \ default value
+\ VARIABLE LOWBLK
+VARIABLE HIGHBLK    79 HIGHBLK !  \ default value
 VARIABLE BHNDL                    \ block file handle
 
 DECIMAL
@@ -32,6 +34,7 @@ CREATE ACTIVE  20 ALLOT   ACTIVE OFF   \ block file name
 \ interface to ANS File system
 HEX
 : ?BLOCKS   ( -- ) BHNDL @ 0= ABORT" No open BLOCK file" ;
+CODE MASK   ( n -- n)  0244 , 7FFF ,   NEXT, ENDCODE \ TOS 7FFF ANDI,
 
 \ move file pointer to start of block (One BLOCK= 8 sectors)
 : SEEK   ( blk# -- )
@@ -54,18 +57,19 @@ HEX
 
 \ ===================================================
 HEX
+
 : UPDATE ( -- ) PREV @ @   8000 OR  PREV @ ! ;
 
 : +BUF   ( addr1-- addr2)
          B/REC + DUP LIMIT = IF DROP FIRST THEN ;
 
 : BUFFER ( n -- addr )
-        USE @ DUP >R       \ get current buffer record & Rpush
+        USE @ DUP>R       \ get current buffer record & Rpush
         @ 0<               \ has it been updated?
         IF                 \ if true ...
            R@ CELL+        \ get buffer address
            R@ @            \ get the block number
-           7FFF AND   WBLK  \ write data to disk
+           MASK   WBLK  \ write data to disk
         THEN R@ !          \ store this in USE record
         R@ PREV !          \ set it as previous record
         R@ +BUF USE !      \ "use" next buffer
@@ -74,14 +78,14 @@ HEX
 : BLOCK   ( block# --- addr )
         ?BLOCKS
        >R
-        PREV @ DUP @  R@ - 7FFF AND 
+        PREV @ DUP @  R@ - MASK
         IF
            BEGIN
               +BUF DUP PREV @ =
               IF
                  DROP R@ BUFFER  R@ RBLK 2- \ CELL-
               THEN
-              DUP @ R@ -  7FFF AND
+              DUP @ R@ -  MASK
            WHILE REPEAT   ( faster than 0= UNTIL)
            DUP PREV !
            DUP USE @ =
@@ -99,7 +103,7 @@ HEX
         DO
            DUP @ 0<     \ is block updated?
            IF          \ yes, write to disk
-              DUP @ 7FFF AND  OVER 2DUP !
+              DUP @ MASK  OVER 2DUP !
               CELL+ SWAP WBLK
            THEN +BUF   \ then goto next block record
         LOOP
@@ -123,10 +127,10 @@ DECIMAL
 
 HEX
 : CLOSE-BLOCKS ( -- )
-      ?BLOCKS FLUSH
-      BHNDL @ CLOSE-FILE ?FILERR
-      BHNDL OFF
-      ACTIVE OFF ;
+       ?BLOCKS FLUSH
+       BHNDL @ CLOSE-FILE ?FILERR
+       BHNDL OFF
+       ACTIVE OFF ;
 
 \ Usage:  45 S" DSK1.MYBLOCKS" MAKE-BLOCKS
 :  MAKE-BLOCKS ( n file len -- )
@@ -139,7 +143,21 @@ HEX
         LOOP
         CLOSE-BLOCKS ;
 
+HERE SWAP - DECIMAL  CR .  .( bytes)
 EMPTY-BUFFERS
 
-HERE SWAP - DECIMAL  CR .  .( bytes)
+\ compiling support
+DECIMAL
+64 CONSTANT #64
+: LINE   ( line# -- addr) #64 *  SCR @ BLOCK  + ; \ index into block
+: LOAD  ( n -- )
+        SCR !  LINES OFF
+        16 0 DO  I LINES !
+                 I LINE #64 EVALUATE
+                 LINES 1+!
+        LOOP ;
 
+: -->   ( n -- ) SCR @ 1+ LOAD ;
+
+EMPTY-BUFFERS
+HERE SWAP - DECIMAL  CR .  .( bytes)

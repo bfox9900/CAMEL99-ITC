@@ -28,7 +28,7 @@ NEEDS SEE FROM DSK1.SEE
           0A14 , ;  \ TOS  1 SLA, shift R1 1 bit left (mult. By 2)
 
 : ()@,   ( addr -- )
-          C124 , ( addr) ,   \ addr(TOS) TOS MOV
+          C124 , ( addr) ,   \ addr(TOS) TOS MOV,
 ;
 
 : ()!,   ( addr -- )
