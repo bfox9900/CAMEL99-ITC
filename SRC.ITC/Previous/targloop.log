@@ -1,9 +1,0 @@
-\ TARGLOOP PROBLEMS LOG
-Version   File used        Classic99     TI-99                  Compiler
--------------------------------------------------------------------------
-V2.61     targloops         works        WORKS                  xfc99b
- "        USER CORRECTED    works        works                  xfc99b
-V2.61     isoloops          works        fail on INCLUDE        xfc99b
-
-v2.62     targloops         works         works                 xfc99c
-          isoloops          works         fail on boot          xfc99c

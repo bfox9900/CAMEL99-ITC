@@ -1,12 +1,32 @@
-# CAMEL99 for TI-99 V2.5
+# CAMEL99 for TI-99 V2.67D
 
-### ABOUT CAMEL99 V2.5
+### V2.67D
+Completely knew VDP driver. Up to 20% faster on some things.
+Fixed improper interrupt masking during TMS9918 read/write operations
+
+### NEW DOCS
+In the doc folder there is a new overall manual for the new user.
+There is also a Glossary for the Forth 8K kernel and secondary reference
+that is Glossary for the library files in the DSK1.ITC Folder
+
+#### S"   
+S" has ANS standard for compiling strings into definitions.
+BUT it is non-standard because it is an state smart word. Does different things for compiling and interpreting
+It now accepts multiple strings in interpreting mode as long they are input on the same line.
+Example:   S"  String #1"  S" String#2 "  S" String #3"  <ENTER>
+                returns three separate stack strings to the data stack.
+
+### Smaller Library Files
+ANSFILES, GRAFIX
+Faster number printing and text output.
+
+### ABOUT CAMEL99 Forth
 ------------------------
 CAMEL99 Forth was built as an educational exercise to learn how to cross-compile Forth to a different CPU using an existing Forth system. It has become a functional ISO/Forth system for the TI-99 computer that implements all of the CORE wordset, much of the EXTENDED wordset.
 
 Rather than starting from scratch CAMEL99 uses CAMEL Forth by Dr. Brad Rodriguez for the hi-level Forth code. This has been "tweeked" and dare I say improved a little to better fit the very slow TI-99 computer. (More things written in Assembler was the answer)
 
-The low level primitives are written in Forth Assembler. The file 9900FAS2.HSF also contains the low level drivers for TI-99 Keyboard and Video display I/O. The final console interfaces are written in Forth including the screen scrolling code, just to demonstrate how it can be done in hi-level Forth.
+The low level primitives are written in Forth Assembler. The file 9900CODE.HSF also contains the low level drivers for TI-99 Keyboard and Video display I/O. The final console interfaces are written in Forth including the screen scrolling code, just to demonstrate how it can be done in hi-level Forth.
 
 In CAMEL99 Version 2 we squeezed enough disk support into the 8K kernel to have the word INCLUDED in the system.  This let's the system compile Forth code from disk which means it can extend itself.
 
@@ -15,12 +35,6 @@ Users of TI BASIC who want to explore Forth might also find this system useful. 
 
 You can load all the "training wheels" with one command: INCLUDE DSK1.BASICHLP
 ... and the files compile into the system. This gives the BASIC programmer most of TI BASIC'S features, but it still requires learning Forth's way of thinking to use it.  
-
-### Changes from V1
-- CAMEL99 V2 finally has TI file access and numerous enhancements that improved the speed/size tradeoff.
-- The binary program is in folder DSK1 and is called CAMEL99
-- The library files exist in DSK1 as TI-99 DV80 TEXT files
-- Folder LIB.ITC contains the same files and more in PC format.
 
 
 ### How it was made
@@ -78,32 +92,22 @@ With your file correctly saved to DSK1 you can type S" DSK1.MYFILE" INCLUDED in 
 
 Source code will load/compile at the blazing speed of about 14 lines per second. :-)
 
-### Nov 28, 2019  V2.5
-Indirect Threaded Version
-- Settled on one build of CAMEL99 Forth. All variations are removed.
-- 25% speed up of CREATE DOES> structures by using BRANCH & LINK instruction
-- Fixed DSK1.ANSFILES file handle bug. Errors did not release current file handle.
-- Improved VDP screen driver using 1+@ code word
-- Improved DSK1.VALUES. Faster TO and +TO
-- Cleaned up LIB.ITC. TI99 versions are in DSK1.
-- Added DSK1.TRAILING. (-TRAILING -LEADING TRIM)
-- Added DSK1.HEXNUMBER. H# is a prefix word to interpret numbers as radix 16.
-- DSK1.TOOLS now includes VDUMP for VDP ram and SDUMP code for SAMS card.
-  (HEX and BINARY numbers alway print unsigned after tools are loaded.)
-- DSK1.CODEMACROS provides native 9900 indexed addressing arrays.
-- DSK1.VTYPE improved VTYPE updates VCOL. AT" ( x,y) placing text.
-- DSK1.AUTOMOTION provides Automatic sprite motion like Extended BASIC
+### V2.67D
+Completely knew VDP driver. Up to 20% faster on some things.
+Fixed improper interrupt masking during TMS9918 read/write operations
 
+### NEW DOCS
+In the doc folder there is a new overall manual for the new user.
+There is also a Glossary for the Forth 8K kernel and secondary reference
+that is Glossary for the library files in the DSK1.ITC Folder
 
-### Known BUG (Not a bug)
-- When INCLUDE is used for a file on a disk other than DSK1, the library files will try to load from that same disk.  Investigating our FILESYSX for the problem.
-- Resolved. It was a configuration error in the Classic99 Emulator. 
+#### S"   
+S" has ANS standard for compiling strings into definitions.
+BUT it is non-standard because it is an state smart word. Does different things for compiling and interpreting
+It now accepts multiple strings in interpreting mode as long they are input on the same line.
+Example:   S"  String #1"  S" String#2 "  S" String #3"  <ENTER>
+                returns three separate stack strings to the data stack.
 
-
-
-
-
-
-
-
-
+### Smaller Library Files
+ANSFILES, GRAFIX
+Faster number printing and text output.

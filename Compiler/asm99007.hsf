@@ -1,7 +1,7 @@
 \               _____  __  __   ___    ___    ___    ___
 \       /\     / ____||  \/  | / _ \  / _ \  / _ \  / _ \
 \      /  \   | (___  | \  / || (_) || (_) || | | || | | |
-\     / /\ \   \___ \ | |\/| | \__, | \__, || | | || | | | 
+\     / /\ \   \___ \ | |\/| | \__, | \__, || | | || | | |
 \    / ____ \  ____) || |  | |   / /    / / | |_| || |_| |
 \   /_/    \_\|_____/ |_|  |_|  /_/    /_/   \___/  \___/
 \
@@ -59,12 +59,13 @@
 \ Jan 2 2017     Verions 5  works with version 5 of cross compiler
 \                Now we create CAMEL Forth dictionary linkage so we can use CAMEL Forth code.
 \                Added FILNAME:  directive for easier initialization of the file name
-\ Feb 28 2018    Version 6 can create multiple 8K files to allow bigger programs
+\ Apr 2020       Fixed ?HEADER to check for $DEAD in the field
+\                Removed ABSOLUTE and RELOCATE. Never worked anyway.
 
 \ ========================================================================
 
-[DEFINED] TMS9900
-[IF] CR
+ [DEFINED] XASM
+ [IF] CR
      CR .( *WARNING* Cross Assembler already loaded)
      CR .( compile halted)  ABORT
 
@@ -76,7 +77,7 @@
        CR .( needs TI99CX5.HSF   halt compile) ABORT
 [THEN]
 
-Create asmver ," Loading TMS9900 Cross Assembler version 5.1 Mar 3 2017"
+Create asmver ," Loading TMS9900 Cross Assembler V5.3 Apr 24 2020"
 
 cr asmver $.
 
@@ -380,7 +381,7 @@ cr .( prenamed jump labels)
 
 \ for Branching with B, BL, or BLWP create a LABEL with L: <text>
 
-HEX 30 value jmptab-size   \ room for 32 labels
+HEX 30 value jmptab-size   \ room for 24 labels
 
 jmptab-size cells BUFFER: REF       \ jump address place holders
 jmptab-size cells BUFFER: BIND
@@ -409,24 +410,21 @@ jmptab-size cells BUFFER: BIND
 
 : ]fwd-calc ( ndx -- byte)
         >r
-        I ]bind @  I ]ref @ -  2- >offset
+        R@ ]bind @  R@ ]ref @ -  2- >offset
         rdrop ;
 
 : ]bwd-calc ( ndx -- byte)
        >r
-       I ]bind @  I ]ref @  -  >offset
+       R@ ]bind @  R@ ]ref @  -  >offset
        rdrop ;
-
-\ for my own sanity I am using I as a local variable. NON-standard but it works in HSForth
-
 
 : refer:  ( n -- <label> ) \ create a destination label for Jump intructions
         create  ,                \ record the index #
         does>   @ >R  ( -- c)
-                THERE I ]ref !
-                I ]bind @ 0 <>  ( there is a bind so this is a backward jump)
+                THERE R@ ]ref !
+                R@ ]bind @ 0 <>  ( there is a bind so this is a backward jump)
                 if
-                    I ]bwd-calc  ( -- offset)
+                    R@ ]bwd-calc  ( -- offset)
                 else
                     0
                 then
@@ -435,10 +433,10 @@ jmptab-size cells BUFFER: BIND
 : binder: ( n --<label> ) \ create a binder label for fwd references
         create  ,         \ record the index #
         does>   @ >R
-                THERE 2- I ]bind !  \ store the address where BINDER is first found
-                I ]ref @ 0 <>       \ there is a reference in the code so this is a forward jump
+                THERE 2- R@ ]bind !  \ store the address where BINDER is first found
+                R@ ]ref @ 0 <>       \ there is a reference in the code so this is a forward jump
                 if
-                   I ]fwd-calc ( offset) I ]ref @ 1+  ( -- offset addr) TC!
+                   R@ ]fwd-calc ( offset) R@ ]ref @ 1+  ( -- offset addr) TC!
                 then
                 rdrop ;
 
@@ -583,7 +581,7 @@ jmptab-size cells BUFFER: BIND
 
 : cruop:
     create ,
-    does> @ swap 000f and 40 * + format6, ;
+    does> @ swap 000F and 6 lshift ( 40 *) + format6, ;  \ change 40 * to lshift
 
 3000 cruop: LDCR,
 3400 cruop: STCR,
@@ -593,9 +591,9 @@ jmptab-size cells BUFFER: BIND
 \ P S E U D O   I N S T R U C T I O N S  (like TI assembler)
 
 : RT,      *R11 B, ;              \ return from subroutine call
-: NOP,      2 jmp, ;              \ jump to the next instruction
+: NOP,     2 +$$ jmp, ;           \ jump to the next instruction
 
-0 [IF]  
+0 [IF]
 
 \  *****   MOVED TO TARGET COMPILER FILE *****
 \ ===================================================================
@@ -623,7 +621,7 @@ HEX
 \ Jump tokens for use with CJMP
 HEX
  1 CONSTANT GTE     \ GT OR EQUAL
- 2 CONSTANT HI       \ JMP IF HI
+ 2 CONSTANT HI      \ JMP IF HI
  3 CONSTANT NE      \ NOT equal
  4 CONSTANT LO      \ jmp if low
  5 CONSTANT LTE     \ jmp if less than or equal
@@ -634,22 +632,18 @@ HEX
  A CONSTANT HE      \ jmp high or equal
  B CONSTANT LE      \ jmp if low or equal
  C CONSTANT NP      \ jmp if no parity ?
- D CONSTANT LT      \ jmp if less than
- E CONSTANT GT      \ jmp if greater than
+ D CONSTANT LT      \ jmp if less than  (SIGNED)
+ E CONSTANT GT      \ jmp if greater than (SIGNED)
  F CONSTANT NO      \ jmp if no overflow
 10 CONSTANT OP      \ jmp if ODD parity
 
-: CJMP
-       case
-              lt of 1101 , 0 endof
-              gt of 1501 , 0 endof
-              no of 1901 , 0 endof
-              op of 1C01 , 0 endof
-
-              dup 0< over 10 > or
-              if 1 ]asmerr then dup
-       endcase
-       100 * 1000 + t, ;
+: CJMP CASE
+         LT OF 1101 T, 0 ENDOF
+         GT OF 1501 T, 0 ENDOF
+         NO OF 1901 T, 0 ENDOF
+         OP OF 1C01 T, 0 ENDOF
+         DUP 0< OVER 10 > ABORT" IF, BAD jump token"
+       ENDCASE CSWAP 1000 + T, ;
 
 
 \ *These words do compile time matching*
@@ -677,7 +671,6 @@ HEX
 : begin,
         ?exec
         THERE 41 ; immediate
-
 
 : until,
         ?exec
@@ -734,8 +727,18 @@ HEX 045A CONSTANT 'NEXT'  \ code for:  *R10 B,
 \ Docs say "There is a 3-word header that contains instructions for the loader."
 
 \ BUT!!!
-\ The piece nobody wrote about is that the TI-99 file header is $80(128) bytes long
-\ So.. you have to create that header in your memory image too !!!
+\ There is an extra header used for files on a PC called V9T9 format.
+\ So.. you have to create the V9T9 header in your memory image too !!!
+
+\ Sept 27, 2018: I now know more abit the V9T9 FORMAT.
+\ Here is the back story from Arcadeshopper on Atariage.com
+\ History:
+\ "When we started uploading files to BBS's they had to come up with a way to
+\ store TI specific file header information.. SO the TIFILES header was
+\ created which prepends the file with the information needed to store it correctly.
+\ V9T9 came out (perhaps the first TI emulator (for DOS!)) and it needed a way
+\ to store files on the PC drive with the TI directory information as well,
+\ so instead of using the standard, they made up their own.."
 
 \ Actual Header of DEMO file from Classic99 Emulator
 \ ----------------------------------------------------------------------------
@@ -746,7 +749,7 @@ HEX 045A CONSTANT 'NEXT'  \ code for:  *R10 B,
 \ 2D9B:0040  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  ................
 \ 2D9B:0050  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  ................
 \ 2D9B:0060  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  ................
-\ 2D9B:0070  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  ................
+\ 2D9B:0070  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  ................ <--- V9T9 header ends here
 \ 2D9B:0080  FF FF 20 00 A0 00 04 60  CC 00 C8 0B A1 0E 02 02  .. ....`........
 \            ^     ^     ^     ^
 \ more flag--|     |     |     |______CODE STARTS HERE.
@@ -785,7 +788,7 @@ HEX 045A CONSTANT 'NEXT'  \ code for:  *R10 B,
 
 
 \ ========================================================================
-\ A D D R E S S   T R A N S L A T I O N
+\ A D D R E S S E S
 
 VARIABLE org-addr         \ holds the TI-99 address that the code is loaded to
 
@@ -795,24 +798,8 @@ VARIABLE org-addr         \ holds the TI-99 address that the code is loaded to
 64K org-addr!              \ init to 64k ( -1) to detect if it has not been set
 
 HEX 86 constant header-size     \ TI-99 E/A5 file header size
-  A000 VALUE LOADADDRESS        \ TI-99 EA5 will always load at this address for now.
 
 : header@   ( -- Taddr ) org-addr@ header-size - ; \ addr of start of program header
-
-\ rel>adr computes the relocated address that is used in the loaded memory image.
-\ addresses are relative to the header size so we subtract it
-: REL>ADR   ( offset -- real_address)
-                  HEADER-SIZE  -  loadaddress  + ;
-
-: ABSOLUTE>ADR  ( offset -- real_address)
-                 ( HEADER-SIZE  - ) ;
-
-\ ========================================================================
-\ here we resolve the forward reference in the Forth CROSS-COMPILER
-\ so it can write threaded code for the correct load address.
-
-\ : RELOCATABLE   ['] REL>ADR IS RELOCATE ;
-: ABSOLUTE      ['] ABSOLUTE>ADR IS RELOCATE ;
 
 \ ========================================================================
 \ TI EA5 file image header addresses
@@ -847,20 +834,26 @@ HEX 2000 80 + EQU MAX-PROG           \ 8K bytes is a big as we can go with each 
 : ?more-field   ( -- ) more-field   t@ 0=  prog-size t@ MAX-prog > AND abort" MORE-FIELD err. Image>8K" ;
 : ?load-field   ( -- ) load-field   t@ DEAD = ABORT" IMAGE has no LOAD address at offset HEX 84" ;
 : ?entry-field  ( -- ) entry-field  t@ 0<     ABORT" TI-99.EA5 directive is missing in the code" ;
-: ?boot-address ( -- ) boot-address t@ 0=     ABORT" IMAGE requires a boot address" ;
+: ?boot-address ( -- ) boot-address t@ DEAD = ABORT" IMAGE requires a boot address" ;
 
 \ test them all!
-: ?header       ( -- ) ?file-name ?prog-size  ?more-field  ?load-field  ?entry-field  ?boot-address ;
+: ?header       ( -- )
+                ?file-name ?prog-size  ?more-field  ?load-field  ?entry-field  ?boot-address ;
 
 \ ========================================================================
 \ C R E A T E  A  L A B E L
 \ usage:  l: endop      R0+ R1 mov,
 \                       endop  b,    ( endless loop created)
 
-
-: l: ( -- <label> )  \ creates a label that returns a real address when executed
+\ creates a label in HOST Forth that returns a TARGET address when executed
+: l: ( -- <label> )
       CREATE  THERE ,
-      DOES> @ RELOCATE ;  ( -- Taddr)
+      DOES> @                        \ interpreting ( -- Taddr)
+\             XSTATE @               \ cross-compiler is on, compile as literal
+\             IF  'LIT T,  T,  THEN  \ 'lit needs to be resolved before use :-(
+ ;
+
+
 
 \ ========================================================================
 \ B L O C K   S T A R T I N G   S E G M E N T
@@ -966,7 +959,7 @@ variable ORGFLAG
 
 : SET-ORG  ( n -- )
             DUP header-size - tdp !  \ set dictionary pointer 86 bytes back for the header
-           ( DUP) org-addr!            \ this will also be the actual load address in TI-99
+           ( DUP) org-addr!          \ this will also be the actual load address in TI-99
               0 XLATEST !  ;          \ LASTEST var must begin at the same place for dictionary links to work
 
 : ORIGIN.  ( n -- )
@@ -1024,39 +1017,43 @@ cr .( TI-99 file control directives)
 
 
 HEX
-\ create the "Editor Assembler 5" binary program header for the first BIN file
-CREATE HEADER1.EA5  ( -- )
-        HERE header-size ERASE                          \ init header memory with zero
-        HERE 0A BL FILL  0A ALLOT                       \ FILL space for the file name with blanks (for debugging)
+\ create the "Editor Assembler 5" binary program header in the memory image
+\ This code adds a 2 byte branch instruction as the first code that runs
+\ so you can jump to a startup routine anywhere in memory
 
-        0000 ,                                                   \ lay in some data after the FILENAME
-        0100 ,                                                   \ don't know what these numbers do...?
-        0020 ,                                                   \ TI-99 FIXED/80 file format code?
+: TI-99.EA5  ( -- )
+        orgflag @ 0= ABORT" missing ORIGIN. directive"   \ ORIGIN. directive MUST precede this directive to set the load address
+        header@ DUP  header-size 0 tfill                 \ init header memory with zero
+        ( -- addr ) 0A BL TFILL  0A TALLOT               \ FILL space for the file name with blanks (for debugging)
 
-        70  ALLOT                                                 \ move pointer to end of header
+        0000 T,                                          \ lay in some data after the FILENAME
+        0100 T,                                          \ don't know what these numbers do...?
+        0020 T,                                          \ TI-99 FIXED/80 file format code?
 
-        FALSE  ,                                                  \ the "MORE-FIELD"= true (-1) if there are more files to load
-        BEEF   ,                                                  \ place holder for the PROG-SIZE  (in bytes)
-        LOADADDRESS ,                                             \ record the load address in the file
-        460 , DEAD ,                                              \ 2 BYTES:  branch to address where the program starts
+        70 TALLOT                                        \ move pointer to end of header
 
+        FALSE DATA,                                      \ the "MORE-FIELD"= true (-1) if there are more files to load
+        BEEF DATA,                                       \ place holder for the PROG-SIZE  (in bytes)
+        ORG-ADDR@ DATA,                                  \ record the load address in the file
+        DEAD @@ B,                                       \ 2 BYTES:  branch to address where the program starts
+;
 
-CREATE HEADER2.EA5  ( -- )
-        HERE header-size ERASE                          \ init header memory with zero
-        HERE 0A BL FILL  0A ALLOT                       \ FILL space for the file name with blanks (for debugging)
+: TIFILES.EA5  ( -- )
+        orgflag @ 0= ABORT" missing ORIGIN. directive"   \ ORIGIN. directive MUST precede this directive to set the load address
+        header@ DUP  header-size 0 tfill                 \ init header memory with zero
+        ( -- addr ) 0A BL TFILL  0A TALLOT               \ FILL space for the file name with blanks (for debugging)
 
-        0000 ,                                                   \ lay in some data after the FILENAME
-        0100 ,                                                   \ don't know what these numbers do...?
-        0020 ,                                                   \ TI-99 FIXED/80 file format code?
+        0000 T,                                          \ lay in some data after the FILENAME
+        0100 T,                                          \ don't know what these numbers do...?
+        0020 T,                                          \ TI-99 FIXED/80 file format code?
 
-        70  ALLOT                                                 \ move pointer to end of header
+        70 TALLOT                                        \ move pointer to end of header
 
-        FALSE  ,                                                  \ the "MORE-FIELD"= true (-1) if there are more files to load
-        BEEF   ,                                                  \ place holder for the PROG-SIZE  (in bytes)
-        LOADADDRESS ,                                             \ record the load address in the file
-        460 , DEAD ,                                              \ 2 BYTES:  branch to address where the program starts
-
-
+        FALSE DATA,                                      \ the "MORE-FIELD"= true (-1) if there are more files to load
+        BEEF DATA,                                       \ place holder for the PROG-SIZE  (in bytes)
+        ORG-ADDR@ DATA,                                  \ record the load address in the file
+        DEAD @@ B,                                       \ 2 BYTES:  branch to address where the program starts
+;
 
 : FILE!  ( caddr -- )                                             \ c" MYFILE" FILE!
          dup len 0A > ABORT" File name too long. >10 chars"
@@ -1064,7 +1061,8 @@ CREATE HEADER2.EA5  ( -- )
          LISTS @ swap UPPER$ COUNT >R  [TARGET] file-name  R> CMOVEL
          COLLAPSE ;
 
-12 $VARIABLE FILENAME$
+[cc] 12 $VARIABLE FILENAME$
+
 
 : FILENAME:  BL WORD DUP file!                                     \ added to version 5 Jan2 2017
              FILENAME$ $! ;                                        \ make a copy of the string
@@ -1078,40 +1076,46 @@ CREATE HEADER2.EA5  ( -- )
 
 : ?8K         ( n -- ) MAX-PROG > IF 9 ]asmerr THEN ;   \ check if too big
 
-: IMAGE-SIZE ( -- n) THERE header@ - ;           \ calculate the file image size starting at header
-: TCODE-SIZE ( -- n) THERE LOADADDRESS - ;       \ calculate the code size.
+: IMAGE-SIZE ( -- n) THERE header@ - ;         \ calculate the file image size starting at header
+: TCODE-SIZE ( -- n) THERE ORG-ADDR@ - ;       \ calculate the TI-99 code size.
 
 : .XMEM   \ Display cross-assembler memory and dictionary usage report
-        base @ >r
+        BASE @ >R
         DECIMAL
-        CR ." Program Summary:"
-        CR LOADADDRESS .HEX/DEC      ."  Load address"
-        CR TCODE-SIZE  .HEX/DEC      ."  Code size"
-        CR boot-address T@  .hex/dec ."  boot address"
-        CR IMAGE-SIZE  .HEX/DEC      ."  Image size"
-        CR TCODEWORDS @ .hex/dec     ."  Code words"
-        CR TFORTHWORDS @ .HEX/DEC    ."  Forth words" 
-        r> base ! ;
+        CR
+        CR ." TI-99 filename: "  FILENAME$ $.
+        CR
+        CR ." Fields         HEX  DECIMAL"
+        CR ." -------------  ---  -------"
+        CR ." Load address " ORG-ADDR@ .HEX/DEC
+        CR ." Code size    " TCODE-SIZE DUP ?8K  .HEX/DEC
+        CR ." Boot address " boot-address T@  .hex/dec
+        CR ." Image size   " IMAGE-SIZE  .HEX/DEC
+        CR ." Code words   " TCODEWORDS @ .hex/dec
+        CR ." Forth words  " TFORTHWORDS @ .HEX/DEC
+
+        R> BASE ! ;
 
 : END.  \ finish off and create a report of what happened
-         IMAGE-SIZE PROG-SIZE T!               \ update the count word in the program image header
+         FILENAME$ LEN 0= ABORT" Missing FILENAME:"
+         IMAGE-SIZE PROG-SIZE T!
          0  data,                               \ put a 0 after the last memory word of the program
          ?header                                \ check that the header is correct
-
          DECIMAL
-         CR
          CR ." >>>> CROSS-ASSEMBLY COMPLETED <<<<<"
-         CR .elapsed
+         .elapsed
          CR
-         .XMEM CR  ;
+         .XMEM
+         CR
+ ;
 
-: SET-BOOT.  ( T'-addr -- )   RELOCATE BOOT-ADDRESS T!  ;
+: SET-BOOT.  ( T'-addr -- ) BOOT-ADDRESS T!  ;
 
 \ ===================================================================
 \ E A 3  T A G G E D  O B J E C T   F I L E
 \ O U T P U T   G E N E R A T O R
 
-include cc9900\compiler\ea3gen.hsf
+\ include cc9900\compiler\ea3gen.hsf
 
 \ ===================================================================
 \ S A V E  B I N A R Y  F I L E
@@ -1121,34 +1125,33 @@ include cc9900\compiler\ea3gen.hsf
 : WRITE-IMG  ( segment $addr -- )
          >R DUP 4I@ 0 R> FIT? MKFILE >R   \ push the file handle to rstack
          DUP@ header@ ROT DROP            \ we write the file from the start of the header.
-         IMAGE-SIZE R@ WRITEH DROP       \ write to the handle, drop the error flag
+         IMAGE-SIZE R@ WRITEH DROP        \ write to the handle, drop the error flag
          R> CLOSEH ;                      \ close the file handle
 
 
-: $SAVE-EA5. ( $ -- )       \ save image as TI-99 EA5 file format
-        cr ." Saved as file " DUP $. ." , "
-        [TARGET-IMG SEGMENT] SWAP WRITE-IMG
-        IMAGE-SIZE U. ." bytes" CR  ;
+: $SAVE-EA5. ( $filename -- )       \ save image as TI-99 EA5 file format
+         cr ." Saved as file " DUP $. ." , "
+         [TARGET-IMG SEGMENT] SWAP WRITE-IMG
+         IMAGE-SIZE U. ." bytes" CR  ;
 
 
- include CC9900\COMPILER\INLIN99.HSF
+: WRITE-BIN  ( segment $addr -- )
+       >R
+       DUP 4I@ 0 R> FIT? MKFILE >R   \ push the file handle to rstack
+       DUP@ org-addr @ ROT DROP      \ we write the file from origin
+       TDP @ ORG-ADDR @ -            \ compute size of binary image
+       R@ WRITEH DROP                \ write to the handle, drop the error flag
+       R> CLOSEH ;                   \ close the file handle
 
+: $SAVE.BIN ( $filename -- ) [TARGET-IMG SEGMENT] SWAP WRITE-BIN ;
+
+
+
+include CC9900\COMPILER\INLIN99.HSF
 
 HOST-COMPILING
 
-: TMS9900 ;                \ xassembler present label
-
-: READ.CMDLINE
-                    ARGS[] LEN 0>
-                    IF  ARGS[] $EVALUATE
-                    ELSE CR ." ERROR: No commands given" CR BYE THEN ;
+: XASM ;                \ xassembler present label
 
 CR .( === XASSEMBLER IS LOADED ===)
-CR .( Saving XFC99.exe file ...)
-
-SAVE-EXE XFC99.EXE  CR ." XFC99 TI-99 Forth Cross Compiler for DOS, V1.1 2018"  READ.CMDLINE CR
-CR
-CR
-BYE
-
-
+cr
