@@ -8,7 +8,7 @@ For this update we have changed some key low level words to CODE words.
 We changed >DIGIT and HOLD to CODE words and number output to the screen is
 over 50% faster.
 
-For better consistency with the Original CAMEL Forth code we put /STRING back
+For better consistency with the Original CAMEL Forth code we put /STRING back 
 into the HI level source file CAMEL2.HSF.
 It is still a CODE word as it was in V1.9 but it is no longer in 9900FAST.HSF.
 
@@ -36,39 +36,6 @@ DTC CAMEL99 was created for analysis. This has shown that although there is
 14% average speed increase in general over the ITC version the extra code size
 is not advantageous for the memory constrained TI-99.
 
-### Nov 28, 2019  V2.5
-Indirect Threaded Version
-- Settled on one build of CAMEL99 Forth. All variations are removed.
-- 25% speed up of CREATE DOES> structures by using BRANCH & LINK instruction
-- Fixed DSK1.ANSFILES file handle bug. Errors did not release current file handle.
-- Improved VDP screen driver using 1+@ code word
-- Improved DSK1.VALUES. Faster TO and +TO
-- Cleaned up LIB.ITC. TI99 versions are in DSK1.
-- Added DSK1.TRAILING. (-TRAILING -LEADING TRIM)
-- Added DSK1.HEXNUMBER. H# is a prefix word to interpret numbers as radix 16.
-- DSK1.TOOLS now includes VDUMP for VDP ram and SDUMP code for SAMS card.
-  (HEX and BINARY numbers alway print unsigned after tools are loaded.)
-- DSK1.CODEMACROS provides native 9900 indexed addressing arrays.
-- DSK1.VTYPE improved VTYPE updates VCOL. AT" ( x,y) placing text.
-- DSK1.AUTOMOTION provides Automatic sprite motion like Extended BASIC
-
-
-### Known BUG (Not a bug)
-- When INCLUDE is used for a file on a disk other than DSK1, the library files will try to load from that same disk.  Investigating our FILESYSX for the problem.
-- Resolved. It was a configuration error in the Classic99 Emulator.
-
-Update: 2.67D
-
-Completely knew VDP driver. Up to 20% faster on some things
-
-S"
-Action is ANS standard for compiling strings into definitions
-BUT it is non-standard because it is an state smart word. Does different things for compiling and interpreting
-It now accepts multiple strings in interpreting mode as long they are input on the same line.
-Example:   S"  String #1"  S" String#2 "  S" String #3"  <ENTER>
-                returns three separate stack strings to the data stack.
-
-Some library files have been made smaller
-ANSFILES, GRAFIX
-
-Slightly faster number printing.
+June 26, 2021
+Version 2.67D  fixes a lot of previous issues with the VDP chip driver.
+There were many things I did not understand in the past.
