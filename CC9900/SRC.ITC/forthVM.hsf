@@ -94,7 +94,7 @@ XASSEMBLER DEFINITIONS
 \ to save space.
 \ See: 9900CODE.HSF
 \
-\ In CAMEL99 we intialize the NEXT register (R10) with the startup code:
+\ In CAMEL99 we initialize the NEXT register (R10) with the startup code:
 \
 \            R10 NEXT2 LI,     \  see: INIT in CAMEL99.hsf
 
@@ -108,7 +108,7 @@ XASSEMBLER DEFINITIONS
 \ RESOLVE NEXT, a deferred word
 
 \ NEXT, is a deferred word in the cross-assembler so you can create different
-\ threading mechanisms with the Cross-assembler easiy.
+\ threading mechanisms with the Cross-assembler easily.
 
 \ We must assign an Execution token to "NEXT," so all the subsequent
 \ CODE: words in 9900CODE.HSF will compile the correct code.

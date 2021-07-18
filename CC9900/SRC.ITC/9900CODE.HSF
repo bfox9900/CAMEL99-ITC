@@ -29,7 +29,7 @@
 \ *G Overview:
 \ ** This implementation creates an Indirect Threaded Code System with the
 \ ** Top of stack (TOS) cached in Register 4 for a speed increase.
-\ **cWe have also tried to use less space where possible. Some primitives
+\ ** We have also tried to use less space where possible. Some primitives
 \ ** are smaller in Assembly language but some are smaller in Forth.
 \ ** We chose smaller is better except where performance would really suffer.
 
