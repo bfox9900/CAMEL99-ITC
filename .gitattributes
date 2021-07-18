@@ -1,1 +1,10 @@
 *.HSF linguist-language=Forth
+
+# Set the default behavior, in case people don't have core.autocrlf set.
+* text eol=crlf
+
+# Explicitly declare text files you want to always be normalized and converted
+# to native line endings on checkout.
+*.hsf text
+*.fth text
+
