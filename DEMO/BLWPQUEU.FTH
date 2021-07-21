@@ -1,4 +1,4 @@
-\ byte queue using Workspace as replacment for variables
+\ byte queue using Workspace instead of variables     Brian Fox 2021
 
 \ Concept here is to replace variables that manage circular pointers
 \ with registers in a workspace. This should need less code because registers
@@ -9,6 +9,7 @@
 
 INCLUDE DSK1.TOOLS
 INCLUDE DSK1.ASM9900
+INCLUDE DSK1.MALLOC
 
 \ DATA =======================
 HEX
@@ -19,8 +20,8 @@ QSIZE 1-   CONSTANT QMASK  \ used for wrap pointer wrap around
   QSIZE MALLOC CONSTANT Q
   20    MALLOC CONSTANT QREGS
 \ ============================
-\ Compiler Directive to create a BLWP sub-program
-\ ... THAT CALLS ITSELF!
+\ Compiler Directive to create sub-programs (have their own workspace)
+\ ... that can be called from FORTH like a Forth word.  Pretty cool!
 : PROG: ( wksp -- )
        CREATE
          ( wksp) ,  HERE CELL+ ,
@@ -33,18 +34,18 @@ QSIZE 1-   CONSTANT QMASK  \ used for wrap pointer wrap around
 
 : [TOS]  8 R13 () ;      \ macro for Forth's TOS register
 
-QREGS PROG: INIT-QREGS        \ code that initializes wksp
-        R8 Q LI,      \ R8 holds the Q data buffer address
+QREGS PROG: SET-MEM  ( buffer -- )       \ code that initializes wksp
+      [TOS] R8 MOV, \ R8 holds the Q data buffer address
     	R9   CLR,     \ R9 is the input pointer
     	R10  CLR,     \ R10 is the output pointer
     	RTWP,
-      ;PROG
+;PROG
 
 \ Forth word to allocate memory, erase Q data and QREGS and call INIT-REGS
 : INIT-Q
         QREGS 20 0 FILL
         Q QSIZE  0 FILL
-        INIT-QREGS ;
+        Q SET-MEM ;
 
 \ code to enqueue a byte in 'Q'
 QREGS PROG: ENQ ( c -- ? ) \ put byte in Q, return error code
@@ -59,7 +60,7 @@ QREGS PROG: ENQ ( c -- ? ) \ put byte in Q, return error code
              [TOS] SETO,      \ return true as error flag
         ENDIF,
         RTWP,                 \ return to Forth
-      ;PROG
+;PROG
 
 \ DEQ requires we put a zero on the Forth stack.
 \ This makes room on the Forth stack for the return data
@@ -74,7 +75,7 @@ QREGS PROG: DEQ ( 0 -- c) \ 0 means bad data
              [TOS] SETO,        \ no data, return -1
         ENDIF,
         RTWP,
-      ;PROG
+;PROG
 
 \ qdata? requires we put a zero on the Forth stack.
 \ This makes room on the Forth stack for the return flag
@@ -118,5 +119,3 @@ QREGS PROG: QSTAT ( 0 -- ?) \ true means data waiting
           CR PRINTQ CR
           ?TERMINAL
         UNTIL ;
-
-

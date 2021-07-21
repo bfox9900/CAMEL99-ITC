@@ -4,6 +4,7 @@ INCLUDE DSK1.TOOLS
 INCLUDE DSK1.GRAFIX
 INCLUDE DSK1.RANDOM
 INCLUDE DSK1.MARKER
+INCLUDE DSK1.UDOTR
 
 MARKER ALPHA
 \ ==================================
@@ -45,7 +46,7 @@ DECIMAL
 
 \ ==================================
 \ double variable hold Y and X
-CREATE VECTOR 0 , 0 ,          
+CREATE VECTOR 0 , 0 ,
 CREATE MY-XY  RNDY , RNDX ,    \ independant cursor for alpha guy
 
 : RNDV     ( -- -1 0 1 )  3 RND 1- ;
@@ -77,13 +78,10 @@ CREATE MY-XY  RNDY , RNDX ,    \ independant cursor for alpha guy
 DECIMAL
 VARIABLE TRYS
 VARIABLE SPEED
-
-\ print right justified n spaces
-: .R   ( n n -- )  >R DUP ABS 0 <# #S ROT SIGN #>  R> OVER - SPACES TYPE ;
-
 : .BRAIN     ( -- )
-     0 0 CLRLN
-     ." Vector"  VECTOR 2@  2 .R ." ," 2 .R  SPACE ." Trys " TRYS @ 2 .R  ;
+    0 0
+    2DUP >VPOS C/L@ BL VFILL
+    AT-XY  ." Vector"  VECTOR 2@  2 .R ." ," 2 .R  SPACE ." Trys " TRYS @ 2 .R  ;
 
 : ALPHA-COLOR  ( n -- )  ALPHA-GUY SET# SWAP 1 COLOR ;
 : SAD         ALPHA-GUY  SADFACE   OVER CHARDEF    SET#  7 1 COLOR  ;
@@ -97,7 +95,7 @@ VARIABLE SPEED
             SAD                        \ change face & color while thinking
             TRYS OFF                   \ reset the trys counter
             BEGIN
-              100 MS                   \ slow down to see sad face
+              10 MS                   \ slow down to see sad face
               CHANGE-DIR               \ get new direction
               1 TRYS +!                \ count the try
               TRYS @ ALPHA-COLOR       \ change color with each try
@@ -105,6 +103,8 @@ VARIABLE SPEED
               CLEAR-AHEAD?
             UNTIL
             HAPPY  ;
+
+25 SPEED !
 
 DECIMAL
 : RUN      ( -- )
@@ -114,7 +114,6 @@ DECIMAL
            PAGE  .BORDER  .WALLS
            HAPPY SHOW-MAN
            CHANGE-DIR
-           100 SPEED !
            BEGIN
               CLEAR-AHEAD?
               IF   MOVE-MAN
@@ -124,4 +123,3 @@ DECIMAL
            UNTIL
            ?BREAK
         AGAIN ;
-

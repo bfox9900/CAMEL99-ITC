@@ -10,7 +10,7 @@
 
 \ TMS9918 Video chip Specific code
 HEX
-FFFF FFFF FFFF FFFF PATTERN: SQUARE
+CREATE SQUARE  FFFF , FFFF , FFFF , FFFF ,
 
 \ define colors and characters
 DECIMAL
@@ -127,13 +127,13 @@ SIZE 1- CONSTANT n   \ sugar to match the Algorithm
                W @ VC@
                CASE
                  REDSQR OF  R @ W @  XCHG
-                            1 R +!           ENDOF
+                            R 1+!           ENDOF
 
-                 WHTSQR OF -1 W +!           ENDOF
+                 WHTSQR OF  W 1-!           ENDOF
 
                  BLUSQR OF  W @ B @  XCHG
-                           -1 W +!
-                           -1 B +!           ENDOF
+                            W 1-!
+                            B 1-!           ENDOF
                ENDCASE
            REPEAT ;
 

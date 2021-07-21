@@ -30,10 +30,12 @@
 \ Oct 2020     V.266 Added CONTEXT array and CURRENT to support wordlists
 \              Fixed bug in RAKE and fixed ISOLOOPS
 
+\ Jul 2021     V2.68 Corrected bug in M+ found in V2.67
+
 \ ===================[ COMPILER CONTROL VALUES ]======================
 CROSS-COMPILING
 
-FALSE VALUE SMALLER   \ only saves 22 bytes
+FALSE  VALUE SLOWER     \ TRUE saves 30 bytes
 FALSE  VALUE HASHING
 FALSE VALUE CARTRIDGE
 
@@ -174,7 +176,7 @@ VARIABLE VTOP
 \ ======================================================================
 [CC] cr .( Hi-level FORTH Primitives...)
 TARGET-COMPILING
-SMALLER [IF]
+SLOWER [IF]
      : HERE   ( -- addr) DP @  ;
 [ELSE]
  ( faster HERE speeds up the compiler)
@@ -243,7 +245,7 @@ TARGET-COMPILING
 : UMIN ( u1 u2 -- u )  2DUP U> IF SWAP THEN DROP ;
 : UMAX ( u1 u2 -- u )  2DUP U< IF SWAP THEN DROP ;
 
-SMALLER [IF]
+SLOWER [IF]
     : WITHIN ( u lo hi -- t ) OVER - -ROT - U> ;
 [ELSE]
 CODE WITHIN   ( n  lo  hi -- flag )
@@ -260,7 +262,23 @@ CODE WITHIN   ( n  lo  hi -- flag )
 \ M I X E D  (32BIT/16BIT)   M A T H   O P E R A T I O N S
 
 : */MOD  ( n1 n2 n3 -- n4 n5) >R UM* R> M/MOD ;
-: S>D    ( n -- d)  DUP 0< ;
+
+SLOWER [IF]
+ : S>D    ( n -- d)  DUP 0< ;
+
+[ELSE]
+CODE S>D ( n -- d)
+         TOS PUSH,     \ DUP
+         TOS TOS MOV,  \ compare TOS to zero this way is smallest
+         TOS CLR,      \ CLR does not affect CPU flags
+         LT IF,        \ so we can jump on the previous compare instruction
+              TOS SETO,
+         ENDIF,
+         NEXT,
+         ENDCODE
+[THEN]
+: M+     ( d n -- d) S>D  D+ ;    \ * change from V2.67
+
 : /MOD   ( n1 n2 -- n3 n4) >R S>D R> M/MOD ;
 : /      ( n n -- n)   /MOD NIP  ;
 : MOD    ( n n -- n)   /MOD DROP ;
@@ -274,13 +292,18 @@ TARGET-COMPILING
 \ CAMEL Forth calls this ">COUNTED"
 : PLACE   ( src n dst -- ) 2DUP C! 1+ SWAP CMOVE ;
 
-\ : /STRING ( caddr1 u1 n - caddr2 u2 ) TUCK - >R + R> ; \ 10 bytes
+SLOWER [IF]
+: /STRING ( caddr1 u1 n - caddr2 u2 ) TUCK - >R + R> ; \ 10 bytes
+
+[ELSE]
+
 CODE /STRING ( c-addr1 u1 n -- c-addr2 u2 ) \ ~20uS!!       Clks
               TOS   *SP  SUB,                               \ 18
               TOS 2 (SP) ADD,                               \ 22
               TOS POP,                         \ refill TOS   22
               NEXT,                            \ 8 bytes      62  ~20uS
               ENDCODE
+[THEN]
 
 : S,       ( c-addr u -- ) HERE OVER 1+ ALLOT PLACE  ALIGN ;
 
@@ -330,7 +353,7 @@ CODE DUP>R  ( n -- n) TOS RPUSH,  NEXT, ENDCODE  \ used 3 times
  HEX
 TARGET-COMPILING
 
-SMALLER [IF]
+SLOWER [IF]
     : BASE@   BASE @ ;
 [ELSE]
  CODE BASE@
@@ -341,7 +364,7 @@ SMALLER [IF]
              ENDCODE
 [THEN]
 
-SMALLER [IF]
+SLOWER [IF]
 
 : DIGIT?  ( c -- n -1) \ if c is a valid digit
  \             -- x  0  \ otherwise
@@ -434,7 +457,7 @@ HEX [TC]
 : VPUT   ( char -- ) VPOS VC! ;
 : AT-XY  ( col row -- ) VROW 2! ;  \ set VDP address for Fast type
 
-SMALLER [IF]
+SLOWER [IF]
 
     : TOPLN   ( -- vaddr)  VPG @ VTOP @ + ;  \ 10 bytes
     : LASTLN  ( -- vaddr)  VPG @ C/SCR @ + ; \ 10 bytes
@@ -551,8 +574,6 @@ TARGET-COMPILING
 \ N U M B E R   T O   S T R I N G   C O N V E R S I O N
 
 TARGET-COMPILING
-( integrated into '#' for speed and save bytes)
-\ : UD/MOD ( ud1 u2 -- u3 ud4) >R 0 R@ UM/MOD -ROT R> UM/MOD ROT ;
 
 0 [IF]
    : >DIGIT   DUP 9 > IF 7 + THEN T[CHAR] 0 + ;  \ 20 BYTES :)
@@ -568,9 +589,9 @@ CODE >DIGIT  ( n -- c) \ ASM is 9 bytes, 4X faster
             ENDCODE
 [THEN]
 
-: <#     ( --)        PAD HP ! ;
+: <#     ( --)   PAD HP ! ;
 
-SMALLER  [if]
+SLOWER  [if]
    : HOLD   ( char -- )  HP DUP 1-! @ C! ;
 
 [else]  \ this took a while to get right :)
@@ -880,7 +901,7 @@ TARGET-COMPILING
               LATEST DUP CONTEXT ! CURRENT !  \ FORTH DEFINITIONS
               FLOOR ON
               TEXT                          \ VDP start screen
-              T." CAMEL99 Forth V2.67d"
+              T." CAMEL99 Forth V2.68"
               DECIMAL                       \ default to base 10
 ;
 
@@ -927,9 +948,9 @@ cr .( Forth Kernel compiled completely")
 
 CARTRIDGE
 [IF]
-     FILENAME: CAM267SC
+     FILENAME: CAM268SC
 [ELSE]
-     FILENAME: CAMEL267
+     FILENAME: CAMEL268
 [THEN]
          T' INIT >BODY BOOT-ADDRESS T!
 

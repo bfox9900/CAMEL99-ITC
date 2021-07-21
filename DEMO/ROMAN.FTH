@@ -3,7 +3,8 @@
 \ ANS/ISO Forth
 
 HEX
-: TOUPPER ( char -- char ) 05F AND ;
+: LOWER?  ( char -- ?) [CHAR] a [CHAR] z 1+ WITHIN ;
+: TOUPPER ( char -- char ) DUP LOWER? IF 05F AND THEN ;
 
 DECIMAL
 \ status holders
@@ -28,8 +29,8 @@ CREATE VALUES ( -- addr) 0 , 1 , 5 , 10 , 50 , 100 , 500 , 1000 ,
 : REMEMBER ( ndx -- ndx ) CURNDX @ OLDNDX !  DUP CURNDX !  ;
 : ]VALUE@  ( ndx -- n )   REMEMBER VALUES [] @ ;
 : >VALUE ( char -- n )   >INDEX ]VALUE@ ;
-: ?ILLEGAL ( ndx --  )   
-           CURNDX @ OLDNDX @ =  
+: ?ILLEGAL ( ndx --  )
+           CURNDX @ OLDNDX @ =
            NEGFLAG @ AND ABORT" Illegal format" ;
 
 \ LOGIC

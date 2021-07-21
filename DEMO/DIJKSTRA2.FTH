@@ -2,20 +2,19 @@
 \ *SORTS IN PLACE FROM Video MEMORY*
 
 \ Compare this version to dijkstra.fth
-\ This code uses INLINE and ASM words for a 25% speed up
+\ This code uses INLINE optimizer for a real speedup
 
  INCLUDE DSK1.TOOLS   ( for debugging)
  INCLUDE DSK1.GRAFIX
  INCLUDE DSK1.RANDOM
  INCLUDE DSK1.CASE
  INCLUDE DSK1.ELAPSE
- INCLUDE DSK1.ASM9900
  INCLUDE DSK1.INLINE
 
 
 \ TMS9918 Video chip Specific code
 HEX
-FFFF FFFF FFFF FFFF PATTERN: SQUARE
+CREATE SQUARE  FFFF , FFFF , FFFF , FFFF ,
 
 \ define colors and characters
 DECIMAL
@@ -47,14 +46,15 @@ SQUARE PTR1   CHARDEF
 
 : NOTRED    (  -- n ) \ return rnd index that is not RED
            BEGIN
-              RNDI DUP VC@ REDSQR =
-           WHILE DROP
+           RNDI  INLINE[ DUP VC@ REDSQR = ]
+           WHILE
+             DROP
            REPEAT ;
 
 : NOTREDWHT    ( -- n ) \ return rnd index that is not RED or BLU
-           BEGIN  RNDI DUP
-              VC@  DUP REDSQR =
-              SWAP WHTSQR = OR
+           BEGIN
+             RNDI
+             INLINE[ DUP VC@  DUP REDSQR =   SWAP WHTSQR = OR ]
            WHILE
               DROP
            REPEAT ;
@@ -66,7 +66,7 @@ SQUARE PTR1   CHARDEF
           #256 0 DO   WHTSQR NOTREDWHT VC!   LOOP ;
 
 : BLUSCREEN ( -- )
-           0 768 BLUSQR VFILL ;
+          INLINE[ 0 768 BLUSQR ] VFILL ;
 
 \ load the screen with random red,white&blue squares
 : RNDSCREEN ( -- )
@@ -75,20 +75,21 @@ SQUARE PTR1   CHARDEF
 : CHECKERED  ( -- ) \ red,wht,blue checker board
          SIZE 0
          DO
-            BLUSQR I VC!
-            WHTSQR I 1+ VC!
-            REDSQR I 2+ VC!
+          INLINE[  BLUSQR I VC! ]
+          INLINE[  WHTSQR I 1+ VC! ]
+          INLINE[  REDSQR I 2+ VC! ]
          3 +LOOP ;
 
+\ inlining multiple parameters generates faster code as well.
 : RUSSIAN  \ Russian flag
-            0  0 WHTSQR 256 HCHAR
-            0  8 BLUSQR 256 HCHAR
-            0 16 REDSQR 256 HCHAR ;
+          INLINE[ 0  0 WHTSQR 256 ] HCHAR
+          INLINE[ 0  8 BLUSQR 256 ] HCHAR
+          INLINE[ 0 16 REDSQR 256 ] HCHAR ;
 
 : FRENCH  \ kind of a French flag
-           0  0 BLUSQR 256 VCHAR
-          10 16 WHTSQR 256 VCHAR
-          21  8 REDSQR 256 VCHAR ;
+        INLINE[   0  0 BLUSQR 256 ] VCHAR
+        INLINE[  10 16 WHTSQR 256 ] VCHAR
+        INLINE[  21  8 REDSQR 256 ] VCHAR ;
 
 \ Algorithm Dijkstra(A)  \ A is an array of three colors
 \ begin
@@ -108,63 +109,35 @@ SQUARE PTR1   CHARDEF
 \               b<-b-1
 \ end
 
-VARIABLE X
-
-\ : XCHG  ( adr1 adr2 -- )
-\      OVER VC@ OVER VC@        \ read the chars in VDP RAM
-\      SWAP ROT VC! SWAP VC! ;  \ exchange the characters
-
-CODE XCHG2   \ this is 150 bytes! But its a little faster
-     INLINE[ OVER VC@ OVER VC@ SWAP ROT VC! SWAP VC! ]
-     NEXT,
-     ENDCODE
+: XCHG  ( adr1 adr2 -- )  \ exchange the characters in addresses
+  INLINE[  OVER VC@ OVER VC@  SWAP ROT VC! SWAP VC! ]  ;
 
 \ address pointer variables
 VARIABLE R
 VARIABLE B
 VARIABLE W
+SIZE 1- CONSTANT n   \ sugar to match the Algorithm
 
-\ fast FETCH pointer variables using C naming style
-CODE *R    TOS PUSH,   R @@ TOS MOV,  NEXT, ENDCODE
-CODE *B    TOS PUSH,   B @@ TOS MOV,  NEXT, ENDCODE
-CODE *W    TOS PUSH,   W @@ TOS MOV,  NEXT, ENDCODE
-
-\ fast incrementer/dectrementer
-CODE R++   R @@ INC, NEXT, ENDCODE
-CODE W--   W @@ DEC, NEXT, ENDCODE
-CODE B--   B @@ DEC, NEXT, ENDCODE
-
-CODE >=     ( n1 n2 -- flag) \ 2% faster than 1- >
-             *SP+ TOS CMP,
-              GTE IF,
-                 TOS SETO,
-              ELSE,
-                 TOS CLR,
-              ENDIF,
-              NEXT,
-              ENDCODE
-
-\ note: Using Assembler for variables makes the code 14% faster
-\       Inlining XCHG gave another 11% (25% improvemnt)
 : DIJKSTRA ( -- )
            0 R !
-           SIZE 1-
-           DUP B !
-           W !
+           n B !
+           n W !
            BEGIN
-             *W *R >=
+              INLINE[ W @  R @ 1- ]  >
            WHILE
-              *W VC@
-              CASE
-                 REDSQR OF *R *W XCHG2
-                            R++           ENDOF
+              INLINE[ W @ VC@ ]
+               CASE
+                 REDSQR OF  INLINE[ R @ W @ ] XCHG
+                            INLINE[ R 1+! ]
+                                              ENDOF
 
-                 WHTSQR OF  W--           ENDOF
+                 WHTSQR OF  INLINE[ W 1-! ]   ENDOF
 
-                 BLUSQR OF *W *B XCHG2
-                            W--
-                            B--          ENDOF
-              ENDCASE
+                 BLUSQR OF  INLINE[ W @ B @ ]  XCHG
+                            INLINE[  W 1-!  ]
+                            INLINE[  B 1-!  ]
+                                              ENDOF
+               ENDCASE
            REPEAT ;
 
 
@@ -178,7 +151,7 @@ CODE >=     ( n1 n2 -- flag) \ 2% faster than 1- >
          CR ."  translated to hi-level Forth"
          CR
          CR ."  Sorted in-place in Video RAM"
-         CR ."  using some ASM code words.
+         CR ."  using INLINE optimizer."
 
          0 23 AT-XY ."   Press any key to begin"
          KEY DROP ;

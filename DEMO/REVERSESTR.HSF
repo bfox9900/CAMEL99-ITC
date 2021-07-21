@@ -9,19 +9,14 @@ NEEDS DUMP  FROM DSK1.TOOLS
           2DUP  OVER C@  OVER C@  ( -- addr addr' char char')
           SWAP ROT C!  SWAP C! ;  \ put the chars in the other address
 
-: MOVEIN  ( addr addr -- addr' addr' )
-          1- SWAP 1+ SWAP ;  \ move addresses toward each other
-
-: MORE?   ( addr addr -- addr addr ? ) 2DUP <  ;
-
 : REVERSE  ( addr len -- addr len )
-           2DUP                        \ keep copy for use later
-           OVER + 1- ( -- start end )
-           BEGIN
+           2DUP                        \ keep copy for result
+           OVER + 1- ( -- startaddr endaddr )
+           BEGIN 2DUP <     \ test: startaddr < endaddr
+           WHILE            \ while true...
               XCHGBYTES
-              MOVEIN
-              MORE? WHILE
+              1 /STRING     \ cut 1 char from front of string
            REPEAT
            2DROP ;
 
-\ USAGE:  A$ REVERSE TYPE
+\ Usage:  A$ REVERSE TYPE

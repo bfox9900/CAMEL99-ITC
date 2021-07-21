@@ -29,7 +29,7 @@
 \ *G Overview:
 \ ** This implementation creates an Indirect Threaded Code System with the
 \ ** Top of stack (TOS) cached in Register 4 for a speed increase.
-\ ** We have also tried to use less space where possible. Some primitives
+\ **cWe have also tried to use less space where possible. Some primitives
 \ ** are smaller in Assembly language but some are smaller in Forth.
 \ ** We chose smaller is better except where performance would really suffer.
 
@@ -624,13 +624,14 @@ CODE -       ( u1 u2 -- u )
               TOS NEG,    \ sign is wrong when subtracting memory from register
               NEXT,
               ENDCODE
-
-CODE M+      ( d n -- d )     \ add single to double signed output
-              TOS  2 (SP) ADD,
-              OC IF,
-                 *SP INC,
+\ D+ is a better primitive for 9900 CPU than M+
+CODE D+   ( lo hi lo' hi' -- d)
+             *SP+    R0  MOV,
+             *SP+    TOS ADD,   \ add hi #s
+              R0      *SP ADD,  \ add lo #s
+              OC IF,            \ carry set?
+                TOS INC,       \ incr hi
               ENDIF,
-              TOS POP,
               NEXT,
               ENDCODE
 
@@ -646,7 +647,7 @@ CODE NEGATE ( n -- n )
 
 CODE ALIGNED ( n -- n)
               TOS INC,
-              TOS -2 ANDI,
+              TOS FFFE ANDI,
               NEXT,
               ENDCODE
 
@@ -700,7 +701,7 @@ CODE UM/MOD ( ud u1 -- u2 u3 ) \ numerator(32bits), divisor -- rem,quot
 \   set flags to reflect signs of operands, and force operands positive...
 
 
-\ cross-compiler creates a variable to control floored or symetrical division
+\ cross-compiler creates a variable to control floored or symmetrical division
 VARIABLE FLOOR
 
 CODE M/MOD  ( lsb msb n3 -- rem quot)
@@ -711,7 +712,7 @@ CODE M/MOD  ( lsb msb n3 -- rem quot)
       *SP  R2 MOV,             \ move low word of ud to r2 (keep stack pos.)
 
           TOS ABS,             \ force denominator positive
-       R1  0 CMPI,             \ check sign of num
+       R1  0 CMPI,             \ check sign of numerator
        LT IF,                  \ if numerator<0
            R1 INV,             \ DABS: invert numerator MSB and..
            R2 NEG,             \ ..negate numerator LSB
@@ -883,8 +884,8 @@ cr .( ANS Forth DO/LOOP )
 \ BUT it is NOT COMPATIBLE with the workspace based multi-tasker
 
 REGISTERS [IF]
-     INCLUDE CC9900\CCLIB\DO-R15.HSF
-\     INCLUDE CC9900\CCLIB\DOFAST.HSF
+\     INCLUDE CC9900\CCLIB\DO-R15.HSF
+     INCLUDE CC9900\CCLIB\DOFAST.HSF
 [ELSE]
 
 \ ===========================================================
@@ -902,7 +903,7 @@ CODE <?DO> ( limit ndx -- )
 @@1:          R0  8000 LI,      \ load "fudge factor" to LIMIT
              *SP+ R0  SUB,      \ Pop limit, compute 8000h-limit "fudge factor"
               R0  TOS ADD,      \ loop ctr = index+fudge
-              R0 RPUSH,
+              R0  RPUSH,
               TOS RPUSH,
               TOS POP,          \ refill TOS
               NEXT,

@@ -1,4 +1,4 @@
-\ sort dictionary words experiment
+\ sort dictionary words experiment  Update for V2.68 Jul 2021 Brian Fox
 
 \ This demo uses some advanced features of CAMEL99 forth
 \ 1. Dynamically allocating memory in the HEAP ( MALLOC )
@@ -14,6 +14,8 @@ INCLUDE DSK1.TOOLS
 INCLUDE DSK1.VALUES
 INCLUDE DSK1.DEFER
 INCLUDE DSK1.ELAPSE
+INCLUDE DSK1.MALLOC
+INCLUDE DSK1.COMPARE
 
 HEX
 \ variables uses by COMBSORT
@@ -94,4 +96,3 @@ HEX
     200 CELLS MFREE                  \ release memory
     0 TO ^DATA                       \ clear the data pointer
     CR  ;
-

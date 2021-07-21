@@ -1,4 +1,4 @@
-\ ELIZA in CAMEL99 Forth
+\ ELIZA in CAMEL99 Forth updated from V2.68 July 2021 Brian Fox
 
 \ This implementation uses the Forth dictionary as a big case statement
 \ Eliza's KEYWORD phrases are converted to Forth words by removing the spaces.
@@ -14,8 +14,11 @@
 \ Example:  : ICANT    ICANNOT  ;
 \ The definition for ICANNOT will do the same thing as ICAN'T
 
-\ INCLUDE DSK1.TOOLS.F  \  for debugging
 
+INCLUDE DSK1.TOOLS  \  for debugging
+INCLUDE DSK1.MALLOC
+INCLUDE DSK1.COMPARE
+INCLUDE DSK1.TRAILING
 
 \ ======[ punctuation characters ]======
 DECIMAL
@@ -24,7 +27,7 @@ CHAR , CONSTANT ','
 CHAR . CONSTANT '.'
 
 \ working memory for string processing
-\ CREATE INPUT$  81 ALLOT  \ holds the "clean" reply from the patient
+CREATE INPUT$  81 ALLOT  \ holds the "clean" reply from the patient
 
 \ === string stack in HEAP ====
          VARIABLE SSP     \ the string stack pointer
@@ -36,7 +39,7 @@ SSW 10 * MALLOC CONSTANT $STAK  \ ten strings deep  (2.5 Kbytes!)
 : NEW:     ( -- ) SSW SSP +! ;  \ bump string stack pointer by 256
 : COLLAPSE ( -- ) SSP OFF  ;    \ reset string stack pointer to zero
 
-: TOP$     ( -- $) SSP @ $STAK + ; 
+: TOP$     ( -- $) SSP @ $STAK + ;
 
 \ string stack helpers ====
 : SPUSH    ( addr len -- top$ ) NEW: TOP$ DUP >R PLACE R> ;
@@ -344,7 +347,7 @@ CREATE KEYWORDS
 \ Replies create a FORTH word with a 2 CELL header structure
 \ followed by a list of counted strings.
 
-: LIST  HERE ;
+: '{    HERE {  ;
 : REPLY: ( LIST -- )   DUP {LEN} 1-  0 ROT CREATE ,  ,  ,   ;
 
 \ given a reply address these words compute the offset of the fields
@@ -399,11 +402,6 @@ VARIABLE ROGERIAN      \ set if Rogerian answer is needed
             CR ." Can I help you?" ;
 
 : $ACCEPT ( $addr -- ) DUP  1+ 80 ACCEPT  SWAP C!  ;
-
-: -TRAILING  ( adr len -- adr len') \ remove trailing blanks (spaces)
-             BEGIN  2DUP + 1- C@  BL =
-             WHILE  1-
-             REPEAT ;
 
 : TRIM     ( addr len -- addr' len')
             BL SKIP -TRAILING ;
@@ -482,21 +480,21 @@ DECIMAL
             CR  QUIT ;
 
 \ The defines the behaviour when Eliza does not understand
-LIST   { " What does that suggest to you?"
-         " I see."
-         " I'm not sure I understand you fully."
-         " Topic shift: How is your love life?"
-         " Can you expand on that a bit?"
-         " That is quite interesting. Tell me more. "
-         " Are you being honest?"
-       } REPLY: TAPDANCE
+'{ " What does that suggest to you?"
+   " I see."
+   " I'm not sure I understand you fully."
+   " Topic shift: How is your love life?"
+   " Can you expand on that a bit?"
+   " That is quite interesting. Tell me more. "
+   " Are you being honest?"
+ } REPLY: TAPDANCE
 
 \ This is the naught word behaviour.
-LIST { " Hey now. we don't use that kind of language here."
-       " I told you to watch your language!"
-       " That's it. I don't have to listen to this!"
-       "   "
-     } REPLY: SHIT
+'{ " Hey now. we don't use that kind of language here."
+   " I told you to watch your language!"
+   " That's it. I don't have to listen to this!"
+   "   "
+ } REPLY: SHIT
 
 \ all these words cause SHIT to happen :-)
 \ Add words as you see fit
@@ -536,17 +534,19 @@ LIST { " Hey now. we don't use that kind of language here."
 .( .)
 
 DECIMAL
-: ELIZA    ( -- )
-        TMR!   \ start the timer.
-        SHIT ->USE# OFF
+: SPLASH
         TEXT  WHT/BLK
         S" Eliza" BIG.TYPE CR
         CR ." Standy while I read your file..."
         CR   1000 MS ." Hmm..." 1000 MS
         CR ." ==================================="
         CR  ." ...interesting..."
+;
+
+: ELIZA    ( -- )
+        SHIT ->USE# OFF
+        SPLASH
         GREETING
-        ABORT
         BEGIN
           ?BADWORDS
            COLLAPSE  ( the string stack)
