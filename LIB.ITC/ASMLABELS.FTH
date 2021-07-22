@@ -8,8 +8,9 @@ DECIMAL
 25 CONSTANT #FWD
 20 CONSTANT #LABELS
 
-\ Make a stack to handle jumps
-CREATE FS0    #FWD CELLS ALLOT
+\ Make a stack to handle 50 forward jumps
+CREATE FS0    #FWD 2* CELLS ALLOT
+
 FS0 CREATE FSP ,   \ fwd stack pointer, initialzed to FS0
 : FSDEPTH ( -- n) FS0 FSP @ -  2/ ;
 : >FS     ( addr --) 2 FSP +!   FSP @ ! ;
@@ -33,7 +34,7 @@ CREATE LABELS   #LABELS CELLS ALLOT
 : RESOLVER ( -- )
        BEGIN
        FSDEPTH WHILE
-           FS> ]LBL @ ?LABEL 
+           FS> ]LBL @ ?LABEL
          ( lbladdress ) FS> TUCK - RESOLVE
        REPEAT
 ;

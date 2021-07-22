@@ -1,8 +1,9 @@
-\ 4tasks.f  mtask demo with numeric printing
+\ 4tasks  mulit-tasking demo with numeric printing
 
 INCLUDE DSK1.TOOLS
 INCLUDE DSK1.MTASK99
 INCLUDE DSK1.UDOTR    \ Right justified number printing
+INCLUDE DSK1.MALLOC   \ Malloc removed from kernel in V2.0
 
 INIT-MULTI
 
@@ -15,8 +16,12 @@ USIZE TASK: TASK3
 USIZE TASK: TASK4
 
 DECIMAL
-\ show the round-robin task time in uS. (TMR is 21.3 uS/tick)
-: .PULSE   TMR@ PAUSE TMR@ - ABS   213 10000  */   6 U.R  ." mS" ;
+\ get the round-robin task time in 9901 timer ticks. (21.2uS per tick)
+: PULSE@  ( ) TMR@ PAUSE TMR@ - ABS ;
+
+\ print n timer ticks in milli-seconds
+: .MS    ( n -- )  213 10000  */  6 U.R  ." mS" ;
+
 
 \ single command to stop a task and goto next task
 : STOP    ( -- ) MYSELF SLEEP PAUSE ;
@@ -24,8 +29,7 @@ DECIMAL
 \ re-entrant up counter
 : UPCOUNTER ( col row end start -- )
             ?DO
-              2DUP AT-XY
-              I 8 U.R
+              2DUP AT-XY I 8 U.R
               PAUSE
             LOOP
             2DROP ;
@@ -56,7 +60,7 @@ DECIMAL
 DECIMAL
 : COUNTER3            \ perpetual binary counter
             196 TPAD !
-            2 BASE !
+            2 BASE !  \ print in binary
             BEGIN
               20 0 256 0 UPCOUNTER
             AGAIN ;
@@ -68,9 +72,8 @@ DECIMAL
             220 TPAD !
             DECIMAL
             BEGIN
-              31 0 AT-XY
-              PAUSE .PULSE
-              500 MS
+              30 0 AT-XY ." t=" PULSE@  .MS
+              1000 MS
               SCR_TIME_OUT  OFF  \ kill screen time-out
             AGAIN ;
 
@@ -88,6 +91,7 @@ DECIMAL
      PAGE
      C/L@ VTOP !     \ set top of screen to 2nd line
      PAGE
+     CR
      CR ."   MULTI-TASKING VDP I/O DEMONSTRATION"
      CR ." ---------------------------------------"
      CR ." 3 counter tasks in BASE 10,16 and 2"
@@ -101,6 +105,10 @@ DECIMAL
      CR ." You have: TASK1 TASK2 TASK3 TASK4"
      CR ." When counters stop use TASK1 RESTART"
      CR ." to run them again. WAKE will crash!"
-     CR ." Press a key to enable mulit-tasker" KEY DROP
+     CR
+     CR ." Top line of screen is protected"
+     CR ." Type WORDS to see this."
+     CR
+     CR ." Press a key to start the demo" KEY DROP
      MULTI
      RUN-TASKS  ;

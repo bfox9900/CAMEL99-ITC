@@ -125,10 +125,17 @@ CODE DXY  ( x2 y2 x1 y1 --- dx dy )   \ Common factor for SP.DIST,SP.DISTXY
 \ VDP status bit set if any two sprites overlap
 : COINCALL  ( -- ? ) VDPSTS C@ 20 AND ;
 
+: COINCXY   ( dx dy sp# tol -- ? )
+           >R
+           POSITION   ( -- x1 y1 x2  y2 )
+           ROT |-| R@ <  \ |-| is  "- ABS"  as a code word
+          -ROT |-| R> <
+           AND
+;
+
 : COINC ( spr#1 spr#2 tol -- ?)
         COINCALL
-        IF
-          >R
+        IF >R
           POSITION ROT POSITION ( -- x1 y1 x2  y2 )
           ROT - ABS R@ <
          -ROT - ABS R> <
@@ -141,18 +148,6 @@ CODE DXY  ( x2 y2 x1 y1 --- dx dy )   \ Common factor for SP.DIST,SP.DISTXY
 
 \ : TESTC   TMR@  0 1 8 COINC TMR@ NIP - . ;  \ 1406 uS
 
- : COINCXY   ( dx dy sp# tol -- ? )
-        COINCALL
-        IF >R
-           POSITION   ( -- x1 y1 x2  y2 )
-           ROT - ABS R@ <
-          -ROT - ABS R> <
-           AND
-           EXIT           \ get out
-        THEN              \ if coincall=true then do this
-        2DROP 2DROP    \ drop parameters
-        FALSE          \ return false flag
- ;
 
 HERE SWAP -
 CR

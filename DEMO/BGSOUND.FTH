@@ -1,4 +1,5 @@
-\ BACKGROUND TI sound list player in CAMEL99 Forth V2
+\ Multi-tasking TI sound list player demo in CAMEL99 Forth V2
+\ SEE: ISRSOUND.FTH for a better way to do this in your games.
 
 INCLUDE DSK1.MTASK99
 
@@ -11,7 +12,7 @@ INCLUDE DSK1.MTASK99
 
 \ To run demo:
 \ MULTI
-\ PACMAN >SNDQ 
+\ PACMAN >SNDQ
 \ MUNCHMAN >SNDQ
 \ PLAYQ
 
@@ -19,8 +20,6 @@ INCLUDE DSK1.MTASK99
 \ sound list player
 
 HEX
-: >MS    ( n -- n')  4 LSHIFT ;  \ n*16, converts ISR delay value to milliseconds
-
 : SILENT ( --)  9F SND!  BF SND!  DF SND! FF SND! ;  \ turn off all sounds
 
 : PLAY$ ( caddr -- )        \ play 1 sound string
@@ -56,7 +55,7 @@ CREATE SOUNDQ   20 CELLS ALLOT
 
 \ BackgroundPlayer
 : BGPLAYER ( -- )   \ play all lists in the Q then goto sleep
-           BEGIN 
+           BEGIN
            Q? WHILE
              SOUNDQ Q@ PLAYLIST
            REPEAT
@@ -67,7 +66,7 @@ CREATE SOUNDQ   20 CELLS ALLOT
 \ === MULTI-TASKING SET-UP ===
 INIT-MULTI
 
-CREATE PLAYER USIZE ALLOT  PLAYER FORK
+CREATE PLAYER    USIZE ALLOT  PLAYER FORK
 
 ' BGPLAYER PLAYER ASSIGN
 
@@ -82,7 +81,7 @@ CREATE PLAYER USIZE ALLOT  PLAYER FORK
 : ?BYTE ( c -- ) FF00 AND  ABORT" Not a byte" ;
 
 : BYTE ( -- )
-         BEGIN  
+         BEGIN
            [CHAR] , WORD DUP C@
          WHILE
             HERE COUNT EVALUATE  DUP ?BYTE  C,
@@ -108,7 +107,7 @@ CREATE PACMAN
        BYTE 03,AC,1A,B7,08
 /END
 
-MUNCHMAN >SNDQ  PACMAN >SNDQ 
+MUNCHMAN >SNDQ  PACMAN >SNDQ
 
 CR .( Type: MULTI)
 CR .( PLAYQ )

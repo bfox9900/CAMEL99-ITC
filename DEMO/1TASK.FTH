@@ -1,6 +1,7 @@
 \ mtask demo
 NEEDS DUMP FROM DSK1.TOOLS
 NEEDS FORK FROM DSK1.MTASK99
+NEEDS MALLOC FROM DSK1.MALLOC
 
 INIT-MULTI
 ( word to  create a task in heap and FORK)
@@ -9,8 +10,9 @@ INIT-MULTI
 USIZE TASK: TASK1
 
 HEX
-: DROP16  ( n --)  2DROP 2DROP 2DROP 2DROP
-                   2DROP 2DROP 2DROP 2DROP  ;
+: DROP16  ( n --) PAUSE   \ be nice and share some time
+           2DROP 2DROP 2DROP 2DROP
+           2DROP 2DROP 2DROP 2DROP  ;
 
 \ show the round-robin task time in uS
 : .PULSE   TMR@ PAUSE TMR@ - ABS  213 10 */  U. ." uS" ;
@@ -23,7 +25,7 @@ HEX
           20 0 AT-XY
           VROW 2@        \ fetch x,y
           BEGIN
-            2DUP AT-XY ." TASK1   "
+            2DUP AT-XY ." TASK1     "
 
             10 0 DO DEAD  LOOP 100 MS
             DROP16 100 MS
@@ -45,6 +47,3 @@ CR .( MULTI <ENTER> )
 CR .( TASK1 WAKE <ENTER> )
 CR .( look at memory address >2000..2100)
 CR .( in debugger to see TASK1 stack)
-
-
-
