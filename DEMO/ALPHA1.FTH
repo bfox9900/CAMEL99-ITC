@@ -1,6 +1,7 @@
 \ alpha intelligence demonstration using characters
+\ Happy face searches the screen randomly looking for food
 
-INCLUDE DSK1.TOOLS
+\ INCLUDE DSK1.TOOLS
 INCLUDE DSK1.GRAFIX
 INCLUDE DSK1.RANDOM
 
@@ -8,10 +9,8 @@ MARKER ALPHA
 \ ==================================
 \ character patterns
 HEX
- 00FE FEFE FEFE FEFE PATTERN: REDBRICK
- 3C7E DBFF DBE7 7E3C PATTERN: HAPPYFACE
- 3C7E DBFF E7DB 7E3C PATTERN: SADFACE
- 0022 5508 C92A 1C3E PATTERN: PLANT
+CREATE HAPPYFACE  3C7E , DBFF , DBE7 , 7E3C ,
+CREATE SADFACE    3C7E , DBFF , E7DB , 7E3C ,
 
 \ named chars
 DECIMAL
@@ -20,8 +19,11 @@ DECIMAL
 176 CONSTANT FOOD
 
 \ define chars
- REDBRICK  BRICK CHARDEF   BRICK  SET#  7 15 COLOR
- PLANT    FOOD CHARDEF   FOOD SET# 13 1 COLOR
+S" 00FEFEFEFEFEFEFE"  BRICK CALLCHAR
+BRICK  SET#  7 15 COLOR
+
+S" 00225508C92A1C3E"  FOOD CALLCHAR
+FOOD SET# 13 1 COLOR
 
 : CLIP       ROT MIN MAX ;
 
@@ -53,31 +55,22 @@ CREATE MY-XY  RNDY , RNDX ,    \ independant cursor for alpha guy
 
 : RNDV   ( -- -1 0 1 )  3 RND 1- ;
 
-: NON-0  ( -- n)
-             BEGIN
-                RNDV DUP 0 <>
-             UNTIL ;
+: NON-0        ( -- n) BEGIN RNDV DUP 0 <> UNTIL ;
 
-: NEW-VECTORS  ( -- X Y)      \ we need to prevent a (0,0) vector condition
-               RNDV DUP 0=    \ If 1st # is 0
-               IF    NON-0    \ wait for a non-zero 2nd #
-               ELSE  RNDV
-               THEN ;
+: CHANGE-DIR   ( -- )  RNDV RNDV VECTOR 2! ;
 
-: CHANGE-DIR   ( -- )  NEW-VECTORS VECTOR 2! ;
 : VECTOR@      ( --  dx dy)  VECTOR 2@ ;
-: VECT+        ( x y dx dy -- x' y' ) ROT +  -ROT + SWAP ;
+: VECT+        ( x y dx dy -- x' y' ) ROT + >R  + R> ;
 
 \ direct memory screen control
-: >VPOS        ( Y X -- vaddr)  C/L@ * + ;
-: GETXY        ( -- x y) MY-XY 2@ ;
-: PUT-CHAR     ( c -- ) GETXY >VPOS VC! ;
+\ : >VPOS        ( Y X -- vaddr)  C/L@ * + ; \ In kernel
+
+: PUT-CHAR     ( c -- ) MY-XY 2@ >VPOS VC! ;
 : ERASE-MAN    ( -- )   BL PUT-CHAR ;
 : SHOW-MAN     ( -- )   ALPHA-GUY PUT-CHAR ;
 
 : READ-CHAR    ( Y X -- c) >VPOS VC@ ;  \ read char without moving cursor
-: NEXT-POS     ( -- Y X ) GETXY VECTOR@ VECT+  ;
-
+: NEXT-POS     ( -- Y X ) MY-XY 2@ VECTOR@ VECT+  ;
 : MOVE-MAN     ( -- ) ERASE-MAN   NEXT-POS MY-XY 2!  SHOW-MAN ;
 
 DECIMAL
@@ -87,8 +80,10 @@ VARIABLE SPEED
 \ print right justified n spaces
 : .R   ( n n -- )  >R DUP ABS 0 <# #S ROT SIGN #>  R> OVER - SPACES TYPE ;
 
+: CLRLN    VPOS C/L@ BL VFILL ;
+
 : .BRAIN     ( -- )
-     0 0 CLRLN
+     0 0 AT-XY CLRLN
      ." Vector"  VECTOR 2@  2 .R ." ," 2 .R
      SPACE ." Trys " TRYS @ 2 .R
      SPACE ." Energy " SPEED @ 150 - ABS 3 .R ;
@@ -96,17 +91,13 @@ VARIABLE SPEED
 : SAD         ALPHA-GUY  SADFACE   OVER CHARDEF    SET#  9 1 COLOR  ;
 : HAPPY       ALPHA-GUY  HAPPYFACE OVER CHARDEF    SET# 12 1 COLOR  ;
 
-: .PLANT      176 RNDY RNDX >VPOS  VC! ;
+: .PLANT      FOOD  RNDY RNDX >VPOS  VC! ;
+: PLANTS      RNDY 4 + 0 DO  .PLANT LOOP ;
 
-: PLANTS      RNDY 0 DO  .PLANT LOOP ;
-
-: SPEED!     ( n -- ) 5 150 CLIP  SPEED ! ;
-: SPEED++    ( -- ) SPEED @ 35 - SPEED! ;   \ speed is inverse
-: SPEED--    ( -- ) SPEED @ 1+  SPEED! ;
-
-: EAT        ( -- )
-             BL NEXT-POS >VPOS VC!
-             SPEED++ ;
+: SPEED!     ( n -- ) 10 150 CLIP  SPEED ! ;
+: SPEED++    ( -- ) SPEED @  5 - SPEED! ;   \ speed is inverse
+: SPEED--    ( -- ) SPEED @  1+  SPEED! ;
+: EAT        ( -- ) BL NEXT-POS >VPOS VC!  SPEED++ ;
 
 : CLEAR-AHEAD? ( -- ?) NEXT-POS READ-CHAR  BL = ;
 : FOOD?        ( -- ?) NEXT-POS READ-CHAR  FOOD = ;
@@ -116,11 +107,11 @@ VARIABLE SPEED
             TRYS OFF                   \ reset the trys counter
             BEGIN
                1 TRYS +!               \ count the try
-               CHANGE-DIR              \ get new direction
-               .BRAIN 50 MS                                               
+                CHANGE-DIR              \ get new direction
+               .BRAIN 50 MS
                CLEAR-AHEAD?
             UNTIL
-            HAPPY   ;
+            HAPPY ;
 
 DECIMAL
 : RUN      ( -- )
@@ -131,15 +122,14 @@ DECIMAL
            .BORDER  .WALLS  PLANTS
            HAPPY SHOW-MAN
            CHANGE-DIR
-           150 SPEED!     \ 150 is slow, longest delay
+           5 SPEED!
            BEGIN
               FOOD? IF BEEP EAT THEN
               CLEAR-AHEAD?
-              IF   MOVE-MAN   \ if true
-              ELSE ALPHA-THINK             \ otherwise
+              IF   MOVE-MAN      \ if true
+              ELSE ALPHA-THINK   \ otherwise
               THEN SPEED @ MS
               KEY?
            UNTIL
-           ?BREAK
+           ?TERMINAL ABORT" Demonstration Halted"
         AGAIN ;
-
