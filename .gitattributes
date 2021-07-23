@@ -1,10 +1,13 @@
 *.HSF linguist-language=Forth
+*.FTH linguist-language=Forth
+
+# I have a report that this is causing pdf file corruption ??
 
 # Set the default behavior, in case people don't have core.autocrlf set.
-* text eol=crlf
+# core.autocrlf=false
+# * text eol=crlf
 
 # Explicitly declare text files you want to always be normalized and converted
 # to native line endings on checkout.
-*.hsf text
-*.fth text
-
+# *.hsf text
+# *.fth text
