@@ -128,8 +128,8 @@ CODE DXY  ( x2 y2 x1 y1 --- dx dy )   \ Common factor for SP.DIST,SP.DISTXY
 : COINCXY   ( dx dy sp# tol -- ? )
            >R
            POSITION   ( -- x1 y1 x2  y2 )
-           ROT |-| R@ <  \ |-| is  "- ABS"  as a code word
-          -ROT |-| R> <
+           ROT - ABS R@ <  \ |-| is  "- ABS"  as a code word
+          -ROT - ABS R> <
            AND
 ;
 

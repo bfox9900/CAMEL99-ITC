@@ -1,4 +1,4 @@
-CR .( GRAPHIX.FTH for CAMEL99 V2.X  Apr 16, 2021 BFox )
+CR .( GRAPHIX.FTH for CAMEL99 V2.X  Jul 22, 2021 BFox )
 CR
 HERE
 NEEDS VC, FROM DSK1.VDPMEM  \ use by new CALLCHAR
@@ -8,8 +8,15 @@ HEX
  0800 CONSTANT PDT       \ "pattern descriptor table" VDP address
 
 \ access VDP tables like arrays. Usage:  9 ]CTAB returns VDP addr
- : ]CTAB  ( set# -- 'ctab[n])   CTAB + ;    \ 1 byte fields
- : ]PDT   ( char# -- 'pdt[n] )  8* PDT + ;  \ 8 byte fields
+\ : ]CTAB  ( set# -- 'ctab[n])   CTAB + ;    \ 1 byte fields
+\ : ]PDT   ( char# -- 'pdt[n] )  8* PDT + ;  \ 8 byte fields
+
+\ code words are same size as Forth 4x faster
+CODE ]CTAB ( char# -- Vaddr ) \ TOS CTAB AI,
+      0224 , CTAB , NEXT,  ENDCODE
+
+CODE ]PDT  ( char# -- Vaddr ) \  TOS 3 SLA,  TOS PDT AI,
+      0A34 ,  0224 , PDT ,  NEXT, ENDCODE
 
 \ ABORT to Forth with a msg if input is bad
 : ?MODE  ( n -- )      VMODE @ <>   ABORT" Bad mode" ;
@@ -81,7 +88,18 @@ HEX
 
 \ need to change to Graphics mode now (C/SCR= >300) to compile VCHAR correctly
 GRAPHICS
+HEX
+CODE VWRAP ( Vaddr C/L@ --  Vaddr) \ makes vchar 25% faster
+C020 , AB8A , \ C/SCR @@ R0 MOV,
+0600 ,        \ R0 DEC,
+8004 ,        \ TOS R0 CMP,
+1201 ,        \ HI IF,
+6100 ,        \     R0 TOS SUB,
+              \ ENDIF,
+NEXT,
+ENDCODE \ 12 bytes vs 16 bytes in Forth
 
+DECIMAL
 : VCHAR  ( col row char cnt -- )
            2SWAP            ( -- char cnt col row )
           >VPOS             ( -- char cnt vdp_addr)
@@ -89,10 +107,7 @@ GRAPHICS
           ?DO               ( -- char vadr)
              2DUP VC!       \ write a character
              C/L@ +         \ bump address by char-per-line
-             DUP [ C/SCR @ 1- ] LITERAL >  \ subtract chars-per-screen-1
-             IF
-                 [ C/SCR @ 1- ] LITERAL -
-             THEN
+             VWRAP
           LOOP
           2DROP
 ;
