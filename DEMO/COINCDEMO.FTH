@@ -17,23 +17,24 @@ NEEDS HZ         FROM DSK1.SOUND
 MARKER /TEST
 
 DECIMAL
-: TINK    GEN1 1600 HZ -6 DB 30 MS MUTE ;
+: TINK   ( spr# ) GEN1 >< 1500 +  HZ -6 DB 20 MS MUTE ;
 : THUMP   GEN2  150 HZ  0 DB  ;
 
+: SP.STOP  ( spr# ) 0 0 ROT MOTION ;
 
 : BOUNCE.X  ( spr# -- ) ]SMT 1+ DUP VC@ NEGATE  SWAP VC! ;
 : BOUNCE.Y  ( spr# -- ) ]SMT    DUP VC@ NEGATE  SWAP VC! ;
-
+: REVERSE   ( spr# -- )  DUP BOUNCE.X   BOUNCE.Y ;
 
 : TRAP.X ( spr# -- )
       DUP SP.X VC@
       242 0 WITHIN
-      IF  BOUNCE.X  TINK  EXIT
+      IF DUP BOUNCE.X  TINK  EXIT
       THEN DROP ;
 
 : TRAP.Y ( spr# -- )
       DUP SP.Y VC@ 185 0 WITHIN
-      IF  BOUNCE.Y TINK  EXIT
+      IF DUP  BOUNCE.Y TINK  EXIT
       THEN DROP ;
 
 : TRAP  ( spr# -- ) DUP TRAP.X TRAP.Y ;
@@ -49,16 +50,12 @@ DECIMAL
        LOOP
        DROP MUTE ;
 
-: SP.STOP  ( spr# ) 0 0 ROT MOTION ;
 
 : COLLISION ( spr1 spr2 -- )
-        2DUP 9 COINC
+        2DUP 9 COINC  \ 9 is tolerance in pixels
         IF
-    ( spr2)  DUP BOUNCE.X BOUNCE.Y
-    ( spr1)  DUP SP.STOP                \ stop the sprite 1
-             DUP BOUNCE.X DUP BOUNCE.Y
-             DUP RAINBOW        \ show his displeasure :)
-             15 15 ROT MOTION   \ start up again
+    ( spr1 spr2) DUP REVERSE OVER REVERSE
+                 DUP RAINBOW DROP \ show displeasure :)
         ELSE
              2DROP
         THEN ;
@@ -71,15 +68,16 @@ DECIMAL
     CR
     CR   ." '#' and '@' will collide"
  ( char     colr  x   y  sp# )
-   [CHAR] @  16   90 100  0 SPRITE  14 15 0 MOTION
-   [CHAR] #   3  200 100  1 SPRITE  20 22 1 MOTION
-   [CHAR] Q   8  200 100  2 SPRITE  10 11 2 MOTION
+   [CHAR] @  16   90 100  0 SPRITE  35 36 0 MOTION
+   [CHAR] #   3  200 100  1 SPRITE  36 35 1 MOTION
+   [CHAR] Q   8  200 100  2 SPRITE  29 32 2 MOTION
 
        1 MAGNIFY
        AUTOMOTION
+\ polling loop for collisions and walls
        BEGIN
            0 TRAP
-         0 1 COLLISION  \ poll for collisions
+         0 1 COLLISION
            1 TRAP
          0 1 COLLISION
            2 TRAP

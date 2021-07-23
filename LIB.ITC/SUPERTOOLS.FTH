@@ -7,7 +7,7 @@ MARKER /SCTEST
     ['] EXIT A000 U< ABORT" SUPERCART in use!"
     BEEF 6000 !  6000 @ BEEF <> ABORT" SuperCart not found" ;
 
-?SUPERCART
+?SUPERCART  \ test if super cart RAM present
 
 /SCTEST    \ remove test code
 
