@@ -11,7 +11,7 @@ HEX
 \ : ]CTAB  ( set# -- 'ctab[n])   CTAB + ;    \ 1 byte fields
 \ : ]PDT   ( char# -- 'pdt[n] )  8* PDT + ;  \ 8 byte fields
 
-\ code words are same size as Forth 4x faster
+\ code words are same size as Forth 2x faster
 CODE ]CTAB ( char# -- Vaddr ) \ TOS CTAB AI,
       0224 , CTAB , NEXT,  ENDCODE
 
@@ -90,13 +90,13 @@ CODE ]PDT  ( char# -- Vaddr ) \  TOS 3 SLA,  TOS PDT AI,
 GRAPHICS
 HEX
 CODE VWRAP ( Vaddr C/L@ --  Vaddr) \ makes vchar 25% faster
-C020 , AB8A , \ C/SCR @@ R0 MOV,
-0600 ,        \ R0 DEC,
-8004 ,        \ TOS R0 CMP,
-1201 ,        \ HI IF,
-6100 ,        \     R0 TOS SUB,
-              \ ENDIF,
-NEXT,
+    C020 , AB8A , \ C/SCR @@ R0 MOV,
+    0600 ,        \ R0 DEC,
+    8004 ,        \ TOS R0 CMP,
+    1201 ,        \ HI IF,
+    6100 ,        \     R0 TOS SUB,
+                  \ ENDIF,
+    NEXT,
 ENDCODE \ 12 bytes vs 16 bytes in Forth
 
 DECIMAL
