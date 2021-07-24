@@ -125,21 +125,41 @@ CODE DXY  ( x2 y2 x1 y1 --- dx dy )   \ Common factor for SP.DIST,SP.DISTXY
 \ VDP status bit set if any two sprites overlap
 : COINCALL  ( -- ? ) VDPSTS C@ 20 AND ;
 
-: COINCXY   ( dx dy sp# tol -- ? )
-           >R
-           POSITION   ( -- x1 y1 x2  y2 )
-           ROT - ABS R@ <  \ |-| is  "- ABS"  as a code word
-          -ROT - ABS R> <
-           AND
-;
+\ : (COINC) ( x1 y1 x2 y2 tol -- ? )
+\          >R
+\           ROT - ABS R@ <
+\          -ROT - ABS R> <
+\           AND ; \ 24 bytes  960 uS !!
+
+CODE (COINC) ( x1 y1 x2 y2 tol -- ? )
+C004 , \          TOS  R0 MOV,
+C076 , \          *SP+ R1 MOV,
+C0B6 , \          *SP+ R2 MOV,
+6076 , \          *SP+ R1 SUB,
+0741 , \          R1 ABS,
+8001 , \          R1 R0 CMP,
+04C4 , \          TOS CLR,
+1401 , \          LO IF,
+0704 , \              TOS SETO,
+       \          ENDIF,
+60B6 , \         *SP+ R2 SUB,
+0742 , \          R2 ABS,
+8002 , \          R2 R0 CMP,
+0703 , \ R3 SETO,  \ inverted logic for SZC later
+1401 , \          LO IF,
+04C3 , \              R3 CLR,
+       \          ENDIF,
+4103 , \          R3 TOS SZC,
+NEXT,
+ENDCODE   \ 32 bytes  460uS
+
+: COINCXY   ( dx dy sp# tol -- ? ) SWAP POSITION ROT (COINC) ;
 
 : COINC ( spr#1 spr#2 tol -- ?)
         COINCALL
         IF >R
           POSITION ROT POSITION ( -- x1 y1 x2  y2 )
-          ROT - ABS R@ <
-         -ROT - ABS R> <
-          AND
+          R> (COINC)
           EXIT          \ get out
         THEN            \ if coincall=true then do this
         2DROP DROP      \ drop parameters

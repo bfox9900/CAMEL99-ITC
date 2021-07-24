@@ -9,68 +9,88 @@
 
 \ EXIT THEN  is like a GOTO semi-colon.  Allows faster escape after IF
 
-\ NEEDS DUMP       FROM DSK1.TOOLS
+NEEDS DUMP       FROM DSK1.TOOLS
 NEEDS SPRITE     FROM DSK1.DIRSPRIT
 NEEDS AUTOMOTION FROM DSK1.AUTOMOTION
 NEEDS HZ         FROM DSK1.SOUND
+NEEDS RND        FROM DSK1.RANDOM
 
 MARKER /TEST
+DECIMAL
+168 CONSTANT BRICK
+
+\ define chars
+S" 00FEFEFEFEFEFEFE"  BRICK CALLCHAR
+BRICK  SET#  7 15 COLOR
+
+: .BORDER   ( -- )
+  \ col row
+     0   1 BRICK 32 HCHAR
+     0  23 BRICK 32 HCHAR
+     0   1 BRICK 23 VCHAR
+    31   1 BRICK 23 VCHAR ;
 
 DECIMAL
-: TINK   ( spr# ) GEN1 >< 1500 +  HZ -6 DB 20 MS MUTE ;
-: THUMP   GEN2  150 HZ  0 DB  ;
+: TINK   ( spr# ) GEN1 >< 1200 +  HZ -6 DB  ;
+: THUMP  ( -- ) GEN2  150 HZ  0 DB  ;
 
-: SP.STOP  ( spr# ) 0 0 ROT MOTION ;
+: SP.STOP   ( spr# ) 0 0 ROT MOTION ;
+: BOUNCE.X  ( spr# -- ) ]SMT 1+ DUP VC@ NEGATE  SWAP VC! 30 MS ;
+: BOUNCE.Y  ( spr# -- ) ]SMT    DUP VC@ NEGATE  SWAP VC! 30 MS ;
 
-: BOUNCE.X  ( spr# -- ) ]SMT 1+ DUP VC@ NEGATE  SWAP VC! ;
-: BOUNCE.Y  ( spr# -- ) ]SMT    DUP VC@ NEGATE  SWAP VC! ;
-: REVERSE   ( spr# -- )  DUP BOUNCE.X   BOUNCE.Y ;
+: HLIMIT?  ( X -- ?)  235  7 WITHIN ; \ true if outside limits
+: VLIMIT?  ( Y -- ?)  170 15 WITHIN ; \ true if outside limits
+
+: REVERSE   ( spr# -- )  DUP BOUNCE.X   BOUNCE.Y  ;
 
 : TRAP.X ( spr# -- )
-      DUP SP.X VC@
-      242 0 WITHIN
+      DUP
+      SP.X VC@ HLIMIT?
       IF DUP BOUNCE.X  TINK  EXIT
       THEN DROP ;
 
 : TRAP.Y ( spr# -- )
-      DUP SP.Y VC@ 185 0 WITHIN
+      DUP
+      SP.Y VC@ VLIMIT?
       IF DUP  BOUNCE.Y TINK  EXIT
       THEN DROP ;
 
-: TRAP  ( spr# -- ) DUP TRAP.X TRAP.Y ;
+: TRAP  ( spr# -- )
+        DUP TRAP.X TRAP.Y  MUTE ;
 
 : RAINBOW  ( spr# -- )
-       THUMP
-       16 3
+       DUP SP.COLR VC@ SWAP
+       16 2
        DO
           I OVER SP.COLOR
           25 MS
-          1 TRAP 2 TRAP   \ keep the other guys trapped
-          GEN2 I DB       \ FADE the sound down
+          2 TRAP   \ keep the other guys trapped
+          GEN2 I DB   \ FADE the sound down
        LOOP
-       DROP MUTE ;
-
+       SP.COLR VC!
+       MUTE ;
 
 : COLLISION ( spr1 spr2 -- )
-        2DUP 9 COINC  \ 9 is tolerance in pixels
-        IF
-    ( spr1 spr2) DUP REVERSE OVER REVERSE
-                 DUP RAINBOW DROP \ show displeasure :)
-        ELSE
-             2DROP
-        THEN ;
+      2DUP 9 COINC  \ 9 is tolerance in pixels
+      IF
+         DUP REVERSE OVER REVERSE
+         ( spr1 spr2) THUMP
+         DUP RAINBOW DROP
+      ELSE
+         2DROP
+      THEN ;
 
 DECIMAL
 : RUN ( motionx motiony -- )
-    7 SCREEN
-    PAGE ." CAMEL99 Forth"
-    CR   ." Coincidence Test with Automotion"
-    CR
-    CR   ." '#' and '@' will collide"
+    PAGE ." CAMEL99 Forth Coicidence Test"
+    11 SCREEN
+    .BORDER
+    4 4 AT-XY ." '#' and '@' will collide"
+
  ( char     colr  x   y  sp# )
-   [CHAR] @  16   90 100  0 SPRITE  35 36 0 MOTION
-   [CHAR] #   3  200 100  1 SPRITE  36 35 1 MOTION
-   [CHAR] Q   8  200 100  2 SPRITE  29 32 2 MOTION
+   [CHAR] @   7   90 100  0 SPRITE  31 28 0 MOTION
+   [CHAR] #   3  200 100  1 SPRITE  26 26 1 MOTION
+   [CHAR] Q   6  200 100  2 SPRITE  29 32 2 MOTION
 
        1 MAGNIFY
        AUTOMOTION
