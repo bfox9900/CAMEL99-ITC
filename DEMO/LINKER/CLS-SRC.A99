@@ -1,0 +1,31 @@
+* Demonstration program by @mathew180
+* modified to be sub-routine for CAMEL99 EA3LOADER  2021 FOX
+
+        DEF  CLS         * Clear the screen in 40 column mode.
+
+* VDP Memory Map
+*
+VDPRD   EQU  >8800       * VDP read data
+VDPSTA  EQU  >8802       * VDP status
+VDPWD   EQU  >8C00       * VDP write data
+VDPWA   EQU  >8C02       * VDP set read/write address
+
+* Workspace
+WRKSP   EQU  >8300       * Workspace is shared with Forth
+R0LB    EQU  WRKSP+1     * R0 low byte req'd for VDP routines
+
+* Program execution starts here
+CLS     LIMI 0
+*       LWPI WRKSP
+        CLR  R0                * Set the VDP address to zero
+        MOVB @R0LB,@VDPWA      * Send low byte of VDP RAM write address
+        ORI  R0,>4000          * Set read/write bits 14 and 15 to write (01)
+        MOVB R0,@VDPWA         * Send high byte of VDP RAM write address
+
+        LI   R1,>2000          * Set high byte to 32 (>20)
+        LI   R2,>3C0           * bytes in the 40 column screen
+LOOP1   MOVB R1,@VDPWD         * Write byte to VDP RAM
+        DEC  R2
+        JNE  LOOP1
+        RT                     * return to caller
+        END
