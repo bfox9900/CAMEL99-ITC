@@ -12,9 +12,11 @@ repository.
 ## Example Usage
 
 INCLUDE DSK4.EA3LOADER  \ the Linking loader code
+
 INCLUDE DSK4.EXTERNS    \ words to call external code
 
 NEW.                    \ Initialize 8K low RAM memory and variables
+
 OLOAD DSK4.CLS-OBJ      \ object load" a file
 
 DEFS CLS   FORTH EXTERN: CLEAR  \ declare a DEF as a Forth word
