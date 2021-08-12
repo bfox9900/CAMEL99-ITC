@@ -3,7 +3,7 @@
 \ *G V2.25  Uses FOPEN to simplify OPEN-FILE, FREAD for READ-FILE
 \ ** V2.26  Removed UPDATE INPUT OUTPUT APPEND. Use R/W R/O W/O W/A
 \ ** Forced CREATE-FILE to erase previous file by using in W/O mode
-CR .( ANS Files V2.26 May 2021..)
+CR .( ANS Files V2.26 Aug 2021..)
 HEX
 HERE
 03 CONSTANT #FILES  \ ** this is locked at 3 in Camel99 Forth
@@ -57,17 +57,17 @@ CREATE FIDS ( -- addr) 0 , 0 , 0 , 0 , 0 , 0 ,
 .( ..)
 VARIABLE FAM   \ ** file access mode is built in this variable
 
-CODE AND!  ( mask addr -- )  \ *SP INV, *SP+ *TOS SZC, TOS POP,
-    0556 ,   4536 ,  C136 ,  NEXT,  ENDCODE
+CODE AND!  ( mask addr -- addr)  \ *SP INV, *SP+ *TOS SZC, TOS POP,
+    0556 ,  4536 ,  C136 ,  NEXT,  ENDCODE
 
-CODE OR! ( mask addr -- )  \ *SP+ *TOS SOC,  TOS POP,
-     E536 ,  C136 , NEXT, ENDCODE
+CODE OR! ( mask addr -- addr)  \ *SP+ *TOS SOC,  TOS POP,
+     E536 ,   C136 ,  NEXT, ENDCODE
 
 \ TI-99 file access mode modifiers
  2 BASE !  \        *ctrl bits*
-: DISPLAY    ( -- ) 11110111 FAM AND! ; \ ** Same as BASIC ie: TEXT file
-: SEQUENTIAL ( -- ) 11111110 FAM AND! ; \ ** Same as BASIC
-: RELATIVE   ( -- ) 00000001 FAM OR! ;  \ ** Same as BASIC
+: DISPLAY    ( -- ) 11110111 FAM AND!  ; \ ** Same as BASIC ie: TEXT file
+: SEQUENTIAL ( -- ) 11111110 FAM AND!  ; \ ** Same as BASIC
+: RELATIVE   ( -- ) 00000001 FAM OR!   ; \ ** Same as BASIC
 
 VARIABLE B/REC
 : VARI  ( size -- fam) B/REC ! 00010000 FAM  OR! ;
@@ -75,11 +75,17 @@ VARIABLE B/REC
 
 : FIXED ( size -- fam) B/REC ! 11101111 FAM AND! ;
 \ *G Used to open or create a file with fixed record size.
+
+: UPDT      ( -- fam)      11111001 FAM AND! ; \ set UPDATE Mode
+\ : INPUT   ( -- fam) UPDT 00000100 FAM OR! ;
+\ : OUTPUT  ( -- fam) UPDT 00000010 FAM OR! ;
+\ : APPEND  ( -- fam) UPDT 00000110 FAM OR! ;
+
 .( ..)
-: R/W   ( -- fam)  11111001 FAM AND! FAM @ ;    \ ** TI UPDATE mode
-: R/O   ( -- fam)  R/W 00000100 FAM OR! FAM @ ; \ ** TI INPUT mode
-: W/O   ( -- fam)  R/W 00000010 FAM OR! FAM @ ; \ ** TI OUTPUT mode
-: W/A   ( -- fam)  R/W 00000110 FAM OR! FAM @ ; \ ** TI APPEND mode
+: R/W   ( -- fam)  UPDT FAM @ ;    \ ** TI UPDATE mode
+: R/O   ( -- fam)  UPDT 00000100 FAM OR! FAM @ ; \ ** TI INPUT mode
+: W/O   ( -- fam)  UPDT 00000010 FAM OR! FAM @ ; \ ** TI OUTPUT mode
+: W/A   ( -- fam)  UPDT 00000110 FAM OR! FAM @ ; \ ** TI APPEND mode
 
 HEX
 \ ANS Forth BIN replaces TI-99 "INTERNAL"
@@ -121,7 +127,8 @@ HEX
 : READ-LINE ( addr u1 fid -- u2 flag ior|0 )
 \ *G Read one record into addr, expecting u1 bytes.
 \ ** Return bytes read in U2, TRUE if data was recieved and error no,
-  NIP SELECT 2 FILEOP ( addr ior)
+  NIP              \ don't need u1 for TI file system
+  SELECT 2 FILEOP ( addr ior)
   SWAP FGET ( -- ior u2)
   DUP 0= INVERT ROT ;
 
