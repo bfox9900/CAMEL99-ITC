@@ -2,16 +2,17 @@
 \ Based on ideas from HsForth by Jim Kalihan (RIP)
 \ Oct 9 2019 reduced compiled size from 930 bytes to 890
 \            OPEN-BLOCKS sets active only if successful
-\            Added DF128 word, MAKE-BLOCKS uses CREATE-FILE
+\            Added DF128 word, Make blocks uses CREATE-FILE
 \ Feb 2021   Added MASK to replace "7FFF AND" 4x. Same size, faster
 \            Used DUP>R cuz it's now in Kernel 2.66
+\ Auf 2021   Added ?BLKFILE to test file in dir.
 
 NEEDS OPEN-FILE  FROM DSK1.ANSFILES
 NEEDS .R         FROM DSK1.UDOTR
 
 HERE
 HEX
-3                CONSTANT #BUFF       \ # of active buffers
+4                CONSTANT #BUFF       \ # of active buffers
 400              CONSTANT B/BUF
 B/BUF 2 CELLS +  CONSTANT B/REC       \ block-record has a 4 byte header
 
@@ -23,8 +24,8 @@ DECIMAL
 
 VARIABLE PREV      FIRST  PREV !
 VARIABLE USE       FIRST  USE  !
-\ VARIABLE LOWBLK
-VARIABLE HIGHBLK    79 HIGHBLK !  \ default value
+VARIABLE LOWBLK
+VARIABLE HIGHBLK    78 HIGHBLK !  \ default value
 VARIABLE BHNDL                    \ block file handle
 
 DECIMAL
@@ -33,31 +34,33 @@ CREATE ACTIVE  20 ALLOT   ACTIVE OFF   \ block file name
 \ ===================================================
 \ interface to ANS File system
 HEX
-: ?BLOCKS   ( -- ) BHNDL @ 0= ABORT" No open BLOCK file" ;
-CODE MASK   ( n -- n)  0244 , 7FFF ,   NEXT, ENDCODE \ TOS 7FFF ANDI,
+: ?BLOCKS   ( -- ) BHNDL @ 0= ABORT" BLOCK file closed" ;
+: ?BLKERR   ( ? -- ) ?DUP IF BHNDL OFF  ?FILERR  THEN ;
+
+CODE MASK   ( n -- n)  0244 , 7FFF ,   NEXT, ENDCODE
 
 \ move file pointer to start of block (One BLOCK= 8 sectors)
 : SEEK   ( blk# -- )
-         ?BLOCKS  8* BHNDL @ REPOSITION-FILE ABORT" SEEK err" ;
+         ?BLOCKS  8* BHNDL @ REPOSITION-FILE ?BLKERR ;
 
 \ READ/WRITE TI records for 1 block
 : RBLK  ( adr blk# -- adr)
           SEEK
           DUP B/BUF BOUNDS ( end-addr,start-addr)
           DO
-            I B/SEC BHNDL @ READ-LINE ?FILERR  2DROP
+            I B/SEC BHNDL @ READ-LINE ?BLKERR  2DROP
           B/SEC +LOOP ;
 
-: WBLK  ( adr blk# -- )
-          SEEK
+: (WBLK) ( add blk# -- )
           B/BUF BOUNDS ( end-addr,start-addr)
           DO
-             I B/SEC BHNDL @ WRITE-LINE ?FILERR
+             I B/SEC BHNDL @ WRITE-LINE ?BLKERR
           B/SEC +LOOP ;
+
+: WBLK  ( adr blk# -- ) SEEK (WBLK) ;
 
 \ ===================================================
 HEX
-
 : UPDATE ( -- ) PREV @ @   8000 OR  PREV @ ! ;
 
 : +BUF   ( addr1-- addr2)
@@ -69,7 +72,7 @@ HEX
         IF                 \ if true ...
            R@ CELL+        \ get buffer address
            R@ @            \ get the block number
-           MASK   WBLK  \ write data to disk
+           MASK  WBLK      \ write data to disk
         THEN R@ !          \ store this in USE record
         R@ PREV !          \ set it as previous record
         R@ +BUF USE !      \ "use" next buffer
@@ -86,7 +89,7 @@ HEX
                  DROP R@ BUFFER  R@ RBLK 2- \ CELL-
               THEN
               DUP @ R@ -  MASK
-           WHILE REPEAT   ( faster than 0= UNTIL)
+           WHILE REPEAT
            DUP PREV !
            DUP USE @ =
            IF
@@ -98,7 +101,7 @@ HEX
 HEX
 : FLUSH ( -- )
         ?BLOCKS
-        FIRST           \ start at 1st block record
+        FIRST
         #BUFF 0
         DO
            DUP @ 0<     \ is block updated?
@@ -119,11 +122,14 @@ HEX
 DECIMAL
 : DF128   DISPLAY RELATIVE  B/SEC FIXED ;
 
+: ?BLKFILE ( addr len -- )
+       DF128 R/O OPEN-FILE ABORT" File not found" CLOSE-FILE DROP ;
+
 : OPEN-BLOCKS ( file$ len -- )
-        2DUP
+        2DUP ?BLKFILE
         EMPTY-BUFFERS
-        DF128 R/W OPEN-FILE ?FILERR BHNDL !
-        ACTIVE PLACE ; \ if successfule store ACTIVE file name
+        2DUP R/W OPEN-FILE ?FILERR BHNDL !
+        ACTIVE PLACE ; \ if successful store ACTIVE file name
 
 HEX
 : CLOSE-BLOCKS ( -- )
@@ -139,25 +145,9 @@ HEX
         DUP HIGHBLK !
         1+  1
         DO
-           FIRST CELL+ I WBLK
+           FIRST CELL+ I (WBLK)
         LOOP
         CLOSE-BLOCKS ;
 
 HERE SWAP - DECIMAL  CR .  .( bytes)
 EMPTY-BUFFERS
-
-\ compiling support
-DECIMAL
-64 CONSTANT #64
-: LINE   ( line# -- addr) #64 *  SCR @ BLOCK  + ; \ index into block
-: LOAD  ( n -- )
-        SCR !  LINES OFF
-        16 0 DO  I LINES !
-                 I LINE #64 EVALUATE
-                 LINES 1+!
-        LOOP ;
-
-: -->   ( n -- ) SCR @ 1+ LOAD ;
-
-EMPTY-BUFFERS
-HERE SWAP - DECIMAL  CR .  .( bytes)
