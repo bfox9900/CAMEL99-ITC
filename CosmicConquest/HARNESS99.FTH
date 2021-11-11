@@ -34,7 +34,7 @@ INCLUDE DSK1.UDOTR
 : HCLR ( --- )  0 C/SCR @ BL VFILL ; \ Erase VDP memory. Don't touch cursor.
 : VHTAB ( y x --- )  SWAP AT-XY ;
 : H1 ( --- ) ; ( selects HIRES mode 1, without clearing screen)
-: TEXT ( --- ) ( selects TEXT screen leaving HIRES1 unchanged) ;
+\ : TEXT ( --- ) ( selects TEXT screen leaving HIRES1 unchanged) ;
 
 : DRAW ( addr delim --- )
 ( draw shape table, presumably first value is address and second is delimiter)
