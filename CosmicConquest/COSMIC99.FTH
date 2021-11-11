@@ -31,7 +31,7 @@ SIZE 3 * 2/ CONSTANT NO-OF-PLANETS ( planets in galaxy)
   200 CONSTANT W1                   ( weight value assigned to planets in score)
     5 CONSTANT W2                   ( weight assigned to ship and troops)
    10 CONSTANT W3                   ( weight assigned to computers troops)
-    5 CONSTANT SPEED                ( how quickly computer moves)
+  100 CONSTANT SPEED                ( how quickly computer moves)
 
 1000 CONSTANT delayms ( milliseconds to wait for in DELAY)
 
@@ -488,8 +488,8 @@ VARIABLE PRICE
 
 : ATTACK       ( attack a planet controlled by the computer)
    CLEAR-MSGE
-   #LEGIONS C@ RANDOM1 1- 5 / 7 + * 10 / DUP TEMP1 !
-  ( calculate enemy garrlsons effective strength)
+   ( calculate enemy garrisons effective strength)
+   #LEGIONS C@ RANDOM1 1- 5 / 7 + * 10 / DUP  TEMP1 !
    5 ]F @ >
    IF   ( enemy garrison wins)
       PROMPT:  ." YOUR FORCES RETREAT"
@@ -705,8 +705,9 @@ DECIMAL
    CLEAR-DISP
    HOME DRAW-BORDERS DRAW-DISPLAY
    BEGIN
-      83C8 OFF  \ enables repeating keys
-      KEY?
+    [ HEX ]  83C8 OFF  \ enables repeating keys
+   [ DECIMAL ]
+     KEY?
       IF ( player has pressed a key)
          OBEY-COMMAND
          -1 LEN +!
