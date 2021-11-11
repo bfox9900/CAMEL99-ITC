@@ -12,8 +12,9 @@ The exact platform is unknown at this time.
 The original byte article is available here:
 https://archive.org/details/byte-magazine-1982-12/page/n131/mode/1up?q=cosmic+conquest
 
-The translation Harness for Camel99 Forth is the file MODERNISE.FTH. It was not
-too difficult to make the adjustments to get Rick's GForth code to compile on
+The translation Harness for Camel99 Forth is the file MODERNISE.FTH for CC_TI99.FTH
+For COSMIC99.FTH, the verions that uses more TI-99 features, the harness file is HARNESS99.FTH 
+It was not too difficult to make the adjustments to get Rick's GForth code to compile on
 the old TI-99 under our version of Camel Forth.
 
 The one big change was to move the data arrays into the 8K low RAM block of the
