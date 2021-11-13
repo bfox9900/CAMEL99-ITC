@@ -316,14 +316,14 @@ DECIMAL
 \ Computed Weighted score
 \ part_score= (player# - computer#) * weight
 : PLANET-DIFF ( -- n) PLANETS @  C-PLANETS @ -   W1 *  ;
-: FLEETS-SUM1 ( -- n) [MY SHIPS] @  [HIS SHIPS] @ -  W2 * ;
-: FLEETS-SUM2 ( -- n) [MY LEGIONS] @  [HIS LEGIONS] @ -  W2 * ;
+: FLEETS-DIFF ( -- n) [MY SHIPS] @  [HIS SHIPS] @ -  W2 * ;
+: FLEETS-DIFF ( -- n) [MY LEGIONS] @  [HIS LEGIONS] @ -  W2 * ;
 : TROOP-VALUE ( -- n) TROOPS @ W3 * ;
 
 :  SCORE ( -- n)
       PLANET-DIFF
-      FLEETS-SUM1  +
-      FLEETS-SUM2  +
+      FLEETS-DIFF  +
+      FLEETS-DIFF  +
       TROOP-VALUE  +  ;
 \ ---------------------
 \       total
