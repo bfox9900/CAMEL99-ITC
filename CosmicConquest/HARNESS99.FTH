@@ -31,8 +31,8 @@ INCLUDE DSK1.UDOTR
 : HOME ( --- )  0 0 AT-XY ; ( set cursor to home position)
 
 \ real HCLR would clear HIRES1
-: HCLR ( --- )  0 C/SCR @ BL VFILL ; \ Erase VDP memory. Don't touch cursor.
-: VHTAB ( y x --- )  SWAP AT-XY ;
+\ : HCLR ( --- )  0 C/SCR @ BL VFILL ; \ Erase VDP memory. Don't touch cursor.
+\ : VHTAB ( y x --- )  SWAP AT-XY ;
 : H1 ( --- ) ; ( selects HIRES mode 1, without clearing screen)
 \ : TEXT ( --- ) ( selects TEXT screen leaving HIRES1 unchanged) ;
 
