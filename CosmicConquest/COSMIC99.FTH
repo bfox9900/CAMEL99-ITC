@@ -130,7 +130,9 @@ SIZE SIZE BYTE-MATRIX: GALAXY    ( the galactic MATRIX:)
 SIZE SIZE BYTE-MATRIX: PLANET    ( planetary MATRIX:)
 SIZE SIZE BYTE-MATRIX: GARRISON  ( strength MATRIX:)
 
-   2    6 BYTE-MATRIX: FLEETS ( player fleets info)
+\ This should be a cell matrix. Manually create one in the heap
+H @ CONSTANT FLEETS[]   2 CELLS 6 CELLS *   HALLOT
+: FLEETS ( x y -- addr)  CELLS 6 * SWAP CELLS FLEETS[] + + ;
 
 \ easier to understand this data by name
 1 CONSTANT [MY   ( human side of matrix)
@@ -140,8 +142,8 @@ SIZE SIZE BYTE-MATRIX: GARRISON  ( strength MATRIX:)
 : Y]       ( n -- addr) 2 FLEETS ; \ byte
 
 \ We can simplify the code and save space
-: X]@    X] C@ ;
-: Y]@    Y] C@ ;
+: X]@    X] @ ;
+: Y]@    Y] @ ;
 : XY]@  ( n -- x y)  DUP Y]@ SWAP X]@ ;
 
 : SHIPS]   ( n -- addr) 3 FLEETS ; \ cell
@@ -196,7 +198,6 @@ CREATE LASTXY   0 , 0 ,
               ."  ? "
               DROP
           REPEAT ;
-
 
 CR .( TMS9918 Pattern table management)
 HEX
@@ -376,9 +377,9 @@ DECIMAL
 
 : DRAW-FIGURES  ( draw the stats)
     9  1 AT-XY   2  4 .R           22 TAB MY-PLANETS @ 4 .R
-    9  5 AT-XY C-FLEETS @  4 U.R   22 TAB C-PLANETS  @ 4 .R
+    9  5 AT-XY C-FLEETS @ 4 U.R    22 TAB C-PLANETS  @ 4 .R
 
-    7 20 AT-XY  [MY Y]@  [MY X]@  .(X,Y)
+    7 20 AT-XY  [MY Y]@  [MY X]@ .(X,Y)
     .SHIPS
     .LEGIONS
     31 22 AT-XY CREDIT @    5 U.R
@@ -514,17 +515,18 @@ DECIMAL
       PROMPT: ." COST PER SHIP = " RND-DOLLARS DUP >R 2 .R
 
       0 12 AT-XY ." HOW MANY DO YOU WANT?" #INPUT
-      CREDIT R@  / MIN    ( no more than he can afford)
+      CREDIT @  R@  / MIN    ( no more than he can afford)
       DUP [MY SHIPS] +!
 
-      CREDIT @  R@ * - 0 MAX  CREDIT !    ( update credit)
-      'FLEET'  [MY Y]@  [MY X]@ GALAXY C!  ( make sure fleet symbol there)
+      CREDIT @  R@ * -  0 MAX  CREDIT !    ( update credit)
+      'FLEET'  [MY Y]@ [MY X]@ GALAXY C!  ( make sure fleet symbol there)
 
    ELSE
       PROMPT: ." NO SHIPS AVAILABLE"
+      REDRAW
    ENDIF
    R> DROP
-   .SHIPS ;
+;
 
 
 : GATHER   ( pick up legions from garrison onto fleet)
@@ -549,10 +551,8 @@ DECIMAL
 
 : FRIENDLY-PLANET ( -- ?)  ( options upon landing at colony)
    BEGIN
-      PROMPT:  ." CLASS " THEPLANET C@ 8 / 2 .R
-      ."  PLANET" 16 SPACES CR  ( give class of planet)
-      ." LOCAL GARRISON IS " #LEGIONS C@ 3 .R ."  LEGIONS"
-                                ( size of local garrison)
+      PROMPT: ." CLASS " THEPLANET C@ 8 / .  ."  PLANET"
+           CR ." LOCAL GARRISON HAS " #LEGIONS C@ 3 .R ."  LEGIONS"
       0 12 AT-XY ." DO YOU WISH TO:" 12 SPACES ( give options)
       CR ." 1.  LEAVE LEGIONS ON PLANET"
       CR ." 2.  GATHER LEGIONS FROM PLANET"
