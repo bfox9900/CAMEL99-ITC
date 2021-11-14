@@ -80,6 +80,8 @@ CR .( utility words)
 
 HEX
 : RKEY?   ( -- c ) 83C8 OFF  KEY? ;   \ enables repeating key for TI-99
+
+DECIMAL 
 : BEEPS   ( n -- ) 0 ?DO BEEP 50 MS LOOP ;
 : DELAY      delayms MS ;
 : BLANKLN    VPOS C/L@ VBLANK ; \ FAST video memory write
