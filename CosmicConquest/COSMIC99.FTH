@@ -231,24 +231,25 @@ CR .( graphics shapes )
 \ Re-define shape of characters used in the matrix map
 \ This allows us to PLOT the map directly to the video screen
 
+\ name the graphic characters used
 DECIMAL
-132 CONSTANT 'COLONY'  \ our colony character
+132 CONSTANT 'COLONY'  \ good guys live here
  16 CONSTANT 'FLEET'   \ our boys
  17 CONSTANT 'ENEMY'   \ enemy ship character
  02 CONSTANT 'STAR'
- 04 CONSTANT 'PLANET'
- 05 CONSTANT 'ALIENS'
+ 04 CONSTANT 'PLANET'  \ empty planet
+ 05 CONSTANT 'ALIENS'  \ bad guys live on this planet
  08 CONSTANT 'BLKHOLE'
  00 CONSTANT 'VACUUM'  \ empty space
 
 : DEF-CHARS
-  ASTAR     'STAR' CHARDEF
-  ACOLONY 132 CHARDEF
+  ASTAR       'STAR' CHARDEF
+  ACOLONY   'COLONY' CHARDEF
   OPLANET   'PLANET' CHARDEF
   EPLANET   'ALIENS' CHARDEF
-  BLKHOLE   'BLKHOLE'CHARDEF
-  PFLEET  'FLEET' CHARDEF  \ player's fleet icon
-  EFLEET  'ENEMY' CHARDEF  \ enemy's fleet icon
+  BLKHOLE  'BLKHOLE' CHARDEF
+  PFLEET     'FLEET' CHARDEF  \ player's fleet icon
+  EFLEET     'ENEMY' CHARDEF  \ enemy's fleet icon
 
   VBARS   133 CHARDEF
   HBARS   134 CHARDEF
@@ -460,7 +461,7 @@ DECIMAL
 
 
    ENDCASE
-   2DROP 
+   2DROP
    DRAW-DISPLAY ;
 
 \ need to add death detector to end when FLEETS are exhausted
