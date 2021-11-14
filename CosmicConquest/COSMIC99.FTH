@@ -53,8 +53,7 @@ CR .( variables)
  VARIABLE C-LEGIONS    ( no. of computer legions for attacks)
  VARIABLE C-PLANETS    ( no. of computer planets)
  VARIABLE CLASS-TOTALS ( computers planets classes totals)
- VARIABLE COMP-START   ( how quickly computer plays)
- VARIABLE COMPUTER     ( how quickly computer plays)
+ VARIABLE TIMER    ( how quickly computer plays)
 
  VARIABLE DIFF         ( difficulty of game 1-4)
  VARIABLE FLEET#       ( Human player's fleet in use)
@@ -75,7 +74,7 @@ CR .( variables)
 CR .( utility words)
 : ERASE    ( addr u --)    0 FILL ;
 : VBLANK   ( Vaddr u --)   BL VFILL ;
-: CENTERED ( addr len -- ) C/L@ OVER - 2/ SPACES  TYPE ; \ print centered
+: CENTERED ( addr len -- ) C/L@ OVER - 2/ 1- SPACES  TYPE ; \ print centered
 : TAB      ( n -- )        VCOL ! ;
 : XY@      ( -- col row)   X @ Y @ ;
 
@@ -89,7 +88,7 @@ HEX
 : BLANKLN    VPOS C/L@ VBLANK ; \ FAST video memory write
 
 : 1+!   ( int-addr -- )  1 SWAP +! ;  \ like C  ++
-: 1-!   ( int-addr -- )  1 SWAP +! ;  \ like C  --
+: 1-!   ( int-addr -- ) -1 SWAP +! ;  \ like C  --
 
 
 : ENDIF      POSTPONE THEN ; IMMEDIATE   \ FIG FORTH
@@ -308,17 +307,17 @@ DECIMAL
    CR
    CR ." INITIALISING"
    CLEAR-GALAXY  CLEAR-INFO  SET-UP-GALAXY
-   1 FLEET# !          ( make fleet 1 current fleet)
-   250 CREDIT !            ( players credit)
+   1 FLEET# !               ( make fleet 1 current fleet)
+   250 CREDIT !             ( players credit)
 
-   0 MY-PLANETS !             ( no planets)
-   0 C-PLANETS !           ( none for computer either)
+   0 MY-PLANETS !           ( no planets)
+   0 C-PLANETS !            ( none for computer either)
 
-   20 [MY SHIPS] !  ( 1 = player's fleets)
-   20 [HIS SHIPS] ! ( 2 = computer's fleets)
+   20 [MY SHIPS] !          ( player's fleets)
+   20 [HIS SHIPS] !         ( computer's fleets)
 
    50 [MY LEGIONS] !
-   50 [HIS LEGIONS] ! ( fleets have 50 legions each)
+   50 [HIS LEGIONS] !       ( fleets have 50 legions each)
 
    DIFF @ 4* 0
   ?DO ( position computer's fleets)
@@ -326,18 +325,18 @@ DECIMAL
         15 THIS GARRISON C!
   LOOP
    16 22 18 GALAXY C!
-   16 18 22 GALAXY C! ( position fleets)
+   16 18 22 GALAXY C!       ( position fleets)
 
-   22 [MY Y] C!   ( players Y)
-   18 [MY X] FLEETS C!   ( players x)
-   18 [HIS Y] C!   ( enemy y )
-   22 [HIS X] C!   ( enemy x)
+   22 [MY Y] C!             ( players Y)
+   18 [MY X] FLEETS C!      ( players x)
+   18 [HIS Y] C!            ( enemy y )
+   22 [HIS X] C!            ( enemy x)
 
-   29 3 DIFF @ * - NEW !   ( how often computer creates fleets)
-   15 DIFF @ 4* * TROOPS ! ( initial no. of computer troops)
-   20 DIFF @ * C-LEGIONS ! ( no. of spare computer legions)
-   DIFF @ 4* C-FLEETS !    ( no. of computer fleets)
-   SPEED DUP COMPUTER !  COMP-START !  ( how often computer moves)
+   29 3 DIFF @ * - NEW !    ( how often computer creates fleets)
+   15 DIFF @ 4* * TROOPS !  ( initial no. of computer troops)
+   20 DIFF @ * C-LEGIONS !  ( no. of spare computer legions)
+   DIFF @ 4* C-FLEETS !     ( no. of computer fleets)
+   SPEED TIMER !            ( how often computer moves)
    1 BUY-V !
 ;
 
@@ -362,9 +361,9 @@ DECIMAL
 
 : DRAW-LABELS
      HOME      ." PLAYER"
-    2  1 AT-XY ." FLEETS:"   12 TAB ." PLANETS:"
+    2  1 AT-XY ." FLEETS:"   14 TAB ." PLANETS:"
     0  4 AT-XY ." EMPIRE"
-    2  5 AT-XY ." FLEETS:"   12 TAB ." PLANETS:"
+    2  5 AT-XY ." FLEETS:"   14 TAB ." PLANETS:"
     0 21 AT-XY ." SHIPS  :"
     0 22 AT-XY ." LEGIONS:" 23 22 AT-XY ." CREDITS:"
     0 20 AT-XY ." COORDS:"
@@ -375,8 +374,8 @@ DECIMAL
 : .SHIPS       8 21 AT-XY  [MY SHIPS]@    4 .R  ;
 
 : DRAW-FIGURES  ( draw the stats)
-    9  1 AT-XY   2  4 .R  20 TAB MY-PLANETS @   4 .R
-    9  5 AT-XY C-FLEETS @  4 U.R   20 TAB C-PLANETS @ 4 .R
+    9  1 AT-XY   2  4 .R  22 TAB MY-PLANETS @   4 .R
+    9  5 AT-XY C-FLEETS @  4 U.R   22 TAB C-PLANETS @ 4 .R
 
     7 20 AT-XY  [MY Y]@  [MY X]@  .(X,Y)
     .SHIPS
@@ -420,7 +419,7 @@ DECIMAL
 ;
 
 : DRAW-DISPLAY  ( -- )
-  DRAW-LABELS  DRAW-SCAN  DRAW-FIGURES  WINDOW ;
+  DRAW-LABELS  DRAW-FIGURES  WINDOW  DRAW-SCAN ;
 
 : REDRAW   PAGE  DRAW-DISPLAY ;
 
@@ -829,8 +828,8 @@ DECIMAL
 ;
 
 : INFORMATION
-  PAGE ."  Information Screen"
-  CR   ." --------------------"
+  PAGE ."  Scanner Display Information"
+  CR   ." -----------------------------"
   CR
   CR   ." A STAR"        25 TAB   2 (EMIT)
   CR
@@ -870,11 +869,11 @@ DECIMAL
 
 DECIMAL
 : COMPUTER? ( -- ?)   ( is it the computers turn or not)
-   COMPUTER DUP 1-! @
+   TIMER DUP 1-! @
    IF ( <>0)
        FALSE
    ELSE
-      COMP-START @ COMPUTER !  \ reset countdown timer
+      SPEED TIMER !  \ reset countdown timer
       TRUE
    ENDIF ;
 
@@ -889,7 +888,7 @@ DECIMAL
       RKEY? ?DUP
       IF ( player has pressed a key)
          OBEY-COMMAND
-         -1 LEN +!
+         LEN 1-!
          100 MS
       ENDIF
       COMPUTER?
@@ -898,7 +897,7 @@ DECIMAL
       ENDIF
       GAME-END?
   \ debug line
-   20 0 AT-XY ." Stk=" DEPTH 2 .R  5 SPACES  COMPUTER @ 3 .R
+   20 0 AT-XY ." Stk=" DEPTH 2 .R  5 SPACES  TIMER @ 3 .R
    UNTIL
    END-MSG ;
 
@@ -958,4 +957,5 @@ DECIMAL
    DIFFICULTY
    GAME-LENGTH
    INITIALISE
+   HELP INFORMATION
    GAME ;
