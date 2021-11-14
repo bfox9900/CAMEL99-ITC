@@ -55,7 +55,7 @@ Forth style:
   DECIMAL
 ```
 
-###What difference does it make?
+### What difference does it make?
 The differences above are quite striking. You don't typically chop up code this
 way in traditional procedural languages. The primary reason for that is the
 over- head for calling a sub-routine can be quite high in other languages.
@@ -68,7 +68,7 @@ us to re-use them elsewhere as needed. Here we now have a test word for lower
 case letters and a word to convert lower case to upper case. The original code
 gave one "fossilized" sub-routine that could only do one thing.
 
-###Make Your Life Simpler
+### Make Your Life Simpler
 Another for the Forth "style" is because stack programming is hard. There I said
 it.  Yes it is harder to code for a stack machine that using name variables.
 The compensation for that is factoring. That is how the language designer wanted
