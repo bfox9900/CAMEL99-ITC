@@ -98,7 +98,7 @@ HEX
 : TOUPPER ( c -- c') DUP ?LOWER IF 5F AND  THEN ;
 : INKEY   ( -- c)    KEY 7F AND  TOUPPER ;  \ uppercase Alpha, 7 bit output
 DECIMAL
-
+\ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 CR .( Heap management and matrix creators)
 \ \\\\\\\\\\\\\\\  TI99 CODE  \\\\\\\\\\\\\\\\\\
 \ TI99 has 32K RAM.
@@ -184,9 +184,9 @@ CREATE LASTXY   0 , 0 ,
 
 \ create random coordinates and remember them.
 : NEWXY  ( -- n n ) RANDOM1 RANDOM2 2DUP LASTXY 2!  ;
-: THIS  ( -- n n ) LASTXY 2@ ;  \ return last NEWXY generated
+: THIS   ( -- n n ) LASTXY 2@ ;  \ return last NEWXY generated
 
-: WRAP ( n --- ng ) SIZE 1- + SIZE MOD 1+ ; ( wrap galaxy coordinate)
+: WRAP   ( n --- ng) SIZE 1- + SIZE MOD 1+ ; ( wrap galaxy coordinate)
 
 \ number input routine
 : #INPUT  ( -- n )
@@ -374,12 +374,13 @@ DECIMAL
 
 : .LEGIONS     8 22 AT-XY  [MY LEGIONS]@  4 .R ;
 : .SHIPS       8 21 AT-XY  [MY SHIPS]@    4 .R  ;
+: .COORDS      7 20 AT-XY  [MY Y]@  [MY X]@ .(X,Y) ;
 
 : DRAW-FIGURES  ( draw the stats)
     9  1 AT-XY   2  4 .R           22 TAB MY-PLANETS @ 4 .R
     9  5 AT-XY C-FLEETS @ 4 U.R    22 TAB C-PLANETS  @ 4 .R
 
-    7 20 AT-XY  [MY Y]@  [MY X]@ .(X,Y)
+    .COORDS
     .SHIPS
     .LEGIONS
     31 22 AT-XY CREDIT @    5 U.R
@@ -408,7 +409,7 @@ DECIMAL
 : PLOT  ( char row col -- )
   CELLS 12 + SWAP 8 + >VPOS ( c Vaddr) VC! ;
 
-: DRAW-SCAN ( draw the screen display)
+: DRAW-VIEWER  ( draw the screen display)
    [MY X]@ 5 -  [MY Y]@ 5 -
    11 0 DO ( rows)
       11 0 DO ( columns)
@@ -417,11 +418,12 @@ DECIMAL
            LOOP
            11 - SWAP 1+ SWAP
         LOOP
-   2DROP
+    2DROP
+   .COORDS
 ;
 
 : DRAW-DISPLAY  ( -- )
-  DRAW-LABELS  DRAW-FIGURES  WINDOW  DRAW-SCAN ;
+  DRAW-LABELS  DRAW-FIGURES  WINDOW  DRAW-VIEWER ;
 
 : REDRAW   PAGE  DRAW-DISPLAY ;
 
@@ -441,11 +443,13 @@ DECIMAL
    0 [MY LEGIONS] !                 ( no legions left)
 ;
 
-: MOVE-FLEET (  X Y ---  )
+: MOVE-FLEET ( x y ---  )
    2DUP
-   0 [MY X]@ [MY Y]@ GALAXY C!  ( remove old symbol)
-   'FLEET' -ROT GALAXY C!                ( plot fleet at new x,y)
-   [MY Y] C! [MY X] C! ;            ( update my coordinates)
+   0 [MY X]@ [MY Y]@ GALAXY C!     ( remove old symbol)
+   'FLEET' -ROT GALAXY C!          ( plot fleet at new x,y)
+   [MY Y] C! [MY X] C!             ( update my coordinates)
+   DRAW-VIEWER
+;
 
 : CHECK-POSITION  ( X Y --- )
    WRAP SWAP WRAP SWAP
@@ -453,16 +457,15 @@ DECIMAL
    CASE
       'VACUUM'  OF MOVE-FLEET         ENDOF
 
-      'BLKHOLE' OF
+      'BLKHOLE' OF MOVE-FLEET
                   LOPROMPT: ." FLEET SUCKED INTO BLACK HOLE"
                   HONK DELAY
-                  MOVE-FLEET
                   NEW-FLEET
                   LOPROMPT:           ENDOF
 
-    ( default)     2DROP
+    ( default)    2DROP
    ENDCASE
-   DRAW-DISPLAY ;
+;
 
 \ need to add death detector to end when FLEETS are exhausted
 : OTHER-FLEET   ( make other fleet current fleet)
@@ -470,7 +473,7 @@ DECIMAL
    IF   2 FLEET# !
    ELSE 1 FLEET# !
    ENDIF
-   DRAW-DISPLAY ;
+   REDRAW ;
 
 : MOVE-LEFT  ( -- )   [MY X]@    [MY Y]@ 1- CHECK-POSITION ;
 : MOVE-RIGHT ( -- )   [MY X]@    [MY Y]@ 1+ CHECK-POSITION ;
@@ -512,7 +515,7 @@ DECIMAL
    IF    ( it's ok to buy)
       5 BUY-V !               ( stop continous buying)
 
-      PROMPT: ." COST PER SHIP = " RND-DOLLARS DUP >R 2 .R
+      PROMPT: ." COST PER SHIP = " RND-DOLLARS DUP >R .$$$
 
       0 12 AT-XY ." HOW MANY DO YOU WANT?" #INPUT
       CREDIT @  R@  / MIN    ( no more than he can afford)
@@ -528,12 +531,13 @@ DECIMAL
    R> DROP
 ;
 
-
 : GATHER   ( pick up legions from garrison onto fleet)
-   0 10 AT-XY ." HOW MANY DO YOU WISH TO TAKE?" #INPUT
-   #LEGIONS C@ MIN >R  ( no more than are there)
-   [MY LEGIONS]@   R@  + [MY LEGIONS] !  ( update legions on fleet)
-   #LEGIONS C@  R>  - #LEGIONS C! ;      ( update on planet)
+   0 10 AT-XY ." HOW MANY DO YOU WISH TO TAKE?"
+   #INPUT  #LEGIONS C@ MIN                ( no more than are there)
+   >R                                     ( push onto Rstack)
+   [MY LEGIONS]@  R@ +  [MY LEGIONS] !    ( update legions on fleet)
+   #LEGIONS C@  R> -    #LEGIONS C!       ( update on planet)
+;
 
 \ Orignal name: "LEAVE"
 : DEPLOY   ( leave legions from fleet on planet as garrison)
@@ -548,12 +552,13 @@ DECIMAL
    DUP NEGATE [MY LEGIONS] +!
    #LEGIONS C@  + 255 MIN   #LEGIONS C! ;
 
+: PCLASS ( -- n) THEPLANET C@ 8 / ;
 
 : FRIENDLY-PLANET ( -- ?)  ( options upon landing at colony)
    BEGIN
-      PROMPT: ." CLASS " THEPLANET C@ 8 / .  ."  PLANET"
-           CR ." LOCAL GARRISON HAS " #LEGIONS C@ 3 .R ."  LEGIONS"
-      0 12 AT-XY ." DO YOU WISH TO:" 12 SPACES ( give options)
+      PROMPT: ." CLASS " PCLASS .  ."  PLANET"
+           CR ." LOCAL GARRISON HAS " #LEGIONS C@ . ."  LEGIONS"
+      0 12 AT-XY ." DO YOU WISH TO:"
       CR ." 1.  LEAVE LEGIONS ON PLANET"
       CR ." 2.  GATHER LEGIONS FROM PLANET"
       CR ." 3.  BUY SHIPS"
@@ -569,12 +574,10 @@ DECIMAL
                            TRUE  ( the default: leave planet)
       ENDCASE DELAY
    UNTIL
-    CLEAR-MSG DRAW-DISPLAY ;
+  REDRAW ;
 
-: PLANET-STRENGTH ( -- n)
-      THEPLANET C@ 8 / RANDOM1 1- 5 / 7 + * 10 / ;
 
-: .LOSSES  ( n - ) ." WE LOST "  3 .R  ."  LEGIONS" ;
+: .LOSSES  ( n - ) ." WE LOST " . ."  LEGIONS" ;
 
 : RETREAT ( enemy-strength -- )
       DELAY
@@ -593,14 +596,16 @@ DECIMAL
       DELAY DELAY
 ;
 
+: PLANET-STRENGTH ( -- n) PCLASS RANDOM1 1- 5 / 7 + * 10 / ;
+
 : COLONISE ( attack an uncolonised planet)
    CLEAR-MSG
    PLANET-STRENGTH
    DUP [MY LEGIONS]@  >
    IF   ( n) RETREAT
    ELSE ( n) CAPTURE FRIENDLY-PLANET
-   THEN  DRAW-DISPLAY
-   R> DROP ;
+   THEN
+;
 
 : EMPTY-PLANET   ( in orbit round uncolonised planet)
    CLEAR-MSG
@@ -610,11 +615,11 @@ DECIMAL
    IF
       COLONISE
    ENDIF
-   CLEAR-MSG ;
+   REDRAW ;
 
 : NOT-PLANET   ( there isn't a planet where he's trying to land)
    PROMPT:  ." NO PLANET THERE"
-   DELAY  CLEAR-MSG ;
+   DELAY  CLEAR-MSG  DRAW-DISPLAY ;
 
 ( calculate enemy garrisons effective strength)
 : ENEMY-STRENGTH ( -- n) #LEGIONS C@ RANDOM1 1- 5 / 7 + * 10 / ;
@@ -657,8 +662,8 @@ DECIMAL
    CASE
       'PLANET'  OF EMPTY-PLANET    ENDOF
       'ALIENS'  OF ENEMY-PLANET    ENDOF
-    'COLONY'  OF FRIENDLY-PLANET ENDOF
-            NOT-PLANET
+      'COLONY'  OF FRIENDLY-PLANET ENDOF
+                 NOT-PLANET
    ENDCASE ;
 
 : REVOLT? ( planet at X,Y revolts)
@@ -788,8 +793,8 @@ DECIMAL
    ELSE
       PROMPT: ." ENEMY FLEET DETECTED AT "  XY@ .(X,Y) 6 BEEPS
 
-      [MY SHIPS]@   #LEGIONS C@  OVER 4* 10 /
-      OVER 4* 10 / DUP
+      [MY SHIPS]@   #LEGIONS C@
+      OVER 4* 10 /  OVER 4* 10 /  DUP
       PROMPT:  ." WE LOST "  .  ." SHIPS"
       -ROT - 0 MAX DUP 0=
       IF ( computers fleet destroyed)
@@ -824,7 +829,7 @@ DECIMAL
   CR
   CR ." L - Land on a planet"
   CR ." T - Tax your planets"
-  CR ." I - Information"
+  CR ." I - Scanner symbol information"
   CR ." F - Fire / attack enemy"
   CR ." O - Switch to Other fleet"
   CR
@@ -837,15 +842,15 @@ DECIMAL
   PAGE ."  Scanner Display Information"
   CR   ." -----------------------------"
   CR
-  CR   ." A STAR"        25 TAB   'STAR' (EMIT)
+  CR   ." A STAR"        25 TAB  'STAR' (EMIT)
   CR
-  CR   ." A COLONY"      25 TAB 'COLONY' (EMIT)
+  CR   ." A COLONY"      25 TAB  'COLONY' (EMIT)
   CR
-  CR   ." Empty PLANET"  25 TAB   'PLANET' (EMIT)
+  CR   ." Empty PLANET"  25 TAB  'PLANET' (EMIT)
   CR
-  CR   ." Enemy PLANET"  25 TAB   'ALIENS' (EMIT)
+  CR   ." Enemy PLANET"  25 TAB  'ALIENS' (EMIT)
   CR
-  CR   ." Black hole"    25 TAB   'BLKHOLE' (EMIT)
+  CR   ." Black hole"    25 TAB  'BLKHOLE' (EMIT)
   CR
   CR   ." Player FLEET"  25 TAB  'FLEET' (EMIT)
   CR
@@ -859,8 +864,8 @@ DECIMAL
 : OBEY-COMMAND ( c -- )
    BUY-V @  IF ( nonzero)  -1 BUY-V +!  ENDIF
    CASE
-      [CHAR] A OF MOVE-LEFT  ENDOF
-      [CHAR] S OF MOVE-RIGHT ENDOF
+      [CHAR] A OF MOVE-LEFT   ENDOF
+      [CHAR] S OF MOVE-RIGHT  ENDOF
       [CHAR] W OF MOVE-UP     ENDOF
       [CHAR] Z OF MOVE-DOWN   ENDOF
       [CHAR] O OF OTHER-FLEET ENDOF
@@ -888,9 +893,8 @@ DECIMAL
 : END-MSG   CLEAR-MSG  0 12 AT-XY ." END OF GAME COMMANDER" ;
 
 : GAME       ( GAME LOOP )
-   PAGE
-   DRAW-LABELS DRAW-DISPLAY
    BEGIN
+      REDRAW
       RKEY? ?DUP
       IF ( player has pressed a key)
          OBEY-COMMAND
@@ -963,5 +967,5 @@ DECIMAL
    DIFFICULTY
    GAME-LENGTH
    INITIALISE
-   HELP INFORMATION
+   HELP
    GAME ;
