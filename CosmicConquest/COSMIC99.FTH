@@ -431,7 +431,7 @@ DECIMAL
     THEN 'FLEET' CHARDEF ;
 
 : NEW-FLEET  ( fleet destroyed for some reason)
-   LOPROMPT: ." OUR FLEET DESTROYED" HONK
+   LOPROMPT: ." OUR FLEET WAS DESTROYED" HONK
    \ you can still move the fleet cursor around though
    \ and buy more ships and take on more legions
    0 [MY X]@  [MY Y]@ GALAXY C! ( erase colony symbol)
