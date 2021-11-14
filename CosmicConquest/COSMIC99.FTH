@@ -81,15 +81,11 @@ CR .( utility words)
 HEX
 : RKEY?   ( -- c ) 83C8 OFF  KEY? ;   \ enables repeating key for TI-99
 : BEEPS   ( n -- ) 0 ?DO BEEP 50 MS LOOP ;
-: ?LOWER  ( c -- ?)  [CHAR] a  [CHAR] z 1+  WITHIN ;
-: TOUPPER ( c -- c') DUP ?LOWER IF 5F AND  THEN ;
-: INKEY   ( -- c)    KEY 7F AND  TOUPPER ;  \ uppercase Alpha, 7 bit output
 : DELAY      delayms MS ;
 : BLANKLN    VPOS C/L@ VBLANK ; \ FAST video memory write
 
 : 1+!   ( int-addr -- )  1 SWAP +! ;  \ like C  ++
 : 1-!   ( int-addr -- ) -1 SWAP +! ;  \ like C  --
-
 
 : ENDIF      POSTPONE THEN ; IMMEDIATE   \ FIG FORTH
 
@@ -374,8 +370,8 @@ DECIMAL
 : .SHIPS       8 21 AT-XY  [MY SHIPS]@    4 .R  ;
 
 : DRAW-FIGURES  ( draw the stats)
-    9  1 AT-XY   2  4 .R  22 TAB MY-PLANETS @   4 .R
-    9  5 AT-XY C-FLEETS @  4 U.R   22 TAB C-PLANETS @ 4 .R
+    9  1 AT-XY   2  4 .R           22 TAB MY-PLANETS @ 4 .R
+    9  5 AT-XY C-FLEETS @  4 U.R   22 TAB C-PLANETS  @ 4 .R
 
     7 20 AT-XY  [MY Y]@  [MY X]@  .(X,Y)
     .SHIPS
