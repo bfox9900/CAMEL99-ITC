@@ -69,10 +69,14 @@ case letters and a word to convert lower case to upper case. The original code
 gave one "fossilized" sub-routine that could only do one thing.
 
 ### Make Your Life Simpler
-Another for the Forth "style" is because stack programming is hard. There I said
-it.  Yes it is harder to code for a stack machine that using name variables.
-The compensation for that is factoring. That is how the language designer wanted
-us to use the language.  By cutting things into small pieces stack contents
-become much simpler almost trivial. If you can remember what is on the
-top of the data stack 20 lines into a sub-routine then you are a genius but us
-mere mortals don't need to do that with Forth.
+Another reason for the Forth "style" is because stack programming is hard. There
+I said it.  Yes it is harder to code for a stack machine that using name
+variables. The compensation for that is factoring. That is how the language
+designer wanted us to use Forth.  By cutting things into small pieces
+stack contents become much simpler almost trivial. If you can remember what is
+on the top of the data stack 20 lines into a sub-routine then you are a genius
+but us mere mortals don't need to do that. We just factor the code into more
+understandable pieces.
+
+### To be continued...
+As I think find more examples of good Forth coding style I will put them here.
