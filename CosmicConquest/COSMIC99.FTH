@@ -184,7 +184,7 @@ SIZE SIZE BYTE-MATRIX: GARRISON  ( strength MATRIX:)
 : RANDOM2 ( --- ran ) ( random number in range 1-SIZE)
    RAND2 @ 53 * 773 + DUP RAND2 ! ABS SIZE MOD 1+ ;
 
-\ create a double variable to randomly created coordinates
+\ create a double variable to hold randomly created coordinates
 \ reduces stack juggling in game language
 CREATE LASTXY   0 , 0 ,
 
