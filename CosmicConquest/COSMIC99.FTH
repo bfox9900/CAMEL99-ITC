@@ -125,13 +125,6 @@ CR .( 2D matrices allocated in Camel99 HEAP)
    DOES> ( n n -- addr )
          @ ROT 1- OVER C@ * + + ;
 
-\ : 2D-ARRAY: ( rows cols -- )  \ 2D integer 2D-ARRAY
-\    CREATE  HEAP , CELLS SWAP CELLS
-\           ( cols) H, ( rows) H,
-\    DOES> @          ( -- base-addr )
-\         DUP CELLS+ @  ( -- base-addr cols )
-;
-
 \ Changed to descriptive names for the data :-)
 SIZE SIZE BYTE-MATRIX: GALAXY    ( the galactic MATRIX:)
 SIZE SIZE BYTE-MATRIX: PLANET    ( planetary MATRIX:)
