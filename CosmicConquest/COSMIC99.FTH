@@ -3,30 +3,34 @@
 \ This version will try to use the features of Camel99 and TI-99 hardware
 
 \ Change log:
-\ Replaced all -ROT  with -ROT for speed and 20 bytes space saving
+\ Replaced all ROT ROT  with -ROT for speed and 20 bytes space saving
 \ Replaced 0 FILL  with ERASE
 \ Replace all 1 -   with 1-  save  14 bytes
 \ Removed Apple ][ character configuration code
+\ replaced FIG Forth VARIABLE
+\ Removed all original screen control words
+\ Attempt to make some syntax for accessing data rather than just numbers
 
-\ Camel99 Optimizations
+\ ANS/Camel99 Optimizations
 \ Replaced all 2 *  with CELLS
 \ Replaced all 2 /  with 2/
-\ Replaced all 4 * with 4*
-\ Replaced 8 *  with 8*
-\ Replaced ARRAY with MATRIX: (ARRAY is 1D in Forth by convention)
+\ Replaced all 4 *  with 4* (Camel99 code word)
+\ Replaced all 8 *  with 8* (Camel99 code word)
+\ Replaced ARRAY with MATRIX: (ARRAY is 1 dimension in Forth by convention)
 \ Added new mapped characters to charset for "space" graphics
 \ Added border characters to create a box on play screen
+\ Wrote new INKEY.  7 bit output, uppercase ALPHA
+\ re-factored extremely long words into smaller words
+\ replaced a lot of code with +! operator where possible
+
 
 \ HARNESS99.FTH is my new FIG/ANS translation file
-\ Wrote smaller INKEY that has 7 bit out uppercase ALPHA output
-\
-\ Camel99 Forth Library requirements
-\ INCLUDE DSK1.CASE
-\ INCLUDE DSK1.UDOTR
-\ INCLUDE DSK1.MTASK99
 
-INCLUDE DSK1.TOOLS
-INCLUDE  DSK5.HARNESS99  \ use DSK# where you have HARNESS99
+\ Camel99 Forth Library requirements
+INCLUDE DSK1.TOOLS  \ for debugging only
+
+INCLUDE DSK1.CASE
+INCLUDE DSK1.UDOTR
 
 HERE
 DECIMAL
@@ -44,29 +48,29 @@ SIZE 3 * 2/ CONSTANT NO-OF-PLANETS ( planets in galaxy)
 1000 CONSTANT delayms   ( milliseconds to wait for in DELAY)
 
 CR .( variables)
-0 VARIABLE BUY-V        ( count to stop player buying every move)
-0 VARIABLE C-FLEETS     ( no. of computer fleets)
-0 VARIABLE C-LEGIONS    ( no. of computer legions for attacks)
-0 VARIABLE C-PLANETS    ( no. of computer planets)
-0 VARIABLE CLASS-TOTALS ( computers planets classes totals)
-0 VARIABLE COMP-START   ( how quickly computer plays)
-0 VARIABLE COMPUTER     ( how quickly computer plays)
-0 VARIABLE DIFF         ( difficulty of game 1-4)
-0 VARIABLE FLEET#       ( Human player's fleet in use)
-0 VARIABLE LEG          ( the no. of legions available to buy)
-0 VARIABLE LEN          ( no. of moves remaining in game)
-0 VARIABLE NEW          ( how often new fleet created)
-0 VARIABLE PLANETS      ( no. of players planets)
-0 VARIABLE RAND1        ( first random number seed)
-0 VARIABLE RAND2        ( second random number seed)
-0 VARIABLE START        ( starting score in the game)
-0 VARIABLE TEMP1        ( a temporary storage variable)
-0 VARIABLE PRICE
-0 VARIABLE TROOPS       ( no. of computers troops in game)
-0 VARIABLE VTAX         ( tax collected)
-0 VARIABLE X            ( temporary storage for X position)
-0 VARIABLE Y            ( temporary storage for Y position)
-250 VARIABLE CREDIT     ( players credit in taxes)
+ VARIABLE BUY-V        ( count to stop player buying every move)
+ VARIABLE C-FLEETS     ( no. of computer fleets)
+ VARIABLE C-LEGIONS    ( no. of computer legions for attacks)
+ VARIABLE C-PLANETS    ( no. of computer planets)
+ VARIABLE CLASS-TOTALS ( computers planets classes totals)
+ VARIABLE COMP-START   ( how quickly computer plays)
+ VARIABLE COMPUTER     ( how quickly computer plays)
+
+ VARIABLE DIFF         ( difficulty of game 1-4)
+ VARIABLE FLEET#       ( Human player's fleet in use)
+ VARIABLE LEG          ( the no. of legions available to buy)
+ VARIABLE LEN          ( no. of moves remaining in game)
+ VARIABLE NEW          ( how often new fleet created)
+ VARIABLE MY-PLANETS   ( no. of players planets)
+ VARIABLE RAND1        ( first random number seed)
+ VARIABLE RAND2        ( second random number seed)
+ VARIABLE START        ( starting score in the game)
+\  VARIABLE TEMP1        ( we don't need no stinking temporary variables mang)
+ VARIABLE TROOPS       ( no. of computers troops in game)
+ VARIABLE VTAX         ( tax collected)
+ VARIABLE X            ( temporary storage for X position)
+ VARIABLE Y            ( temporary storage for Y position)
+250 CREATE CREDIT  ,   ( players credit in taxes)
 
 CR .( utility words)
 : ERASE    ( addr u --)    0 FILL ;
@@ -81,7 +85,22 @@ HEX
 : ?LOWER  ( c -- ?)  [CHAR] a  [CHAR] z 1+  WITHIN ;
 : TOUPPER ( c -- c') DUP ?LOWER IF 5F AND  THEN ;
 : INKEY   ( -- c)    KEY 7F AND  TOUPPER ;  \ uppercase Alpha, 7 bit output
+: DELAY      delayms MS ;
+: BLANKLN    VPOS C/L@ VBLANK ; \ FAST video memory write
 
+: 1+!   ( int-addr -- )  1 SWAP +! ;  \ like C  ++
+: 1-!   ( int-addr -- )  1 SWAP +! ;  \ like C  --
+
+
+: ENDIF      POSTPONE THEN ; IMMEDIATE   \ FIG FORTH
+
+: HOME ( --- )  0 0 AT-XY ;
+
+HEX
+: ?LOWER  ( c -- ?)  [CHAR] a  [CHAR] z 1+  WITHIN ;
+: TOUPPER ( c -- c') DUP ?LOWER IF 5F AND  THEN ;
+: INKEY   ( -- c)    KEY 7F AND  TOUPPER ;  \ uppercase Alpha, 7 bit output
+DECIMAL
 
 CR .( Heap management and matrix creators)
 \ \\\\\\\\\\\\\\\  TI99 CODE  \\\\\\\\\\\\\\\\\\
@@ -89,10 +108,11 @@ CR .( Heap management and matrix creators)
 \ 8K low RAM, 15K Hi RAM. Matrices need 7.3K
 \ Using LOW RAM
 
-\ heap memory analogs to HERE ALLOT C,
+\ heap memory analogs to HERE ALLOT C,  and ,
 : HEAP    H @ ;
 : HALLOT  H +! ;
-: HC,     HEAP C! ;
+: HC,     HEAP C!  1 HALLOT ;
+: H,      HEAP !   2 HALLOT ;
 
 \ INIT heap pointer & clean up heap space
 HEX  2000 H !
@@ -100,45 +120,63 @@ HEAP 2000 ERASE
 
 DECIMAL
 CR .( 2D matrices allocated in Camel99 HEAP)
-: MATRIX: ( cols rows -- )
+: BYTE-MATRIX: ( cols rows -- )
    CREATE HEAP ,
           DUP HC, * HALLOT
    DOES> ( n n -- addr )
-        @ ROT 1- OVER C@ * + + ;
+         @ ROT 1- OVER C@ * + + ;
 
-SIZE SIZE MATRIX: GALAXY ( the galactic MATRIX:)
-SIZE SIZE MATRIX: INFO1  ( planetary MATRIX:)
-SIZE SIZE MATRIX: INFO2  ( strength MATRIX:)
-\  11   11 MATRIX: SCREEN ( the screen MATRIX:)
-   2    6 MATRIX: FLEETS ( player fleets info)
+\ : 2D-ARRAY: ( rows cols -- )  \ 2D integer 2D-ARRAY
+\    CREATE  HEAP , CELLS SWAP CELLS
+\           ( cols) H, ( rows) H,
+\    DOES> @          ( -- base-addr )
+\         DUP CELLS+ @  ( -- base-addr cols )
+;
 
-\ clarification language
-: THEPLANET ( -- addr) XY@ INFO1 ;
-: #LEGIONS  ( -- addr) XY@ INFO2 ; \ Legions on the planet
+\ Changed to descriptive names for the data :-)
+SIZE SIZE BYTE-MATRIX: GALAXY    ( the galactic MATRIX:)
+SIZE SIZE BYTE-MATRIX: PLANET    ( planetary MATRIX:)
+SIZE SIZE BYTE-MATRIX: GARRISON  ( strength MATRIX:)
+
+   2    6 BYTE-MATRIX: FLEETS ( player fleets info)
+
+\ easier to understand this data by name
+1 CONSTANT [MY   ( human side of matrix)
+2 CONSTANT [HIS  ( enemy side of matrix)
+
+: X]       ( n -- addr) 1 FLEETS ; \ byte
+: Y]       ( n -- addr) 2 FLEETS ; \ byte
+
+\ We can simplify the code and save space
+: X]@    X] C@ ;
+: Y]@    Y] C@ ;
+: XY]@  ( n -- x y)  DUP Y]@ SWAP X]@ ;
+
+: SHIPS]   ( n -- addr) 3 FLEETS ; \ cell
+: SHIPS]@  ( ndx -- n) SHIPS] @  ;
+
+: LEGIONS]  ( n -- addr) 5 FLEETS ; \ cell
+: LEGIONS]@ ( ndx -- x) LEGIONS] @ ;
+
+: THEPLANET ( -- addr) XY@ PLANET ;
+: #LEGIONS  ( -- addr) XY@ GARRISON ; \ Legions on the planet
 : THEGALAXY ( -- addr) XY@ GALAXY ;
 
-CR .( general utility words)
-: DELAY      delayms MS ;       \ MS sleeps task while waiting
-: BLANKLN    VPOS C/L@ VBLANK ; \ FAST video memory write
-
 ( clear message area on text screen)
-: CLEAR-MSGE ( -- ) 18 10 DO   0 I AT-XY BLANKLN  LOOP ;
+: CLEAR-MSG ( -- ) 18 10 DO   0 I AT-XY BLANKLN   LOOP ;
 
-: PROMPT:   ( -- )   0 10 AT-XY  BLANKLN  ;
-: LOPROMPT: ( -- )   0 23 AT-XY  BLANKLN ;
+: PROMPT:   ( -- ) 0 10 AT-XY  BLANKLN ;
+: LOPROMPT: ( -- ) 0 23 AT-XY  BLANKLN ;
 
-\ clear screen, don't change cursor
-: CLEAR-SCREEN ( -- )  0  C/SCR @ BL VFILL ;
+: CLEAR-SCREEN ( -- )  0  C/SCR @ BL VFILL ; \ does NOT touch cursor
 
-\ : CLEAR-DISP ( fill screen MATRIX: with FF's)
-\   1 1 SCREEN 121 255 FILL ;
+: []ERASE ( addr --) SIZE SIZE * ERASE ;  \ erase a matrix ;
 
-: CLEAR-GALAXY ( fills galactic MATRIX: with NULLS)
-   1 1 GALAXY SIZE SIZE * ERASE ;
+: CLEAR-GALAXY ( -- )  1 1 GALAXY []ERASE ;
 
-: CLEAR-INFO ( fills info MATRIX:s with NULLs)
-   1 1 INFO1 SIZE SIZE * ERASE
-   1 1 INFO2 SIZE SIZE * ERASE ;
+: CLEAR-INFO
+    1 1 PLANET []ERASE
+    1 1 GARRISON []ERASE ;
 
 : RANDOM1 ( --- ran) ( random number in range 1-SIZE)
    RAND1 @ 37 * 651 + DUP RAND1 ! ABS SIZE MOD 1+ ;
@@ -149,34 +187,24 @@ CR .( general utility words)
 \ create a double variable to randomly created coordinates
 \ reduces stack juggling in game language
 CREATE LASTXY   0 , 0 ,
+
 \ create random coordinates and remember them.
 : NEWXY  ( -- n n ) RANDOM1 RANDOM2 2DUP LASTXY 2!  ;
 : THIS  ( -- n n ) LASTXY 2@ ;  \ return last NEWXY generated
 
-: WRAPPED ( n --- ng ) ( calculates wrap around of galaxy)
-   SIZE 1- + SIZE MOD 1+ ;
+: WRAP ( n --- ng ) SIZE 1- + SIZE MOD 1+ ; ( wrap galaxy coordinate)
 
-\ better number input routine.  ACCEPT is multi-tasking ready
-:  INPUT  ( -- n )
+\ number input routine
+: #INPUT  ( -- n )
           DECIMAL
           BEGIN
             PAD DUP 10 ACCEPT  \ ACCEPT text into temp buffer PAD
             NUMBER?            \ convert the number in PAD
           WHILE                \ while the conversion is bad we do this
-              ." ? "
+              ."  ? "
               DROP
           REPEAT ;
 
-\ easier to understand this data by name
-1 CONSTANT [MY
-2 CONSTANT [HIS
-
-: X]        1 FLEETS ; \ byte
-: Y]        2 FLEETS ; \ byte
-: SHIPS]    4 FLEETS ; \ cell
-: LEGIONS]  6 FLEETS ; \ cell
-
-: END-MSGE  CLEAR-MSGE  0 12 AT-XY ." END OF GAME COMMANDER" ;
 
 CR .( TMS9918 Pattern table management)
 HEX
@@ -186,7 +214,9 @@ DECIMAL
 : CHARDEF ( data[] ascii -- ) ]PDT 32 VWRITE ; \ write 32 bytes to video RAM
 
 CR .( graphics shapes )
- \ TI-99 specific outer-space characters
+ \ TI-99 specific
+
+ \ outer-space characters
  HEX
  CREATE ACOLONY 7884 , 3040 , 4030 , 8478 ,
  CREATE OPLANET 0078 , 8484 , 8484 , 8478 ,
@@ -195,7 +225,9 @@ CR .( graphics shapes )
  CREATE PFLEET  40F8 , 503C , 1040 , F840 ,
  CREATE EFLEET  20C0 , 2438 , 0410 , E010 ,
  CREATE BLKHOLE 7884 , 3078 , 7830 , 8478 ,
- \ -------- double line box chars --------
+ CREATE NOFLEET 0084 , 4800 , 0048 , 8400 , \ fleet empty icon
+
+ \ double line box chars
  CREATE VBARS  2828 , 2828 , 2828 , 2828 ,
  CREATE HBARS  0000 , 00FF , 00FF , 0000 ,
  CREATE ULEFT  0000 , 003F , 202F , 2828 ,
@@ -203,17 +235,21 @@ CR .( graphics shapes )
  CREATE LLEFT  2828 , 282F , 203F , 0000 ,
  CREATE LRIGHT 2828 , 28E8 , 08F8 , 0000 ,
 
-\ re-define shape of characters used in the matrix map
-\ This allows us to write the map directly to the screen
+\ TI-99 specific strategy
+\ Re-define shape of characters used in the matrix map
+\ This allows us to PLOT the map directly to the video screen
+
 DECIMAL
+17 CONSTANT FOE  \ enemy ship character
+
 : DEF-CHARS
   ASTAR     2 CHARDEF
   ACOLONY 132 CHARDEF
   OPLANET   4 CHARDEF
   EPLANET   5 CHARDEF
   BLKHOLE   8 CHARDEF
-  PFLEET   16 CHARDEF
-  EFLEET   17 CHARDEF
+  PFLEET   16 CHARDEF  \ player's fleet icon
+  EFLEET  FOE CHARDEF  \ enemy's fleet icon
 
   VBARS   133 CHARDEF
   HBARS   134 CHARDEF
@@ -224,7 +260,7 @@ DECIMAL
 ;
 
 DEF-CHARS
- \ use (EMIT) which does not interpert control characters
+ \ Camel99 Forth: use (EMIT) which does not interpret control characters
 : VLINE ( len --) 0 DO  133 VPUT  VROW 1+!  LOOP ;
 : HLINE ( len --) 0 DO  134 (EMIT) LOOP ;
 : TOPLINE ( len --) 135 (EMIT)  HLINE  136 (EMIT) ;
@@ -240,22 +276,15 @@ CR .( main game words)
 : RND-GALAXY! ( n -- ) NEWXY GALAXY C! ;
 
 : SET-UP-GALAXY
-   NO-OF-STARS 0
-   DO
-      2  RND-GALAXY! ( set up stars in galaxy)
-   LOOP
+   NO-OF-STARS 0 DO  2  RND-GALAXY!    LOOP
 
    NO-OF-PLANETS 0
    DO
      4 RND-GALAXY!    ( set up planets)
-     RANDOM1 4* 8 +  THIS INFO1 C!  ( set up class of planet)
+     RANDOM1 4* 8 +  THIS PLANET C!  ( set up class of planet)
    LOOP
 
-   NO-OF-B-HOLES 0
-   DO
-      8 RND-GALAXY!  ( set up black holes)
-   LOOP ;
-
+   NO-OF-B-HOLES 0 DO   8 RND-GALAXY!   LOOP ;
 
 CR .( initialisers)
 : GAME-LENGTH
@@ -282,7 +311,7 @@ DECIMAL
    1 FLEET# !          ( make fleet 1 current fleet)
    250 CREDIT !            ( players credit)
 
-   0 PLANETS !             ( no planets)
+   0 MY-PLANETS !             ( no planets)
    0 C-PLANETS !           ( none for computer either)
 
    20 [MY SHIPS] !  ( 1 = player's fleets)
@@ -292,9 +321,9 @@ DECIMAL
    50 [HIS LEGIONS] ! ( fleets have 50 legions each)
 
    DIFF @ 4* 0
-  ?DO ( position computers fleets)
-         17 NEWXY GALAXY C!
-        15 THIS INFO2 C!
+  ?DO ( position computer's fleets)
+       FOE NEWXY GALAXY C!
+        15 THIS GARRISON C!
   LOOP
    16 22 18 GALAXY C!
    16 18 22 GALAXY C! ( position fleets)
@@ -315,9 +344,9 @@ DECIMAL
 \ ** re-factored score computation **
 \ Computed Weighted score
 \ part_score= (player# - computer#) * weight
-: PLANET-DIFF ( -- n) PLANETS @  C-PLANETS @ -   W1 *  ;
-: FLEETS-DIFF ( -- n) [MY SHIPS] @  [HIS SHIPS] @ -  W2 * ;
-: FLEETS-DIFF ( -- n) [MY LEGIONS] @  [HIS LEGIONS] @ -  W2 * ;
+: PLANET-DIFF ( -- n) MY-PLANETS @  C-PLANETS @ -   W1 *  ;
+: FLEETS-DIFF ( -- n) [MY SHIPS]@   [HIS SHIPS]@  -  W2 * ;
+: FLEETS-DIFF ( -- n) [MY LEGIONS]@   [HIS LEGIONS]@  -  W2 * ;
 : TROOP-VALUE ( -- n) TROOPS @ W3 * ;
 
 :  SCORE ( -- n)
@@ -333,27 +362,27 @@ DECIMAL
 
 : DRAW-LABELS
      HOME      ." PLAYER"
-    0  1 AT-XY ." PLANETS:"
+    2  1 AT-XY ." FLEETS:"   12 TAB ." PLANETS:"
     0  4 AT-XY ." EMPIRE"
-    0  5 AT-XY ." FLEETS:"   12 TAB ." PLANETS:"
-    0 21 AT-XY ." SHIPS :"
-    0 22 AT-XY ." LEGIONS:" 24 22 AT-XY ." CREDITS:"
+    2  5 AT-XY ." FLEETS:"   12 TAB ." PLANETS:"
+    0 21 AT-XY ." SHIPS  :"
+    0 22 AT-XY ." LEGIONS:" 23 22 AT-XY ." CREDITS:"
     0 20 AT-XY ." COORDS:"
-    25 20 AT-XY ." SCORE:"
+   25 20 AT-XY ." SCORE:"
 ;
 
-: .LEGIONS     9 22 AT-XY [MY LEGIONS] @ 5 U.R ;
-: .SHIPS       7 21 AT-XY [MY SHIPS] @   4 .R  ;
+: .LEGIONS     8 22 AT-XY  [MY LEGIONS]@  4 .R ;
+: .SHIPS       8 21 AT-XY  [MY SHIPS]@    4 .R  ;
 
 : DRAW-FIGURES  ( draw the stats)
-    10 1 AT-XY PLANETS @   4  .R
-    7  5 AT-XY C-FLEETS @  4 U.R   20 TAB C-PLANETS @ 4 U.R
+    9  1 AT-XY   2  4 .R  20 TAB MY-PLANETS @   4 .R
+    9  5 AT-XY C-FLEETS @  4 U.R   20 TAB C-PLANETS @ 4 .R
 
-    7 20 AT-XY  [MY Y] C@  [MY X] C@  .(X,Y)
+    7 20 AT-XY  [MY Y]@  [MY X]@  .(X,Y)
     .SHIPS
     .LEGIONS
-   31 22 AT-XY CREDIT @    5 U.R
-   31 20 AT-XY SCORE       5 U.R
+    31 22 AT-XY CREDIT @    5 U.R
+    31 20 AT-XY SCORE       5 U.R
 ;
 
 : FIND-DIRECTION     (  --- X Y )
@@ -368,58 +397,72 @@ DECIMAL
                       0  0
    ENDCASE
    LOPROMPT:   ( clear message )
-   [MY Y] C@ + WRAPPED SWAP
-   [MY X] C@ + WRAPPED SWAP ;
+   [MY Y]@ + WRAP SWAP
+   [MY X]@ + WRAP SWAP ;
 
-: PRINT-IT  ( c  --- )  X @ CELLS 12 +  Y @ 8 +  AT-XY   VPUT  ;
+\ : PRINT-IT  ( c  --- ) X @ CELLS 12 +  Y @ 8 +  AT-XY VPUT  ;
+
+\ >VPOS computes video screen address. Does not affect cursor variables
+\ VC! writes a byte to Video RAM
+: PLOT  ( char row col -- )
+  CELLS 12 + SWAP 8 + >VPOS ( c Vaddr) VC! ;
 
 : DRAW-SCAN ( draw the screen display)
-   [MY X] C@ 5 -  [MY Y] C@ 5 -
-   11 0 DO
-      11 0 DO
-              OVER WRAPPED OVER WRAPPED
-              J Y ! I X ! GALAXY C@  PRINT-IT
+   [MY X]@ 5 -  [MY Y]@ 5 -
+   11 0 DO ( rows)
+      11 0 DO ( columns)
+              OVER WRAP OVER WRAP GALAXY C@  J I PLOT
               1+
            LOOP
            11 - SWAP 1+ SWAP
         LOOP
-   DROP DROP
+   2DROP
 ;
 
-: DRAW-DISPLAY  ( 1 SCALE )
-    DRAW-LABELS  DRAW-SCAN  DRAW-FIGURES  WINDOW ;
+: DRAW-DISPLAY  ( -- )
+  DRAW-LABELS  DRAW-SCAN  DRAW-FIGURES  WINDOW ;
 
 : REDRAW   PAGE  DRAW-DISPLAY ;
 
+: FLEET-ICON (  )
+    [MY SHIPS]@
+    IF   PFLEET
+    ELSE NOFLEET
+    THEN 16 CHARDEF ;
+
 : NEW-FLEET  ( fleet destroyed for some reason)
-   \ 24 0 vhtab ." fleet destroyed"
+   LOPROMPT: ." OUR FLEET DESTROYED" HONK
    \ you can still move the fleet cursor around though
    \ and buy more ships and take on more legions
-
-   0 [MY X] C@  [MY Y] C@ GALAXY C! ( remove fleet symbol)
-   0 [MY SHIPS] !                  ( no ships left)
-   0 [MY LEGIONS] ! ;              ( no legions left)
+   0 [MY X]@  [MY Y]@ GALAXY C! ( erase colony symbol)
+   0 [MY SHIPS] !                   ( no ships left)
+     FLEET-ICON
+   0 [MY LEGIONS] !                 ( no legions left)
+;
 
 : MOVE-FLEET (  X Y ---  )
    2DUP
-   0 [MY X] C@ [MY Y] C@ GALAXY C!  ( remove old symbol)
-   16 -ROT GALAXY C!              ( position fleet)
-   [MY Y] C! [MY X] C! ;            ( update fleet MATRIX:)
+   0 [MY X]@ [MY Y]@ GALAXY C!  ( remove old symbol)
+   16 -ROT GALAXY C!                ( plot fleet at new x,y)
+   [MY Y] C! [MY X] C! ;            ( update my coordinates)
 
 : CHECK-POSITION  ( X Y --- )
-   WRAPPED SWAP WRAPPED SWAP 2DUP GALAXY C@
+   WRAP SWAP WRAP SWAP
+   2DUP GALAXY C@
    CASE
       0  OF MOVE-FLEET              ENDOF ( empty space)
 
-      8  OF LOPROMPT: ." FLEET IN BLACK HOLE"
-            MOVE-FLEET HONK DELAY
-            NEW-FLEET  LOPROMPT:
-                                    ENDOF
+      8  OF LOPROMPT: ." FLEET SUCKED INTO BLACK HOLE"
+            HONK DELAY
+            MOVE-FLEET
+            NEW-FLEET
+            LOPROMPT:               ENDOF
+
       DROP DROP
    ENDCASE
    DRAW-DISPLAY ;
 
-\ needs to add death detector to end when FLEETS are exhausted
+\ need to add death detector to end when FLEETS are exhausted
 : OTHER-FLEET   ( make other fleet current fleet)
    FLEET# @ 1 =
    IF   2 FLEET# !
@@ -427,33 +470,37 @@ DECIMAL
    ENDIF
    DRAW-DISPLAY ;
 
-: MOVE-LEFT  ( -- )   [MY X] C@    [MY Y] C@ 1- CHECK-POSITION ;
-: MOVE-RIGHT ( -- )   [MY X] C@    [MY Y] C@ 1+ CHECK-POSITION ;
-: MOVE-DOWN  ( -- )   [MY X] C@ 1+ [MY Y] C@    CHECK-POSITION ;
-: MOVE-UP    ( -- )   [MY X] C@ 1- [MY Y] C@    CHECK-POSITION ;
+: MOVE-LEFT  ( -- )   [MY X]@    [MY Y]@ 1- CHECK-POSITION ;
+: MOVE-RIGHT ( -- )   [MY X]@    [MY Y]@ 1+ CHECK-POSITION ;
+: MOVE-DOWN  ( -- )   [MY X]@ 1+ [MY Y]@    CHECK-POSITION ;
+: MOVE-UP    ( -- )   [MY X]@ 1- [MY Y]@    CHECK-POSITION ;
+
+: LEGION-COST    ( -- n) RANDOM1 8 / THEPLANET C@ 7 / + ; ( cost of 1 legion)
+: .$$$         ( n --) ." $" . ;
+
+: PLANET-LEGIONS ( -- n) THEPLANET C@ 6 / ;  ( no. of legions on planet)
 
 : ENLIST    ( enlisting 1egions on a planet)
    BUY-V @ 0=
    IF  ( it's ok to buy)
        5 BUY-V !  ( can't buy for 5 more moves)
-       ( calculate cost of legions)
-       RANDOM1 8 / THEPLANET C@ 7 / + DUP TEMP1 !
-       PROMPT:  ." COST PER LEGION =" 3 .R
-       ( calculate no. of legions available)
-       THEPLANET C@ 6 / DUP LEG !
-       0 12 AT-XY ." NO OF LEGIONS AVAILABLE = " 3 .R
-       ( take the order)
-       0 14 AT-XY ." HOW MANY DO YOU REQUIRE?" INPUT
-       LEG @ MIN DUP TEMP1 @ * CREDIT @ >
-       IF  ( not enough money)
+
+       PROMPT: ." COST PER LEGION =" LEGION-COST DUP >R .$$$
+       0 12 AT-XY ." NO. OF LEGIONS AVAILABLE = " PLANET-LEGIONS 3 .R
+
+       0 14 AT-XY ." HOW MANY DO YOU REQUIRE?"
+       #INPUT
+       PLANET-LEGIONS MIN DUP R@ * CREDIT @ >
+       IF
          0 16 AT-XY ." NOT ENOUGH CREDIT"
        ELSE
-         [MY LEGIONS] @ OVER + [MY LEGIONS] !  ( update legions)
-         TEMP1 @ * CREDIT @ SWAP - CREDIT ! ( update credit)
+         [MY LEGIONS]@  OVER + [MY LEGIONS] !  ( update legions)
+         R@ * CREDIT @ SWAP - CREDIT ! ( update credit)
        ENDIF
    ELSE
-      PROMPT:  ." NO TROOPS AVAILABLE"
+       PROMPT: ." NO TROOPS AVAILABLE"
    ENDIF
+   R> DROP
    .LEGIONS ;
 
 : RND-DOLLARS ( -- n) RANDOM1 5 / THEPLANET C@ 10 / + 1+ ;
@@ -462,40 +509,34 @@ DECIMAL
    BUY-V @ 0=
    IF    ( it's ok to buy)
       5 BUY-V !               ( stop continous buying)
-      RND-DOLLARS >R
-      PROMPT:  ." COST PER SHIP = " PRICE @ 2 .R
-      0 12 AT-XY ." HOW MANY DO YOU WANT?" INPUT
+
+      PROMPT: ." COST PER SHIP = " RND-DOLLARS DUP >R 2 .R
+
+      0 12 AT-XY ." HOW MANY DO YOU WANT?" #INPUT
       CREDIT R@  / MIN    ( no more than he can afford)
       DUP [MY SHIPS] +!
 
-      CREDIT @  R@ * - 0 MAX  CREDIT !  ( update credit)
-      16  [MY Y] C@  [MY X] C@ GALAXY C!  ( make sure fleet symbol there)
+      CREDIT @  R@ * - 0 MAX  CREDIT !    ( update credit)
+      16  [MY Y]@  [MY X]@ GALAXY C!  ( make sure fleet symbol there)
+
    ELSE
-      PROMPT:  ." NO SHIPS AVAILABLE"
+      PROMPT: ." NO SHIPS AVAILABLE"
    ENDIF
    R> DROP
    .SHIPS ;
 
 
 : GATHER   ( pick up legions from garrison onto fleet)
-   0 10 0 AT-XY ." HOW MANY DO YOU WISH TO TAKE?" INPUT
+   0 10 AT-XY ." HOW MANY DO YOU WISH TO TAKE?" #INPUT
    #LEGIONS C@ MIN >R  ( no more than are there)
-   [MY LEGIONS] @  R@  + [MY LEGIONS] !     ( update legions on fleet)
-   #LEGIONS C@  R>  - #LEGIONS C! ; ( update on planet)
-
-\ Orignal name: "LEAVE"
-\ : DEPLOY   ( leave legions from fleet on planet as garrison)
-\   PROMPT:  ." HOW MANY DO YOU WISH TO LEAVE? "
-\   INPUT  5 ]F @ MIN TEMP1 !         ( no more than you have)
-\   5 ]F @ TEMP1 @ - 5 ]F !    ( update legions on fleet)
-\   #LEGIONS C@ TEMP1 @ + 255 MIN ( no more than 255)
-\   #LEGIONS C! ;            ( update on planet)
+   [MY LEGIONS]@   R@  + [MY LEGIONS] !  ( update legions on fleet)
+   #LEGIONS C@  R>  - #LEGIONS C! ;      ( update on planet)
 
 \ Orignal name: "LEAVE"
 : DEPLOY   ( leave legions from fleet on planet as garrison)
    BEGIN
      PROMPT: ." HOW MANY DO YOU WISH TO LEAVE? "
-     INPUT [MY LEGIONS] @ OVER <
+     #INPUT [MY LEGIONS]@  OVER <
    WHILE
       PROMPT: ." You don't have that many!"
       HONK 500 MS
@@ -518,7 +559,7 @@ DECIMAL
       CR ." 4.  ENLIST TROOPS"
       CR ." 5.  LEAVE" CR
       INKEY              ( get reply)
-      CLEAR-MSGE
+      CLEAR-MSG
       CASE
          49 ( 1) OF DEPLOY FALSE ( leave legions)  ENDOF
          50 ( 2) OF GATHER FALSE ( gather legions) ENDOF
@@ -527,87 +568,83 @@ DECIMAL
                            TRUE  ( the default: leave planet)
       ENDCASE DELAY
    UNTIL
-    CLEAR-MSGE DRAW-DISPLAY ;
+    CLEAR-MSG DRAW-DISPLAY ;
 
 : PLANET-STRENGTH ( -- n)
-    THEPLANET C@ 8 / RANDOM1 1- 5 / 7 + * 10 /
+      THEPLANET C@ 8 / RANDOM1 1- 5 / 7 + * 10 / ;
+
+: .LOSSES  ( n - ) ." WE LOST "  3 .R  ."  LEGIONS" ;
+
+: RETREAT ( enemy-strength -- )
+      DELAY
+      0 12 AT-XY  2/ DUP .LOSSES
+      [MY LEGIONS]@  SWAP -   0 MAX [MY LEGIONS] !
+      PROMPT: ." OUR FORCES RETREATED"
+      DELAY DELAY
 ;
 
-: .LOSSES  ( n - ) ." YOU LOST " 3 .R  ."  LEGIONS" ;
-
-: COLONISE ( attack an uncolonised planet)
-   CLEAR-MSGE
-   PLANET-STRENGTH DUP >R  \ USE rstack as temp variable
-
-   [MY LEGIONS] @ >
-   IF   ( planet drives off your forces)
-      PROMPT: ." YOUR FORCES RETREATED"
-      DELAY
-      0 12 AT-XY R@ 2/ DUP .LOSSES
-      [MY LEGIONS] @ SWAP -   0 MAX [MY LEGIONS] !
-
-      DELAY DELAY
-   ELSE ( you capture planet)
+: CAPTURE ( enemy-strength -- )
       PROMPT:  ." PLANET CAPTURED"
-      0 12 AT-XY  R@ .LOSSES
-      [MY LEGIONS] @ R@ -  0 MAX [MY LEGIONS] !   ( update legions in fleet)
-      1 PLANETS +!
+      0 12 AT-XY  DUP  .LOSSES
+      [MY LEGIONS]@  SWAP -  0 MAX [MY LEGIONS] !   ( update legions in fleet)
+      MY-PLANETS 1+!
       132 THEGALAXY C!
       DELAY DELAY
-      FRIENDLY-PLANET
-   ENDIF
-   .LEGIONS
+;
+
+: COLONISE ( attack an uncolonised planet)
+   CLEAR-MSG
+   PLANET-STRENGTH
+   DUP [MY LEGIONS]@  >
+   IF   ( n) RETREAT
+   ELSE ( n) CAPTURE FRIENDLY-PLANET
+   THEN  DRAW-DISPLAY
    R> DROP ;
 
 : EMPTY-PLANET   ( in orbit round uncolonised planet)
-   CLEAR-MSGE
+   CLEAR-MSG
    PROMPT:  ." UNCOLONISED CLASS " THEPLANET C@ 8 / 2 .R   ." PLANET"
-   0 12 AT-XY ." DO YOU WISH TO ATTACK?" INKEY 89 =
+   0 12 AT-XY ." DO YOU WISH TO ATTACK?"
+   INKEY [CHAR] Y =
    IF
       COLONISE
    ENDIF
-    CLEAR-MSGE ;
+   CLEAR-MSG ;
 
 : NOT-PLANET   ( there isn't a planet where he's trying to land)
    PROMPT:  ." NO PLANET THERE"
-   DELAY  CLEAR-MSGE ;
+   DELAY  CLEAR-MSG ;
+
+( calculate enemy garrisons effective strength)
+: ENEMY-STRENGTH ( -- n) #LEGIONS C@ RANDOM1 1- 5 / 7 + * 10 / ;
 
 : ATTACK       ( attack a planet controlled by the computer)
-   CLEAR-MSGE
-   ( calculate enemy garrisons effective strength)
-   #LEGIONS C@ RANDOM1 1- 5 / 7 + * 10 / DUP  TEMP1 !
-   [MY LEGIONS] @ >
-   IF   ( enemy garrison wins)
-      PROMPT:  ." YOUR FORCES RETREAT"
-      0 12 AT-XY ." YOUR LOSSES = "
-      #LEGIONS C@ [MY LEGIONS] @ * TEMP1 @ / 2/ #LEGIONS C@ SWAP -  #LEGIONS C!
-      [MY LEGIONS] @ 2/ DUP 3 .R
-      [MY LEGIONS] @ SWAP - [MY LEGIONS] !
+   CLEAR-MSG
+   ENEMY-STRENGTH DUP [MY LEGIONS]@  >
+   IF ( enemy garrison wins)
+      RETREAT
    ELSE
       0 #LEGIONS C!           ( reduce legions on planet to 0)
-      PROMPT:  ." PLANET CAPTURED"
-      0 12 AT-XY ." YOUR LOSSES = "
-      TEMP1 @ 3 .R
-      [MY LEGIONS] @ TEMP1 @ - [MY LEGIONS] !  ( update legions with fleet)
-      132 THEGALAXY C!         ( put colony in galaxy)
-      1 PLANETS +!             ( increment planets)
-     -1 C-PLANETS +!           ( decrement computer planets)
-      THEPLANET C@ 8 / MINUS CLASS-TOTALS +!
+      CAPTURE
+      C-PLANETS 1-!           ( decrement computer planets)
+      THEPLANET C@ 8 / NEGATE CLASS-TOTALS +!
       DELAY                    ( reduce classes of compo plnts)
       FRIENDLY-PLANET
    ENDIF
-   DELAY  CLEAR-MSGE ;
+   R> DROP
+   DELAY
+   CLEAR-MSG ;
 
 : ENEMY-PLANET   ( player orbits enemy planet)
    THEPLANET C@ 8 /
    PROMPT:  ." CLASS " 2 .R ."  PLANET" CR CR
    ." ENEMY GARRISON OF STRENGTH "
    #LEGIONS C@ 3 .R CR CR
-   ." DO YOU WISH TO ATTACK?" INKEY  89 =
+   ." DO YOU WISH TO ATTACK?" INKEY  [CHAR] Y =
    IF
       ATTACK
    ENDIF
-  CLEAR-MSGE ;
+  CLEAR-MSG ;
 
 : LAND   ( land on adjacent planet)
    FIND-DIRECTION
@@ -620,114 +657,139 @@ DECIMAL
    ENDCASE ;
 
 : REVOLT? ( planet at X,Y revolts)
-   0 12 AT-XY ." PLANET AT " Y @ . X @ . ." REVOLTS" DELAY
+   0 12 AT-XY ." PLANET AT " XY@  .(X,Y)  ." REVOLTS" DELAY
    THEPLANET C@ 8 / #LEGIONS C@ 2DUP >
-   IF   ( revolt succeeds)
+   IF ( revolt succeeds)
       DROP 4 THEGALAXY C!            ( place planet symbol)
       8* 7 + THEPLANET C!            ( set revolt factor 7)
-      0 #LEGIONS C!                  ( set lpgions to 0)
-      -1 PLANETS +!                   ( reduce no.of planets )
-     BEEP                          ( ring bell)
+      0 #LEGIONS C!                  ( set legions to 0)
+      MY-PLANETS 1-!                    ( reduce no.of planets we have )
+
       0 14 AT-XY ." SUCCEEDS"
+      2 BEEPS                         ( ring bell)
+
    ELSE ( revolt fails)
-      SWAP 2/ - #LEGIONS C!         ( reduce legions)
+      SWAP 2/ - #LEGIONS C!           ( reduce legions)
       THEPLANET C@ 7 OR THEPLANET C!  ( set revolt factor 7)
       0 14 AT-XY ." FAILS"
+      HONK
    ENDIF
    DELAY
-   0 12 AT-XY 30 SPACES
-   0 14 AT-XY 12 SPACES ;             ( clear messages)
+   0 12 AT-XY BLANKLN
+   0 14 AT-XY BLANKLN ;             ( clear messages)
 
 : TAX     ( collect taxes on players planets)
    0 VTAX !                           ( set tax to 0)
-   PROMPT:  ." TAX COLLECTED ="
-   17 10 AT-XY 0 .
-   SIZE 1+ 1 DO
-     SIZE 1+ 1 DO
-                 I J GALAXY C@ 132 =
-                 IF   ( it's a colony)
-                    I J INFO1 C@ 3 * 5 / ( tax from planet)
-                    VTAX @ + DUP VTAX !  ( update tax)
-                    17 10 AT-XY 5 .R
-                    I J INFO1 C@ 7 AND -DUP
-                    IF ( doesn't revolt)
-                       I J INFO1 DUP C@ 1- SWAP C!
-                    ELSE ( revolt)
-                       I X ! J Y ! REVOLT?
-                    ENDIF
-                 ENDIF
-               LOOP
-             LOOP
+   PROMPT: ." COLLECTING ..."
+   SIZE 1+ 1
+   DO
+     SIZE 1+ 1
+     DO
+         I J GALAXY C@ 132 =
+         IF   ( it's a colony)
+              I J PLANET C@ 3 * 5 /   VTAX +!  ( update tax)
+              17 10 AT-XY 4 U.R
+              I J PLANET C@ 7 AND ?DUP
+              IF ( doesn't revolt)
+                 I J PLANET DUP C@ 1- SWAP C!
+              ELSE ( revolt)
+                 I X ! J Y ! REVOLT?
+              ENDIF
+         ENDIF
+      LOOP
+    LOOP
+    PROMPT:  ." TAX COLLECTED =" VTAX @ .$$$
     CREDIT @ VTAX @ + CREDIT !            ( update credit)
-    CLEAR-MSGE DRAW-DISPLAY ;
+    CLEAR-MSG DRAW-DISPLAY ;
 
-: COMPUTER-TURN   ( computers turn to do something)
-   -1 NEW +!                            ( decrement NEW)
-   NEW @ 0=
-   IF    ( computer creates new fleet)
-      3 BEEPS                            ( ring bell)
-      1 C-FLEETS +!                     ( update comp. fleets)
+: CREATE-ENEMY-FLEET ( -- ?)
+      3 BEEPS                           ( ring bell)
+      C-FLEETS 1+!                     ( update comp. fleets)
       29 4 DIFF @ * - NEW !             ( reset NEW)
-      CLASS-TOTALS @ 8 / DUP C-LEGIONS +!
+      CLASS-TOTALS @ 8 /
+      DUP C-LEGIONS +! ( increase enemy legions )
       DUP TROOPS +!
       BEGIN
-         RANDOM1 RANDOM2 2DUP GALAXY C@ 0=
-         IF  ( empty space in galaxy)
-            2DUP 17 -ROT GALAXY C!   ( place fleet symbol)
-            INFO2 C! 1                  ( plus legions)
+         NEWXY GALAXY C@ 0=        ( check random galaxies)
+         IF ( empty )
+            FOE  THIS GALAXY C!    ( place enemy fleet symbol)
+                 THIS GARRISON C!  ( plus legions)
+                 TRUE
          ELSE
-            DROP DROP DROP 0
+            2DROP DROP
+            FALSE
          ENDIF
       UNTIL
-   ENDIF
-   DIFF @ 0 DO   ( see if computer colonises planet)
-      RANDOM1 RANDOM2 2DUP GALAXY C@
+;
+
+: ENEMY-COLONIZER
+   DIFF @ 0
+   DO ( see if computer colonises planet)
+      NEWXY GALAXY C@
       CASE
          4 OF ( empty planet)
-              2DUP 2DUP 5 -ROT GALAXY C! ( place colony)
+             \ 2DUP 2DUP
+              5 THIS GALAXY C! ( place colony)
               C-LEGIONS @ 2/ DUP C-LEGIONS !
-              -ROT INFO2 C!
-              1 C-PLANETS +!
-              INFO1 C@ 8 / CLASS-TOTALS +!
+              ( -- n ) THIS GARRISON C!
+              C-PLANETS 1+!
+              THIS PLANET C@ 8 / CLASS-TOTALS +!
                                           ENDOF
        132 OF ( players planet)
-              2DUP Y ! X ! INFO2 C@ C-LEGIONS @ 2/ <
+              THIS GARRISON C@  C-LEGIONS @ 2/ <
               IF ( captures planet)
                  C-LEGIONS @ 3 / C-LEGIONS !
-                 5 THEGALAXY C!
+                 5 THIS GALAXY C! ( place colony)
                  THEPLANET C@ 8 / CLASS-TOTALS +!
-                 1 C-PLANETS +!
-                -1 PLANETS +!
+                 C-PLANETS 1+!
+                 MY-PLANETS 1-!
                  5 BEEPS
                ENDIF
                                           ENDOF
-           DROP DROP
       ENDCASE
-   LOOP
+    LOOP
+;
+
+: COMPUTER-TURN   ( computers turn to do something)
+   NEW 1-!                            ( decrement NEW)
+   NEW @ 0= IF  CREATE-ENEMY-FLEET  ENDIF
+   ENEMY-COLONIZER
    DRAW-DISPLAY ;
 
-: FIRE     ( players fleet attacks computer fleet)
-   0 X !
-
-   [MY Y] C@ 2 + DUP 3 - DO
-      [MY X] C@ 2 + DUP 3 - DO
-         I WRAPPED J WRAPPED GALAXY C@ 17 =
+: RADAR ( -- x y )  \ scan for enemy ship, return coordinates
+   [MY Y]@ 2 + DUP 3 -
+   DO
+      [MY X]@ 2 + DUP 3 -
+      DO
+         I WRAP J WRAP GALAXY C@  FOE =
          IF  ( there's a fleet in range)
-            I WRAPPED X !
-            J WRAPPED Y !
+            I WRAP X !
+            J WRAP Y !
          ENDIF
       LOOP
    LOOP
+;
+
+: FIRE     ( players fleet attacks computer fleet)
+   [MY SHIPS]@  0= IF
+         PROMPT: ." WE HAVE NO SHIPS SIR ..."
+         DELAY REDRAW EXIT
+   ENDIF
+   0 X !
+   RADAR
    X @ 0=
    IF
       PROMPT:  ." NO ENEMY FLEET IN RANGE"
    ELSE
-      [MY SHIPS] @   #LEGIONS C@ OVER 4* 10 /
+      PROMPT: ." ENEMY FLEET DETECTED AT "  XY@ .(X,Y) 6 BEEPS
+
+      [MY SHIPS]@   #LEGIONS C@  OVER 4* 10 /
       OVER 4* 10 / DUP
-      PROMPT:  ." FLEET HIT BY " .  ." UNITS"
+      PROMPT:  ." WE LOST "  .  ." SHIPS"
       -ROT - 0 MAX DUP 0=
       IF ( computers fleet destroyed)
          DROP TROOPS @ #LEGIONS C@ - TROOPS !
+         PROMPT: ." ENEMY FLEET DESTROYED!" DELAY
         ( reduce computers troops)
           0 THEGALAXY C!       ( destroy fleet symbol)
          -1 C-FLEETS +!        ( reduce comps fleets)
@@ -740,10 +802,12 @@ DECIMAL
       IF  ( players fleet destroyed)
          DROP NEW-FLEET
       ELSE
-         [MY SHIPS] !
+        [MY SHIPS] !
       ENDIF
    ENDIF
-   DELAY DELAY CLEAR-MSGE DRAW-DISPLAY   ;
+   DELAY DELAY
+   REDRAW ;
+
 
 : PRESSANY   LOPROMPT: ." Press a key to return" KEY DROP ;
 
@@ -778,11 +842,9 @@ DECIMAL
   CR
   CR   ." Black hole"    25 TAB   8 (EMIT)
   CR
-  CR   ." Unkown object" 25 TAB  11 (EMIT)
-  CR
   CR   ." Player FLEET"  25 TAB  16 (EMIT)
   CR
-  CR   ." Enemy FLEET"   25 TAB  17 (EMIT)
+  CR   ." Enemy FLEET"   25 TAB  FOE (EMIT)
   CR PRESSANY
   REDRAW
 ;
@@ -792,8 +854,8 @@ DECIMAL
 : OBEY-COMMAND ( c -- )
    BUY-V @  IF ( nonzero)  -1 BUY-V +!  ENDIF
    CASE
-      [CHAR] A  OF MOVE-LEFT  ENDOF
-      [CHAR] S  OF MOVE-RIGHT ENDOF
+      [CHAR] A OF MOVE-LEFT  ENDOF
+      [CHAR] S OF MOVE-RIGHT ENDOF
       [CHAR] W OF MOVE-UP     ENDOF
       [CHAR] Z OF MOVE-DOWN   ENDOF
       [CHAR] O OF OTHER-FLEET ENDOF
@@ -816,8 +878,9 @@ DECIMAL
       TRUE
    ENDIF ;
 
-: GAME-END?
-   LEN @ 0= ;    ( game end if LEN is zero)
+: GAME-END? ( -- ? ) LEN @ 0= ;    ( game end if LEN is zero)
+
+: END-MSG   CLEAR-MSG  0 12 AT-XY ." END OF GAME COMMANDER" ;
 
 : GAME       ( GAME LOOP )
    PAGE
@@ -837,7 +900,7 @@ DECIMAL
   \ debug line
    20 0 AT-XY ." Stk=" DEPTH 2 .R  5 SPACES  COMPUTER @ 3 .R
    UNTIL
-   END-MSGE ;
+   END-MSG ;
 
 : RANDOMIZER
    CR
@@ -851,7 +914,7 @@ DECIMAL
    CR
    BEGIN
       CR ." WHAT LEVEL OF DIFFICULTY (1-4) "
-      INPUT
+      #INPUT
       DUP 5 1 WITHIN ( reversed args [(5 1]  means "NOT WITHIN")
    WHILE
       DROP HONK
@@ -896,5 +959,3 @@ DECIMAL
    GAME-LENGTH
    INITIALISE
    GAME ;
-
-HERE SWAP - DECIMAL U.  .( Bytes)
