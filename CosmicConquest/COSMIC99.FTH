@@ -232,16 +232,23 @@ CR .( graphics shapes )
 \ This allows us to PLOT the map directly to the video screen
 
 DECIMAL
-17 CONSTANT FOE  \ enemy ship character
+132 CONSTANT 'COLONY'  \ our colony character
+ 16 CONSTANT 'FLEET'   \ our boys
+ 17 CONSTANT 'ENEMY'   \ enemy ship character
+ 02 CONSTANT 'STAR'
+ 04 CONSTANT 'PLANET'
+ 05 CONSTANT 'ALIENS'
+ 08 CONSTANT 'BLKHOLE'
+ 00 CONSTANT 'VACUUM'  \ empty space
 
 : DEF-CHARS
-  ASTAR     2 CHARDEF
+  ASTAR     'STAR' CHARDEF
   ACOLONY 132 CHARDEF
-  OPLANET   4 CHARDEF
-  EPLANET   5 CHARDEF
-  BLKHOLE   8 CHARDEF
-  PFLEET   16 CHARDEF  \ player's fleet icon
-  EFLEET  FOE CHARDEF  \ enemy's fleet icon
+  OPLANET   'PLANET' CHARDEF
+  EPLANET   'ALIENS' CHARDEF
+  BLKHOLE   'BLKHOLE'CHARDEF
+  PFLEET  'FLEET' CHARDEF  \ player's fleet icon
+  EFLEET  'ENEMY' CHARDEF  \ enemy's fleet icon
 
   VBARS   133 CHARDEF
   HBARS   134 CHARDEF
@@ -268,15 +275,15 @@ CR .( main game words)
 : RND-GALAXY! ( n -- ) NEWXY GALAXY C! ;
 
 : SET-UP-GALAXY
-   NO-OF-STARS 0 DO  2  RND-GALAXY!    LOOP
+   NO-OF-STARS 0 DO  'STAR'  RND-GALAXY!    LOOP
 
    NO-OF-PLANETS 0
    DO
-     4 RND-GALAXY!    ( set up planets)
+     'PLANET' RND-GALAXY!    ( set up planets)
      RANDOM1 4* 8 +  THIS PLANET C!  ( set up class of planet)
    LOOP
 
-   NO-OF-B-HOLES 0 DO   8 RND-GALAXY!   LOOP ;
+   NO-OF-B-HOLES 0 DO   'BLKHOLE'RND-GALAXY!   LOOP ;
 
 CR .( initialisers)
 : GAME-LENGTH
@@ -314,7 +321,7 @@ DECIMAL
 
    DIFF @ 4* 0
   ?DO ( position computer's fleets)
-       FOE NEWXY GALAXY C!
+       'ENEMY' NEWXY GALAXY C!
         15 THIS GARRISON C!
   LOOP
    16 22 18 GALAXY C!
@@ -377,7 +384,7 @@ DECIMAL
     31 20 AT-XY SCORE       5 U.R
 ;
 
-: FIND-DIRECTION     (  --- X Y )
+: GET-DIRECTION     (  --- X Y )
 ( find out which square player means)
    LOPROMPT: ." WHICH DIRECTION? "
    INKEY
@@ -442,16 +449,18 @@ DECIMAL
    WRAP SWAP WRAP SWAP
    2DUP GALAXY C@
    CASE
-      0  OF MOVE-FLEET              ENDOF ( empty space)
+      'VACUUM'  OF MOVE-FLEET         ENDOF
 
-      8  OF LOPROMPT: ." FLEET SUCKED INTO BLACK HOLE"
-            HONK DELAY
-            MOVE-FLEET
-            NEW-FLEET
-            LOPROMPT:               ENDOF
+      'BLKHOLE' OF
+                  LOPROMPT: ." FLEET SUCKED INTO BLACK HOLE"
+                  HONK DELAY
+                  MOVE-FLEET
+                  NEW-FLEET
+                  LOPROMPT:           ENDOF
 
-      DROP DROP
+
    ENDCASE
+   2DROP 
    DRAW-DISPLAY ;
 
 \ need to add death detector to end when FLEETS are exhausted
@@ -580,7 +589,7 @@ DECIMAL
       0 12 AT-XY  DUP  .LOSSES
       [MY LEGIONS]@  SWAP -  0 MAX [MY LEGIONS] !   ( update legions in fleet)
       MY-PLANETS 1+!
-      132 THEGALAXY C!
+      'COLONY' THEGALAXY C!
       DELAY DELAY
 ;
 
@@ -643,12 +652,12 @@ DECIMAL
    CLEAR-MSG ;
 
 : LAND   ( land on adjacent planet)
-   FIND-DIRECTION
+   GET-DIRECTION
    2DUP Y ! X !  GALAXY C@
    CASE
-      4  OF EMPTY-PLANET    ENDOF
-      5  OF ENEMY-PLANET    ENDOF
-    132  OF FRIENDLY-PLANET ENDOF
+      'PLANET'  OF EMPTY-PLANET    ENDOF
+      'ALIENS'  OF ENEMY-PLANET    ENDOF
+    'COLONY'  OF FRIENDLY-PLANET ENDOF
             NOT-PLANET
    ENDCASE ;
 
@@ -656,7 +665,7 @@ DECIMAL
    0 12 AT-XY ." PLANET AT " XY@  .(X,Y)  ." REVOLTS" DELAY
    THEPLANET C@ 8 / #LEGIONS C@ 2DUP >
    IF ( revolt succeeds)
-      DROP 4 THEGALAXY C!            ( place planet symbol)
+      DROP 'PLANET' THEGALAXY C!            ( place planet symbol)
       8* 7 + THEPLANET C!            ( set revolt factor 7)
       0 #LEGIONS C!                  ( set legions to 0)
       MY-PLANETS 1-!                    ( reduce no.of planets we have )
@@ -681,7 +690,7 @@ DECIMAL
    DO
      SIZE 1+ 1
      DO
-         I J GALAXY C@ 132 =
+         I J GALAXY C@ 'COLONY' =
          IF   ( it's a colony)
               I J PLANET C@ 3 * 5 /   VTAX +!  ( update tax)
               17 10 AT-XY 4 U.R
@@ -708,7 +717,7 @@ DECIMAL
       BEGIN
          NEWXY GALAXY C@ 0=        ( check random galaxies)
          IF ( empty )
-            FOE  THIS GALAXY C!    ( place enemy fleet symbol)
+            'ENEMY'  THIS GALAXY C!    ( place enemy fleet symbol)
                  THIS GARRISON C!  ( plus legions)
                  TRUE
          ELSE
@@ -723,19 +732,19 @@ DECIMAL
    DO ( see if computer colonises planet)
       NEWXY GALAXY C@
       CASE
-         4 OF ( empty planet)
+         'PLANET' OF ( empty planet)
              \ 2DUP 2DUP
-              5 THIS GALAXY C! ( place colony)
+              'ALIENS' THIS GALAXY C! ( place colony)
               C-LEGIONS @ 2/ DUP C-LEGIONS !
               ( -- n ) THIS GARRISON C!
               C-PLANETS 1+!
               THIS PLANET C@ 8 / CLASS-TOTALS +!
                                           ENDOF
-       132 OF ( players planet)
+       'COLONY' OF ( players planet)
               THIS GARRISON C@  C-LEGIONS @ 2/ <
               IF ( captures planet)
                  C-LEGIONS @ 3 / C-LEGIONS !
-                 5 THIS GALAXY C! ( place colony)
+                 'ALIENS' THIS GALAXY C! ( place colony)
                  THEPLANET C@ 8 / CLASS-TOTALS +!
                  C-PLANETS 1+!
                  MY-PLANETS 1-!
@@ -757,7 +766,7 @@ DECIMAL
    DO
       [MY X]@ 2 + DUP 3 -
       DO
-         I WRAP J WRAP GALAXY C@  FOE =
+         I WRAP J WRAP GALAXY C@  'ENEMY' =
          IF  ( there's a fleet in range)
             I WRAP X !
             J WRAP Y !
@@ -828,19 +837,19 @@ DECIMAL
   PAGE ."  Scanner Display Information"
   CR   ." -----------------------------"
   CR
-  CR   ." A STAR"        25 TAB   2 (EMIT)
+  CR   ." A STAR"        25 TAB   'STAR' (EMIT)
   CR
-  CR   ." A COLONY"      25 TAB 132 (EMIT)
+  CR   ." A COLONY"      25 TAB 'COLONY' (EMIT)
   CR
-  CR   ." Empty PLANET"  25 TAB   4 (EMIT)
+  CR   ." Empty PLANET"  25 TAB   'PLANET' (EMIT)
   CR
-  CR   ." Enemy PLANET"  25 TAB   5 (EMIT)
+  CR   ." Enemy PLANET"  25 TAB   'ALIENS' (EMIT)
   CR
-  CR   ." Black hole"    25 TAB   8 (EMIT)
+  CR   ." Black hole"    25 TAB   'BLKHOLE'(EMIT)
   CR
   CR   ." Player FLEET"  25 TAB  16 (EMIT)
   CR
-  CR   ." Enemy FLEET"   25 TAB  FOE (EMIT)
+  CR   ." Enemy FLEET"   25 TAB  'ENEMY' (EMIT)
   CR PRESSANY
   REDRAW
 ;
