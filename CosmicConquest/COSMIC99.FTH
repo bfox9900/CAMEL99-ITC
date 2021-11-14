@@ -627,9 +627,11 @@ DECIMAL
    DELAY
    CLEAR-MSG ;
 
+: P-CLASS ( -- n) THEPLANET C@ 8 / ; \ compute planet's class
+
 : ENEMY-PLANET   ( player orbits enemy planet)
-   THEPLANET C@ 8 /
-   PROMPT:  ." CLASS " 2 .R ."  PLANET"
+
+   PROMPT: ." CLASS "  P-CLASS 2 .R  ."  PLANET"
    CR
    CR ." ENEMY GARRISON OF STRENGTH "   #LEGIONS C@ 3 .R
    CR
