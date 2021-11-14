@@ -28,11 +28,11 @@ very good BASIC programmer. We can see that in the following give-aways:
 
 Now this is not a crime but it is kind of a shame when the power of the language
 is not used.
- 
+
 Here is an example of working code that was written in a style that you might
 write in C, contrasted to how it arguably should be written in Forth.
 
-
+```
   : INKEY ( --- key)
       KEY DUP DUP
       [CHAR] \ >
@@ -44,14 +44,16 @@ write in C, contrasted to how it arguably should be written in Forth.
       ENDIF
       127 AND
       ;
-
+```
 
 Forth style:
+```
   HEX
   : ?LOWER ( c -- ?) [CHAR] a [CHAR] z 1+ WITHIN ;
   : TOUPPER ( c -- c') DUP ?LOWER IF 5F AND THEN ;
   : INKEY ( -- c) KEY 7F AND TOUPPER ;
   DECIMAL
+```
 
 ###What difference does it make?
 The differences above are quite striking. You don't typically chop up code this
