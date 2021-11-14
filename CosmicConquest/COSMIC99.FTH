@@ -629,14 +629,16 @@ DECIMAL
 
 : ENEMY-PLANET   ( player orbits enemy planet)
    THEPLANET C@ 8 /
-   PROMPT:  ." CLASS " 2 .R ."  PLANET" CR CR
-   ." ENEMY GARRISON OF STRENGTH "
-   #LEGIONS C@ 3 .R CR CR
-   ." DO YOU WISH TO ATTACK?" INKEY  [CHAR] Y =
+   PROMPT:  ." CLASS " 2 .R ."  PLANET"
+   CR
+   CR ." ENEMY GARRISON OF STRENGTH "   #LEGIONS C@ 3 .R
+   CR
+   CR ." DO YOU WISH TO ATTACK?" INKEY
+   [CHAR] Y =
    IF
       ATTACK
    ENDIF
-  CLEAR-MSG ;
+   CLEAR-MSG ;
 
 : LAND   ( land on adjacent planet)
    FIND-DIRECTION
