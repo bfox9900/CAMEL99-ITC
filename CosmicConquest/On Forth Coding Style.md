@@ -49,13 +49,13 @@ write in C, contrasted to how it arguably should be written in Forth.
 Forth style:
 ```
   HEX
-  : ?LOWER ( c -- ?) [CHAR] a [CHAR] z 1+ WITHIN ;
+  : ?LOWER  ( c -- ?) [CHAR] a [CHAR] z 1+ WITHIN ;
   : TOUPPER ( c -- c') DUP ?LOWER IF 5F AND THEN ;
-  : INKEY ( -- c) KEY 7F AND TOUPPER ;
+  : INKEY   ( -- c)    KEY 7F AND TOUPPER ;
   DECIMAL
 ```
 
-### What difference does it make?
+## What difference does it make?
 The differences above are quite striking. You don't typically chop up code this
 way in traditional procedural languages. The primary reason for that is the
 over- head for calling a sub-routine can be quite high in other languages.
@@ -63,6 +63,7 @@ over- head for calling a sub-routine can be quite high in other languages.
 However Chuck Moore designed Forth to reduce that calling over-head. This gives
 the programmer more freedom to factor out common code from long sub- routines.
 
+### More Re-usable Code
 As we can see in the example factoring out and naming these code pieces allows
 us to re-use them elsewhere as needed. Here we now have a test word for lower
 case letters and a word to convert lower case to upper case. The original code
@@ -77,6 +78,13 @@ stack contents become much simpler almost trivial. If you can remember what is
 on the top of the data stack 20 lines into a sub-routine then you are a genius
 but us mere mortals don't need to do that. We just factor the code into more
 understandable pieces.
+
+### Less Comments Required
+On of the side-effects of one line definitions is that you can understand them
+almost instantly. This means expansive text comments are not as necessary and we
+all know how fast comments go stale. BUT... Do not omit the stack comments.
+These are the key to remembering what goes in and what comes out of each
+definition.
 
 ### To be continued...
 As I think find more examples of good Forth coding style I will put them here.
