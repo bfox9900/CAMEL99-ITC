@@ -459,9 +459,8 @@ DECIMAL
                   NEW-FLEET
                   LOPROMPT:           ENDOF
 
-
+    ( default)     2DROP
    ENDCASE
-   2DROP
    DRAW-DISPLAY ;
 
 \ need to add death detector to end when FLEETS are exhausted
