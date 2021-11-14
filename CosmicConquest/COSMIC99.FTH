@@ -284,7 +284,7 @@ CR .( main game words)
      RANDOM1 4* 8 +  THIS PLANET C!  ( set up class of planet)
    LOOP
 
-   NO-OF-B-HOLES 0 DO   'BLKHOLE'RND-GALAXY!   LOOP ;
+   NO-OF-B-HOLES 0 DO   'BLKHOLE' RND-GALAXY!   LOOP ;
 
 CR .( initialisers)
 : GAME-LENGTH
@@ -428,7 +428,7 @@ DECIMAL
     [MY SHIPS]@
     IF   PFLEET
     ELSE NOFLEET
-    THEN 16 CHARDEF ;
+    THEN 'FLEET' CHARDEF ;
 
 : NEW-FLEET  ( fleet destroyed for some reason)
    LOPROMPT: ." OUR FLEET DESTROYED" HONK
@@ -443,7 +443,7 @@ DECIMAL
 : MOVE-FLEET (  X Y ---  )
    2DUP
    0 [MY X]@ [MY Y]@ GALAXY C!  ( remove old symbol)
-   16 -ROT GALAXY C!                ( plot fleet at new x,y)
+   'FLEET' -ROT GALAXY C!                ( plot fleet at new x,y)
    [MY Y] C! [MY X] C! ;            ( update my coordinates)
 
 : CHECK-POSITION  ( X Y --- )
@@ -519,7 +519,7 @@ DECIMAL
       DUP [MY SHIPS] +!
 
       CREDIT @  R@ * - 0 MAX  CREDIT !    ( update credit)
-      16  [MY Y]@  [MY X]@ GALAXY C!  ( make sure fleet symbol there)
+      'FLEET'  [MY Y]@  [MY X]@ GALAXY C!  ( make sure fleet symbol there)
 
    ELSE
       PROMPT: ." NO SHIPS AVAILABLE"
@@ -846,9 +846,9 @@ DECIMAL
   CR
   CR   ." Enemy PLANET"  25 TAB   'ALIENS' (EMIT)
   CR
-  CR   ." Black hole"    25 TAB   'BLKHOLE'(EMIT)
+  CR   ." Black hole"    25 TAB   'BLKHOLE' (EMIT)
   CR
-  CR   ." Player FLEET"  25 TAB  16 (EMIT)
+  CR   ." Player FLEET"  25 TAB  'FLEET' (EMIT)
   CR
   CR   ." Enemy FLEET"   25 TAB  'ENEMY' (EMIT)
   CR PRESSANY
