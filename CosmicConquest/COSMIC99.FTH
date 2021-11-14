@@ -81,7 +81,7 @@ CR .( utility words)
 HEX
 : RKEY?   ( -- c ) 83C8 OFF  KEY? ;   \ enables repeating key for TI-99
 
-DECIMAL 
+DECIMAL
 : BEEPS   ( n -- ) 0 ?DO BEEP 50 MS LOOP ;
 : DELAY      delayms MS ;
 : BLANKLN    VPOS C/L@ VBLANK ; \ FAST video memory write
@@ -101,8 +101,8 @@ DECIMAL
 
 CR .( Heap management and matrix creators)
 \ \\\\\\\\\\\\\\\  TI99 CODE  \\\\\\\\\\\\\\\\\\
-\ TI99 has 24K RAM.
-\ 8K low RAM, 15K Hi RAM. Matrices need 7.3K
+\ TI99 has 32K RAM.
+\ 8K low RAM, 24 Hi RAM. Matrices need 7.3K
 \ Using LOW RAM
 
 \ heap memory analogs to HERE ALLOT C,  and ,
