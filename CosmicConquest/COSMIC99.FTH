@@ -102,7 +102,9 @@ DECIMAL
 CR .( Heap management and matrix creators)
 \ \\\\\\\\\\\\\\\  TI99 CODE  \\\\\\\\\\\\\\\\\\
 \ TI99 has 32K RAM.
-\ 8K low RAM, 24 Hi RAM. Matrices need 7.3K
+\ 8K low RAM,
+\ 24 Hi RAM, Forth uses 8K of this
+\ Matrices need 7.3K
 \ Using LOW RAM
 
 \ heap memory analogs to HERE ALLOT C,  and ,
