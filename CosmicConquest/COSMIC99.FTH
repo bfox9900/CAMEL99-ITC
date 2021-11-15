@@ -53,7 +53,7 @@ CR .( variables)
  VARIABLE C-LEGIONS    ( no. of computer legions for attacks)
  VARIABLE C-PLANETS    ( no. of computer planets)
  VARIABLE CLASS-TOTALS ( computers planets classes totals)
- VARIABLE TIMER    ( how quickly computer plays)
+ VARIABLE TIMER        ( how quickly computer plays)
 
  VARIABLE DIFF         ( difficulty of game 1-4)
  VARIABLE FLEET#       ( Human player's fleet in use)
@@ -69,7 +69,7 @@ CR .( variables)
  VARIABLE VTAX         ( tax collected)
  VARIABLE X            ( temporary storage for X position)
  VARIABLE Y            ( temporary storage for Y position)
-250 CREATE CREDIT  ,   ( players credit in taxes)
+ VARIABLE CREDIT       ( players credit in taxes)
 
 CR .( utility words)
 : ERASE    ( addr u --)    0 FILL ;
@@ -214,7 +214,7 @@ CR .( graphics shapes )
  CREATE ACOLONY 7884 , 3040 , 4030 , 8478 ,
  CREATE OPLANET 0078 , 8484 , 8484 , 8478 ,
  CREATE EPLANET 0070 , 8850 , 2050 , 8870 ,
- CREATE ASTAR   0000 , 1054 , 2854 , 1000 ,
+ CREATE ASTAR   0000 , 4830 , 3048 , 0000 , \ 0000 , 1054 , 2854 , 1000 ,
  CREATE PFLEET  40F8 , 503C , 1040 , F840 ,
  CREATE EFLEET  20C0 , 2438 , 0410 , E010 ,
  CREATE BLKHOLE 7884 , 3078 , 7830 , 8478 ,
@@ -285,7 +285,10 @@ CR .( main game words)
      RANDOM1 4* 8 +  THIS PLANET C!  ( set up class of planet)
    LOOP
 
-   NO-OF-B-HOLES 0 DO   'BLKHOLE' RND-GALAXY!   LOOP ;
+   NO-OF-B-HOLES 0 DO   'BLKHOLE' RND-GALAXY!   LOOP
+
+  'FLEET' [MY X]@  [MY Y]@ GALAXY C!  ( plot players fleet)
+;
 
 CR .( initialisers)
 : GAME-LENGTH
@@ -321,23 +324,27 @@ DECIMAL
    50 [MY LEGIONS] !
    50 [HIS LEGIONS] !       ( fleets have 50 legions each)
 
-   DIFF @ 4* 0
-  ?DO ( position computer's fleets)
-       'ENEMY' NEWXY GALAXY C!
-        15 THIS GARRISON C!
-  LOOP
-   16 22 18 GALAXY C!
-   16 18 22 GALAXY C!       ( position fleets)
+   DIFF @ 4* C-FLEETS !     ( no. of computer fleets)
 
-   22 [MY Y] C!             ( players Y)
-   18 [MY X] FLEETS C!      ( players x)
+   C-FLEETS @  0
+   DO ( position computer's fleets)
+       'ENEMY' NEWXY GALAXY C!  \ place an enemy planet
+        15 THIS GARRISON C!     \ garrisons on the planet
+   LOOP
+
+   22 [MY Y] C!      ( players Y)
+   18 [MY X] C!      ( players x)
+
+  ( position players fleets)
+   'FLEET' 22 18 GALAXY C!  \ primary fleet
+   'FLEET' 18 22 GALAXY C!  \ 2nd fleet
+
    18 [HIS Y] C!            ( enemy y )
    22 [HIS X] C!            ( enemy x)
 
    29 3 DIFF @ * - NEW !    ( how often computer creates fleets)
    15 DIFF @ 4* * TROOPS !  ( initial no. of computer troops)
    20 DIFF @ * C-LEGIONS !  ( no. of spare computer legions)
-   DIFF @ 4* C-FLEETS !     ( no. of computer fleets)
    SPEED TIMER !            ( how often computer moves)
    1 BUY-V !
 ;
@@ -514,21 +521,24 @@ DECIMAL
    BUY-V @ 0=
    IF    ( it's ok to buy)
       5 BUY-V !               ( stop continous buying)
-
+      CLEAR-MSG
       PROMPT: ." COST PER SHIP = " RND-DOLLARS DUP >R .$$$
-
-      0 12 AT-XY ." HOW MANY DO YOU WANT?" #INPUT
-      CREDIT @  R@  / MIN    ( no more than he can afford)
-      DUP [MY SHIPS] +!
-
-      CREDIT @  R@ * -  0 MAX  CREDIT !    ( update credit)
-      'FLEET'  [MY Y]@ [MY X]@ GALAXY C!  ( make sure fleet symbol there)
-
+      BEGIN
+         0 12 AT-XY BLANKLN ." HOW MANY DO YOU WANT?"
+         #INPUT
+         DUP R@ *  CREDIT @ >  ( is our order bigger than our bank acc't?)
+      WHILE
+          LOPROMPT: ." YOU CAN'T AFFORD THAT!"
+          HONK DELAY LOPROMPT:
+      REPEAT
+      DUP [MY SHIPS] +!   \ add ships to the fleet
+      ( #ships) R> * NEGATE  CREDIT +!    ( update credit)
+      'FLEET'  [MY Y]@ [MY X]@ GALAXY C!  ( place our fleet symbol)
    ELSE
       PROMPT: ." NO SHIPS AVAILABLE"
+      HONK DELAY
       REDRAW
    ENDIF
-   R> DROP
 ;
 
 : GATHER   ( pick up legions from garrison onto fleet)
@@ -554,8 +564,9 @@ DECIMAL
 
 : PCLASS ( -- n) THEPLANET C@ 8 / ;
 
-: FRIENDLY-PLANET ( -- ?)  ( options upon landing at colony)
+: LANDING-MENU ( -- ?)  ( options upon landing at colony)
    BEGIN
+      CLEAR-MSG
       PROMPT: ." CLASS " PCLASS .  ."  PLANET"
            CR ." LOCAL GARRISON HAS " #LEGIONS C@ . ."  LEGIONS"
       0 12 AT-XY ." DO YOU WISH TO:"
@@ -574,36 +585,39 @@ DECIMAL
                            TRUE  ( the default: leave planet)
       ENDCASE DELAY
    UNTIL
-  REDRAW ;
+;
 
 
 : .LOSSES  ( n - ) ." WE LOST " . ."  LEGIONS" ;
 
 : RETREAT ( enemy-strength -- )
+      PROMPT: ." OUR FORCES RETREATED"
       DELAY
       0 12 AT-XY  2/ DUP .LOSSES
-      [MY LEGIONS]@  SWAP -   0 MAX [MY LEGIONS] !
-      PROMPT: ." OUR FORCES RETREATED"
+      [MY LEGIONS]@  SWAP  -   0 MAX [MY LEGIONS] !
       DELAY DELAY
 ;
 
 : CAPTURE ( enemy-strength -- )
-      PROMPT:  ." PLANET CAPTURED"
+      PROMPT:  ." PLANET WAS CAPTURED"
+      DELAY
       0 12 AT-XY  DUP  .LOSSES
-      [MY LEGIONS]@  SWAP -  0 MAX [MY LEGIONS] !   ( update legions in fleet)
+      [MY LEGIONS]@  SWAP 2/ -  0 MAX [MY LEGIONS] !   ( update legions in fleet)
       MY-PLANETS 1+!
       'COLONY' THEGALAXY C!
-      DELAY DELAY
+      .LEGIONS  DRAW-VIEWER
+      DELAY
 ;
 
 : PLANET-STRENGTH ( -- n) PCLASS RANDOM1 1- 5 / 7 + * 10 / ;
 
-: COLONISE ( attack an uncolonised planet)
+: COLONISE  ( attack an uncolonised planet)
    CLEAR-MSG
    PLANET-STRENGTH
    DUP [MY LEGIONS]@  >
    IF   ( n) RETREAT
-   ELSE ( n) CAPTURE FRIENDLY-PLANET
+   ELSE ( n) CAPTURE
+        LANDING-MENU
    THEN
 ;
 
@@ -628,14 +642,16 @@ DECIMAL
    CLEAR-MSG
    ENEMY-STRENGTH DUP [MY LEGIONS]@  >
    IF ( enemy garrison wins)
-      RETREAT
+       PROMPT: ." THE PLANET WAS WELL GARRISONED"
+       DELAY
+       ( -- strength) RETREAT
    ELSE
       0 #LEGIONS C!           ( reduce legions on planet to 0)
       CAPTURE
       C-PLANETS 1-!           ( decrement computer planets)
-      THEPLANET C@ 8 / NEGATE CLASS-TOTALS +!
-      DELAY                    ( reduce classes of compo plnts)
-      FRIENDLY-PLANET
+      PCLASS NEGATE CLASS-TOTALS +!
+      DELAY
+      LANDING-MENU
    ENDIF
    R> DROP
    DELAY
@@ -662,7 +678,7 @@ DECIMAL
    CASE
       'PLANET'  OF EMPTY-PLANET    ENDOF
       'ALIENS'  OF ENEMY-PLANET    ENDOF
-      'COLONY'  OF FRIENDLY-PLANET ENDOF
+      'COLONY'  OF LANDING-MENU ENDOF
                  NOT-PLANET
    ENDCASE ;
 
@@ -709,8 +725,9 @@ DECIMAL
       LOOP
     LOOP
     PROMPT:  ." TAX COLLECTED =" VTAX @ .$$$
-    CREDIT @ VTAX @ + CREDIT !            ( update credit)
-    CLEAR-MSG DRAW-DISPLAY ;
+    VTAX @ CREDIT +!   ( update credit)
+    CLEAR-MSG
+    DRAW-DISPLAY ;
 
 : CREATE-ENEMY-FLEET ( -- ?)
       3 BEEPS                           ( ring bell)
@@ -819,7 +836,7 @@ DECIMAL
    REDRAW ;
 
 
-: PRESSANY   LOPROMPT: ." Press a key to return" KEY DROP ;
+: ANYKEY   LOPROMPT: ." Press a key to return" KEY DROP ;
 
 : HELP
   PAGE ." Key controls:
@@ -834,11 +851,10 @@ DECIMAL
   CR ." O - Switch to Other fleet"
   CR
   CR ." H - show this HELP screen"
-  CR PRESSANY
-  REDRAW
+  CR ANYKEY
 ;
 
-: INFORMATION
+: INFO
   PAGE ."  Scanner Display Information"
   CR   ." -----------------------------"
   CR
@@ -855,8 +871,7 @@ DECIMAL
   CR   ." Player FLEET"  25 TAB  'FLEET' (EMIT)
   CR
   CR   ." Enemy FLEET"   25 TAB  'ENEMY' (EMIT)
-  CR PRESSANY
-  REDRAW
+  CR ANYKEY
 ;
 
 : >FORTH  HONK  0 0 AT-XY ." *Forth*"   ABORT  ;
@@ -869,11 +884,11 @@ DECIMAL
       [CHAR] W OF MOVE-UP     ENDOF
       [CHAR] Z OF MOVE-DOWN   ENDOF
       [CHAR] O OF OTHER-FLEET ENDOF
-      [CHAR] I OF INFORMATION ENDOF
+      [CHAR] I OF INFO REDRAW ENDOF
       [CHAR] L OF LAND        ENDOF
       [CHAR] T OF TAX         ENDOF
       [CHAR] F OF FIRE        ENDOF
-      [CHAR] H OF HELP        ENDOF
+      [CHAR] H OF HELP REDRAW ENDOF
        15      OF >FORTH      ENDOF  \ escape key for debugging
    ENDCASE
 ;
@@ -890,11 +905,11 @@ DECIMAL
 
 : GAME-END? ( -- ? ) LEN @ 0= ;    ( game end if LEN is zero)
 
-: END-MSG   CLEAR-MSG  0 12 AT-XY ." END OF GAME COMMANDER" ;
+: END-MSG   CLEAR-MSG  0 12 AT-XY ." END OF GAME COMMANDER"  ABORT ;
 
 : GAME       ( GAME LOOP )
+   REDRAW
    BEGIN
-      REDRAW
       RKEY? ?DUP
       IF ( player has pressed a key)
          OBEY-COMMAND
@@ -955,7 +970,7 @@ DECIMAL
    CR
    CR S" Port for Camel99 Forth" CENTERED
    CR S" Brian Fox 2021" CENTERED
-   2000 MS
+   DELAY
 ;
 
 DECIMAL
