@@ -31,7 +31,7 @@ INCLUDE DSK1.TOOLS  \ for debugging only
 
 INCLUDE DSK1.CASE
 INCLUDE DSK1.UDOTR
-INCLUDE DSK1.INLINE
+\ INCLUDE DSK1.INLINE
 
 HERE
 DECIMAL
@@ -131,7 +131,7 @@ CR .( 2D matrices allocated in Camel99 HEAP)
    CREATE HEAP ,
           DUP HC, * HALLOT
    DOES> ( n n -- addr )
-         @  ROT OVER INLINE[ 1-  C@  * + + ]
+         @  ROT OVER 1-  C@ *  + +
 ;
 
 \ Changed to descriptive names for the data :-)
@@ -140,7 +140,7 @@ SIZE SIZE BYTE-MATRIX: PLANET    ( planetary MATRIX:)
 SIZE SIZE BYTE-MATRIX: GARRISON  ( strength MATRIX:)
 
 \ This should be a cell matrix. Manually create one in the heap
-H @ CONSTANT FLEETS[]   2 CELLS 6 CELLS *   HALLOT
+HEAP CONSTANT FLEETS[]   2 CELLS 6 CELLS *   HALLOT
 : FLEETS ( x y -- addr)  CELLS 6 * SWAP CELLS FLEETS[] + + ;
 
 \ easier to understand this data by name
@@ -375,7 +375,7 @@ DECIMAL
 \       total
 
 DECIMAL
-: .(X,Y)  ( x y -- )  ." ("  2 .R ." ,"  2 .R ." )" ; \ print coordinate
+: .(X,Y)  ( x y -- )  ." ("  2 .R ." ,"  2 .R ." )" ; \ print coordinates
 
 : DRAW-LABELS
      HOME      ." PLAYER"
@@ -408,11 +408,11 @@ DECIMAL
    LOPROMPT: ." WHICH DIRECTION? "
    INKEY
    CASE
-      87 ( up)    OF -1  0 ENDOF
-      90 ( down)  OF  1  0 ENDOF
-      83 ( right) OF  0  1 ENDOF
-      65 ( left)  OF  0 -1 ENDOF
-                      0  0
+      [CHAR] W ( up)    OF -1  0 ENDOF
+      [CHAR] Z ( down)  OF  1  0 ENDOF
+      [CHAR] S ( right) OF  0  1 ENDOF
+      [CHAR] A ( left)  OF  0 -1 ENDOF
+               ( default)   0  0
    ENDCASE
    LOPROMPT:   ( clear message )
    [MY Y]@ + WRAP SWAP
@@ -422,10 +422,9 @@ DECIMAL
 
 \ >VPOS computes video screen address. Does not affect cursor variables
 \ VC! writes a byte to Video RAM
-: PLOT  ( char row col -- )
-  CELLS 12 + SWAP 8 + >VPOS ( c Vaddr) VC! ;
+: PLOT  ( char row col -- ) CELLS 12 + SWAP 8 + >VPOS ( c Vaddr) VC! ;
 
-: DRAW-VIEWER  ( draw the screen display)
+ : DRAW-VIEWER  ( draw the screen display)
    [MY X]@ 5 -  [MY Y]@ 5 -
    11 0 DO ( rows)
       11 0 DO ( columns)
@@ -436,10 +435,9 @@ DECIMAL
         LOOP
     2DROP
    .COORDS
-;
+ ;
 
-: DRAW-DISPLAY  ( -- )
-  DRAW-LABELS  DRAW-FIGURES  WINDOW  DRAW-VIEWER ;
+: DRAW-DISPLAY  ( -- )  DRAW-LABELS  DRAW-FIGURES  WINDOW  DRAW-VIEWER ;
 
 : REDRAW   PAGE  DRAW-DISPLAY ;
 
