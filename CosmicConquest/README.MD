@@ -2,7 +2,7 @@
 
 https://github.com/RickCarlino/Cosmic-Conquest-1982
 
-This is a re-creation of a realtime strategy game published in BYTE Magazine in
+This is a re-creation of a real-time strategy game published in BYTE Magazine in
 1982. The original version of the game was distributed in printed form for
 users to manually type into their Apple II computers. It is credited as one of
 the first real-time strategy computer games. The game was authored in a flavor
@@ -30,6 +30,6 @@ computer play in the background as a separate task making the game truly
 challenging. This requires re-entrant code and we are in the process of removing
 temporary variables and replacing them with stack operations.  
 
-The TI-99 also multiple screen capability so potentially the computer's screen
+The TI-99 also has multiple screen capability so potentially the computer's screen
 could be updated independantly while you play. A key command would allow you to
 check on the computer's progress anytime you needed to.
