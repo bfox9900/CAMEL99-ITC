@@ -4,7 +4,7 @@ HERE
 DECIMAL
   24 USER 'R12  \ address of R12 in any Forth workspace
 HEX
-: IDECARD  ( -- ) 1000 'R12 ! ; \ select sams card
+: IDECARD  ( -- ) 1000 'R12 ! ; \ select ide card
 
 HEX
 \ *set the CRU address in 'R12 before using these words*

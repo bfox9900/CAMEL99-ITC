@@ -53,10 +53,6 @@ HEX 80 SET# 2 3 COLOR
 PAGE
 CR CR 80 EMIT
 
-
-
-
-
 CREATE PXY  0 , 0 ,   \ remember coarse screen position
 : D=   ( d d -- ?) ROT = -ROT = AND ;
 

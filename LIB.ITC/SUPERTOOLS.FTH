@@ -1,23 +1,27 @@
 CR .( Developer Tools to SUPER CART @>6000 )
+NEEDS MARKER FROM DSK1.MARKER
 
-HEX
 MARKER /SCTEST
 
+HEX
 : ?SUPERCART
     ['] EXIT A000 U< ABORT" SUPERCART in use!"
     BEEF 6000 !  6000 @ BEEF <> ABORT" SuperCart not found" ;
 
-?SUPERCART  \ test if super cart RAM present
+CR .( Testing for Supercart)
+?SUPERCART
+CR .( Removing test code)
+/SCTEST
 
-/SCTEST    \ remove test code
+: TOOLS ;  \ forget this word to remove tools
 
 \ SAVEDP holds the LINK field of the 1st new word we will create in HI RAM
 VARIABLE SAVEDP
 LATEST @ CONSTANT KEEP  \ remember latest name field address
 
-CR .( Set up low ram compiling ...)
-  HERE SAVEDP !      \ save the dictionary pointer.
-  6000 DP !          \ DP points to SUPER cart
+  HERE SAVEDP !      \ save the hi-ram dictionary pointer.
+  HEX 6000 DP !      \ Move DP to SUPER cart
+CR .( Compiling to HEX 6000 ...)
 
 HERE   ( to compute space used in SuperCart)
   INCLUDE DSK1.WORDLISTS
@@ -38,12 +42,8 @@ SAVEDP @ DP !     \ restore DP back to original address
 
 FORTH DEFINITIONS
 HEX
-: REMOVE-TOOLS ( -- )
-         KEEP SAVEDP @ !  \ relink the dictionary
-         2000 H ! ;       \ init-the heap to low RAM
 
 DECIMAL
 .FREE
-CR
-CR ." Search Order:"
+CR .( Search Order:)
 ORDER

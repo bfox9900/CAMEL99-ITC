@@ -310,12 +310,14 @@ HEX
 
 : SHELL
        WARM
-       PAGE ." Fox Shell V1.1,    Brian Fox 2021"
+       PAGE ." Fox Shell V1.2, Brian Fox Sep2021"
        DECIMAL
        HELP
        WARNINGS ON
        ABORT ;
-LOCK
+\ LOCK to current dictionary position on WARM boot
+DP @        ORGDP !
+LATEST  @ ORGLAST !
 CR .( Save as EA5 binary files)
 
 INCLUDE DSK1.SAVESYS

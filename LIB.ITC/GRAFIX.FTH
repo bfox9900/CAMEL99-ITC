@@ -1,5 +1,5 @@
-CR .( GRAPHIX.FTH for CAMEL99 V2.X  Jul 22, 2021 BFox )
-CR
+CR .( GRAPHIX.FTH for CAMEL99 V2.X  July 6, 2021 BFox )
+CR  \ added VWRAP to speed up VCHAR by 4X
 HERE
 NEEDS VC, FROM DSK1.VDPMEM  \ use by new CALLCHAR
 
@@ -8,27 +8,20 @@ HEX
  0800 CONSTANT PDT       \ "pattern descriptor table" VDP address
 
 \ access VDP tables like arrays. Usage:  9 ]CTAB returns VDP addr
-\ : ]CTAB  ( set# -- 'ctab[n])   CTAB + ;    \ 1 byte fields
-\ : ]PDT   ( char# -- 'pdt[n] )  8* PDT + ;  \ 8 byte fields
-
-\ code words are same size as Forth 2x faster
-CODE ]CTAB ( char# -- Vaddr ) \ TOS CTAB AI,
-      0224 , CTAB , NEXT,  ENDCODE
-
-CODE ]PDT  ( char# -- Vaddr ) \  TOS 3 SLA,  TOS PDT AI,
-      0A34 ,  0224 , PDT ,  NEXT, ENDCODE
+ : ]CTAB  ( set# -- 'ctab[n])   CTAB + ;    \ 1 byte fields
+ : ]PDT   ( char# -- 'pdt[n] )  8* PDT + ;  \ 8 byte fields
 
 \ ABORT to Forth with a msg if input is bad
 : ?MODE  ( n -- )      VMODE @ <>   ABORT" Bad mode" ;
 : ?COLOR ( n -- n )    DUP 16 U>    ABORT" Bad Color" ;
-: ?SCR   ( vdpadr -- ) C/SCR @ CHAR+ > ABORT" too many chars"  ;
+: ?SCR   ( vdpadr -- ) C/SCR @ CHAR+ > ABORT" too many chars" ;
 
 ( takes fg nibble, bg nibble, convert to TI hardware no.)
 ( test for legal values, and combine into 1 byte)
 : >COLR ( fg bg -- byte) 1- ?COLOR SWAP 1- ?COLOR  04 LSHIFT + ;
 .( .)
 \ ti-basic sub-programs begin
-: CLEAR  ( -- ) PAGE  0 17 AT-XY  ; ( just because you love it )
+: CLEAR  ( -- ) PAGE  0 17 AT-XY  ; ( because you love it )
 
 : COLOR  ( character-set fg-color bg-color -- )
           1 ?MODE  >COLR SWAP ]CTAB  VC! ;
@@ -75,42 +68,34 @@ CODE ]PDT  ( char# -- Vaddr ) \  TOS 3 SLA,  TOS PDT AI,
 ;
 .( .)
 \ PATTERN: is deprecated. Use CREATE and comma
-\ : PATTERN: ( u u u u -- ) CREATE  >R >R >R  , R> , R> , R> , ;
+ : PATTERN: ( u u u u -- ) CREATE  >R >R >R  , R> , R> , R> , ;
 
-: CHARDEF  ( addr char# --)  ]PDT      8 VWRITE ; \ ti basic call char
-: CHARPAT  ( addr char# --)  ]PDT SWAP 8 VREAD ;  \ ti basic call charpat
+: CHARDEF  ( addr char# --)  ]PDT      8 VWRITE ; \ write pattern to PDT
+: CHARPAT  ( addr char# --)  ]PDT SWAP 8 VREAD ;  \ read pattern to 'addr'
 : GCHAR    ( col row -- char) >VPOS VC@ ; \ does not affect VROW,VCOL
 
 : HCHAR   ( col row char cnt -- )
           2SWAP >VPOS   ( -- char cnt vdp_addr)
           2DUP + ?SCR
-          -ROT SWAP VFILL ;
+         -ROT SWAP VFILL ;
 
-\ need to change to Graphics mode now (C/SCR= >300) to compile VCHAR correctly
+\ change to Graphics mode (C/SCR = HEX300) to compile VCHAR correctly
 GRAPHICS
-HEX
-CODE VWRAP ( Vaddr C/L@ --  Vaddr) \ makes vchar 25% faster
-    C020 , AB8A , \ C/SCR @@ R0 MOV,
-    0600 ,        \ R0 DEC,
-    8004 ,        \ TOS R0 CMP,
-    1201 ,        \ HI IF,
-    6100 ,        \     R0 TOS SUB,
-                  \ ENDIF,
-    NEXT,
-ENDCODE \ 12 bytes vs 16 bytes in Forth
 
-DECIMAL
-: VCHAR  ( col row char cnt -- )
-           2SWAP            ( -- char cnt col row )
-          >VPOS             ( -- char cnt vdp_addr)
-          SWAP 0
-          ?DO               ( -- char vadr)
-             2DUP VC!       \ write a character
-             C/L@ +         \ bump address by char-per-line
-             VWRAP
-          LOOP
-          2DROP
-;
+HEX
+CODE VWRAP   \ 4x faster than Forth
+  02A1 ,               \ R1 STWP,
+  0202 , C/SCR @ 1- ,  \ R2 C/SCR @ 1- LI,
+  A121 , 002E ,        \ 2E R1 () TOS ADD,  ( C/L@ TOS + )
+  8084 ,               \ TOS  R2 CMP,
+  1201 ,               \ HI IF,
+  6102 ,               \    R2 TOS SUB,
+                       \ ENDIF,
+  NEXT,
+ENDCODE
+
+: (VCHAR) ( char vdp_addr cnt --) 0 ?DO   2DUP VC!   VWRAP   LOOP ;
+: VCHAR   ( col row char cnt -- ) 2SWAP >VPOS SWAP (VCHAR) 2DROP ;
 
 CR .( GRAPHICS 1 Mode READY)
 CR HERE SWAP - DECIMAL . .( bytes)

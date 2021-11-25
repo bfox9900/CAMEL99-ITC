@@ -1,10 +1,14 @@
-\ multi-tasker tools
-
-\ These tools are used to evaluate task system performance
+\ multi-tasker tools for Camel99 Forth updated  Nov 1 2021  Brian Fox
+\ These tools are used to evaluate MULTI-Task system performance
 \ and control tasks.
 
-: PULSE  ( -- n)  \ returns round robin transit time
-         TMR@ PAUSE TMR@ - ABS ;
+VARIABLE PEAK
+: TICK>uS ( n -- n') 213 10 */ ; \ TMS9901: 1 tick = 21.3 uS
+
+: ##.###  0 <#   # # # [CHAR] . HOLD  # #  #> TYPE ;
+
+: PULSE  ( -- n)  \ n = round robin transit time in uS
+   TMR@ PAUSE TMR@ - ABS TICK>uS  DUP  PEAK @  MAX PEAK ! ;
 
 : .AWAKE ( ? -- ) IF ." awake"  ELSE ." sleep"  THEN ;
 
@@ -27,6 +31,8 @@
 \ which is aliased as TLINK
 : NEXTJOB ( pid -- pid') TLINK LOCAL @ ;
 
+: .PULSE ." Pulse(mS):" PULSE ##.###  ."  Peak:" PEAK @ ##.### ;
+
 : .TASKS ( -- )
        .HDR
        1 >R    \ intial count is 1 (USER0)
@@ -40,12 +46,13 @@
        USER0 .TASK
        DROP DECIMAL
        CR R> .  ."  jobs" \ pull count off Rstack
-       CR ." Pulse=" PULSE . ;
+       CR .PULSE  ;
+
 DECIMAL
 : MONITOR  ( -- )
            CR VROW 2@     \ get x,y
            BEGIN
-             2DUP AT-XY ." Pulse: " PULSE .
+             2DUP AT-XY .PULSE
              1000 MS
              ?TERMINAL
            UNTIL

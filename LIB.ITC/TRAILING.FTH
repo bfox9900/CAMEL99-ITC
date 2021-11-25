@@ -1,28 +1,22 @@
-\ -TRAILING  remove trailing blanks   added 0 length protection Mar 2021 FOX
+\ -TRAILING  *Faster* remove trailing blanks   Oct 2021 FOX
 HEX
 CODE -TRAILING
-    C216 , A204 , 0201 , 2000 ,
-    0608 , 9058 , 1603 , 0608 ,
-    0604 , 10FB , 0284 , 0000 ,
-    1501 , 04C4 , NEXT,
-ENDCODE
+A116 , 0604 , 0201 , 2000 , 9054 ,
+1602 , 0604 , 10FC , 6116 , 0584 ,
+NEXT,
+ENDCODE ok
 
-\ NEEDS .S   FROM DSK1.TOOLS
-\ NEEDS MOV, FROM DSK1.ASM9900
-
-\ CODE -TRAILING ( addr len -- addr len') \ 8x FASTER than Forth
-\     *SP  W  MOV,   \ DUP addr in W
-\      TOS W  ADD,   \ add len
-\      R1 2000 LI,
-\      W DEC,        \ w=address of last char
+\ HEX
+\ CODE -TRAILING ( addr len -- addr len')
+\     *SP TOS  ADD,     \ compute end of string
+\         TOS  DEC,
+\      R1 2000 LI,      \ R1 = BL
 \      BEGIN,
-\        *W R1 CMPB, \ compare to ascii >20
+\        *TOS R1 CMPB,
 \      EQ WHILE,
-\         W   DEC,   \ move back 1 char
-\         TOS DEC,   \ dec len in TOS
+\            TOS DEC,
 \      REPEAT,
-\      TOS 0 CI,
-\      1 JGT,
-\      TOS CLR,
-\  NEXT,
-\  ENDCODE
+\    *SP TOS SUB,
+\        TOS INC,
+\   NEXT,
+\ ENDCODE

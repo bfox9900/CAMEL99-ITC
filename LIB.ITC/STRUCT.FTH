@@ -30,8 +30,8 @@ INCLUDE DSK1.BUFFER
 ;
 
 \ define forth 2012 field types for TI-99
-: FIELD:   ( n1 "name" -- n2 ; addr1 -- addr2 ) ALIGNED 1 CELLS +FIELD ;
-: CFIELD:  ( n1 "name" -- n2 ; addr1 -- addr2 )         1 CHARS +FIELD ;
+: INT:   ( n1 "name" -- n2 ; addr1 -- addr2 ) ALIGNED 1 CELLS +FIELD ;
+: BYTE:  ( n1 "name" -- n2 ; addr1 -- addr2 )         1 CHARS +FIELD ;
 
 \ BF custom field types
 : DFIELD:  ( d1 "name" -- d2 ; addr1 -- addr2 ) ALIGNED 2 CELLS +FIELD ;
@@ -40,7 +40,7 @@ INCLUDE DSK1.BUFFER
 
 
 \ ===================================================================
-\ example: using [ ] brackets as a naming convention 
+\ example: using [ ] brackets as a naming convention
 \ to identity record and fields
 DECIMAL
 

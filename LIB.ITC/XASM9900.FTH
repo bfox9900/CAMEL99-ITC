@@ -15,11 +15,11 @@ VARIABLE ORIGIN  \ holds ORG address
 
 HEX
 \ set where the Cross-assembler puts its code
-: ORG    ( addr --) DUP ORIGIN TDP ! ;
+: ORG    ( addr --) DUP ORIGIN ! TDP ! ;
 .( .)
 \ Target versions of HERE and ALLOT
-: THERE  ( -- addr) TDP @ ;
-: TALLOT ( n -- )   TDP +! ;
+: THERE  ( -- addr)   TDP @ ;
+: TALLOT ( n -- )     TDP +! ;
 : TC!    ( n addr --) TDP @ + C! ;
 
 \ integer and byte "Target" compilers

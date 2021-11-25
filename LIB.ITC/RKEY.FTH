@@ -1,44 +1,52 @@
 \ Repeating key based on Nouspikel TI-99 tech pages, V1.7 BFox
-\ Improved Jan 18, 2021
+\ Improved Oct 21, 2021
 
 DECIMAL
- 68 CONSTANT LD
-  4 CONSTANT SD
-VARIABLE OUTKEY     \ key buffer
+ 500 CONSTANT LD
+  20 CONSTANT SD
+
+\ VARIABLE OUTKEY     \ key buffer
 VARIABLE OLDKEY     \ previous key buffer
 VARIABLE RPT
-\ CREATE DLY LD ,     \ delay var MUST be initiaized to LONG
+
 HEX
+
+: WAITKEYUP  ( char delay -- char)
+      0 DO
+           KEY? OVER <>
+           IF
+              DUP OLDKEY !
+             LEAVE
+           THEN
+      LOOP ;
+
+
 : RKEY?   ( -- char)
-    RPT @
-    IF   SD
-    ELSE LD
-    THEN ( dly) 0
-    DO
-       FF 83C8 C!
-       KEY?
-       OLDKEY @ OVER <>   \ different key?
-       IF DUP OUTKEY !
-          DUP OLDKEY !
-          RPT OFF
-          UNLOOP EXIT     \ jump out
-       THEN
-       DROP
-    LOOP
-    RPT ON
-    OUTKEY @  DUP OLDKEY !
+    FFFF 83C8 !         \ set KEY buffer to empty
+    KEY?
+    OLDKEY @ OVER <>   \ different key?
+    IF   DUP OLDKEY !
+         LD
+    ELSE SD
+    THEN WAITKEYUP 
 ;
+
+: RSKEY  BEGIN  RKEY?  ?DUP UNTIL ;
+: TEST   BEGIN  RSKEY EMIT  ?TERMINAL UNTIL ;
+
 
 : RKEY ( -- char)
    VPOS VC@ >R
    BEGIN
-     TMR@ 1FFF > IF CURS @ ELSE R@  THEN VPUT
-     PAUSE
-     RKEY?
-     ?DUP
-     CURS @ VPUT
-   UNTIL
+     RKEY? ?DUP 0=
+   WHILE
+      PAUSE
+      TMR@ 1FFF >
+      IF CURS @ VPUT
+      ELSE R@ VPUT
+      THEN
+   REPEAT
    R> VPUT
 ;
 
-\ : TEST BEGIN  RKEY DUP EMIT  83 = UNTIL ;
+: TEST  BEGIN  RKEY EMIT  ?TERMINAL UNTIL ;

@@ -3,23 +3,23 @@
 \ *G V2.25  Uses FOPEN to simplify OPEN-FILE, FREAD for READ-FILE
 \ ** V2.26  Removed UPDATE INPUT OUTPUT APPEND. Use R/W R/O W/O W/A
 \ ** Forced CREATE-FILE to erase previous file by using in W/O mode
-CR .( ANS Files V2.26 Aug 2021..)
+CR .( ANS Files V2.27 Sept 2021..)
 HEX
 HERE
+
 03 CONSTANT #FILES  \ ** this is locked at 3 in Camel99 Forth
 VARIABLE LASTH      \ ** last handle that was selected ie:  CURRENT handle
 
 CREATE FIDS ( -- addr) 0 , 0 , 0 , 0 , 0 , 0 ,
-
 : FATAL   ( -- true)
           FIDS #FILES CELLS  0 FILL  \ erase all file IDs
           TRUE ;
 
 : ?HNDL   ( n -- )  #FILES 1+ 1 WITHIN IF FATAL ABORT" Bad handle" THEN  ;
-: ]FID    ( hndl -- PAB_addr ) DUP ?HNDL  CELLS FIDS + ;
+: ]FID    ( hndl -- PAB_addr ) DUP ?HNDL CELLS FIDS + ;
 
 : NEWHNDL ( -- hndl) \ *G Handle server: Looks for available file handle.
-  0  BEGIN  1+ DUP ]FID @  WHILE REPEAT DUP ?HNDL ;
+  1  BEGIN  DUP ]FID @ WHILE  1+  REPEAT DUP ?HNDL ;
 
 : RELEASE ( hndl -- ) ]FID OFF ;  \ *G release handle back to the pool
 : SELECT  ( hndl -- )
@@ -28,11 +28,11 @@ CREATE FIDS ( -- addr) 0 , 0 , 0 , 0 , 0 , 0 ,
 
 : VCOUNT  ( vdp$adr -- vdpadr len )
 \ *G COUNT for VDP strings
-  DUP 1+ SWAP VC@ ;
+      DUP 1+ SWAP VC@ ;
 
-: .FNAME  ( padaddr -- ) FNAME] VCOUNT 10 MAX BOUNDS DO  I VC@ EMIT LOOP ;
+: TYPE.VDP ( vdpaddr len -- ) BOUNDS ?DO  I VC@ EMIT  LOOP ;
 
-: DUMP]   ( vaddr -- ) \ dump contents of a PAB
+: DUMP]   ( PABvaddr -- ) \ dump contents of a PAB
 \ *G PAB dump utility used by ANSFILES error handler.
 \ ** It can be expanded by uncommenting two lines in source code.
 \ ** This will add REC# and file status fields to the output.
@@ -41,7 +41,7 @@ CREATE FIDS ( -- addr) 0 , 0 , 0 , 0 , 0 , 0 ,
          CR ." PAB:" .  ." FAM=" R@ FLG] VC@ 1F AND .
 \           ."  Rec#="   R@ REC#]  V@ .
 \           ."  Fstat= " R@ STAT] VC@ .
-         CR ." Dev:" R> .FNAME ;
+         CR ." Dev:" R> FNAME] VCOUNT TYPE.VDP ;
 
 : ?FILERR  ( ior -- )
 \ *G Enhanced file error handler for use with ANS/ISO file words.
@@ -140,7 +140,7 @@ HEX
   3 FILEOP ; ( -- ior)
 
 \ =======================================
-DECIMAL
+DECIMAL FATAL DROP
 CR .( Max files set to ) #FILES .
-CR HERE SWAP - . .( bytes used)
+CR HERE SWAP - U. .( bytes used)
 HEX

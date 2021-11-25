@@ -1,53 +1,49 @@
 \ MOVE.FTH    Forth 2012                       Mar 29 2021 FOX
 \ "address unit" CELL move, A.6.1.1900 MOVE
 \ like CMOVE but 2x faster because it moves 2 bytes per iteration
-\ TMS9900 does not like this for strings. 
+\ TMS9900 does not like this for strings.
 
 NEEDS MOV,  FROM DSK1.ASM9900
 NEEDS .S    FROM DSK1.TOOLS
 NEEDS ELAPSE FROM DSK1.ELAPSE
 
+\ Test results
+\ A000 2000 2000 ELAPSE CMOVE
+\ Elapsed time =0:00.26 ok
 
-CODE MOVE
-   C036 , C076 , 0584 , 0244 ,
-   FFFE , CC31 , CC31 , 0644 ,
-   16FD , C136 , NEXT,
+\ A000 2000 2000 ELAPSE MOVE16
+\ Elapsed time =0:00.11 ok
+
+\ A000 2000 2000 ELAPSE MOVE32
+\ Elapsed time =0:00.10 ok
+
+HEX
+CODE MOVE16  ( src dst n -- ) \ n= no. of bytes to move
+    TOS  1 SRA,  \ divide by 2
+   *SP+ R0 MOV,
+   *SP+ R1 MOV,
+    BEGIN,
+       R1 *+ R0 *+ MOV,
+       TOS DEC,
+    EQ UNTIL,
+    TOS POP,
+    NEXT,
 ENDCODE
 
-CODE <MOVE16
-    C036 , C076 , C104 , 130C , 0584 ,
-    0244 , FFFE , A004 , 0640 , A044 ,
-    0641 , C411 , 0641 , 0640 , 0644 ,
-    15FB , C136 ,
-NEXT,
+\ 2.5x FASTER than CMOVE for 16K byte moves
+CODE MOVE32  ( src dst n -- )  \ n= no. of bytes to move
+       TOS 2 SRA,        \ divide by 4
+      *SP+ R0 MOV,       \ pop DEST into R0
+      *SP+ R1 MOV,       \ pop source into R1
+      BEGIN,
+        TOS DEC,
+      OC WHILE,
+          R1 *+ R0 *+ MOV,  \ memory to memory move, auto increment
+          R1 *+ R0 *+ MOV,  \ memory to memory move, auto increment
+      REPEAT,
+      TOS POP,
+      NEXT,
 ENDCODE
-
-CODE MOVE  ( src dst n -- )    \ n= no. of CELLS to move
-          *SP+ R0 MOV,       \ pop DEST into R0
-          *SP+ R1 MOV,       \ pop source into R1
-          TOS TOS MOV,
-          NE IF,
-             BEGIN,
-                R1 *+ R0 *+ MOV,  \ mem to mem move, auto increment
-                TOS DECT,         \ dect by two, moving 2 bytes at once
-             EQ UNTIL,
-          ENDIF,
-          TOS POP,
-          NEXT,
-          ENDCODE
-
-\ no improvement for 4K byte moves.  20% faster for 8K bytes
-CODE MOVE32  ( src dst n -- )  \ n= no. of CELLS to move
-            *SP+ R0 MOV,       \ pop DEST into R0
-            *SP+ R1 MOV,       \ pop source into R1
-            BEGIN,
-                R1 *+ R0 *+ MOV,  \ memory to memory move, auto increment
-                R1 *+ R0 *+ MOV,  \ memory to memory move, auto increment
-                TOS -4 AI,        \ we are moving 4 bytes at once!
-            LTE UNTIL,
-            TOS POP,
-            NEXT,
-            ENDCODE
 
 \ Speed test
 \
@@ -56,8 +52,16 @@ HEX
 \ 2000 3000 1000 ELAPSE MOVE16  6 ms
 \ 2000 3000 1000 ELAPSE MOVE32  6 ms
 
+CODE MOVE16> ( src dst n -- )
+    C036 , C076 , C104 , 130C , 0584 ,
+    0244 , FFFE , A004 , 0640 , A044 ,
+    0641 , C411 , 0641 , 0640 , 0644 ,
+    15FB , C136 ,
+NEXT,
+ENDCODE
+
 \ OVERLAP safe MOVE16
-CODE <MOVE  ( src dst n -- )  \ n= no. of bytes to move
+CODE MOVE>  ( src dst n -- )  \ n= no. of bytes to move
             *SP+ R0 MOV,       \ pop DEST into R0
             *SP+ R1 MOV,       \ pop source into R1
              TOS TOS MOV,

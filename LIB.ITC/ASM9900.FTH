@@ -6,6 +6,8 @@
 \     Compare instruction has been changed to CMP,
 \     Changed  A, and S, to ADD, SUB,
 
+NEEDS MARKER FROM DSK1.MARKER
+
 MARKER /ASM
 
 CR .( CAMEL99 Assembler V2.2 Dec 2020)
@@ -54,10 +56,13 @@ A000 GGOP ADD,  B000 GGOP ADDB, 8000 GGOP CMP, 9000 GGOP CMPB,
 6000 GGOP SUB,  7000 GGOP SUBB, E000 GGOP SOC, F000 GGOP SOCB,
 4000 GGOP SZC,  5000 GGOP SZCB, C000 GGOP MOV, D000 GGOP MOVB,
 
-: 0OP     CREATE ,  DOES> @ , ;
-
-0340 0OP IDLE,   0360 0OP RSET,  03C0 0OP CKOF,
-03A0 0OP CKON,   03E0 0OP LREX,  0380 0OP RTWP,
+\ : 0OP     CREATE ,  DOES> @ , ;
+\ 0340 0OP IDLE,    \ "should not be used in TI99"
+\ 0360 0OP RSET,
+\ 03C0 0OP CKOF,
+\ 03A0 0OP CKON,
+\ 03E0 0OP LREX,
+: RTWP,  0380 , ;
 
 : ROP     CREATE , DOES> @ + , ;
 02C0 ROP STST,
@@ -129,7 +134,7 @@ CR .( Simplified branching and looping)
 
 : BEGIN,  ( -- addr)  HERE ;
 : WHILE,  ( token -- *while *begin) IF, SWAP ;
-: AGAIN,  ( *begin --)  HERE  0 JMP, <BACK ;
+: AGAIN,  ( *begin --) HERE  0 JMP, <BACK ;
 : UNTIL,  ( *begin token --) HERE SWAP AJUMP, <BACK ;
 : REPEAT, ( *while *begin -- ) AGAIN, ENDIF, ;
 

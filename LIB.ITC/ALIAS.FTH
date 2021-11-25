@@ -1,5 +1,3 @@
-\ alias for code words
+\ 1 cell alias. *FOR CODE WORDS ONLY*
 
-: ALIAS  CODE  ( <TEXT>)   '  ( -- cfa) CFA>CA  HERE PFA>CA ! ;
-
-
+: ALIAS ( XT -- <newname> ) 2+ HEADER  , ;

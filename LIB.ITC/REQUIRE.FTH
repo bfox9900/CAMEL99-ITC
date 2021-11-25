@@ -12,4 +12,4 @@
         COMPILE DOCON TRUE , \ make it a constant that returns TRUE
       THEN ;
 
-: REQUIRES ( <PATH> ) PARSE-NAME REQUIRED ;
+: REQUIRE ( <PATH> ) PARSE-NAME REQUIRED ;

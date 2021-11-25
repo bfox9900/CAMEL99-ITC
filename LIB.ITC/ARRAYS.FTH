@@ -13,17 +13,16 @@
       NEXT,
       ENDCODE
 
-\ ARRAY  creates a cell size array.
-\ : ARRAY ( n -- ) CREATE  CELLS ALLOT  DOES>  SWAP CELLS + ;
+\ ARRAY  creates a fast cell size array.
 : ARRAY ( n -- )
       CREATE  CELLS ALLOT      \ compile time
 ;CODE ( n -- addr)             \ RUN time
-       0A14 , , \  R4 1 SLA,  \ 2*  ie: CELLS
+       A104 ,   \  R4 R4 ADD,  \ 2*  ie: CELLS
        A108 ,   \  W  R4 ADD,  \ base-address+tos=address'
        NEXT,
        ENDCODE
 
 \ ** Usage:
 \ ** HEX 1000 CARRAY []Q     99 6 []Q C!   6 []Q C@ . ( 99)
-\ ** HEX 1000 ARRAY  []T   1234 3 []T !    3 []T @ .  ( 1234)  Forth 1.68
+\ ** HEX 1000 ARRAY  []T   1234 3 []T !    3 []T @ .  ( 1234) 
 \ ** : ATEST  1000 0 DO  I []T @ DROP  LOOP ;

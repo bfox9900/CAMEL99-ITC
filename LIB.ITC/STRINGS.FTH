@@ -62,6 +62,8 @@ HEX 3FFF SSW +  CONSTANT $STACK
            LOOP
            DROP - ABS ;
 
+: RPT$  ( $ n -- $') NEW:  0 DO  DUP TOP$ & LOOP  DROP ;
+
 \ much faster find position of char in $
 : CPOS     ( $ char -- n) >R COUNT 2DUP R> SCAN NIP - NIP ;
 
@@ -109,7 +111,6 @@ HEX 3FFF SSW +  CONSTANT $STACK
 COLLAPSE  \ initialize the string stack
 
 HERE SWAP - DECIMAL .  .( Bytes)
-
-\ 20 DIM A$  A$ =" This is A$"
+ 20 DIM A$  A$ =" This is A$"
 \ 20 DIM B$  B$ =" This is B$."
 \ 50 DIM C$  A$ B$ & C$ PUT

@@ -15,20 +15,30 @@ HEX
    NEXT,
  ENDCODE
 
-: FILLA  0 3C0 41 VFILL ;
+: FILL1
+     [CHAR] Z 1+  [CHAR] A
+     DO
+       WAITVBI
+       0 3C0 I VFILL
+     LOOP
+;
 
 : TEST1
     BEGIN
       WAITVBI
-      FILLA
-\      WAITVBI
-      PAGE
+      FILL1
       ?TERMINAL
     UNTIL ;
 
+: FILL2
+     [CHAR] Z 1+  [CHAR] A
+     DO
+       0 3C0 I VFILL
+     LOOP
+;
+
 : TEST2
         BEGIN
-          FILLA
-          PAGE
+          FILL2
           ?TERMINAL
         UNTIL ;

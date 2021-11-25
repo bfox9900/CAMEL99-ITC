@@ -1,4 +1,4 @@
-\ LOADER.FTH   E/A file loader for CAMEL99 Forth      Brian Fox jAN 28 2021
+\ LOADER.FTH   E/A file loader for CAMEL99 Forth      Brian Fox Jan 28 2021
 
 MARKER /LOADER
 
@@ -8,13 +8,18 @@ NEEDS LOAD-FILE  FROM DSK1.LOADSAVE
 : FIELD       ( n -- Vaddr) VP @ SWAP CELLS + ;
 
 : BLOAD  ( addr len -- ?)
-           VP @ 2000 13 LOAD-FILE   \ VP default address is VDP>1000
-           3 FIELD         \ -- codestart
-           2 FIELD V@      \ -- codestart addr )
-           1 FIELD V@      \ -- codestart addr size)
-           VREAD           \ read VDP RAM to CPU RAM
-           0 FIELD V@      \ return the multi-file flag
+          VP @ 2000 13 LOAD-FILE   \ VP default address is VDP>1000
+          3 FIELD         \ -- codestart
+          2 FIELD V@      \ -- codestart addr )
+          1 FIELD V@      \ -- codestart addr size)
+          VREAD           \ read VDP RAM to CPU RAM
+          0 FIELD V@      \ return the multi-file flag
 ;
 
 : LOADER  ( addr len -- )
-  BEGIN  2DUP BLOAD  WHILE LASTCHAR++  REPEAT 2DROP ;
+          BEGIN  
+            2DUP BLOAD
+          WHILE
+            LASTCHAR++
+          REPEAT
+          2DROP ;

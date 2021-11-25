@@ -1,14 +1,17 @@
 \ Faster/smaller "TI BASIC" string library for CAMEL99 V2.59  Jan 28 2020 B Fox
+\ Mov 25 2021 Change to use MALLOC/MFREE for temp strings.
 
-\ No string stack. Data stack used for intermediate results
-\ Uses stack strings for processing, counted string storage
-\ PAD buffer used for concatenation only
+\ No string stack.
+\ Uses stack strings so processing just changes addresses and length.
 \ "Copy on write" (COW) with store string operator. (!$)
+\ Strings are stored as byte counted strings
+\ MALLOC buffer used for concatenation and then de-allocated
 
 \    TI BASIC                      Forth
 \ ----------------            ------------------
 \ DIM A$(100)                  100 DIM A$
 \ DIM B$(100)                  100 DIM B$
+\  not needed                  100 DIM C$         ( must DIM first)
 \ A$=LEFT$(A$,5)               A$ 5 LEFT$ A$ !$   ( modify, store)
 \ PRINT SEG$(A$,4,4)           A$ 4 4 SEG$ PRINT  ( process, print)
 \ PRINT A$&B$&C$               A$ B$ & C$ & PRINT ( concatenate, print)
@@ -16,16 +19,13 @@
 
 \ ----------------------------------------------------
 \ INCLUDE DSK1.TOOLS
-HERE
 NEEDS -TRAILING FROM DSK1.TRAILING
 NEEDS COMPARE   FROM DSK1.COMPARE
 NEEDS MALLOC    FROM DSK1.MALLOC
 
-MARKER /STRINGS
-
+HERE
 DECIMAL
   255 CONSTANT MXLEN          \ 255 bytes is longest string
-  256 MALLOC CONSTANT TEMP$   \ Fixed size concat buffer in HEAP
 
 : ?$IZE    ( n -- ) MXLEN > ABORT" $ too big!" ;
 
@@ -52,10 +52,13 @@ DECIMAL
 : STR$     ( n -- adr len) DUP ABS 0 <# #S ROT SIGN #> ;
 : ASC$     ( addr len -- c) DROP C@ ;
 : &        ( addr len addr len -- addr len )
-           2SWAP TEMP$ DUP >R PLACE
+           2SWAP MXLEN MALLOC DUP >R PLACE
            R@ +PLACE
-           R> COUNT LEN ?$IZE  ;  \ abort if string len >255
-\ needed for some ANS Forth systems. In CAMEL99 Forth Kernel
+           R> COUNT LEN
+           MXLEN MFREE
+           ?$IZE  ;  \ abort if string len >255
+
+\ needed for some ANS Forth systems
 \ : NUMBER?  ( addr len -- n ?)  \ convert to single, ?=0 is good conversion
 \             OVER C@ [CHAR] - = DUP >R   \ save minus sign flag
 \             IF   1 /STRING THEN
@@ -80,7 +83,14 @@ DECIMAL
 : "      POSTPONE S" ; IMMEDIATE   \ renamed S"
 : PRINT    ( addr len -- ) CR TYPE ;  \ more like BASIC'S print
 
-\ compile or interpret string assigment
+\ Strings words that TI-BASIC does not have
+: LEFT$    ( addr len n -- addr len') NIP ;
+: RIGHT$   ( addr len n -- addr len) /STRING ;
+: -LEADING ( addr len -- addr' len') BL SKIP ;   \ trim leading spaces
+: CLEAN$   ( addr len -- addr len) -LEADING -TRAILING  ;
+: DELIMIT$ ( addr len char -- addr' len') >R 2DUP R> SCAN NIP - 0 MAX ;
+
+\ *EXTRA*  compile or interpret string assigment
 \ : :="       ( addr len -- <text> )
 \            [CHAR] " PARSE
 \            STATE @
@@ -90,12 +100,5 @@ DECIMAL
 \
 \            ELSE   2SWAP !$
 \            THEN ; IMMEDIATE
-\ Strings words that TI-BASIC does not have
-\ : LEFT$    ( addr len n -- addr len') NIP ;
-\ : RIGHT$   ( addr len n -- addr len) /STRING ;
-\ : -LEADING ( addr len -- addr' len') BL SKIP ;   \ trim leading spaces
-\ : CLEAN$   ( addr len -- addr len) -LEADING -TRAILING  ;
-\ : DELIMIT$ ( addr len char -- addr' len') >R 2DUP R> SCAN NIP - 0 MAX ;
-
 
 HERE SWAP - DECIMAL CR .  .( Bytes)

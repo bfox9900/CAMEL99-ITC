@@ -1,11 +1,12 @@
-\ blocks.fth  for CAMEL99 Forth     Dec 17 2018 BJFox
+CR .( blocks.fth  for CAMEL99 Forth     Aug 2021  BJFox)
+
 \ Based on ideas from HsForth by Jim Kalihan (RIP)
 \ Oct 9 2019 reduced compiled size from 930 bytes to 890
 \            OPEN-BLOCKS sets active only if successful
 \            Added DF128 word, Make blocks uses CREATE-FILE
 \ Feb 2021   Added MASK to replace "7FFF AND" 4x. Same size, faster
 \            Used DUP>R cuz it's now in Kernel 2.66
-\ Auf 2021   Added ?BLKFILE to test file in dir.
+\ Aug 2021   Added ?BLKFILE to test file in dir.
 
 NEEDS OPEN-FILE  FROM DSK1.ANSFILES
 NEEDS .R         FROM DSK1.UDOTR
@@ -140,7 +141,7 @@ HEX
 
 \ Usage:  45 S" DSK1.MYBLOCKS" MAKE-BLOCKS
 :  MAKE-BLOCKS ( n file len -- )
-        DF128  R/W  CREATE-FILE ?FILERR BHNDL !
+        DF128  W/O  CREATE-FILE ?FILERR BHNDL !
         FIRST CELL+ B/BUF BL FILL
         DUP HIGHBLK !
         1+  1

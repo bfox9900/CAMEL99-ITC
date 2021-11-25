@@ -4,7 +4,7 @@
 \  NEEDS MOV, FROM DSK1.ASM9900
 
 MARKER REMOVE
- 
+
 HERE
 
 DECIMAL
@@ -40,41 +40,11 @@ HEX
 ;
 
 \ ==========================================
-\ block  as SAMS manager
+\ BLOCK is the entire SAMS manager
 HEX
 VARIABLE USE
 CREATE BLK#S       0 ,    0 ,      \ SAMS page in the buffer
 CREATE WINDOWS  2000 , 3000 ,      \ windows in Low CPU RAM
-
-\ CODE BLOCK ( bank -- buffer)
-\          R0 BLK#S LI,     \ handle 0 search
-\         R0 ** TOS CMP,
-\          EQ IF,
-\                TOS 2000 LI,
-\                NEXT,
-\          ENDIF,
-\                R0 INCT,   \ handle 1 search
-\         R0 ** TOS CMP,
-\          EQ IF,
-\                TOS 3000 LI,
-\                NEXT,
-\          ENDIF,
-\           W  0001 LI,
-\         USE @@  W XOR,
-\         W  USE @@ MOV,
-\         W       W ADD,   \ W holds offset
-\     TOS BLK#S (W) MOV,   \ store the bank#
-\    WINDOWS (W) R1 MOV,   \ get the window to use
-\          R1    0B SRL,   \ divide by 2048
-\          R1  4000 AI,    \ convert to SAMS register address
-\          R12 1E00 LI,    \ cru address of SAMS
-\                 0 SBO,   \ SAMS card on
-\              TOS  SWPB,  \ swap bytes on bank value
-\         TOS R1 ** MOV,   \ load bank into register
-\                 0 SBZ,   \ SAMS card off
-\   WINDOWS (W) TOS MOV,   \ return buffer on TOS
-\                   NEXT,
-\ ENDCODE
 
 CODE BLOCK ( bank -- buffer)
  0200 , BLK#S ,
@@ -104,15 +74,15 @@ CODE BLOCK ( bank -- buffer)
  NEXT,
  ENDCODE
 
-VARIABLE SEG
+ VARIABLE SEG
 \ safely set the 64K segment that you want to use
-: SEGMENT ( 1..F -- ) \ don't allow segment 0
+ : SEGMENT ( 1..F -- ) \ don't allow segment 0
          DUP 01 10 WITHIN 0= ABORT" SAMS segment err"
          SEG ! ;
  1 SEGMENT
 
-HEX
-: PAGED  ( virtual-addr -- real-addr)
+ HEX
+ : PAGED  ( virtual-addr -- real-addr)
          SEG @ 1000 UM/MOD ( -- offset bank#) BLOCK + ;
 
 HERE SWAP - DECIMAL  CR .  .( bytes)
