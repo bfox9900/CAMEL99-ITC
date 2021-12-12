@@ -1,52 +1,47 @@
-\ Repeating key based on Nouspikel TI-99 tech pages, V1.7 BFox
-\ Improved Oct 21, 2021
+\ Repeating key based on Nouspikel TI-99 tech pages,   V2 BFox
+\ Improved Dec 11, 2021
 
+HERE
 DECIMAL
- 500 CONSTANT LD
-  20 CONSTANT SD
-
-\ VARIABLE OUTKEY     \ key buffer
+VARIABLE OUTKEY     \ key buffer
 VARIABLE OLDKEY     \ previous key buffer
 VARIABLE RPT
 
 HEX
-
-: WAITKEYUP  ( char delay -- char)
-      0 DO
-           KEY? OVER <>
-           IF
-              DUP OLDKEY !
-             LEAVE
-           THEN
-      LOOP ;
-
-
 : RKEY?   ( -- char)
-    FFFF 83C8 !         \ set KEY buffer to empty
-    KEY?
-    OLDKEY @ OVER <>   \ different key?
-    IF   DUP OLDKEY !
-         LD
-    ELSE SD
-    THEN WAITKEYUP 
+    RPT @
+    IF    3             \ short delay value
+    ELSE 45             \ long delay value
+    THEN >R             \ delay counter on rstack
+    BEGIN
+       R> 1- DUP>R      \ dect. counter
+    WHILE ( counter>0)
+       83C8 ON          \ clear key buffer
+       KEY?             \ call kscan
+       OLDKEY @ OVER =  \ compare to oldkey
+    WHILE ( key is same)
+       DROP             \ don't need this key
+       RPT ON
+    REPEAT ( endwhile #2)
+      DUP OUTKEY !  OLDKEY !
+      RPT OFF
+    THEN ( endwhile #1)
+    R> DROP             \ remove the counter
+    OUTKEY @
 ;
-
-: RSKEY  BEGIN  RKEY?  ?DUP UNTIL ;
-: TEST   BEGIN  RSKEY EMIT  ?TERMINAL UNTIL ;
-
 
 : RKEY ( -- char)
    VPOS VC@ >R
    BEGIN
-     RKEY? ?DUP 0=
-   WHILE
-      PAUSE
-      TMR@ 1FFF >
-      IF CURS @ VPUT
-      ELSE R@ VPUT
-      THEN
-   REPEAT
+     PAUSE
+     TMR@ 1FFF >
+     IF CURS @ ELSE R@  THEN VPUT
+     RKEY?
+     ?DUP
+   UNTIL
    R> VPUT
 ;
 
-: TEST  BEGIN  RKEY EMIT  ?TERMINAL UNTIL ;
+HERE SWAP - DECIMAL .  ( 194 bytes)
+
+\ : TEST  BEGIN  RKEY EMIT  ?TERMINAL UNTIL ;
