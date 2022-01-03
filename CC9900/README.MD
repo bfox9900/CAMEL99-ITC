@@ -25,9 +25,8 @@ c:\forth\cc9900      contains the source files
 Loads and runs with normal Editor assembler cartridge. Entry=HEX A000
 In file FORTHITC.MAK set the compiler switches as shown below:
 
-`\ compiler switches
-  TRUE  VALUE ITC
-  FALSE VALUE SLOWER       \ TRUE saves 22 bytes
+` TRUE  VALUE ITC
+  FALSE VALUE SLOWER
   FALSE VALUE HASHING
   FALSE VALUE SUPERCART`
 
