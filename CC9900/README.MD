@@ -26,15 +26,11 @@ Loads and runs with normal Editor assembler cartridge. Entry=HEX A000
 In file FORTHITC.MAK set the compiler switches as shown below:
 
 `\ compiler switches
-
   TRUE  VALUE ITC
-
   FALSE VALUE SLOWER       \ TRUE saves 22 bytes
-
   FALSE VALUE HASHING
+  FALSE VALUE SUPERCART`
 
-  FALSE VALUE SUPERCART
-`
 At the DOS prompt type:    XFC99X  fload cc9900\src.itc\forthitc.mak
 
 ### SuperCart Kernel Build
