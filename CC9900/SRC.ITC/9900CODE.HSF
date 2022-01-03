@@ -118,10 +118,13 @@ CROSS-ASSEMBLING
           START.       \ sets a timer
           NEW.         \ init target memory segment to FFFF
 
-CARTRIDGE
-[IF]     6000 ORIGIN.  \ set the origin before TI-99.EA5 directive
-[ELSE]   A000 ORIGIN.  \ ORGADDRESS is in the Forth kernel code
-[THEN]   TI-99.EA5     \ format the memory/file header for TI-99 EA5 file format
+\ set the origin before TI-99.EA5 directive
+SUPERCART 
+[IF]     6000 ORIGIN.
+[ELSE]   A000 ORIGIN.
+[THEN]
+
+         TI-99.EA5
 
 \ ***********************************************************************
 
@@ -144,6 +147,7 @@ ORG-ADDR@ 2 cells + equ HSprims   \ beginning of the code to be copied to HS ram
 \ Having these critical routines in fast memory makes more difference than ANY other improvements
 TALIGN
 NEW-JMPTABLE
+XSTATE OFF
 l: _exit      IP RPOP,        \ >8388
 l: _next                      \ Forth ITC NEXT routine (>838A)
 @@9:         *IP+ W  MOV,     \ move CFA into Working register & incr IP \ 22
@@ -225,8 +229,13 @@ T'  LIT  RESOLVES 'LIT         \ 'LIT is used by the cross-compiler
 \ After NEXT completes W is auto-incremented by 2.  CFA+2=PFA
 \ By auto-incrementing in NEXT we save 1 instruction in each of these words.
 CODE DOCON   ( -- n )         \ Executor that executes a "CONSTANT"
+
+\ * ***** BUG IN COMPILER? *****
+\ * an  extra address is inserted here and it is read as "ADD" instruction
+             -2 TALLOT
+\ *****************************
               TOS PUSH,        \ make room in TOS
-             *W TOS MOV,       \ put contents of PFA (W+2) in TOS
+             *R8 TOS MOV,      \ put contents of PFA (W+2) in TOS
               NEXT,
               ENDCODE
 
@@ -234,9 +243,9 @@ CODE DOCON   ( -- n )         \ Executor that executes a "CONSTANT"
 
 \ In CAMEL99 the 9900 Workspace register (WP) doubles as USER pointer
 CODE DOUSER ( -- addr)
-              TOS PUSH,        \ Executor that executes a "USER VARIABLE" (local to each task)
-              TOS STWP,        \ store workspace register WP in TOS
-             *W TOS ADD,       \ add the offset stored in the USER variable's parameter field
+              TOS PUSH,      \ Executor that executes a "USER VARIABLE" (local to each task)
+              TOS STWP,      \ store workspace register WP in TOS
+              *R8 TOS ADD,   \ add the offset stored in the USER variable's parameter field
               NEXT,
               ENDCODE
 \
@@ -464,7 +473,7 @@ CODE -ROT    ( n1 n2 n3 --  n2 n3 n1)
               ENDCODE
 
 \ byte/word conversions
-CODE ><      ( n -- n )           \ swap bytes in n
+CODE ><      ( n -- n )            \ swap bytes in n
               TOS SWPB,            \ handy and only 1 instruction
               NEXT,
               ENDCODE
@@ -559,7 +568,7 @@ CODE 2-     ( n -- n)
               ENDCODE
 
 CODE 2*      ( n -- n)
-              TOS 1 SLA,   \ mpy is 52 clocks minimum. This is 14 clocks
+              TOS TOS ADD,  \ mpy is 52 clocks minimum. This is 14 clocks
               NEXT,
               ENDCODE
 
@@ -892,7 +901,7 @@ REGISTERS [IF]
 \ conventional do loops use 2 cells on the RSTACK
 cr .( Rstack based DO/LOOP )
 
-CODE <?DO> ( limit ndx -- )
+ CODE <?DO> ( limit ndx -- )
              *SP TOS CMP,       \ compare 2 #s
               @@1 JNE,          \ if they are not the same jump to regular 'do.' (BELOW)
               SP INCT,          \ remove limit
@@ -993,23 +1002,22 @@ CODE SKIP  ( c-addr u char -- c-addr' u')    \ skip matching chars
               NEXT,
               ENDCODE
 
-
-CODE SCAN   ( adr len char -- adr' len' )    \ find matching char
+ CODE SCAN   ( adr len char -- adr' len' )    \ find matching char
               TOS SWPB,                       \ silly machine needs this to compare memory to register
-              2 (SP) W MOV,                   \ get address->w
+              2 (SP) R8 MOV,                   \ get address->w
              *SP+ R1 MOV,                     \ POP count into R1, char is already in TOS
               NE IF,                          \ R1<>0 ?
                   BEGIN,
-                    TOS *W CMPB,              \ does character match?
+                    *R8 TOS CMPB,             \ does character match?
                     @@2 JEQ,                  \ YES, we are done, JUMP OUT
                      W INC,                   \ next character
                      R1 DEC,                  \ dec. loop counter
                   EQ UNTIL,                   \ hit end of string, jmp out
               ENDIF,
-@@2:          W *SP  MOV,                     \ store updated address on stack
+ @@2:          W *SP  MOV,                    \ store updated address on stack
               R1 TOS MOV,                     \ updated count to TOS
               NEXT,
-             ENDCODE
+              ENDCODE
 
 \ ===========================================================
 \ D I C T I O N A R Y   S E A R C H
@@ -1100,7 +1108,7 @@ cr .( CAMEL99 custom primitives)
 
 \ multi-tasking support
 CODE PAUSE   ( -- )             \ MULTI-TASKER switcher needed by I/O words in Kernel
-           _next >HSRAM CFA!     \ patch fast NEXT address (replaced for multi-tasking)
+            NEXT2 CFA!   \ patch fast NEXT address (replaced for multi-tasking)
             ENDCODE
 
 \ used in sprite control and very handy for byte/cell manipulation

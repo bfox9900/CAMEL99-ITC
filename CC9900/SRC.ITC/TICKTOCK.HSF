@@ -4,13 +4,13 @@
 \ impovements based on code from Tursi Atariage
 \ TMR! now loads from the Forth stack
 \ Jan 31, 2021 simplified JIFFS
+\ Dec 2021  removed JIFFS , replaced with TICKS which gives ~10mS resolution
 
 \ timer resolution:  64 clock periods, thus 64*333 = 21.3 microseconds
 \ Max Duration    :  ($3FFF) 16383 *64*333 ns = 349.2 milliseconds
-
 CROSS-ASSEMBLING
 [CC] DECIMAL [TC]
-CODE: TMR!   ( n -- )         \ load TMS9901 timer from stack
+CODE TMR!   ( n -- )         \ load TMS9901 timer from stack
              0 LIMI,
              R12 CLR,        \ CRU addr of TMS9901 = 0
              0   SBO,        \ SET bit 0 to 1, Enter timer mode
@@ -20,9 +20,9 @@ CODE: TMR!   ( n -- )         \ load TMS9901 timer from stack
              2 LIMI,
              TOS POP,
              NEXT,
-             END-CODE
+             ENDCODE
 
-CODE: TMR@   ( -- n)         \ read the TMS9901 timer
+CODE TMR@   ( -- n)         \ read the TMS9901 timer
              0 LIMI,
              TOS PUSH,
              R12 2 LI,      \ cru = 1 (honest, 2=1)
@@ -31,30 +31,19 @@ CODE: TMR@   ( -- n)         \ read the TMS9901 timer
             -1 SBZ,         \ RESET bit 1, exit timer mode
              2 LIMI,
              NEXT,
-             END-CODE
+             ENDCODE
 
-TARGET-COMPILING
 
- CODE: |-| ( x y -- x n )    \ : |-|   OVER - ABS ;
-            *SP TOS SUB,
-             TOS    ABS,    \ get ABS of subtraction
-             NEXT,
-             END-CODE
-
-\ Because JIFFS are 1/60 seconds, there is a lot of time while PAUSE
-\ switches to all the tasks.
-\ JIFFS give finest resolution for delays
-: JIFFS ( n -- )
-        0 ?DO
-            TMR@
+[CC] DECIMAL [TC]
+: TICKS  ( n -- )   \ n must be less than 4000. 4000 TICKS ~= 100 mS
+            TMR@ >R
             BEGIN
               PAUSE
-              TMR@ |-| 685 >
+              TMR@ R@ - ABS  OVER >
             UNTIL
-            DROP
-        LOOP ;
+            R> 2DROP
+;
 
-\ MS resolution limited to 1/60 second and minimum is 1/60 sec.
-: MS  ( n -- )  4 RSHIFT JIFFS ;  \ MS/16 = JIFFS
+: MS   ( n -- ) 10 /  0 ?DO  420 TICKS LOOP ;
 
 [CC] HEX [TC]

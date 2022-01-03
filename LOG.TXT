@@ -1,19 +1,18 @@
-Apr 15, 2018
+## Log 1st entry Apr 15, 2018
 
-Version 2.0.8
-
+### Version 2.0.8
 For this update we have changed some key low level words to CODE words.
 (HERE ALLOT) This has improved compilation speed.
 
 We changed >DIGIT and HOLD to CODE words and number output to the screen is
 over 50% faster.
 
-For better consistency with the Original CAMEL Forth code we put /STRING back 
+For better consistency with the Original CAMEL Forth code we put /STRING back
 into the HI level source file CAMEL2.HSF.
 It is still a CODE word as it was in V1.9 but it is no longer in 9900FAST.HSF.
 
 
-Nov 2 2019  Version 2.5
+### Nov 2 2019  Version 2.5
 Made final decisions on balance of CODE words and High Level Forth for the
 Kernel trading off size and speed. There is now only 1 version of CAMEL99 Forth.
 (Indirect threaded)
@@ -30,12 +29,28 @@ Bugs:
 - You cannot clear the screen while automotion is running. Re-define the word
 CLEAR to STOPMOTION CLEAR AUTOMOTION if you need to erase the screen with
 automotion running.
+Fixed: This was due to interrupts being enabled sometimes during VDP I/O.
 
-Note on DTC Version:
+### Note on DTC Version:
 DTC CAMEL99 was created for analysis. This has shown that although there is
 14% average speed increase in general over the ITC version the extra code size
 is not advantageous for the memory constrained TI-99.
 
-June 26, 2021
+### June 26, 2021
 Version 2.67D  fixes a lot of previous issues with the VDP chip driver.
 There were many things I did not understand in the past.
+
+
+### Camel V2.68 Notes
+July 20, 2021
+Found a bug in M+ after working on porting a PI digit calculator.
+M+ is also used in >NUMBER and so was a ticking bomb all this time.
+
+### Camel 2.68G
+Jan 2022
+Changed build method to use a building file FORTHITC.MAK
+Changed TI99IO file to use sub-routines for some operations.
+This is to allow future linking to Assembler if needed.
+Found bug in how to build SuperCart verion so CAML99SC running out of memory
+at HEX 6000 if the E/A SuperCart is installed. Works in Classic99 Emulator as
+well.

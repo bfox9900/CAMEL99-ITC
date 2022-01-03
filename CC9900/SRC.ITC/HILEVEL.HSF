@@ -1,9 +1,9 @@
-\ CAMEL99 Forth for the TI-99  un-optimized  version  11Apr2019
+\ CAMEL99 Forth for the TI-99  First build 11Apr2019
 \ Copyright (c) 2018 Brian Fox
 \ KILWORTH Ontario Canada
 \ brian.fox@brianfox.ca
 
-\ compiles with XFC99D.EXE cross-compiler
+\ compiles with XFC99X.EXE cross-compiler SEE: FORTHITC.MAK
 
 \ This program is free software; you can redistribute it and/or modify
 \ it under the terms of the GNU General Public License as published by
@@ -15,8 +15,9 @@
 \ The work derived from CAMEL Forth under the GNU General Public License.
 \ CamelForth (c) 2009 Bradford J. Rodriguez.
 \ Commercial inquiries for Camel Forth should be directed to:
-\ 115 First St., #105, Collingwood, Ontario L9Y 4W3 Canada
-\ or via email to bj@camelforth.com
+\    Dr. Bradford J. Rodriguez
+\    115 First St., #105, Collingwood, Ontario L9Y 4W3 Canada
+\    or via email to bj@camelforth.com
 
 \ History
 \ Oct 21 2019, replaced critical routines with CODE.
@@ -31,55 +32,12 @@
 \              Fixed bug in RAKE and fixed ISOLOOPS
 
 \ Jul 2021     V2.68 Corrected bug in M+ found in V2.67
+\ Dec 2021     V2.68G removes JIFFS. Replaced with TICKS, hi res timer.
+\ Jan 2022     create FORTHITC.MAK to build the project
 
-\ ===================[ COMPILER CONTROL VALUES ]======================
-CROSS-COMPILING
-
-FALSE  VALUE SLOWER     \ TRUE saves 30 bytes
-FALSE  VALUE HASHING
-FALSE VALUE CARTRIDGE
-
-\ ======================================================================
-\ M E M O R Y   U S A G E   D E F I N I T I O N S
-CROSS-COMPILING
-HEX
-       0FFFE   EQU EMEM    \ EMEM = "end of memory"
-   EMEM 0080 - EQU 'TIB    \ ADDRESS OF Terminal Input Buffer
-   EMEM 'TIB - EQU TIBSIZE \ 128 bytes
-
-\ ======================================================================
-\ Create FORTH stacks
-HEX
-     'TIB 2 -   EQU SP0    \ FORTH DATA stack base address
-     'TIB 100 - EQU RP0    \ FORTH RETURN stack base address
-
-\ ======================================================================
-\ configure cross-compiler header and threading mechanism
-CROSS-COMPILING
-
- INCLUDE CC9900\SRC.ITC\ITCTYPES.HSF   \ indirect threaded Forth words
-
-\ ======================================================================
-\ C O D E   P R I M I T I V E S
-
-[CC] cr .( Compile Forth Assembler primitives ...)
-
- INCLUDE CC9900\SRC.ITC\9900CODE.HSF  \ ASM primitives for TMS9900
- INCLUDE CC9900\SRC.ITC\TI99IO.HSF    \ VDP & KEY code
-
-\ ======================================================================
-\ T A R G E T   D E - C O M P I L E R
-\ debugging tool used to examine cross-compiler output
-
-CROSS-COMPILING
-FALSE [IF]   INCLUDE CC9900\SRC.ITC\TSEE.HSF   [THEN]
-
-\ ======================================================================
-\ C R O S S   C O M P I L E R   B O O T - S T R A P P I N G
-\ add loop and branch words to the cross-compiler (not the TARGET)
-
-CROSS-COMPILING
-INCLUDE CC9900\SRC.ITC\BOOTSTRP.HSF
+\ ITC is defined in FORTHITC.MAK
+\ compile will abort if file is compiled directly
+  ITC
 
 TARGET-COMPILING
 
@@ -94,12 +52,12 @@ TARGET-COMPILING
 cr .( Constants and VARIABLEs...)
 
 TARGET-COMPILING
-\ ASM/Equate       Forth Name
-\ -----------      ------------
- 'TIB     CONSTANT TIB
- SP0      CONSTANT SP0
- RP0      CONSTANT RP0
- \ TIBSIZE  CONSTANT TIB#
+
+\ fixed system memory locations
+ FF00   CONSTANT TIB
+ FF7C   CONSTANT SP0
+ FEEE   CONSTANT RP0
+
 
 \ Utility constants
         0 CONSTANT FALSE
@@ -171,16 +129,17 @@ VARIABLE H
 VARIABLE VP
 VARIABLE CURS     [CC] 205F CURS T! [TC]  \ BLANK and '_' in one VARIABLE
 VARIABLE VTOP
+\ VARIABLE WID-LINK
 
 ?stk
 \ ======================================================================
 [CC] cr .( Hi-level FORTH Primitives...)
 TARGET-COMPILING
 SLOWER [IF]
-     : HERE   ( -- addr) DP @  ;
+    : HERE   ( -- addr) DP @  ;
 [ELSE]
  ( faster HERE speeds up the compiler)
- CODE HERE   ( -- addr) TOS PUSH,  DP @@ TOS MOV,  NEXT, ENDCODE
+ CODE HERE   ( -- addr) TOS PUSH, TOS STWP,  24 (TOS) TOS MOV,  NEXT, ENDCODE
 [THEN]
 
 : ALLOT     ( n --)   DP +! ;
@@ -190,7 +149,7 @@ SLOWER [IF]
 : ALIGN     ( -- )   HERE ALIGNED DP ! ;
 : PAD       ( -- addr) HERE TPAD @ + ;
 : COMPILE   ( -- )  R> DUP 2+ >R @ COMPILE, ;
-: IMMEDIATE ( --)  01 LATEST @ 1-  C! ;
+: IMMEDIATE ( --)   01 LATEST @ 1-  C! ;
 : LITERAL   ( n -- n|~) STATE @ IF  COMPILE LIT  COMPILE,  THEN ;  XIMMEDIATE
 : ]         ( -- ) STATE ON  ;
 : [         ( -- ) STATE OFF ;  XIMMEDIATE
@@ -206,13 +165,7 @@ SLOWER [IF]
 
 : TUCK  ( w1 w2 --  w2 w1 w2 ) SWAP OVER ;
 
-0 [IF]
-
-    : 2>R   SWAP >R >R ;  \ these don't work ??
-    : 2R>   R> R> SWAP  ;
-
-[ELSE]
-
+\ double Rstack Forth2012
 CODE 2>R    ( d -- ) ( r-- n n)
               RP -4 ADDI,          \ 14
               TOS 2 (RP) MOV,      \ 22
@@ -228,7 +181,6 @@ CODE 2R>     ( -- d )
               TOS RPOP,            \ 22
               NEXT,              \ = 88
               ENDCODE
-[THEN]
 
 \ *G NOT standard forth. Nice native 9900 instructions
 CODE 1+! ( addr -- )  *TOS INC,  TOS POP,  NEXT,   ENDCODE
@@ -263,7 +215,7 @@ CODE WITHIN   ( n  lo  hi -- flag )
 
 : */MOD  ( n1 n2 n3 -- n4 n5) >R UM* R> M/MOD ;
 
-SLOWER [IF]
+-1 [IF]
  : S>D    ( n -- d)  DUP 0< ;
 
 [ELSE]
@@ -277,6 +229,7 @@ CODE S>D ( n -- d)
          NEXT,
          ENDCODE
 [THEN]
+
 : M+     ( d n -- d) S>D  D+ ;    \ * change from V2.67
 
 : /MOD   ( n1 n2 -- n3 n4) >R S>D R> M/MOD ;
@@ -347,7 +300,7 @@ CODE DUP>R  ( n -- n) TOS RPUSH,  NEXT, ENDCODE  \ used 3 times
             HERE BL OVER COUNT + C!  \ append blank character
 ;
 
-\ \ =====================================================================
+\ =====================================================================
 \ S T R I N G  T O  N U M B E R   C O N V E R S I O N
 [CC] CR .( CAMEL FORTH Number conversion)
  HEX
@@ -431,14 +384,14 @@ TARGET-COMPILING
 : SND!   ( c -- )  8400 C!  ;  \ 4 bytes, 277 uS
 
 : BEEP     ( -- )
-            80 SND! 5 SND!    \ precalulated values for OSC1 1390Hz
+            80 SND! 5 SND!    \ pre-calculated values for OSC1 1390Hz
             91 SND!           \ turn on OSC1 at -2 dB level
             AA MS             \ Delay ~ 170 mS
             9F SND! ;         \ turn off OSC1
 
 \ We use the HONK sound for ABORT like TI-BASIC does on errors
 : HONK     ( -- )
-            81 SND! 20 SND!   \ precalculated values for OSC1 218Hz
+            81 SND! 20 SND!   \ pre-calculated values for OSC1 218Hz
             90 SND!           \ turn on OSC1 at 0 dB level
             AA MS             \ Delay ~ 170 mS
             9F SND! ;         \ turn off OSC1
@@ -482,43 +435,37 @@ CODE LASTLN ( -- vaddr)
 \ =====================================================================
 \ *G Scrolling has been implemented in Forth using VREAD & VWRITE
 \ ** Uses un-allocated Dictionary as a temporary buffer to hold lines of text
-
-\ Notes: Using SEVENs program as a benchmark
-\ Buffer Lines	Sevens Speed
-\     1          	01:08.71
-\     2           01:02.13  10% faster
 : SCROLL ( buffer vaddr -- )
        PAUSE
        HERE 100 +     \ grab some space above Forth PAD
        TOPLN C/SCR @  ( -- buffer Vstart len)
        BOUNDS  ( -- buffer SCRend SCRstart)
        DO
-         I  C/L@ +  OVER  C/L@ 2* VREAD
-         DUP  I           C/L@ 2* VWRITE
-       C/L@ 2* +LOOP
+         I  C/L@ +  OVER  C/L@ 4* VREAD
+         DUP  I           C/L@ 4* VWRITE
+       C/L@ 4* +LOOP
        DROP
-       0 17 AT-XY  VPOS C/L@ BL VFILL
+       0 17 AT-XY VPOS C/L@ BL VFILL
 ;
 
 \ ======================================================================
 \ V D P   T E X T   O U T P U T
 
 [cc] HEX [tc]
-: <CR>   ( -- )  (CR) L/SCR = IF  SCROLL  THEN  ;
-: (EMIT) ( char -- ) CPUT IF  <CR>  THEN ;
+:  CR    ( -- )  (CR) L/SCR = IF  SCROLL  THEN  ;
+: (EMIT) ( char -- ) CPUT IF  CR  THEN ;
 : PAGE   ( -- ) TOPLN LASTLN OVER -  BL VFILL   0 0 AT-XY ;
 : BS     ( --)  VCOL DUP @ 1- 0 MAX  SWAP ! ;
 
 : EMIT   ( char -- )  \ shows how to handle control characters
           PAUSE
-          DUP 0A = IF  DROP <CR>   EXIT THEN
-          DUP 0D = IF  DROP <CR>   EXIT THEN
+          DUP 0D = IF  DROP CR     EXIT THEN
           DUP 08 = IF  DROP BS     EXIT THEN
          (EMIT) ;
 
-: CR     0A EMIT ;
-: (TYPE) ( addr cnt -- ) 0 ?DO COUNT (EMIT) LOOP ;
-: TYPE     ( addr cnt -- ) PAUSE (TYPE) DROP ;
+: TYPE ( addr cnt -- )
+\    DUP 0= IF  2DROP EXIT  THEN PAUSE
+    0 DO   COUNT (EMIT)   LOOP  DROP ;
 
 : SPACE  ( -- )   BL (EMIT) ;
 : SPACES ( n -- ) 0 MAX  0 ?DO  SPACE  LOOP ;
@@ -591,12 +538,12 @@ CODE >DIGIT  ( n -- c) \ ASM is 9 bytes, 4X faster
 
 : <#     ( --)   PAD HP ! ;
 
-SLOWER  [if]
+SLOWER [if]
    : HOLD   ( char -- )  HP DUP 1-! @ C! ;
 
 [else]  \ this took a while to get right :)
  CODE HOLD  ( char -- )
- \ *G HOLD is CODE. 4 bytes bigger, 9% faster number output than Forth version.
+ \ *G HOLD is CODE. 4 bytes bigger, 4..9% faster number output than Forth version.
            R1 STWP,        \ get workspace pointer
            26 (R1) DEC,    \ DEC address in HP user variable
            26 (R1) R1 MOV, \ put the address into R1
@@ -638,7 +585,7 @@ SLOWER  [if]
            BEGIN
               TIB DUP 80 ACCEPT SPACE    \ TIB is $80 (128) bytes long
             ( addr len) INTERPRET
-             STATE @ 0= IF  T."  ok"  THEN CR
+              STATE @ 0= IF  T."  ok"  THEN CR
            AGAIN ;
 
 : EVALUATE ( c-addr u -- j*x)
@@ -664,7 +611,7 @@ SLOWER  [if]
              CR
              CR T." * " TYPE  T."  ?" HONK
              SOURCE-ID @   ( if source is NOT console)
-             IF  T."  Line " LINES @ DECIMAL U.
+             0> IF  T."  Line " LINES @ DECIMAL U.
                  CR CR SOURCE TYPE
              THEN ABORT
            THEN 2DROP ;
@@ -743,11 +690,11 @@ VARIABLE 'FIND   \ *G vector for the action of find
 : '        ( -- xt) BL WORD FIND 0= ?ERR ;
 : [']      ( -- <name> ) ?COMP  '  T[COMPILE] LITERAL ; XIMMEDIATE
 
-: POSTPONE ( <name> -- ) \ *G replaces COMPILE and [COMPILE]
+ : POSTPONE ( <name> -- ) \ *G replaces COMPILE and [COMPILE]
           ?COMP
           BL WORD FIND DUP 0= ?ERR
           0< IF   COMPILE COMPILE
-          THEN  , ; XIMMEDIATE
+          THEN  COMPILE, ;  XIMMEDIATE
 
 \ ======================================================================
 \ T E X T   O U T P U T
@@ -804,7 +751,7 @@ TARGET-COMPILING
 \ ======================================================================
 \ TI-99 F I L E   S Y S T E M   I N T E R F A C E
 
-[CC] include CC9900\SRC.ITC\dsrlinkA.hsf
+[CC] include CC9900\SRC.ITC\DSRLINKA.hsf
 [CC] include CC9900\SRC.ITC\filesyX2.hsf
 
 \ ======================================================================
@@ -814,11 +761,11 @@ TARGET-COMPILING
       ALIGN
       CURRENT @  DUP>R   \ Fetch CURRENT wid, make a copy for later
 \ === compile the header fields ===
-      @ ,                \ fetch the NFA & compile in the LFA field
-      0 C,               \ compile the precedence byte (immediate flag)
-      HERE DUP LATEST !  \ HERE is now a new NFA, store NFA in LATEST
-      R>  !              \ & also in the current 'WID' we saved earlier
-      S, ;               \ compile the (addr len) string as the name.
+      @ ,                  \ fetch the NFA & compile in the LFA field
+      0 C,                 \ compile the precedence byte (immediate flag)
+      HERE DUP LATEST !    \ HERE is now a new NFA, store NFA in LATEST
+      R>  !                \ & also in the current 'WID' we saved earlier
+      S, ;                 \ compile the (addr len) string as the name.
 
 : HEADER   BL PARSE-WORD HEADER, ;
 
@@ -850,7 +797,7 @@ TARGET-COMPILING
 \ ======================================================================
 \ LOOPS AND BRANCH COMPILERS FOR THE TI-99 SYSTEM
 
-  include cc9900\SRC.ITC\ISOLOOPS.HSF
+[CC]  include cc9900\SRC.ITC\ISOLOOPS.HSF
 
 \ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 \  ===[ CANNOT COMPILE IF, ELSE, THEN, BEGIN UNTIL ETC. AFTER THIS ]===
@@ -882,10 +829,19 @@ CODE INIT
 \ *G : ENDCODE   ( -- )  ?CSP  ;
 \ *G ;CODE is moved to DSK1.SYSTEM ***
 
+\ *new* Added VER string for easy updates
+SUPERCART
+[IF]
+     : VER   TS" 2.68G SuperCart" ;
+[ELSE]
+     : VER   TS" 2.68G" ;
+[THEN]
+
 [CC] HEX
 \ ======================================================================
 \ B O O T   U P   C O D E
 TARGET-COMPILING
+
 : WARM       ( -- )
 \ *G restarts Forth but does not load DSK1.START
               80 83C2 C!                    \ disable user interrupts
@@ -901,7 +857,7 @@ TARGET-COMPILING
               LATEST DUP CONTEXT ! CURRENT !  \ FORTH DEFINITIONS
               FLOOR ON
               TEXT                          \ VDP start screen
-              T." CAMEL99 Forth V2.68"
+              T." CAMEL99 Forth " VER TYPE
               DECIMAL                       \ default to base 10
 ;
 
@@ -911,14 +867,14 @@ TARGET-COMPILING
               TS" DSK1.START" INCLUDED
               ABORT ;
 
-\ ======================================================================
+\ =====================================================================
 \ define target comment words
 TARGET-COMPILING
 : (         T[CHAR] ) PARSE 2DROP ; XIMMEDIATE
 : \                 1 PARSE 2DROP ; XIMMEDIATE
 
 [CC]
-\ ======================================================================
+\ =====================================================================
 \ TARGET Colon, :NONAME and Semi-colon  definitions
 \ X: ;X are aliases for the cross-compiler : and ;
 
@@ -937,33 +893,41 @@ cr .( Forth Kernel compiled completely")
 \ ======================================================================
 \  P A T C H   T H E   T A R G E T  S Y S T E M   V A R I A B L E S
 
-[CC]   XLATEST @ DUP LATEST T!
+[CC]
+  XLATEST @ DUP LATEST T! ORGLAST T! ( align TARGET dictionary to compiler)
 
-                    ORGLAST T!
-            THERE   DUP DP T!
-                      ORGDP T!
+ SUPERCART
+ [IF]
+
+   A000  DUP DP T! ORGDP T!   ( SUPERCART must put dictionary in HI RAM )
+
+ [ELSE]
+
+   THERE   DUP DP T!  ORGDP T!
+
+ [THEN]
+
+ T' COLD BOOT T!  ( set the boot word to run )
+
 
 \ ======================================================================
 \ P A T C H   T A R G E T   I M A G E  F I L E   H E A D E R
 
-CARTRIDGE
+SUPERCART
 [IF]
-     FILENAME: CAM268SC
+     FILENAME: CAML99SC
 [ELSE]
-     FILENAME: CAMEL268
+     FILENAME: CAMEL99
 [THEN]
-         T' INIT >BODY BOOT-ADDRESS T!
 
-\ SET THE BOOT WORD TO RUN
+     T' INIT >BODY BOOT-ADDRESS T!
 
-         T' COLD BOOT T!
-
-          END.   ( report compile time and stats)
+     END.       ( report compile time and stats)
 
 \ ======================================================================
 \ S A V E   B I N A R Y  I M A G E   F I L E
 
-         FILENAME$ $SAVE-EA5.     \ FILENAME$ was set by FILENAME:
+         FILENAME$ $SAVE-EA5.     ( FILENAME$ was set by FILENAME: )
 
 \ ======================================================================
 \  C O P Y   T O   T I - 9 9   V I R T U A L   D I S K

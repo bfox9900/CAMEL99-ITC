@@ -44,8 +44,9 @@ l: H1300   DATA 1300
 \ Allocate a small buffer to parse the device name
 \ l: NAMBUF   BSS 6    \ TALLOT
 
-\ use memory below Forth RETURN stack for workspace & name buffer
-[CC] RP0 80 -     [TC] EQU DREGS
+\ use memory ABOVE Forth RETURN stack (ie: use high end of DATA stack)
+\ for workspace & name buffer
+[CC] RP0 0A +      [TC] EQU DREGS
 [CC] 4 2* DREGS + [TC] EQU DREG(4)  \ address of dsr wksp R4
 [CC] 5 2* DREGS + [TC] EQU DREG(5)  \ compute address of DREGS register 5
 [CC] DREGS 8 -    [TC] EQU NAMBUF
@@ -91,7 +92,7 @@ l: DSR1                     \ headless code
 \ ==== GPL WORKSPACE ====
        83E0         LWPI,    \ SROM (search ROM device list)
        R1           CLR,     \ MAGIC GPL REG. 1 to call DSR, returns error
-       R2   4000    LI,    \ ROM start addr -> R2
+       R2   4000    LI,      \ ROM start addr -> R2
        H2000 @@ CYC1 @@ MOV, \ init the CYC1 variable ??
        R12     0F00 LI,      \ init CRU base to 0F00
        @@A          JMP,

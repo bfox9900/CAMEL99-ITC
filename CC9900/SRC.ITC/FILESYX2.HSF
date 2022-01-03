@@ -83,7 +83,8 @@ CODE [PAB   ( -- adr) TOS PUSH,  ^PAB @@ TOS MOV,  NEXT, ENDCODE
            BEGIN
              2 FILEOP 0=                   \ file read operation
            WHILE
-             HERE 200 + DUP FGET           \ read line to temp mem buffer
+             RP0 100 - DUP FGET              \ 160 bytes below top of RP works
+
              ( -- addr len ) INTERPRET     \ interpret the buffer
              LINES 1+!                     \ count the line
            REPEAT
