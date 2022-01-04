@@ -6,7 +6,7 @@ space. A return to a common address setting sub-routine was implemented
 A fix was made to DOCON to allow building a super-cart version that give Camel99
 Forth all of available RAM because the kernel resides in cartidge memory space.
 Also a FORTHITC.MAK file was created for easier understanding of the file
-compiling order and compiler switches. 
+compiling order and compiler switches.
 
 ### V2.68
 This version fixes a long standing bug in M+ that was detected by Ed of DxForth

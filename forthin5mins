@@ -31,10 +31,10 @@
 . . . . . . .
 
 \ ------------------------------ Basic Arithmetic ------------------------------
-\ set the interpreter to DECIMAL arithimetic with:
+\ set the interpreter to DECIMAL arithmetic with:
 DECIMAL    \ ok
 
-\ Arithmetic operators (+,-,*,/ etc) are also just Forth WORDs
+\ Arithmetic operators (+ - * /  etc.) are also just Forth WORDs
 \ They operate on numbers sitting on the stack
 \ '+' takes two inputs, adds them and leaves the answer on the stack
 
@@ -80,7 +80,7 @@ DROP DROP DROP DROP DROP DROP DROP DROP DROP DROP DROP DROP DROP
 
 DROP DROP DROP DROP DROP
 
-\ duplicate the second item to the top:    
+\ duplicate the second item to the top:
 1 2 3 4 OVER  .S
 
 DROP DROP DROP DROP DROP
@@ -125,7 +125,7 @@ HELLO
 \ In IMMEDIATE mode "dot-quote" simply has to type a string to the output device.
 ." Print this now!"
 
-\ You can also print text in the interpret mode ONLY using .(  
+\ You can also print text in the interpret mode ONLY using .(
 \ This is called a talking comment.
 
 CR .( This message will print from the interpreter)
@@ -163,7 +163,7 @@ FALSE .    \ 0 ok
 20 ?>64
 
 \ ------------------------------------ Loops ------------------------------
-\ looping words are compile-only. (must be inside a colon defintion)
+\ looping words are compile-only. (must be inside a colon definition)
 
 : MYLOOP ( -- ) 5 0 DO ." Hello!  " LOOP ; \ ok
 
@@ -189,14 +189,14 @@ ONE-TO-12
 
 : SQUARES ( n -- ) 0 ?DO I SQUARE . LOOP ;   \ ok
 \            0 1 4 9 16 25 36 49 64 81 ok
-10 SQUARES   
+10 SQUARES
 0 SQUARES
 
 \ Change the looping "step" with `+LOOP`:
 
 : THREES ( n n -- ) 3 ?DO  I .   3 +LOOP ;  \ ok
 \          3 6 9 12 15 18 ok
-20 THREES 
+20 THREES
 
 \ Indefinite loops with `BEGIN` <stuff to do>  `AGAIN`:
 ( **DONT' RUN THIS. YOU CAN'T STOP IT ***)
@@ -309,7 +309,7 @@ MYNUMBERS 1 CELLS + ?    \ 9001 ok
 
 \ ------------------------------ The Return Stack ------------------------------
 \ Just like a sub-routine stack, the Forth return stack holds the address (pointer)
-\ of the word that called the currently running word.  This lets a Forth Word'return'
+\ of the word that called the currently running word.  This lets a Forth Word 'return'
 \ to the word that called it. (ie: where it came from)
 \ In CAMEL99 the return stack also holds the limit and index of any running DO LOOP.
 
