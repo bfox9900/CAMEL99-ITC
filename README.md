@@ -1,13 +1,29 @@
 # CAMEL99 for TI-99 V2.68G Jan 2022
 
 ### V2.68G
-Primarily a maintenance update with a number changes to the VDP driver to save
-space. A return to a common address setting sub-routine was implemented
-A fix was made to DOCON to allow building a super-cart version that give Camel99
-Forth all of available RAM because the kernel resides in cartidge memory space.
-Also a FORTHITC.MAK file was created for easier understanding of the file
-compiling order and compiler switches.
+What started as a maintenance update became something bigger.
+#### VDP Driver changes
+- A return to a common address setting sub-routine to save space in the kernel.
+The performance difference is not worth worrying about.
+- Some VDP routines now exist in memory as "leaf" sub-routines but are not #in
+the dictionary.
 
+#### "EXECUTOR" word Changes
+- A fix was made to DOCON DOVAR DOUSER due my owm misunderstanding. These words
+were compiled as CODE words with an ITC pointer in the CFA. WRONG!
+Each CFA of these words should have started with the actual code.
+
+#### SuperCart Forth
+With the Executor words fixed we could reliably create a SUPERCART version of
+Camel99 Forth that resides in lower RAM, cartridge space when an Editor
+Assembler cart has the 8K RAM chip installed.
+
+#### Source code Re-Org
+- FORTHITC.MAK file was created for easier understanding of the file
+compiling order and compiler switches.
+- Hi level Forth words and a few CODE words are now in HILEVEL.HSF
+Many files INCLUDEs are still embedded in the HILEVEL.HSF file.
+**************************************************************************
 ### V2.68
 This version fixes a long standing bug in M+ that was detected by Ed of DxForth
 fame. D+ has been added to the 9900CODE.HSF file and M+ is now a Forth word.
