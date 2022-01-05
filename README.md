@@ -5,7 +5,7 @@ What started as a maintenance update became something bigger.
 #### VDP Driver changes
 - A return to a common address setting sub-routine to save space in the kernel.
 The performance difference is not worth worrying about.
-- Some VDP routines now exist in memory as "leaf" sub-routines but are not #in
+- Some VDP routines now exist in memory as "leaf" sub-routines but are not in
 the dictionary.
 
 #### "EXECUTOR" word Changes
