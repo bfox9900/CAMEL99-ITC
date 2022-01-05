@@ -17,23 +17,21 @@ CROSS-COMPILING
                  TRUE ABORT" Compile halted"
               THEN ;
 
-: (CODE:)       TCREATE:  \ make the word header(TCREATE: Taligns when done)
- \ **UNDERSTAND**
-                THERE CELL+ CFA,  \ the CFA of a code word, points to the next CELL address,
-                                  ( which is where the machine code starts)
-
-                tcodewords 1+!    \ count the new code word for COMPILER report
-                TALIGN ;
+: (CODE:)      ;
 
 : CODE         !CSP              \ record the stack pointer for error checking
-                (CODE:)           \ create the code word header
-                NEW-JMPTABLE      \ init the jump table
-                DOES> TCODE-ERR ; \ if you try to run these words they error out
+               NEW-JMPTABLE      \ init the jump table
+               TCREATE:
+               THERE 2+ CFA,  \ the CFA of a code word, points to the next CELL address,
 
-: +CODE        (CODE:)           \ keep same jump-table but add this label inside a definition
-                                  \ so we can jump from word to word
-                                  \ *** DOES NOT NEED END-CODE ***
-                DOES> TCODE-ERR ;
+               tcodewords 1+!    \ count the new code word for COMPILER report
+               DOES> TCODE-ERR ; \ if you try to run these words they error out
+
+: +CODE        !CSP
+               TCREATE:
+               THERE 2+ CFA,
+               tcodewords 1+!
+               DOES> TCODE-ERR ;
 
 : ENDCODE      ?CODE-ERR ;
 
@@ -45,27 +43,28 @@ CROSS-COMPILING
 
 CROSS-COMPILING
 : CREATE
-                TCREATE:             \ compile time: create a dual header and record the Target LFA in Host Forth
+                TCREATE:             \ compile time: create a dual header and record the Target NFA in Host Forth
                 'DOVAR  cfa,         \ compile the XT of 'dovar' into the TARGET CFA
                                      \ (PFA is empty)
                 DOES> @ nfa>PFA ;    \ Run-time: fetch the nfa we stored and convert to PFA (pointer to the data)
 
 : VARIABLE
-                TCREATE:             \ compile time: create a dual header and record the Target LFA in Host Forth
+                TCREATE:             \ compile time: create a dual header and record the Target NFA in Host Forth
                 'DOVAR  cfa,         \ compile the XT of 'dovar' into the TARGET CFA
                 0 T,                 \ compile a zero into the PFA
 
                 DOES> @ nfa>PFA ;    \ Run-time: fetch the nfa we stored and convert to PFA (pointer to the data)
 
-: 2VARIABLE:
-                TCREATE:             \ compile time: create a dual header and record the Target LFA in Host Forth
-                'DOVAR  cfa,         \ compile the XT of 'dovar' into the TARGET CFA
+: 2VARIABLE
+                TCREATE:             \ compile time: create a dual header and record the Target NFA in Host Forth
+                'DOVAR cfa,         \ compile the XT of 'dovar' into the TARGET CFA
                 0 T, 0 T,            \ make space for 2 cells and init them to 0
 
                 DOES> @ nfa>PFA ;    \ Run-time: fetch the LFA we stored and convert to PFA (pointer to the data)
 
 : CONSTANT                          \ CONSTANT: words are used like a normal constant for debugging and compiling on the HOST
-                TCREATE:             \ compile time: create a dual header and record the Target LFA in Host Forth
+                TCREATE:             \ compile time: create a dual header and record the Target NFA in Host Forth
+\ compile into the target word header
                 'DOCON  cfa,         \ compile the 'docon' XT into this CFA
                 ( n) T,              \ compile the actual number into the next CELL which is the TARGET word's PFA
 

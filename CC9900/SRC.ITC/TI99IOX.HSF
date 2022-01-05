@@ -149,7 +149,7 @@ CODE VFILL ( VDP-addr count char-- )
 \      32 USER: VROW
 \      34 USER: VCOL
 
-7E USER: VPG  \ Free space in scratchpad RAM used for VDP page# USER VARIABLE
+7E USER VPG  \ Free space in scratchpad RAM used for VDP page# USER VARIABLE
 
 CODE >VPOS ( col row -- vaddr) \ compute a VDP screen address
          R1         STWP,

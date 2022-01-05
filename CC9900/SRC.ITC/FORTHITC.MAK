@@ -3,10 +3,10 @@
 CROSS-COMPILING
 
 \ compiler switches
-TRUE  VALUE ITC
+TRUE  VALUE ITC          \ used to prevent directly compiling HILEVEL.HSF
 FALSE VALUE SLOWER       \ TRUE saves 22 bytes
 FALSE VALUE HASHING
-TRUE  VALUE SUPERCART
+TRUE VALUE SUPERCART
 
  INCLUDE CC9900\SRC.ITC\ITCTYPES.HSF   \ CROSS-Compiler Extensions
 
