@@ -59,11 +59,16 @@ There is also a Glossary for the Forth 8K kernel and secondary reference
 that is Glossary for the library files in the DOCS Folder
 
 #### S"   
-S" has ANS standard for compiling strings into definitions.
-BUT it is non-standard because it is an state smart word. Does different things for compiling and interpreting
-It now accepts multiple strings in interpreting mode as long they are input on the same line.
-Example:   S"  String #1"  S" String#2 "  S" String #3"  <ENTER>
-                returns three separate stack strings to the data stack.
+S" has ANS standard for compiling strings into definitions. BUT it is
+non-standard because it is an state smart word. Does different things for
+compiling and interpreting It now accepts multiple strings in interpreting mode
+as long they are input on the same line.
+
+Example:   
+`S"  String #1"  S" String#2`
+`S" String #3"  <ENTER>`
+
+returns three separate stack strings to the data stack.
 
 ### Smaller Library Files
 ANSFILES, GRAFIX
@@ -71,19 +76,39 @@ Faster number printing and text output.
 
 ### ABOUT CAMEL99 Forth
 ------------------------
-CAMEL99 Forth was built as an educational exercise to learn how to cross-compile Forth to a different CPU using an existing Forth system. It has become a functional ISO/Forth system for the TI-99 computer that implements all of the CORE wordset, much of the EXTENDED wordset.
+CAMEL99 Forth was built as an educational exercise to learn how to cross-compile
+Forth to a different CPU using an existing Forth system. It has become a
+functional ISO/Forth system for the TI-99 computer that implements all of the
+CORE wordset, much of the EXTENDED wordset.
 
-Rather than starting from scratch CAMEL99 uses CAMEL Forth by Dr. Brad Rodriguez for the hi-level Forth code. This has been "tweeked" and dare I say improved a little to better fit the very slow TI-99 computer. (More things written in Assembler was the answer)
+Rather than starting from scratch CAMEL99 uses CAMEL Forth by Dr. Brad Rodriguez
+for the hi-level Forth code. This has been "tweeked" and dare I say improved a
+little to better fit the very slow TI-99 computer. (More things written in
+Assembler was the answer)
 
-The low level primitives are written in Forth Assembler. The file 9900CODE.HSF also contains the low level drivers for TI-99 Keyboard and Video display I/O. The final console interfaces are written in Forth including the screen scrolling code, just to demonstrate how it can be done in hi-level Forth.
+The low level primitives are written in Forth Assembler. The file TI99IOX.HSF
+contains the low level drivers for TI-99 Keyboard and Video display I/O. The
+final console interfaces are written in Forth including the screen scrolling
+code, just to demonstrate how it can be done in hi-level Forth.
 
-In CAMEL99 Version 2 we squeezed enough disk support into the 8K kernel to have the word INCLUDED in the system.  This let's the system compile Forth code from disk which means it can extend itself.
+In CAMEL99 Version 2 we squeezed enough disk support into the 8K kernel to have
+the word INCLUDED in the system.  This let's the system compile Forth code from
+disk which means it can extend itself.
 
 ### Made Friendly for BASIC Programmers
-Users of TI BASIC who want to explore Forth might also find this system useful. With that in mind it has a string package that provides many of the features of BASIC including the use of a string stack and automated stack management. It also has an INPUT statement for strings and numbers.  You will also find the TI BASIC graphics functions are emulated in the library file called GRAFIX.  The instruction manual has been written to compare BASIC and Forth and there are example programs where the BASIC code is side by side with Forth for faster understanding for those new to Forth.
+Users of TI BASIC who want to explore Forth might also find this system useful.
+With that in mind it has a string package that provides many of the features of
+BASIC including the use of a string stack and automated stack management. It
+also has an INPUT statement for strings and numbers.  You will also find the TI
+BASIC graphics functions are emulated in the library file called GRAFIX.  The
+instruction manual has been written to compare BASIC and Forth and there are
+example programs where the BASIC code is side by side with Forth for faster
+understanding for those new to Forth.
 
 You can load all the "training wheels" with one command: INCLUDE DSK1.BASICHLP
-... and the files compile into the system. This gives the BASIC programmer most of TI BASIC'S features, but it still requires learning Forth's way of thinking to use it.  
+... and the files compile into the system. This gives the BASIC programmer most
+of TI BASIC'S features, but it still requires learning Forth's way of thinking
+to use it.  
 
 
 ### How it was made
@@ -133,7 +158,7 @@ ALL the TI-99 source code files for CAMEL99 must be in TI-99 DV80 format. DV80 m
 (COPIES OF THE LIBRARY SOURCE FILES FILES ARE IN /LIB.ITC AS TEXT FILES)
 
 A simple way to create TI Files on a PC is to open the TI Editor (Menu Option 1) and start the editor (Menu Option 1).
-Using the the Classic99 emulator on your PC you can paste text into the TI editor window and then save the file in the default DV80 format by following the on screen prompts. It's a quaint old fashioned editor but it works.  Intructions on how to use the editor are in the manual here:
+Using the Classic99 emulator on your PC you can paste text into the TI editor window and then save the file in the default DV80 format by following the on screen prompts. It's a quaint old fashioned editor but it works.  Instructions on how to use the editor are in the manual here:
 
 https://github.com/bfox9900/CAMEL99-V2/tree/master/DOCS
 
