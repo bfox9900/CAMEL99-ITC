@@ -24,6 +24,11 @@ With the Executor words fixed we could reliably create a SUPERCART version of
 Camel99 Forth that resides in lower RAM, cartridge space when an Editor
 Assembler cart has the 8K RAM chip installed.
 
+#### Changes to Code in Hi-Speed RAM
+Commonly used code snippets are copied to hi-speed RAM at boot-up. We removed
+DROP and added DUP and +  which are deemed to be more frequently used in the
+literature. Routines in 16bit RAM: EXIT NEXT ?BRANCH BRANCH ENTER LIT @ DUP +
+
 #### Source code Re-Org
 - FORTHITC.MAK file was created for easier understanding of the file
 compiling order and compiler switches.
