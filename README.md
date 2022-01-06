@@ -87,9 +87,9 @@ You can load all the "training wheels" with one command: INCLUDE DSK1.BASICHLP
 
 
 ### How it was made
-- CAMEL99 begins with a TMS9900 Cross-Assembler written in HsForth, an MS DOS Forth system written in the 1990s. (The cross-compiler is XFC99.EXE)
+- CAMEL99 begins with a TMS9900 Cross-Assembler written in HsForth, an MS DOS Forth system written in the 1990s. (The cross-compiler is XFC99X.EXE)
 
-- With the cross-assembler we define the primitive operations in the file 9900FAST.HSF.
+- With the cross-assembler we define the primitive operations in the file 9900CODE.HSF.
 
 - The Cross-Assembler is combined with a Cross-compiler, which gives us the tools to create the Forth dictionary, a linked list of structures in the TARGET memory image. This lets us give each primitive a "header" (name) in the dictionary with pointers to the code that they will run.
 
