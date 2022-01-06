@@ -32,8 +32,9 @@ literature. Routines in 16bit RAM: EXIT NEXT ?BRANCH BRANCH ENTER LIT @ DUP +
 #### Source code Re-Org
 - FORTHITC.MAK file was created for easier understanding of the file
 compiling order and compiler switches.
-- Hi level Forth words and a few CODE words are now in HILEVEL.HSF
-  Many files INCLUDEs are still embedded in the HILEVEL.HSF file.
+- Hi level Forth words and a few CODE words are now in HILEVEL.HSF.
+
+  Other INCLUDE statements are still embedded in the HILEVEL.HSF file.
 
 **************************************************************************
 ### V2.68
