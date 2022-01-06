@@ -2,6 +2,12 @@
 
 ### V2.68G
 What started as a maintenance update became something bigger.
+
+#### JIFFS timer is Removed
+The JIFFS timer had more overhead than needed. It is replaced with TICKS.
+TICKS uses the 9901 timer as it's reference. TICKS is now used to create MS.
+MS resolution has been improved to ~10 milli-seconds .
+
 #### VDP Driver changes
 - A return to a common address setting sub-routine to save space in the kernel.
 The performance difference is not worth worrying about.
