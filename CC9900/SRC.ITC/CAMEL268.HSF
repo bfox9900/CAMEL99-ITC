@@ -1,9 +1,9 @@
-\ CAMEL99 Forth for the TI-99  First build 11Apr2019
+\ CAMEL99 Forth for the TI-99  un-optimized  version  11Apr2019
 \ Copyright (c) 2018 Brian Fox
 \ KILWORTH Ontario Canada
 \ brian.fox@brianfox.ca
 
-\ compiles with XFC99X.EXE cross-compiler SEE: FORTHITC.MAK
+\ compiles with XFC99D.EXE cross-compiler
 
 \ This program is free software; you can redistribute it and/or modify
 \ it under the terms of the GNU General Public License as published by
@@ -15,9 +15,8 @@
 \ The work derived from CAMEL Forth under the GNU General Public License.
 \ CamelForth (c) 2009 Bradford J. Rodriguez.
 \ Commercial inquiries for Camel Forth should be directed to:
-\    Dr. Bradford J. Rodriguez
-\    115 First St., #105, Collingwood, Ontario L9Y 4W3 Canada
-\    or via email to bj@camelforth.com
+\ 115 First St., #105, Collingwood, Ontario L9Y 4W3 Canada
+\ or via email to bj@camelforth.com
 
 \ History
 \ Oct 21 2019, replaced critical routines with CODE.
@@ -32,12 +31,56 @@
 \              Fixed bug in RAKE and fixed ISOLOOPS
 
 \ Jul 2021     V2.68 Corrected bug in M+ found in V2.67
-\ Dec 2021     V2.68G removes JIFFS. Replaced with TICKS, hi res timer.
-\ Jan 2022     create FORTHITC.MAK to build the project
+\ Dec 2021     V2.68G removed JIFFS. Replaced with TICKS, hi res timer.
 
-\ ITC is defined in FORTHITC.MAK
-\ compile will abort if file is compiled directly
-  ITC
+\ ===================[ COMPILER CONTROL VALUES ]======================
+CROSS-COMPILING
+
+FALSE VALUE SLOWER     \ TRUE saves 26 bytes
+FALSE VALUE HASHING
+FALSE VALUE SUPERCART
+
+\ ======================================================================
+\ M E M O R Y   U S A G E   D E F I N I T I O N S
+CROSS-COMPILING
+HEX
+       0FFFE   EQU EMEM    \ EMEM = "end of memory"
+   EMEM 0080 - EQU 'TIB    \ ADDRESS OF Terminal Input Buffer
+   EMEM 'TIB - EQU TIBSIZE \ 128 bytes
+
+\ ======================================================================
+\ Create FORTH stacks
+HEX
+     'TIB 2 -   EQU SP0    \ FORTH DATA stack base address
+     'TIB 90 - EQU RP0    \ FORTH RETURN stack base address
+
+\ ======================================================================
+\ configure cross-compiler header and threading mechanism
+CROSS-COMPILING
+
+ INCLUDE CC9900\SRC.ITC\ITCTYPES.HSF   \ indirect threaded Forth words
+
+\ ======================================================================
+\ C O D E   P R I M I T I V E S
+
+[CC] cr .( Compile Forth Assembler primitives ...)
+
+ INCLUDE CC9900\SRC.ITC\9900CODE.HSF  \ ASM primitives for TMS9900
+ INCLUDE CC9900\SRC.ITC\TI99IOX.HSF    \ VDP & KEY code
+
+\ ======================================================================
+\ T A R G E T   D E - C O M P I L E R
+\ debugging tool used to examine cross-compiler output
+
+CROSS-COMPILING
+FALSE [IF]   INCLUDE CC9900\SRC.ITC\TSEE.HSF   [THEN]
+
+\ ======================================================================
+\ C R O S S   C O M P I L E R   B O O T - S T R A P P I N G
+\ add loop and branch words to the cross-compiler (not the TARGET)
+
+CROSS-COMPILING
+INCLUDE CC9900\SRC.ITC\BOOTSTRP.HSF
 
 TARGET-COMPILING
 
@@ -52,14 +95,14 @@ TARGET-COMPILING
 cr .( Constants and VARIABLEs...)
 
 TARGET-COMPILING
+\ ASM/Equate       Forth Name
+\ -----------      ------------
+ 'TIB     CONSTANT TIB
+ SP0      CONSTANT SP0
+ RP0      CONSTANT RP0
+ \ TIBSIZE  CONSTANT TIB#
 
-\ fixed system memory locations
- FF00   CONSTANT TIB
- FF7C   CONSTANT SP0
- FEEE   CONSTANT RP0
-
-
-\ Utility constants
+\ Utility constants 
         0 CONSTANT FALSE
        -1 CONSTANT TRUE
         0 CONSTANT 0
@@ -165,7 +208,13 @@ SLOWER [IF]
 
 : TUCK  ( w1 w2 --  w2 w1 w2 ) SWAP OVER ;
 
-\ double Rstack Forth2012
+0 [IF]
+
+    : 2>R   SWAP >R >R ;  \ these don't work ??
+    : 2R>   R> R> SWAP  ;
+
+[ELSE]
+
 CODE 2>R    ( d -- ) ( r-- n n)
               RP -4 ADDI,          \ 14
               TOS 2 (RP) MOV,      \ 22
@@ -181,6 +230,7 @@ CODE 2R>     ( -- d )
               TOS RPOP,            \ 22
               NEXT,              \ = 88
               ENDCODE
+[THEN]
 
 \ *G NOT standard forth. Nice native 9900 instructions
 CODE 1+! ( addr -- )  *TOS INC,  TOS POP,  NEXT,   ENDCODE
@@ -215,7 +265,7 @@ CODE WITHIN   ( n  lo  hi -- flag )
 
 : */MOD  ( n1 n2 n3 -- n4 n5) >R UM* R> M/MOD ;
 
--1 [IF]
+SLOWER [IF]
  : S>D    ( n -- d)  DUP 0< ;
 
 [ELSE]
@@ -229,7 +279,6 @@ CODE S>D ( n -- d)
          NEXT,
          ENDCODE
 [THEN]
-
 : M+     ( d n -- d) S>D  D+ ;    \ * change from V2.67
 
 : /MOD   ( n1 n2 -- n3 n4) >R S>D R> M/MOD ;
@@ -763,7 +812,7 @@ TARGET-COMPILING
 \ === compile the header fields ===
       @ ,                  \ fetch the NFA & compile in the LFA field
       0 C,                 \ compile the precedence byte (immediate flag)
-      HERE DUP LATEST !    \ HERE is now a new NFA, store NFA in LATEST
+      HERE DUP LATEST !   \ HERE is now a new NFA, store NFA in LATEST
       R>  !                \ & also in the current 'WID' we saved earlier
       S, ;                 \ compile the (addr len) string as the name.
 
@@ -779,7 +828,7 @@ TARGET-COMPILING
  : VARIABLE  ( -- )   CREATE                  0 COMPILE, ;
 
 \ (:noname) came from studying gforth. It's a nice factor.
- : (:NONAME) ( -- )  T['] DOCOL @ COMPILE,  HIDE  ]  ;
+: (:NONAME) ( -- )  T['] DOCOL @ COMPILE,  HIDE  ]  ;
 
 \ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 \  =====[ CANNOT DEFINE ANY CONSTANT, VARIABLE OR USER AFTER THIS ]=====
@@ -788,10 +837,10 @@ TARGET-COMPILING
 \ D O E S   S U P P O R T
 : (;CODE) ( -- )  R> LATEST @ NFA>CFA !  ;
 
-\ 06A0 = BL @XXXX   0460 = B @XXXX
+\ 06A0 = BL   0460 = B
 : DOES>    ( -- )
            COMPILE (;CODE)
-           06A0 COMPILE,  t['] DODOES COMPILE,   \ compiles: BL @DODOES
+           06A0 COMPILE,  PFA' DODOES COMPILE,   \ compiles: BL @DODOES
            ; XIMMEDIATE
 
 \ ======================================================================
@@ -830,18 +879,12 @@ CODE INIT
 \ *G ;CODE is moved to DSK1.SYSTEM ***
 
 \ *new* Added VER string for easy updates
-SUPERCART
-[IF]
-     : VER   TS" 2.68G SuperCart" ;
-[ELSE]
-     : VER   TS" 2.68G" ;
-[THEN]
+: VER  TS" 2.68G" ;
 
 [CC] HEX
 \ ======================================================================
 \ B O O T   U P   C O D E
 TARGET-COMPILING
-
 : WARM       ( -- )
 \ *G restarts Forth but does not load DSK1.START
               80 83C2 C!                    \ disable user interrupts
@@ -863,11 +906,7 @@ TARGET-COMPILING
 
 : COLD        WARM
 \ *G performs WARM start includes DSK1.START and runs ABORT
-\ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-\ debugging
-  HEX  CR HERE U.  LATEST @ U.  CONTEXT @  U.   CONTEXT @ @ U.
-
-\ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+              RP0 RP!  SP0 SP!              \ RESET Forth stacks
               TS" DSK1.START" INCLUDED
               ABORT ;
 
@@ -897,42 +936,33 @@ cr .( Forth Kernel compiled completely")
 \ ======================================================================
 \  P A T C H   T H E   T A R G E T  S Y S T E M   V A R I A B L E S
 
-[CC]
-  XLATEST @ DUP LATEST T! ORGLAST T! ( align TARGET dictionary to compiler)
+[CC]   XLATEST @ DUP LATEST T!
 
- SUPERCART
- [IF]
-
-  THERE DP T!
-  HEX A000 ORGDP T!   ( SUPERCART must start dictionary in HI RAM )
-
- [ELSE]
-
-   THERE DUP DP T!  ORGDP T!
-
- [THEN]
-
- T' COLD BOOT T!  ( set the boot word to run )
+                    ORGLAST T!
+            THERE   DUP DP T!
+                      ORGDP T!
 
 \ ======================================================================
 \ P A T C H   T A R G E T   I M A G E  F I L E   H E A D E R
 
-T' INIT  >BODY BOOT-ADDRESS T!
-
-SUPERCART
+CARTRIDGE
 [IF]
-     FILENAME: CAML99SC
+     FILENAME: CAM268SC
 [ELSE]
-     FILENAME: CAMEL99
+     FILENAME: CAMEL268
 [THEN]
+         T' INIT >BODY BOOT-ADDRESS T!
 
+\ SET THE BOOT WORD TO RUN
 
-     END.       ( report compile time and stats)
+         T' COLD BOOT T!
+
+          END.   ( report compile time and stats)
 
 \ ======================================================================
 \ S A V E   B I N A R Y  I M A G E   F I L E
 
-         FILENAME$ $SAVE-EA5.     ( FILENAME$ was set by FILENAME: )
+         FILENAME$ $SAVE-EA5.     \ FILENAME$ was set by FILENAME:
 
 \ ======================================================================
 \  C O P Y   T O   T I - 9 9   V I R T U A L   D I S K
