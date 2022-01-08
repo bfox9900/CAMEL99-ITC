@@ -180,8 +180,7 @@ CODE CPUT ( char --  ?) \ write to screen, test for end of screen
          NEXT,
          ENDCODE
 
-
-CODE (CR) ( -- n)   \ inc VROW, return value
+ CODE (CR) ( -- n)   \ inc VROW, return value
            TOS PUSH,
            R1 STWP,
            34 (R1) CLR,     \ VCOL OFF
@@ -220,10 +219,10 @@ CODE C/L@   ( -- n )        \ this is used 8 times in the KERNEL. Saves 24 bytes
           NEXT,
           ENDCODE
 
-
 \ ===================================================================
 CR .( KSCAN KEY?  and  ?TERMINAL)
 \ Camel99 interface to KSCAN. *Modified 13Jun2020 to save/restore GPL R11
+\ Removed R11 save. It's in the ROM code. Jan 2022
 \ See: KEY  in the Camel99 Kernel
 CODE KEY? ( -- ?)  \ *WARNING* it takes 1,128uS for KEY? scan to run
           TOS PUSH,
@@ -231,14 +230,13 @@ CODE KEY? ( -- ?)  \ *WARNING* it takes 1,128uS for KEY? scan to run
           0 LIMI,
           TOS 837C @@ MOVB,   \ clear GPL flags
           83E0 LWPI,          \ switch to GPL workspace
-          R11 83BE @@ MOV,    \ save in empty scratch PAD location
           000E @@ BL,         \ call ROM keyboard scanning routine
-          83BE @@ R11 MOV,
           WRKSP0 LWPI,        \ return to Forth's workspace , interrupts are restored
           837C @@ R1 MOVB,    \ read GPL status byte (=2000 if key pressed)
           R1  3 SLA,          \ check the key bit
           OC IF,              \ if carry flag set
-               8374 @@ TOS MOV, \ read the key
+               8375 @@ TOS MOVB, \ read the key
+               TOS SWPB,
           ENDIF,
           2 LIMI,
           NEXT,               \ return

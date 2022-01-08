@@ -60,12 +60,12 @@ TARGET-COMPILING
 
 
 \ Utility constants
-        0 CONSTANT FALSE
-       -1 CONSTANT TRUE
-        0 CONSTANT 0
-        1 CONSTANT 1
-\        2 CONSTANT 2
-       20 CONSTANT BL
+      0 CONSTANT FALSE
+     -1 CONSTANT TRUE
+      0 CONSTANT 0
+      1 CONSTANT 1
+\      2 CONSTANT 2
+     20 CONSTANT BL
 
 \ ======================================================================
 \ U S E R   V A R I A B L E S
@@ -124,7 +124,7 @@ VARIABLE L0  [CC] 4 CELLS TALLOT  [TC]
 VARIABLE ^PAB
 VARIABLE LINES
 VARIABLE C/SCR
-VARIABLE 'IV    \ *G interpretor vector. Hold address of <INTERPRET>
+VARIABLE 'IV    \ *G interpretor vector. Holds address of <INTERPRET>
 VARIABLE H
 VARIABLE VP
 VARIABLE CURS     [CC] 205F CURS T! [TC]  \ BLANK and '_' in one VARIABLE
@@ -194,8 +194,28 @@ TARGET-COMPILING
 : 0>  ( n -- ?)    1- 0< INVERT ;
 : <>  ( n n -- ?)  =  INVERT ;
 
+-1 [IF]
+( Forth is bigger than CODE versions :-)
 : UMIN ( u1 u2 -- u )  2DUP U> IF SWAP THEN DROP ;
 : UMAX ( u1 u2 -- u )  2DUP U< IF SWAP THEN DROP ;
+
+[ELSE]
+
+CODE UMIN     ( n1 n2 -- n)
+             *SP TOS CMP,
+              @@1 JL,
+              SP INCT,
+              NEXT,
++CODE UMAX   ( n1 n2 -- n)
+             *SP  TOS CMP,
+              @@2 JH,
+              SP INCT,
+              NEXT,
+@@1: @@2:     TOS POP,
+              NEXT,
+ENDCODE
+
+[THEN]
 
 SLOWER [IF]
     : WITHIN ( u lo hi -- t ) OVER - -ROT - U> ;
@@ -445,7 +465,7 @@ CODE LASTLN ( -- vaddr)
          DUP  I           C/L@ 4* VWRITE
        C/L@ 4* +LOOP
        DROP
-       0 17 AT-XY VPOS C/L@ BL VFILL
+       0 17 2DUP AT-XY >VPOS C/L@ BL VFILL
 ;
 
 \ ======================================================================
@@ -474,7 +494,7 @@ CODE LASTLN ( -- vaddr)
 \ S T R I N G   L I T E R A L S
 [cc] HEX [tc]
 \ run-time action of S"   (For ITC Forth only)
-: (S")    ( -- c-addr u) R>  COUNT  2DUP + ALIGNED  >R ;
+: (S")    ( -- c-addr u) R>  COUNT  2DUP + ALIGNED >R ;
 
 \ ======================================================================
 CROSS-COMPILING
@@ -832,9 +852,9 @@ CODE INIT
 \ *new* Added VER string for easy updates
 SUPERCART
 [IF]
-     : VER   TS" 2.68G SuperCart" ;
+     : .VER   T." 2.69 SuperCart" ;
 [ELSE]
-     : VER   TS" 2.68G" ;
+     : .VER   T." 2.69" ;
 [THEN]
 
 [CC] HEX
@@ -842,34 +862,30 @@ SUPERCART
 \ B O O T   U P   C O D E
 TARGET-COMPILING
 
-: WARM       ( -- )
 \ *G restarts Forth but does not load DSK1.START
-              80 83C2 C!                    \ disable user interrupts
-              26 TPAD !                     \ HERE + 38 bytes for root task PAD
-              1000 VP !                     \ reset VDP memory manager
-              2000  H !                     \ reset HEAP, +16 bytes for DSRLINK
-              3FFF TMR!                     \ start 9901, enable interrupts too
-              VDPTOP ^PAB !                 \ reset PAB stack in VDP RAM
-            t['] <INTERP> 'IV !             \ PATCH interpreter vector
-            t['] <FIND>   'FIND !           \ set find action
-              ORGDP @ DP !                  \ restore dictionary
-              ORGLAST @ LATEST !            \ restore last word pointer
-              LATEST DUP CONTEXT ! CURRENT !  \ FORTH DEFINITIONS
+: WARM       ( -- )
+              80 83C2 C!
+              26 TPAD !
+              1000 VP !
+              2000  H !
+              3FFF TMR!
+              VDPTOP ^PAB !
               FLOOR ON
-              TEXT                          \ VDP start screen
-              T." CAMEL99 Forth " VER TYPE
-              DECIMAL                       \ default to base 10
+            t['] <INTERP> 'IV !
+            t['] <FIND>   'FIND !
+             DECIMAL
+             ORGDP @ DP !
+             ORGLAST @ LATEST !
+             LATEST DUP CONTEXT ! CURRENT !
+             TEXT
+             TS" CAMEL99 Forth" TYPE .VER
 ;
 
-: COLD        WARM
-\ *G performs WARM start includes DSK1.START and runs ABORT
-\ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-\ debugging
-  HEX  CR HERE U.  LATEST @ U.  CONTEXT @  U.   CONTEXT @ @ U.
-
-\ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-              TS" DSK1.START" INCLUDED
-              ABORT ;
+: COLD
+        WARM
+        HEX  CR HERE U.  LATEST @ U.  CONTEXT @  U.   CONTEXT @ @ U.
+        TS" DSK1.START" INCLUDED
+        ABORT ;
 
 \ =====================================================================
 \ define target comment words
@@ -908,7 +924,7 @@ cr .( Forth Kernel compiled completely")
 
  [ELSE]
 
-   THERE DUP DP T!  ORGDP T!
+    THERE DUP DP T!  ORGDP T!
 
  [THEN]
 
