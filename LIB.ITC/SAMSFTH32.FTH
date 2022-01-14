@@ -17,7 +17,6 @@ HEX
 \ *set the CRU address in 'R12 before using these words*
  CODE 0SBO  ( -- ) 1D00 ,  NEXT, ENDCODE
  CODE 0SBZ  ( -- ) 1E00 ,  NEXT, ENDCODE
-
  CODE 1SBO  ( -- ) 1D01 ,  NEXT, ENDCODE
  CODE 1SBZ  ( -- ) 1E01 ,  NEXT, ENDCODE
 
@@ -64,6 +63,6 @@ SAMS-ON
 CR .( SAMS card activated)
 CR HERE SWAP - DECIMAL . .( bytes)
 
-1 SEG !
+1 SEG !  \ set the segment
 
 : WRITE64  -1  0 DO   I  I  SEG @ !L  LOOP ;
