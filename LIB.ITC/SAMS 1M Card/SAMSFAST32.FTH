@@ -56,7 +56,7 @@ CODE SAMSINI
        ENDCODE
 
 HEX
-CODE PAGED  ( addr -- paged_address )
+CREATE _PAGED  ( addr -- paged_address )
      R0  4K LI,         \ 4K divisor ->R0
      TOS R5 MOV,        \ address to r5
      SEG @@ TOS MOV,    \ segment# to R4,
@@ -72,14 +72,29 @@ CODE PAGED  ( addr -- paged_address )
      ENDIF,
      TOS PMEM LI,         \ page_mem->tos
      R5  TOS ADD,         \ add computed offset to page
-     NEXT,
-     ENDCODE
+     RT,
+
+CODE PAGED ( SEGaddr -- CPUaddress )   _PAGED @@ BL,  NEXT, ENDCODE
+
+CODE @L    ( SEGaddr -- n)
+    _PAGED @@ BL,
+    *TOS  TOS MOV,
+    NEXT,
+ENDCODE
+
+
+CODE !L    ( n SEGadd -- )
+    _PAGED @@ BL,
+    *SP+ *TOS MOV,
+    TOS POP,
+    NEXT,
+ENDCODE
 
 \ paged memory fetch and store
+\ : @L     ( addr -- n)    PAGED @ ;    \ fetch an int
+\ : !L     ( n 32addr -- ) PAGED ! ;    \ store an int
 : C@L    ( addr -- n)    PAGED C@ ;   \ fetch a byte
 : C!L    ( n addr -- )   PAGED C! ;   \ store a byte
-: @L     ( addr -- n)    PAGED @ ;    \ fetch an int
-: !L     ( n 32addr -- ) PAGED ! ;    \ store an int
 
 \ SAMSINI  (only on real iron)
 CR .( SAMS card initialized)
@@ -87,5 +102,7 @@ CR HERE SWAP - DECIMAL . .( bytes)  \  314 BYTES
 
 HEX
 \ test code
- : LOADSAMS     FFFF 0 DO   I  I !L        2 +LOOP ; \ 15.7 secs
- : READSAMS     FFFF 0 DO      I @L DROP   2 +LOOP ;
+1 SEGMENT
+ : LOADSAMS     FFFF 0 DO   I  I !L        2 +LOOP ; \ 13 secs
+ : READSAMS     FFFF 0 DO    I @L DROP     2 +LOOP ; \ 11 secs
+ : READRAM      FFFF 0 DO    I @ DROP      2 +LOOP ; \  8 secs  
