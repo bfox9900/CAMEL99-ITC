@@ -82,7 +82,6 @@ CODE @L    ( SEGaddr -- n)
     NEXT,
 ENDCODE
 
-
 CODE !L    ( n SEGadd -- )
     _PAGED @@ BL,
     *SP+ *TOS MOV,
@@ -104,5 +103,5 @@ HEX
 \ test code
 1 SEGMENT
  : LOADSAMS     FFFF 0 DO   I  I !L        2 +LOOP ; \ 13 secs
- : READSAMS     FFFF 0 DO    I @L DROP     2 +LOOP ; \ 11 secs
- : READRAM      FFFF 0 DO    I @ DROP      2 +LOOP ; \  8 secs  
+ : READSAMS     FFFF 0 DO    I @L DROP     2 +LOOP ; \ 11.7 secs
+ : READRAM      FFFF 0 DO    I @  DROP     2 +LOOP ; \  8 secs
