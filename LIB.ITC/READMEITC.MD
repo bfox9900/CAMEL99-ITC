@@ -20,17 +20,21 @@ With CAMEL99 running...
 Open the source file you want to load with a text editor.
 Copy the entire source file file using CTRL A
 
-Paste the file into CAMEL99 using the EDIT->PASTE tab on the Emulator window.
+Paste the file into Classic99 using the EDIT->PASTE tab on the Emulator window.
+
 ========================
 IF THERE ARE ERRORS IN THE CODE...We apologize.
 
-If you hear a TI-99 honk sound while the file is pasting there has been an error of some kind.
+If you hear a TI-99 honk sound while the file is pasting there has been an error
+of some kind.
 
 In the CAMEL99 program type the command COLD <ENTER>
 
 This will reset Forth back to a clean system.
 
-Try pasting the file into CAMEL99, pieces at a time from the top of file until you find the line with the error. Then you will have to fix the error in the source code and test it by reloading.
+Try pasting the file into CAMEL99, pieces at a time from the top of file until
+you find the line with the error. Then you will have to fix the error in the
+source code and test it by reloading.
 
 If you need help contact theBF on
 
