@@ -13,8 +13,11 @@ HEX
 : RESIZE   ( n addr -- addr ?) DROP ALLOCATE ;
 : SIZE     ( addr -- n) 2- @ ; \ not ANS/ISO commonly found
 
-\ A bit of protection  and syntax sugar
+\ A bit of protection and syntax sugar.
  : ?ALLOC ( ? --) ABORT" Allocate error" ;
+
+\ Use -> as replacement for 'TO' values 
+\ Example: 99 -> X
  : ->     ( -- addr ?) ?ALLOC  POSTPONE TO ; IMMEDIATE
 
 CR HERE SWAP - DECIMAL . .( bytes)

@@ -1,13 +1,10 @@
-\ BOOTRACK.FTH
+\ bootdisk.FTH tells our program which drive it was loaded from 2022 B Fox
 \ *
 \ * Boot tracking
 \ *
 \ * Code copied more or less verbatim from:
 \ * 1.7. The Art Of Assembly Part 7. Why A Duck?
 \ * By Bruce Harrison 1991
-\ *
-\ * THE SECTION HERE AT LABEL OPEN PERFORMS "BOOT TRACKING"
-\ * THAT IS, IT TELLS OUR PROGRAM WHICH DRIVE IT WAS LOADED FROM
 \ *
 \ BOOTTR MOV  @>83D0,R12          * GET THE CRU BASE IN R12
 \        MOV  @>83D2,R9           * GET THE ROM ADDRESS FOR \DEVICE
@@ -23,20 +20,25 @@
 \        B   *R11                 * BRANCH TO NEXT SECTION OF CODE
 \ FILEDV TEXT "DSK1."             * File device
 
-NEEDS MARKER     FROM DSK1.MARKER
-NEEDS .S         FROM DSK1.TOOLS
+\ NEEDS MARKER     FROM DSK1.MARKER
+\ NEEDS .S         FROM DSK1.TOOLS
+\ MARKER REMOVE
 
-MARKER REMOVE
+DECIMAL
+24 USER 'R12  \ address of R12 in any CAmel99 workspace
+              \ >8324 in other TI-99 Forths
 
-HEX
-24 USER 'R12  \ address of R12 in any Forth workspace
 HEX
 CODE 0SBO  ( -- ) 1D00 ,  NEXT, ENDCODE
-CODE 1SBZ  ( -- ) 1E00 ,  NEXT, ENDCODE
+CODE 0SBZ  ( -- ) 1E00 ,  NEXT, ENDCODE
+
+83D0 CONSTANT DISKCARD
+83D2 CONSTANT ROMADDR
 
 HEX
-: CARDON    83D0 @ 'R12 !   0SBO 83D2 @   ;
-
-: DSK?. ( -- addr len)
-
-          0SBZ ;
+: BOOTDISK ( -- addr len)
+          DISKCARD @ 'R12 !
+          0SBO
+          ROMADDR @ 4 + COUNT PAD PLACE
+          0SBZ
+          PAD COUNT ;
