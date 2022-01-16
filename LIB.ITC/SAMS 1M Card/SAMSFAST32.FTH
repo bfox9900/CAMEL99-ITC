@@ -1,4 +1,4 @@
-\ SAMS CARD support. 64K segmented memory fetch and store
+\ SAMS CARD using 32bit contiguous address   Jan  15 2022  Brian Fox 
 
 \ 1 sams page only.  Set to >3000 by PMEM (paged memory)
 
@@ -17,15 +17,6 @@ HEX
 1000 CONSTANT 4K         \ bytes per bank = 4K
 3000 CONSTANT PMEM       \ paged memory block location
 PMEM 0B RSHIFT 4000 + CONSTANT SREG
-
-     VARIABLE SEG        \ holds current 64K segment
-
-\ safely set the 64K segment that you want to use
-: SEGMENT ( 1..F -- )
-       DUP 01 10 WITHIN 0= ABORT" BAD segment selected"
-       SEG ! ;  \ don't allow segment 0
-
-1 SEGMENT
 
 \ using machine code so we don't need the CRU library
 CODE SAMS-OFF  ( --) \ disable mapped memory
@@ -53,14 +44,12 @@ CODE SAMSINI
        16FA ,        \ EQ UNTIL,    ( no, init more)
        1E00 ,        \ 0 SBZ,       ( turn off SAMS card)
        NEXT,         \ return
-       ENDCODE
 
 HEX
-CREATE _PAGED  ( addr -- paged_address )
-     R0  4K LI,         \ 4K divisor ->R0
-     TOS R5 MOV,        \ address to r5
-     SEG @@ TOS MOV,    \ segment# to R4,
-     R0 TOS DIV,        \ TOS=bank#, R5=offset
+CREATE _D>REAL  ( 32bit-address -- paged_address )
+     R0  4K LI,         \ 4K divisor ->R0         12
+     R5    POP,         \ address to r5           28
+     R0 TOS DIV,        \ TOS=bank#, R5=offset   124
      TOS BANK# @@ CMP,  \ switch page ?
      NE IF,
          TOS BANK# @@ MOV, \ YES, update BANK#
@@ -74,34 +63,27 @@ CREATE _PAGED  ( addr -- paged_address )
      R5  TOS ADD,         \ add computed offset to page
      RT,
 
-CODE PAGED ( SEGaddr -- CPUaddress )   _PAGED @@ BL,  NEXT, ENDCODE
-
-CODE @L    ( SEGaddr -- n)
-    _PAGED @@ BL,
+CODE @L    ( d -- n)
+    _D>REAL @@ BL,
     *TOS  TOS MOV,
     NEXT,
 ENDCODE
 
-CODE !L    ( n SEGadd -- )
-    _PAGED @@ BL,
+CODE !L    ( n d -- )
+    _D>REAL @@ BL,
     *SP+ *TOS MOV,
     TOS POP,
     NEXT,
 ENDCODE
 
-\ paged memory fetch and store
-\ : @L     ( addr -- n)    PAGED @ ;    \ fetch an int
-\ : !L     ( n 32addr -- ) PAGED ! ;    \ store an int
-: C@L    ( addr -- n)    PAGED C@ ;   \ fetch a byte
-: C!L    ( n addr -- )   PAGED C! ;   \ store a byte
-
 \ SAMSINI  (only on real iron)
 CR .( SAMS card initialized)
-CR HERE SWAP - DECIMAL . .( bytes)  \  314 BYTES
+CR HERE SWAP - DECIMAL . .( bytes)    \ 314 bytes
 
 HEX
 \ test code
-1 SEGMENT
- : LOADSAMS     FFFF 0 DO   I  I !L        2 +LOOP ; \ 13 secs
- : READSAMS     FFFF 0 DO    I @L DROP     2 +LOOP ; \ 11.7 secs
- : READRAM      FFFF 0 DO    I @  DROP     2 +LOOP ; \  8 secs
+: STORESAMS     FFFF 0 DO     I  I 1 !L       2 +LOOP ; \ 14.5 secs
+: FETCHSAMS     FFFF 0 DO     I 1 @L DROP     2 +LOOP ; \ 13.2 secs
+
+\ REGULAR RAM COMPARISON
+: FETCHRAM      FFFF 0 DO    I @  DROP     2 +LOOP ; \  8 secs

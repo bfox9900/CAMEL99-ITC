@@ -1,4 +1,4 @@
-\ *********************************************************************
+\ BOOTRACK.FTH
 \ *
 \ * Boot tracking
 \ *
@@ -23,7 +23,8 @@
 \        B   *R11                 * BRANCH TO NEXT SECTION OF CODE
 \ FILEDV TEXT "DSK1."             * File device
 
-INCLUDE DSK1.TOOLS
+NEEDS MARKER     FROM DSK1.MARKER
+NEEDS .S         FROM DSK1.TOOLS
 
 MARKER REMOVE
 
@@ -31,10 +32,10 @@ HEX
 24 USER 'R12  \ address of R12 in any Forth workspace
 HEX
 CODE 0SBO  ( -- ) 1D00 ,  NEXT, ENDCODE
-CODE 0SBZ  ( -- ) 1E00 ,  NEXT, ENDCODE
+CODE 1SBZ  ( -- ) 1E00 ,  NEXT, ENDCODE
 
 HEX
-: CARDON    83D0 @ 'R12 !   0SBO 83D2 @  ;
+: CARDON    83D0 @ 'R12 !   0SBO 83D2 @   ;
 
 : DSK?. ( -- addr len)
 
