@@ -24,8 +24,7 @@ Copy the entire source file file using CTRL A
 
 Paste the file into CAMEL99 using the EDIT->PASTE tab on the Emulator window.
 
-
-========================
+---------------------------------------------
 IF THERE ARE ERRORS IN THE CODE...We apologize.
 
 If you hear a TI-99 honk sound while the file is pasting there has been an
