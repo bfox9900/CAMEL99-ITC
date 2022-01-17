@@ -1,8 +1,11 @@
-CR .( Compile code into another RAM location and remove it later)
+CR .( Transient.fth    Jan 17 2022 B Fox)
+
+\ Compile code into another RAM location and remove it later)
 \ SEE: DSK1.LOWTOOLS DSK1.SUPERTOOLS for demo code
+
 HEX
 VARIABLE SAVEDP
-VARIABLE OLDNFA  \ LINK field of the 1st new word we will create in HI RAM
+VARIABLE OLDNFA  \ NFA of last word in the old dictionary
 
 : TRANSIENT ( NEWDP -- ) \ Usage   HEX 2000 TRANSIENT
            LATEST @ OLDNFA !
@@ -19,4 +22,4 @@ VARIABLE OLDNFA  \ LINK field of the 1st new word we will create in HI RAM
 
 : ERADICATE ( -- ) ( removes TRANSIENT dictionary code)
           OLDNFA @  LATEST !  \ relink the dictionary
-          2000 H ! ;          \ init-the heap.
+          2000 H ! ;          \ init-the heap

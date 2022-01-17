@@ -1,13 +1,12 @@
-CR .( Compile Tools in LOW RAM)
+CR .( Compile Tools in SuperCart RAM)
 
 NEEDS TRANSIENT FROM DSK1.TRANSIENT
-HEX 6000 TRANSIENT   \ transient dictionary in supercart 
+HEX 6000 TRANSIENT   \ transient dictionary in supercart
 CR .( Compiling to address:) HERE U.
 
-CR
-  INCLUDE DSK1.ELAPSE
-  INCLUDE DSK1.TOOLS
-  INCLUDE DSK1.ASM9900
+    INCLUDE DSK1.ELAPSE
+    INCLUDE DSK1.TOOLS
+    INCLUDE DSK1.ASM9900
 
 PERMANENT
 CR .( Now compiling to: ) HERE HEX U.
