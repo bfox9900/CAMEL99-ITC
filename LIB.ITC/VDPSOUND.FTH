@@ -13,7 +13,7 @@ HEX
        2DUP + VC@  >R        \ get duration at end of string, Rpush
        BOUNDS                \ convert addr/len to end-addr. start-addr.
        DO  I VC@ SND! LOOP   \ feed bytes to sound chip
-       R> 8* 2* MS ;         \ time units are 16mS 
+       R> 8* 2* MS ;         \ time units are 16mS
 
 : VPLAYLIST   ( addr -- )    \ play a TI sound list
          BEGIN DUP VC@

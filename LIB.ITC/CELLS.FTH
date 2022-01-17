@@ -1,5 +1,5 @@
 \ CELLS ANS Forth Core wordset
-
+\ Now in DSK1.SYSTEM
 \ 1 cell alias. *FOR CODE WORDS ONLY*
 : ALIAS ( <newname>  <oldword> ) CODE '  2+   HERE 2- ! ;
 

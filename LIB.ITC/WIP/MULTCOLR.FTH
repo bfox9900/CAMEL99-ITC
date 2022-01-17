@@ -1,11 +1,14 @@
 \ MULTCOLR.FTH for   CAMEL99 V2
+
+          **work_in_progress** 
+
 \ This mode is selected by setting bit 4 of VDP register 1 as 1.
 \ Bit 3 must be 0, as well as bit 7 of register 0. VR0: 0 VR1: 0 1
 
-\ In this mode, the screen is divided into 48 rows of 64 boxes. 
-\ Each box is 4x4 pixel and can be independently assigned a color. 
+\ In this mode, the screen is divided into 48 rows of 64 boxes.
+\ Each box is 4x4 pixel and can be independently assigned a color.
 \ The screen image table is still >300 bytes long, but each byte now represents
-\ a "character" made of 4 boxes. 
+\ a "character" made of 4 boxes.
 \ The boxes are arranged as:
 \   0 1
     2 3

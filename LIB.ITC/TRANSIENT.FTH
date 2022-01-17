@@ -1,23 +1,22 @@
-CR .( Compile Tools in LOW RAM)
-NEEDS MALLOC FROM DSK1.MALLOC
+CR .( Compile code into another RAM location and remove it later)
+\ SEE: DSK1.LOWTOOLS DSK1.SUPERTOOLS for demo code
 HEX
 VARIABLE SAVEDP
-VARIABLE KEEP
+VARIABLE OLDNFA  \ LINK field of the 1st new word we will create in HI RAM
 
-CR .( Set up low ram compiling ...)
-\ *INSIGHT*
-\ SAVEDP holds the LINK field of the 1st new word we will create in HI RAM
-\ Usage  2050 LATEST @ TRANSIENT
-: TRANSIENT ( addr latest  -- )
-                KEEP !
+: TRANSIENT ( NEWDP -- ) \ Usage   HEX 2000 TRANSIENT
+           LATEST @ OLDNFA !
            HERE SAVEDP !     \ save the dictionary pointer.
            DP ! ;            \ Point DP to transient memory
 
-CR .( Restore high ram compiling ...)
-: PERMANENT ( -- )
+: PERMANENT ( -- ) ( Restores high ram compiling )
            HERE H !          \ give back what we didn't use to the HEAP
-           SAVEDP @ DP ! ;   \ restore DP back to original address
+           SAVEDP @ DP !     \ restore DP back to original address
 
-: ERADICATE ( -- )
-          KEEP @ SAVEDP @ !  \ relink the dictionary
-          2050 H ! ;         \ init-the heap. (INCLUDE buffer is at >2000)
+         \ built a dummy word as the link to the permanent dictionary
+          S" $$$$" HEADER, COMPILE DOCON  HERE ,  COMPILE EXIT
+;
+
+: ERADICATE ( -- ) ( removes TRANSIENT dictionary code)
+          OLDNFA @  LATEST !  \ relink the dictionary
+          2000 H ! ;          \ init-the heap.

@@ -1,60 +1,60 @@
-\ Bitmap text mode
-
-\ This is the mode TI forgot to tell us about. It works just like standard bitmap
-\ mode, except that the screen is now 40 columns and that only two colors are
-\ available.
-
-\ This mode is set as follows:
-\ R0  bit 7=true
-\ R1  Bit 4=true
-\ VR0: 1
-\ VR1: 0 1
-\ The screen is now divided in three, each third is 8 lines high and thus
-\ occupies >140 bytes in the screen image table (8*40=320).
-\ The colors are taken from VR7, just like in regular text mode. There is no color table,
-\ and the contents \of VR3 is irrelevant. Just like in standard bitmap mode, 
-\ there can be upto 3 pattern tables, located either at >0000 or at >2000.
-\ You can use the address mask bits in VR4 to determine which third of the screen 
-\ uses which table.
-\ The main difference is that the color address mask is not used to fill-in 
-\ the patten address mask:
-\ >07 is always used instead. No character grouping to worry about, then! 
-\ This mode comes handy for black-and-white drawings.
-
+\ Bitmap mode
 \ The VDP register setting could be the following:
 \ VR0 >02 Bitmap mode on
 \ VR1 >C0 16K, screen on
 \ VR2 >08 Screen image at >1800
-\        (we can't have it at >0000 since either the pattern or the color table must be there)
-\ VR3 >FF Color table at >2000, address mask = >1FFF (full size table: 3 times >800 bytes)
-\ VR4 >03 Pattern table at >0000, address mask = >1FFF (full size table: 3 times >800 bytes)
+\ (we can't have it at >0000 since either the
+\  pattern or the color table must be there)
+\ VR3 >FF  Color table at >2000, address mask = >1FFF
+\ (full size table: 3 times >800 bytes)
+\ VR4 >03   Pattern table at >0000, address mask = >1FFF
+\ (full size table: 3 times >800 bytes)
 
 HEX
-
 CREATE 40COL
-\     CNT     0     1     2     3     4     5     6     7
-       08 C, 00 C, F0 C, 00 C, 0E C, 01 C, 06 C, 02 C, 1B C, 00 C,
+\      VR0   VR1   VR2   VR3   VR4   VR5   VR6   VR7
+       00 C, F0 C, 00 C, 0E C, 01 C, 06 C, 02 C, 17 C, ALIGN
 
+: VDPMODE ( Caddr  -- ) 8 0 DO  COUNT I VWTR  LOOP DROP ;
 
-: VREGS    ( addr len -- ) 0 DO  DUP I + C@  I VWTR  LOOP DROP ;
-
-: .REGS    ( addr len -- ) 0 DO  CR DUP I + C@ . LOOP DROP ;
+: .REGS    ( Caddr  -- ) 8 0 DO  CR COUNT . LOOP DROP ;
 
 : TEXT   ( -- )
-         40COL COUNT VREGS
+         40COL VDPMODE
          2 VMODE !  \ record the mode we are in
-         28 C/L!    \ Set 40 chars/line, which also re-calcs the screen variables
-         F0 KTP C!  \ TI KSCAN re-writes VReg1 with whatever is in this byte.
-         PAGE ;     
+         28 C/L!    \ Set 40 chars/line, which also re-calcs the screen vars
+         0 VTOP !
+         F0 83D4 C!  \ TI KSCAN re-writes VReg1 with whatever is in this byte.
+         PAGE ;
 
  CREATE BITTAB
-\      CNT       0     1     2     3     4     5     6     7
-        08 C,   02 C, C0 C, 08 C, FF C, 03 C, 00 C, 00 C, 02 C, 00 C,
+        02 C,   \ VR0 = 02 Bitmap mode on
+        C0 C,   \ VR1 = C0 16K ram, screen on
+        08 C,   \ VR2 = 08 Screen image at >1800
+        FF C,   \ VR3 = FF Color table at >2000, address mask = >1FFF
+        03 C,   \ VR4 = 03 Pattern table at >0000, address mask = >1FFF
+        00 C,   \ N/A
+        00 C,   \ N/A
+        00 C,   \
+        ALIGN
 
 : BITMAP
-          BITTAB COUNT VREGS
+          BITTAB VDPMODE
           1300 VTOP !
-          2 KTP C!
+          C0 83D4 C!
 ;
 
-: TEST    BITMAP  5000 MS  TEXT ;
+: SEQFILL ( addr n ) 0 DO I OVER I +  VC! LOOP DROP ;
+
+HEX
+: TEST
+   BITMAP
+   2000 1800 AA VFILL \ fill the color table
+   100 MS
+   1800 100 SEQFILL   \ fill screen table with sequential chars
+   1900 100 SEQFILL
+   1A00 100 SEQFILL
+   400 MS
+   0000 1800 AA VFILL
+   300 MS
+   COLD ;
