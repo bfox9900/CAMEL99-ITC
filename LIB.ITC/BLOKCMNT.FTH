@@ -1,45 +1,41 @@
-\ Conditional compilation
+\ Block comment
+HEX
+NEEDS DUMP   FROM DSK1.TOOLS
+NEEDS MARKER FROM DSK1.MARKER
+NEEDS MOV,  FROM DSK1.ASM9900
 
-\ INCLUDE DSK1.TOOLS.F
+CHAR ) DUP SWAP FUSE CONSTANT '))'
 
-: COMPARE ( a1 n1 a2 n2 -- -1|0|1 ) \  0 = match, -1 = a1<a2, 1 = a1>a2
-    ROT  2DUP - >R            ( a1 a2 n2 n1)( R: n2-n1)
-    MIN                       ( a1 a2 n3)
-    BOUNDS ?DO                ( a1)
-        COUNT  I C@  -        ( a1 diff)
-        DUP IF
-            NIP  0< 1 OR      ( -1|1)
-            UNLOOP
-            R> DROP
-            EXIT THEN         ( a1 diff)
-        DROP                  ( a1)
-    LOOP DROP                 ( )
-    R>  DUP IF  0> 1 OR  THEN \ 2's complement arith.
+DECIMAL
+: REFILL   ( -- ?)
+    SOURCE-ID @
+    IF  2 FILEOP DUP ?FILERR  0=   EXIT THEN
+    TIB 127 ACCEPT ; 
+
+\ scanw.fth  like SCAN but searches for CELL match    Dec 30 2021  B Fox
+CODE SCANW   ( addr len n -- addr' len' )    \ find matching n in string
+             *SP+  R2 MOV,     \ len -> R2
+              *SP  R2 ADD,     \ END addr is in R2
+              *SP  R1 MOV,     \ start addr in R1
+             BEGIN,
+                TOS R1 *+ CMP,
+             NE WHILE,
+                R1 R2 CMP,
+             EQ UNTIL,
+             ENDIF,
+             R2 TOS MOV,
+             R1 TOS SUB,  \ len'  is in TOS
+                TOS INCT,
+                R1  DECT,
+             R1 *SP MOV,  \ addr' is in NOS
+             NEXT,
+ENDCODE
+
+
+: ((   ( flag -- )
+      BEGIN  REFILL
+      WHILE  RP0 100 - DUP FGET DUP 0=
+      WHILE  '))' SCANW 0=
+      REPEAT
+      THEN INTERPRET    \ use what ever is left over in the line
 ;
-
-: PASSOVER ( -- )
-       1
- \   BEGIN                                  \ level
-       BEGIN BL WORD COUNT DUP WHILE        \ level adr len
-         2DUP S" /* " COMPARE 0= IF         \ level adr len
-             2DROP 1+                       \ level'
-          ELSE                              \ level adr len
-            2DUP S" [ELSE]" COMPARE
-            0= IF                  \ level adr len
-                2DROP 1- DUP
-                IF 1+ THEN                  \ level'
-            ELSE                            \ level adr len
-                S" */" COMPARE
-                0= IF              \ level
-                   1-                       \ level'
-               THEN
-             THEN
-          THEN ?DUP 0= IF EXIT THEN         \ level'
-       REPEAT 2DROP                         \ level
-\   REFILL 0= UNTIL                         \ level
-       DROP
-; IMMEDIATE
-
-: /*  ( flag -- ) 0= IF POSTPONE PASSOVER THEN ; IMMEDIATE
-: */  ( -- ) ; IMMEDIATE
-

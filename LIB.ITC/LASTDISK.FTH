@@ -36,7 +36,7 @@ CODE 0SBZ  ( -- ) 1E00 ,  NEXT, ENDCODE
 83D2 CONSTANT ROMADDR
 
 HEX
-: BOOTDISK ( -- addr len)
+: LASTDISK ( -- addr len)
           DISKCARD @ 'R12 !
           0SBO
           ROMADDR @ 4 + COUNT PAD PLACE
