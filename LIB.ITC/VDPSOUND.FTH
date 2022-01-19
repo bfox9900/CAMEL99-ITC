@@ -1,5 +1,6 @@
 \ TI sound list player using VDP RAM    CAMEL99 Forth V2
 \ Jan 2022 Removed Jiffs timer, replaced with TICKS for V2.68
+CR .( Depracated: Use DSK1.ISRSOUND)
 
 \ INCLUDE DSK1.TOOLS
 INCLUDE DSK1.VDPMEM

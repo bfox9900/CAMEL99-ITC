@@ -1,6 +1,15 @@
 \ forth-94 version of klaus schleisiek's dynamic memory allocation
 \ (forml'88) uh 2016-10-28
 
+\ 6.1.1900 MOVE     LIBRARY FILE FOR CAMEL99
+\ CORE
+: MOVE    ( src dst n -- )
+          >R  2DUP SWAP DUP R@ +  \ -- src dst dst src src+n
+          WITHIN
+          IF    R> CMOVE>         \ src <= dst < src+n
+          ELSE  R> CMOVE
+          THEN ;
+
 VARIABLE ANCHOR  0 ANCHOR !
 
 DECIMAL 050 CONSTANT WASTE
@@ -16,11 +25,11 @@ DECIMAL 050 CONSTANT WASTE
 : RELEASE ( mem size -- )  #FREE OR USE ;
 
 : FITS? ( size -- mem | false ) >R ANCHOR @
-   BEGIN 
+   BEGIN
       ADDR&SIZE  R@ U< 0=
       IF R> DROP EXIT THEN
       @ DUP ANCHOR @ =
-   UNTIL 
+   UNTIL
    0= R> DROP ;
 
 : LINK ( mem >mem <mem -- )
@@ -36,7 +45,7 @@ DECIMAL 050 CONSTANT WASTE
    IF  DROP  DUP @ OVER UNLINK  OVER ADDR&SIZE USE
    ELSE 2 CELLS -   OVER R@ USE
         OVER ABOVE   DUP ROT RELEASE
-        2DUP SWAP @LINKS LINK 
+        2DUP SWAP @LINKS LINK
    THEN R> DROP  ANCHOR ! 0 ;
 
 : FREE ( mem -- ior )
@@ -63,7 +72,6 @@ CR .( dynamic memory allocation:)
 CR .( use   addr size EMPTY-MEMORY  to initialize,)
 CR .( then use the standard memory allocation wordset allocate free resize to manage memory.)
 
-\ leave room at top for Camel99 Forth SCROLL
-HEX 1F00 DUP MALLOC SWAP ( addr len ) EMPTY-MEMORY
-CR .( Low RAM is HEAP)
 
+HEX 2000 2000 ( addr len ) EMPTY-MEMORY
+CR .( Low RAM is HEAP)

@@ -1,4 +1,5 @@
-\ BACKGROUND TI sound list player in CAMEL99 Forth V2
+\ BACKGROUND TI sound list player in CAMEL99 Forth V2 March 30 2020 Brian Fox
+\ Modified Jan 2022: Replaced JIFFS with MS for V2.68
 
 NEEDS FORK  FROM DSK1.MTASK99
 
@@ -20,7 +21,7 @@ HEX
         2DUP + C@  >R       \ get duration at end of string, Rpush
         BOUNDS              \ convert addr/len to end-addr. start-addr.
         DO  I C@ SND! LOOP  \ feed bytes to sound chip
-        R> JIFFS ;          \ use the delay from Rstack
+        R> 8* 2* MS ;          \ use the delay from Rstack
 
 : PLAYLIST   ( addr -- )    \ play a TI sound list
          BEGIN
@@ -48,7 +49,7 @@ CREATE SOUNDQ   20 CELLS ALLOT
 
 \ BackgroundPlayer
 : BGPLAYER ( -- )   \ play all lists in the Q then goto sleep
-           BEGIN Q? 
+           BEGIN Q?
            WHILE
               SOUNDQ Q@ PLAYLIST
            REPEAT
