@@ -1,4 +1,4 @@
-\ SAMS CARD support for CAMEL99 Forth   May 2020  B Fox
+\ SAMS CARD support for CAMEL99 Forth in Forth May 2020  B Fox
 \ 64K segmented memory fetch and store
 \
 HERE

@@ -1,6 +1,7 @@
 \ CARDUTIL.FTH lets you search for and examine cards in your system
 NEEDS .S FROM DSK1.TOOLS
-NEEDS COMPARE FROM DSK1.COMPARE 
+NEEDS COMPARE FROM DSK1.COMPARE
+NEEDS MARKER  FROM DSK1.MARKER
 
 MARKER /CARDS
 
@@ -60,10 +61,10 @@ HEX
              DUP 4 +             \ get address of the id field
              DUP C@ 1 =
              IF
-                 @ . ." , "      \ it's a number
+                CR  @ . ." , "      \ it's a number
              ELSE
-                 COUNT TYPE      \ convert to addr,len & type with comma
-             THEN .," , "
+                CR COUNT TYPE      \ convert to addr,len & type with comma
+             THEN 
           REPEAT
           0SBZ
           DROP ;
@@ -91,4 +92,3 @@ CREATE DEV$ 8 ALLOT
              THEN
           REPEAT
           DROP ;
-
