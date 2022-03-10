@@ -1,7 +1,7 @@
 # TI-99 Library Files
 
-This folder is a fuller version of the TI-99 files found in the DSK1 folder.
-It represents not only finished work but also works in progress so my apology
+This folder contains the TI-99 files found in the DSK1 folder plus more.
+It represents not only finished work but also work in progress so my apology
 if something here does not work as advertised.
 
 
