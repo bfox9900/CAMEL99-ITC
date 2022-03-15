@@ -40,10 +40,12 @@ DECIMAL
 \ Code is same size as Forth, faster
 HEX
 CODE DXY   ( x y x2 y2 -- dx dy)
-  C076 , \ *SP+  R1 MOV, \ x2
-  6136 , \ *SP+ TOS SUB, \ y2=y2-y
-  6581 , \  R1  *SP SUB, \ x=x-x2
-  NEXT,
+  *SP+  R1 MOV, \ x2
+  *SP+ TOS SUB, \ y2=y2-y
+       TOS ABS,
+   R1  *SP SUB, \ x=x-x2
+       *SP ABS,
+        NEXT,
 ENDCODE
 
 DECIMAL
