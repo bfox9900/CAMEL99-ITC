@@ -54,3 +54,9 @@ CODE BLOCK ( bank# -- buffer)
 ENDCODE
 
 SAMSINI CR .( SAMS card initialized)
+
+\ LONG memory fetch and store
+\ : C@L    ( addr -- n)   0 4K UM/MOD  PAGED C@ ;   \ fetch a byte
+\ : C!L    ( n addr -- )   PAGED C! ;   \ store a byte
+\ : @L     ( addr -- n)    PAGED @ ;    \ fetch an int
+\ : !L     ( n 32addr -- ) PAGED ! ;    \ store an int

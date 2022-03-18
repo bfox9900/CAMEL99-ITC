@@ -66,10 +66,10 @@ HEX
 
 \ paged memory fetch and store
 : C@P    ( addr -- n)    PAGED C@ ;   \ fetch a byte
-: C!P    ( n 32addr -- ) PAGED C! ;   \ store a byte
+: C!P    ( n addr -- ) PAGED C! ;   \ store a byte
 
-: @P     ( 32addr -- n)  PAGED @ ;    \ fetch an int
-: !P     ( n 32addr -- ) PAGED ! ;    \ store an int
+: @P     ( addr -- n)  PAGED @ ;    \ fetch an int
+: !P     ( n addr -- ) PAGED ! ;    \ store an int
 
 \ SAMSINI SAMS-ON   ( un-comment for real iron)
 CR .( SAMS card activated)
