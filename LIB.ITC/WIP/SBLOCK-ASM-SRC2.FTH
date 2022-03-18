@@ -1,17 +1,17 @@
 \ BLOCK using 2 pages of SAMS memory in Low RAM    Mar 18 2022 Brian Fox
 NEEDS .S    FROM DSK1.TOOLS
 NEEDS MOV,  FROM DSK1.ASM9900
-NEEDS SAMSINI FROM DSK1.SAMSINI
+
+NEEDS SAMSINI FROM DSK1.SAMSINI \ *NEW* common code for SAMS card
 
 \ Note:
 \ I realized that I was not using the WINDOWS array as the source
-\ of data for the fast tests. With this code the windows can be anywhere
+\ of data for the 1st tests. With this code the two windows can be anywhere
 
 \ For reference this the data to manage what banks are in RAM
  VARIABLE USE                       \ index of the last bank# used
  CREATE BLK#S       0 ,    0 ,      \ SAMS bank# in the windows
  CREATE WINDOWS  2000 , 3000 ,      \ array of windows in CPU RAM
-
 
 CODE BLOCK ( bank# -- buffer)
 \ FAST test if we already have the bank# in one of windows
@@ -25,11 +25,11 @@ CODE BLOCK ( bank# -- buffer)
           W INCT,                  \ bump index to next "cell"
           BLK#S (W) TOS CMP,
           EQ IF,
-              WINDOWS (W) TOS MOV, \ use windows(2) is: >3000
-              NEXT,          \ Return to Forth
+              WINDOWS (W) TOS MOV, \ use windows(2) ie: >3000
+              NEXT,                \ Return to Forth
           ENDIF,
 
-\ bank# is not in RAM. Need to get it
+\ ** bank# is not in RAM. Get it
 
 \ whatever blk# was last used, switch to the other one
            W  0001 LI,    \ init W to 1
@@ -53,13 +53,4 @@ CODE BLOCK ( bank# -- buffer)
                    NEXT,
 ENDCODE
 
- VARIABLE SEG
-\ safely set the 64K segment that you want to use
- : SEGMENT ( 1..F -- ) \ don't allow segment 0
-         DUP 01 10 WITHIN 0= ABORT" SAMS segment err"
-         SEG ! ;
- 1 SEGMENT
-
- HEX
- : PAGED  ( virtual-addr -- real-addr)
-         SEG @ 1000 UM/MOD ( -- offset bank#) BLOCK + ;
+SAMSINI CR .( SAMS card initialized)
