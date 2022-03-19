@@ -52,3 +52,8 @@ CODE BLOCK ( bank -- buffer)
          SEG @ 1000 UM/MOD ( -- offset bank#) BLOCK + ;
 
 HERE SWAP - DECIMAL  CR .  .( bytes)
+
+HEX
+: WRITER  FFFF 0 DO   I  I PAGED !  2 +LOOP ;
+DECIMAL
+ : TEST   256 0 DO  I BLOCK DROP  LOOP ;

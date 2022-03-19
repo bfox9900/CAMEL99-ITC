@@ -1,6 +1,8 @@
 \ BLOCK using 2 pages of SAMS memory in Low RAM    Mar 18 2022 Brian Fox
+
 NEEDS .S    FROM DSK1.TOOLS
 NEEDS MOV,  FROM DSK1.ASM9900
+NEEDS ELAPSE FROM DSK1.ELAPSE 
 
 NEEDS SAMSINI FROM DSK1.SAMSINI \ *NEW* common code for SAMS card
 
@@ -13,6 +15,7 @@ NEEDS SAMSINI FROM DSK1.SAMSINI \ *NEW* common code for SAMS card
  CREATE BLK#S       0 ,    0 ,      \ SAMS bank# in the windows
  CREATE WINDOWS  2000 , 3000 ,      \ array of windows in CPU RAM
 
+HEX
 CODE BLOCK ( bank# -- buffer)
 \ FAST test if we already have the bank# in one of windows
           W CLR,                   \ W is index register = 0
@@ -54,9 +57,5 @@ CODE BLOCK ( bank# -- buffer)
 ENDCODE
 
 SAMSINI CR .( SAMS card initialized)
-
-\ LONG memory fetch and store
-\ : C@L    ( addr -- n)   0 4K UM/MOD  PAGED C@ ;   \ fetch a byte
-\ : C!L    ( n addr -- )   PAGED C! ;   \ store a byte
-\ : @L     ( addr -- n)    PAGED @ ;    \ fetch an int
-\ : !L     ( n 32addr -- ) PAGED ! ;    \ store an int
+DECIMAL
+ : TEST   256 0 DO  I BLOCK DROP  LOOP ;
