@@ -30,12 +30,13 @@ DECIMAL
           R> BASE ! ;
 
 : CLOCK  ( -- )
+         0 5 AT-XY ." Press FCTN 4 to stop"
          BEGIN
             1SEC
             0 0 AT-XY SECONDS 2@ .TIME
             ?TERMINAL
          UNTIL
-         2DROP ;
+;
 
 : SETCLOCK  ( hrs mins -- )  S>D ROT 60 *  M+  SECONDS 2! ;
 
