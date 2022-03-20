@@ -26,8 +26,8 @@ CODE >SMEM ( addr -- offset bank#)
       TOS  0C SRL,    \ divide by 4096
       R0  TOS ADD,
               NEXT,
-ENDCODE                  \ 222 cycles
-: PAGED  >SMEM BLOCK + ;  \ 18% FASTER than using UM/MOD 
+ENDCODE                   \ 222 cycles
+: PAGED  >SMEM BLOCK + ;  \ 18% FASTER than using UM/MOD
 
 HEX
 : WRITER  FFFF 0 DO   I  I PAGED !  2 +LOOP ;
