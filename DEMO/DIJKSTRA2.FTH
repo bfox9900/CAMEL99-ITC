@@ -1,8 +1,10 @@
+\ dijkstra.fth
 \ Dutch flag DEMO using CAMEL99 Forth using Dijkstra's Algorithm
 \ *SORTS IN PLACE FROM Video MEMORY*
 
-\ This code uses INLINE optimizer for a real speedup
+\ This code uses INLINE optimizer and some optimized CAMEL99 words.
 \ Compare this version to dijkstra.fth
+\ Runtime ~6 seconds
 
  INCLUDE DSK1.TOOLS   ( for debugging)
  INCLUDE DSK1.GRAFIX
@@ -82,14 +84,14 @@ SQUARE PTR1   CHARDEF
 
 \ inlining multiple parameters generates faster code as well.
 : RUSSIAN  \ Russian flag
-          INLINE[ 0  0 WHTSQR 256 ] HCHAR
-          INLINE[ 0  8 BLUSQR 256 ] HCHAR
-          INLINE[ 0 16 REDSQR 256 ] HCHAR ;
+           0  0 WHTSQR 256 HCHAR
+           0  8 BLUSQR 256 HCHAR
+           0 16 REDSQR 256 HCHAR ;
 
 : FRENCH  \ kind of a French flag
-        INLINE[   0  0 BLUSQR 256 ] VCHAR
-        INLINE[  10 16 WHTSQR 256 ] VCHAR
-        INLINE[  21  8 REDSQR 256 ] VCHAR ;
+           0  0 BLUSQR 256  VCHAR
+          10 16 WHTSQR 256  VCHAR
+          21  8 REDSQR 256  VCHAR ;
 
 \ Algorithm Dijkstra(A)  \ A is an array of three colors
 \ begin
