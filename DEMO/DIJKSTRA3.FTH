@@ -1,17 +1,17 @@
 \ Dutch flag DEMO using CAMEL99 Forth using Dijkstra's Algorithm
 \ *SORTS IN PLACE FROM Video MEMORY*
-\ Uses Conventional Forth. No Camel99 optimization tricks
-\ Runtime ~ 8 seconds 
+\ This version uses VALUES, optimized exchanges, faster VALUE INCR & DECR
 
-\ INCLUDE DSK1.TOOLS   ( for debugging)
+\ INCLUDE DSK1.TOOLS ( for debugging)
  INCLUDE DSK1.GRAFIX
  INCLUDE DSK1.RANDOM
  INCLUDE DSK1.CASE
  INCLUDE DSK1.ELAPSE
+ INCLUDE DSK1.VALUES
 
 \ TMS9918 Video chip Specific code
 HEX
-CREATE SQUARE  FFFF , FFFF , FFFF , FFFF ,
+CREATE SQUARE FFFF , FFFF , FFFF , FFFF ,
 
 \ define colors and characters
 DECIMAL
@@ -20,7 +20,6 @@ SIZE 3 / CONSTANT #256     \ 256 chars per segment of flag
 1        CONSTANT REDSQR   \ red character
 9        CONSTANT WHTSQR   \ white character
 19       CONSTANT BLUSQR   \ blue character
-28       CONSTANT PTR1
 
 \ color constants
 1        CONSTANT TRANS
@@ -31,7 +30,6 @@ SIZE 3 / CONSTANT #256     \ 256 chars per segment of flag
 SQUARE REDSQR CHARDEF
 SQUARE BLUSQR CHARDEF
 SQUARE WHTSQR CHARDEF
-SQUARE PTR1   CHARDEF
 
 \ charset  FG    BG
   0        RED TRANS COLOR
@@ -106,37 +104,72 @@ SQUARE PTR1   CHARDEF
 \               b<-b-1
 \ end
 
-: XCHG  ( adr1 adr2 -- )
-      OVER VC@ OVER VC@        \ read the chars in VDP RAM
-      SWAP ROT VC! SWAP VC! ;  \ exchange the characters
 
-: >=  ( n n -- ? ) 1- > ;  \ make a new operator
+\ generic exchange is verbose
+\ : XCHG  ( adr1 adr2 -- )
+\      OVER VC@ OVER VC@        \ read the chars in VDP RAM
+\      SWAP ROT VC! SWAP VC! ;  \ exchange the characters
 
-\ address pointer variables
-VARIABLE R
-VARIABLE B
-VARIABLE W
-SIZE 1- CONSTANT n   \ sugar to match the Algorithm
+\ Optimizations .......................
+\ 5% faster using values instead of variables
+\ address pointers
+0 VALUE R
+0 VALUE B
+0 VALUE W
+
+\ 5% faster with optimized exhanges
+: R<->W     R VC@  W VC@  R VC! W VC! ;
+: W<->B     W VC@  B VC@  W VC! B VC! ;
+
+\ 5% faster again using custom incrementors
+: INCR     ( n -- )
+           ' >BODY
+           STATE @
+           IF   POSTPONE LITERAL  POSTPONE 1+! EXIT
+           THEN  1+! ; IMMEDIATE
+
+: DECR    ( n -- )
+           ' >BODY
+           STATE @
+           IF   POSTPONE LITERAL  POSTPONE 1-! EXIT
+           THEN  1-! ; IMMEDIATE
+
+\ Algorithm Dijkstra(A)  \ A is an array of three colors
+\ begin
+\   r <- 1;
+\   b <- n;
+\   w <- n;
+\ while (w>=r)
+\       check the color of A[w]
+\       case 1: red
+\               swap(A[r],A [w]);
+\                r<-r+1
+\       case 2: white
+\               w<-w-1
+\       case 3: blue
+\               swap(A[w],A[b]);
+\               w<-w-1;
+\               b<-b-1
+\ end
 
 : DIJKSTRA ( -- )
-           0 R !
-           n B !
-           n W !
-           BEGIN
-               W @  R @ >=
-           WHILE
-               W @ VC@
-               CASE
-                 REDSQR OF  R @ W @  XCHG
-                            1 R +!           ENDOF
+    0 TO R
+    SIZE 1- DUP TO B  TO W
+    BEGIN
+      W  R  1- >
+    WHILE
+         W VC@
+         CASE
+           REDSQR OF  R<->W
+                      INCR R  ENDOF
 
-                 WHTSQR OF  -1 W +!           ENDOF
+           WHTSQR OF  DECR W  ENDOF
 
-                 BLUSQR OF  W @ B @  XCHG
-                            -1 W +!
-                            -1 B +!           ENDOF
-               ENDCASE
-           REPEAT ;
+           BLUSQR OF  W<->B
+                      DECR W
+                      DECR B  ENDOF
+           ENDCASE
+    REPEAT ;
 
 : WAIT   11 11 AT-XY ." Finished!" 1500 MS ;
 
@@ -153,7 +186,6 @@ SIZE 1- CONSTANT n   \ sugar to match the Algorithm
          0 23 AT-XY ."   Press any key to begin"
          KEY DROP ;
 
-
 : RUN ( -- ) \ test with different input patterns
          TITLE
          TICKER OFF
@@ -161,7 +193,8 @@ SIZE 1- CONSTANT n   \ sugar to match the Algorithm
          CHECKERED  DIJKSTRA \ WAIT
          RUSSIAN    DIJKSTRA \ WAIT
          FRENCH     DIJKSTRA \ WAIT
-         0 23 AT-XY
+         0 23 AT-XY .ELAPSED
          CR ." Completed"
-         .ELAPSED
 ;
+
+RUN

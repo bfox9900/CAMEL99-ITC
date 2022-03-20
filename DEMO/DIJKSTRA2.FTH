@@ -1,8 +1,8 @@
 \ Dutch flag DEMO using CAMEL99 Forth using Dijkstra's Algorithm
 \ *SORTS IN PLACE FROM Video MEMORY*
 
-\ Compare this version to dijkstra.fth
 \ This code uses INLINE optimizer for a real speedup
+\ Compare this version to dijkstra.fth
 
  INCLUDE DSK1.TOOLS   ( for debugging)
  INCLUDE DSK1.GRAFIX
