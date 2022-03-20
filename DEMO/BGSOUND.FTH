@@ -21,13 +21,13 @@ INCLUDE DSK1.MTASK99
 
 HEX
 : SILENT ( --)  9F SND!  BF SND!  DF SND! FF SND! ;  \ turn off all sounds
-
+: 16*    4 LSHIFT ; 
 : PLAY$ ( caddr -- )        \ play 1 sound string
         COUNT               \ -- addr len
         2DUP + C@  >R       \ get duration at end of string, to milli-secs & Rpush
         BOUNDS              \ convert addr/len to end-addr. start-addr.
         DO  I C@ SND! LOOP  \ feed bytes to sound chip
-        R> JIFFS ;          \ use the delay from Rstack
+        R>  16* MS ;       \ use the delay from Rstack
 
 : PLAYLIST   ( addr -- )    \ play a TI sound list
          BEGIN
