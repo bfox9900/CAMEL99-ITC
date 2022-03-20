@@ -86,3 +86,5 @@ SIZE 4 + ARRAY ]Q
         SFLAG @  GAP 1 = AND     \ additional conditional
    UNTIL
    DROP ;
+
+: GO    TICKER OFF   SIZE COMBSORT   .ELAPSED ;

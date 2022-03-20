@@ -92,6 +92,7 @@ HEX
        [CHAR] . EMIT                 \ show progress on screen
        SFLAG @  GAP 1 = AND          \ test for completion
     UNTIL
+    DROP 
     .WORDS                           \ print the sorted array
     200 CELLS MFREE                  \ release memory
     0 TO ^DATA                       \ clear the data pointer
