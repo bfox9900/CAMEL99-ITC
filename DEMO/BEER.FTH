@@ -21,14 +21,14 @@ DECIMAL
 : WALL     ." wall" ;      : TAKE     ." take " ;
 : ONE      ." one "  ;     : DOWN     ." down, " ;
 : PASS     ." pass " ;     : IT       ." it "   ;
-: AROUND   ." around" ;    
+: AROUND   ." around" ;
 
 : POPONE    1 SWAP CR ;
 : DRINK     POSTPONE DO ; IMMEDIATE
-: ANOTHER   POSTPONE -1  POSTPONE +LOOP ; IMMEDIATE
+: ANOTHER   S" -1 +LOOP" EVALUATE ; IMMEDIATE
 : HOWMANY   S" I " EVALUATE ; IMMEDIATE
 : ONELESS   S" I 1- " EVALUATE ; IMMEDIATE
-: BINARY    2 BASE ! ; 
+: BINARY    2 BASE ! ;
 
 : BEERS ( n -- )   \ Usage:  99 BEERS
       POPONE
@@ -37,8 +37,5 @@ DECIMAL
          HOWMANY BOTTLES OF BEER ,
          TAKE ONE DOWN PASS IT AROUND ,
          ONELESS BOTTLES OF BEER ON THE WALL .
-      ANOTHER 
+      ANOTHER
       HANGOVER ;
-
-
-
