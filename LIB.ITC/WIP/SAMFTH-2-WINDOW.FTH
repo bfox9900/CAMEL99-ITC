@@ -15,10 +15,10 @@ HEX
  1 SEGMENT
 
 HEX
-\ : PAGED  ( virtual-addr -- real-addr)
+\ : >VIRT  ( virtual-addr -- real-addr)
 \         SEG @ 1000 UM/MOD ( -- offset bank#) BLOCK + ;
 
-\ 18% FASTER than using UM/MOD
+\ 18% FASTER than using Forth and UM/MOD
 CODE >VIRT ( addr -- offset bank#)  \ 222 cycles!
       TOS  R0 MOV,
       R0 0FFF ANDI,   \ mask upper 4 bits
@@ -33,28 +33,29 @@ ENDCODE
 
 : PAGED ( virtual_address -- real_address ) >VIRT BLOCK + ;
 
+: @L    ( addr -- )  S" PAGED @"  EVALUATE ; IMMEDIATE
+: !L    ( addr -- )  S" PAGED !"  EVALUATE ; IMMEDIATE
+: C@L   ( addr -- )  S" PAGED C@" EVALUATE ; IMMEDIATE
+: C!L   ( addr -- )  S" PAGED C@" EVALUATE ; IMMEDIATE
+
+: SAMSFILL  ( addr size byte -- ) -ROT BOUNDS ?DO  DUP I C!L    LOOP ;
+: SAMSFILLW ( addr size byte -- ) -ROT BOUNDS ?DO  DUP I !L  2 +LOOP ;
 HEX
-: WRITER    FFFF 0 DO   I  I PAGED !  2 +LOOP ; \ write 32K words to memory
-
-: 64KFILL   FFFF 0 DO   I PAGED 1000 A FILL    1000 +LOOP ;
-
-: SAMSFILL ( addr1 size byte -- )
-            -ROT
-            BOUNDS
-            ?DO
-                DUP I PAGED C!
-            LOOP ;
+: SAMSPAGEFILL ( addr size byte -- )
+           -ROT
+           OVER 1000 MOD ABORT" Not 4K boundary"
+            0 DO  DUP PAGED 1000 2 PICK FILL  1000 +LOOP ;
 
 : SAMSMOVE ( addr1 addr2 size --)
             BOUNDS
             DO
-                DUP PAGED I PAGED !
+              DUP PAGED I !L
             2 +LOOP
             DROP ;
 
 : SAMSCMOVE ( addr1 addr2 size --)
             BOUNDS
             DO
-                DUP PAGED I PAGED C!
+              DUP PAGED I C!L
             LOOP
             DROP ;
