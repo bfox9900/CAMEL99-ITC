@@ -46,3 +46,6 @@ ENDCODE
 
 : SAMSCMOVE ( addr1 addr2 size --)
   BOUNDS DO   DUP >SAMS I C!L   LOOP DROP ;
+
+: SAMSBLOCKFILL ( blk1 blk2 byte --)
+  -ROT ?DO   DUP I BLOCK 1000 ROT FILL  LOOP DROP ; 
