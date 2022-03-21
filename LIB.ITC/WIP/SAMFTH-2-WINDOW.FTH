@@ -38,33 +38,11 @@ ENDCODE
 : C@L   ( addr -- )  S" >SAMS C@" EVALUATE ; IMMEDIATE
 : C!L   ( addr -- )  S" >SAMS C@" EVALUATE ; IMMEDIATE
 
-: SAMSFILL  ( addr size byte -- ) -ROT BOUNDS ?DO  DUP I C!L    LOOP ;
-: SAMSFILLW ( addr size byte -- ) -ROT BOUNDS ?DO  DUP I !L  2 +LOOP ;
-HEX
-: SAMSPAGEFILL ( addr size byte -- )
-           >R
-           OVER 1000 MOD ABORT" Not 4K boundary"
-           BOUNDS
-           BEGIN
-             2DUP >
-           WHILE
-              DUP >SAMS 1000 R@ FILL
-              1000 +
-          REPEAT
-          2DROP
-          R> DROP
-;
+: SAMSFILL  ( addr size byte -- ) -ROT BOUNDS ?DO   DUP I C!L    LOOP ;
+: SAMSFILLW ( addr size byte -- ) -ROT BOUNDS ?DO   DUP I !L    2 +LOOP ;
 
 : SAMSMOVE ( addr1 addr2 size --)
-            BOUNDS
-            DO
-              DUP >SAMS I !L
-            2 +LOOP
-            DROP ;
+  BOUNDS DO   DUP >SAMS I !L   2 +LOOP DROP ;
 
 : SAMSCMOVE ( addr1 addr2 size --)
-            BOUNDS
-            DO
-              DUP >SAMS I C!L
-            LOOP
-            DROP ;
+  BOUNDS DO   DUP >SAMS I C!L   LOOP DROP ;
