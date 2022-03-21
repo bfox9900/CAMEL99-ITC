@@ -19,7 +19,7 @@ HEX
 \         SEG @ 1000 UM/MOD ( -- offset bank#) BLOCK + ;
 
 \ 18% FASTER than using Forth and UM/MOD
-CODE >VIRT ( addr -- offset bank#)  \ 222 cycles!
+CODE >SAMS ( addr -- offset bank#)  \ 222 cycles!
       TOS  R0 MOV,
       R0 0FFF ANDI,   \ mask upper 4 bits
            R0 PUSH,   \ push offset to memory stack
@@ -31,21 +31,21 @@ CODE >VIRT ( addr -- offset bank#)  \ 222 cycles!
               NEXT,
 ENDCODE
 
-: >SAMS ( virtual_address -- real_address ) >VIRT BLOCK + ;
+: PAGED ( virtual_address -- real_address ) >SAMS BLOCK + ;
 
-: @L    ( addr -- )  S" >SAMS @"  EVALUATE ; IMMEDIATE
-: !L    ( addr -- )  S" >SAMS !"  EVALUATE ; IMMEDIATE
-: C@L   ( addr -- )  S" >SAMS C@" EVALUATE ; IMMEDIATE
-: C!L   ( addr -- )  S" >SAMS C@" EVALUATE ; IMMEDIATE
+: @L    ( addr -- )  S" PAGED @"  EVALUATE ; IMMEDIATE
+: !L    ( addr -- )  S" PAGED !"  EVALUATE ; IMMEDIATE
+: C@L   ( addr -- )  S" PAGED C@" EVALUATE ; IMMEDIATE
+: C!L   ( addr -- )  S" PAGED C@" EVALUATE ; IMMEDIATE
 
 : SAMSFILL  ( addr size byte -- ) -ROT BOUNDS ?DO   DUP I C!L    LOOP ;
 : SAMSFILLW ( addr size byte -- ) -ROT BOUNDS ?DO   DUP I !L    2 +LOOP ;
 
 : SAMSMOVE ( addr1 addr2 size --)
-  BOUNDS DO   DUP >SAMS I !L   2 +LOOP DROP ;
+  BOUNDS DO   DUP PAGED I !L   2 +LOOP DROP ;
 
 : SAMSCMOVE ( addr1 addr2 size --)
-  BOUNDS DO   DUP >SAMS I C!L   LOOP DROP ;
+  BOUNDS DO   DUP PAGED I C!L   LOOP DROP ;
 
 : SAMSBLOCKFILL ( blk1 blk2 byte --)
-  -ROT ?DO   DUP I BLOCK 1000 ROT FILL  LOOP DROP ; 
+  -ROT ?DO   DUP I BLOCK 1000 ROT FILL  LOOP DROP ;
