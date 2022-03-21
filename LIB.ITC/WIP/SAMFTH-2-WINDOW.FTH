@@ -31,31 +31,40 @@ CODE >VIRT ( addr -- offset bank#)  \ 222 cycles!
               NEXT,
 ENDCODE
 
-: PAGED ( virtual_address -- real_address ) >VIRT BLOCK + ;
+: >SAMS ( virtual_address -- real_address ) >VIRT BLOCK + ;
 
-: @L    ( addr -- )  S" PAGED @"  EVALUATE ; IMMEDIATE
-: !L    ( addr -- )  S" PAGED !"  EVALUATE ; IMMEDIATE
-: C@L   ( addr -- )  S" PAGED C@" EVALUATE ; IMMEDIATE
-: C!L   ( addr -- )  S" PAGED C@" EVALUATE ; IMMEDIATE
+: @L    ( addr -- )  S" >SAMS @"  EVALUATE ; IMMEDIATE
+: !L    ( addr -- )  S" >SAMS !"  EVALUATE ; IMMEDIATE
+: C@L   ( addr -- )  S" >SAMS C@" EVALUATE ; IMMEDIATE
+: C!L   ( addr -- )  S" >SAMS C@" EVALUATE ; IMMEDIATE
 
 : SAMSFILL  ( addr size byte -- ) -ROT BOUNDS ?DO  DUP I C!L    LOOP ;
 : SAMSFILLW ( addr size byte -- ) -ROT BOUNDS ?DO  DUP I !L  2 +LOOP ;
 HEX
 : SAMSPAGEFILL ( addr size byte -- )
-           -ROT
+           >R
            OVER 1000 MOD ABORT" Not 4K boundary"
-            0 DO  DUP PAGED 1000 2 PICK FILL  1000 +LOOP ;
+           BOUNDS
+           BEGIN
+             2DUP >
+           WHILE
+              DUP >SAMS 1000 R@ FILL
+              1000 +
+          REPEAT
+          2DROP
+          R> DROP
+;
 
 : SAMSMOVE ( addr1 addr2 size --)
             BOUNDS
             DO
-              DUP PAGED I !L
+              DUP >SAMS I !L
             2 +LOOP
             DROP ;
 
 : SAMSCMOVE ( addr1 addr2 size --)
             BOUNDS
             DO
-              DUP PAGED I C!L
+              DUP >SAMS I C!L
             LOOP
             DROP ;
