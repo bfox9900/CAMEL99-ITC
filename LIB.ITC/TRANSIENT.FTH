@@ -12,11 +12,11 @@ VARIABLE OLDH    \ where the HEAP (low RAM) was in the beginning
 : ?TWICE   SAVEDP @ ABORT" Can't do twice"  ;
 
 : CFA>NFA ( cfa -- nfa | 0 ) 2- BEGIN   1- DUP C@ 0FE AND  0= UNTIL 1+  ;
-: >LINK   ( cfa -- lfa) CFA>NFA NFA>LFA ;
+: CFA>LFA   ( cfa -- lfa) CFA>NFA NFA>LFA ;
 
 : RELINK ( CFA1 CFA2 -- )
         SWAP CFA>NFA
-        SWAP >LINK  ! ;
+        SWAP CFA>LFA  ! ;
 
 : PERMANENT ( -- ) ( Restores high ram compiling )
            HERE 4000 < IF  HERE H ! THEN  \ set H if in LOW RAM
@@ -27,7 +27,7 @@ VARIABLE OLDH    \ where the HEAP (low RAM) was in the beginning
 
 : ERADICATE ( -- ) ( removes TRANSIENT dictionary code)
           SAVEDP @ 0= ABORT" Nothing to eradicate"
-          OLDNFA @  LATEST !  \ relink the dictionary
+          OLDNFA @  LATEST !    \ relink the dictionary
           SAVEDP OFF
           OLDH @ H ! ;          \ init-the heap.
 
