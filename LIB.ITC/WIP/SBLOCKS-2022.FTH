@@ -54,13 +54,12 @@ CODE SBLOCK ( blk# -- buffer)
                    NEXT,
 ENDCODE
 
-\ 32% FASTER than using Forth and UM/MOD
+\ Faster than using Forth and UM/MOD
 HEX
 CODE >SAMS ( addr -- offset bank#)  \ 222 cycles!
       TOS  R0 MOV,
       R0 0FFF ANDI,   \ mask upper 4 bits
            R0 PUSH,   \ push offset to memory stack
-
      TOS F000 ANDI,
     SEG @@ R0 MOV,
          R0 4 SLA,    \ mult by 16
@@ -70,9 +69,9 @@ CODE >SAMS ( addr -- offset bank#)  \ 222 cycles!
 ENDCODE
 
 
-\ safely set the 64K segment that you want to use
+\ safely set the 64K segment in use. doesn't allow 1st 64K
 DECIMAL
- : SEGMENT ( 1..F -- ) \ don't allow segment 0
+ : SEGMENT ( 1..F -- )
          DUP 1 16 WITHIN 0= ABORT" SAMS segment err"
          SEG ! ;
 
@@ -92,7 +91,7 @@ DECIMAL
 : SAMSMOVE ( addr1 addr2 size --)
   BOUNDS
    DO
-      DUP @L  \ fetch from addr1
+      DUP @L   \ fetch from addr1
       I !L     \ store to addr2
       2+       \ bump addr1
    2 +LOOP
@@ -109,8 +108,7 @@ DECIMAL
 
 HERE SWAP - DECIMAL  CR .  .( bytes)
 
-
 \ test results with >SAMS (code)
-\ 0 FFFF BEEF ELAPSE SAMSFILLW  19.88
-\ test results with >SAMS2 (forth)
-\ 0 FFFF BEEF ELAPSE SAMSFILLW  26.31
+\ 0 FFFF BEEF ELAPSE SAMSFILLW  20 secs
+\ test results with forth
+\ 0 FFFF BEEF ELAPSE SAMSFILLW  27 secs
