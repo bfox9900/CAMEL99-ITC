@@ -1,16 +1,8 @@
-\ direct SPRITE control lexicon  v2              BFox Aug 6 2020
+CR .( direct SPRITE control lexicon  v2.5) \  Mar 23 2022 Brian Fox
 \ control by writing direct to VDP RAM
-\ - simpler to understand.
-\ - Less efficient when moving big no. of sprites
-
-\ this version uses some machine code words for a more speed
-\ July 2018  Removed DXY from Kernel and put machine code here
-\ July 2019  Simplfied DIST for 20% speedup.
-\ Aug 2020   Re-wrote COINCXY COINC to be faster
-\            Removed SP.X@, SP.Y@.  Use VC@ with them, faster.
-\ Feb 2021   Added FUSEXY to speed up locate
 \ Feb 2022   Added TABLE4:
 \ Mar 2022   Removed distance calcs for sprites to DSK1.DISTANCE file
+\            Added DXY code word for faster COINC.
 
 NEEDS .S     FROM DSK1.LOWTOOLS
 NEEDS HCHAR  FROM DSK1.GRAFIX  \ must be in Graphics 1 mode
@@ -55,19 +47,16 @@ HEX
 : ?NDX  ( n -- n ) MAX.SP OVER < ABORT" Bad SPR#" ;
 
 CR .( .)
-\ INIT SPRITES: You must run DELALL before using sprites*
 : DELALL  ( -- )
           1 ?MODE               \ test for graphics mode
           1 6 VWTR              \ vdp reg 6 = 1, puts ]PDT @ $800
           SAT SATsize BL VFILL  \ init the sprite desc. table with blanks
           SPR# OFF ;            \ #sprites=0
 
-\ The following words are named like Extended BASIC
-\ They are index protected by the word ?NDX.
+\ They CAN be index protected by the word ?NDX.
 \ POSITION is a macro for more COINC speed
 : POSITION  ( sprt# -- dx dy ) ( ?NDX) S" SP.Y V@ SPLIT" EVALUATE ; IMMEDIATE
-: LOCATE    ( dx dy sprt# -- ) -ROT FUSE SWAP SP.Y V! ; ( 639 uS)
-: LOCATE    ( dx dy sprt# -- )   FUSEXY SP.Y V! ;         ( 532 uS)
+: LOCATE    ( dx dy sprt# -- )   FUSEXY SP.Y V! ;  ( 532 uS)
 : PATTERN   ( char sprt# -- )  ( ?NDX) SP.PAT VC! ;
 : SP.COLOR  ( col sprt# -- )   ( ?NDX) SWAP 1- SWAP SP.COLR VC! ;
 .( .)
@@ -82,34 +71,31 @@ CR .( .)
 HEX
 : MAGNIFY  ( mag-factor -- ) VDPR1 C@ 0FC AND +  DUP 1 VWTR  VDPR1 C! ;
 
-\ ?=0 means no coincidence
 \ VDP status bit set if any two sprites overlap
 : COINCALL  ( -- ? ) VDPSTS C@ 20 AND ;
+
 HEX
 CODE DXY   ( x y x2 y2 -- dx dy)
-  *SP+  R1 MOV, \ x2
-  *SP+ TOS SUB, \ y2=y2-y
-       TOS ABS,
-   R1  *SP SUB, \ x=x-x2
-       *SP ABS,
-        NEXT,
+C076 , \  *SP+  R1 MOV, \ x2
+6136 , \  *SP+ TOS SUB, \ y2=y2-y
+0744 , \       TOS ABS,
+6581 , \   R1  *SP SUB, \ x=x-x2
+0756 , \       *SP ABS,
+NEXT,
 ENDCODE
 
+\ ?=0 means no coincidence
 : COINC ( spr#1 spr#2 tol -- ?)
-          >R
-          POSITION ROT POSITION ( -- x1 y1 x2 y2 )
-          DXY  R@  <
-          SWAP R> < AND
-;
-
-: TESTCOINC   TMR@  0 1 8 COINC TMR@ NIP - . ; \ 67 ticks = 1427 uS
+        >R
+        POSITION ROT POSITION ( -- x1 y1 x2 y2 )
+        DXY  R@  <
+        SWAP R> < AND ;
 
 : COINCXY   ( dx dy sp# tol -- ? )
-           >R
-           POSITION   ( -- x1 y1 x2  y2 )
-           ROT - ABS R@ <
-          -ROT - ABS R> < AND
-;
+        >R
+        POSITION   ( -- x1 y1 x2  y2 )
+        DXY  R@ <
+        SWAP R> < AND ;
 
 DELALL
 HERE SWAP -
