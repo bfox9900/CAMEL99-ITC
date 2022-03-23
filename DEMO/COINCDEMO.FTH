@@ -55,7 +55,7 @@ DECIMAL
 ;
 
 DECIMAL
-: RNDV ( -- x y) 60 RND 30 -  ;
+: RNDV ( -- x y) 60 RND 30 - ;
 : RNDXY    RNDV RNDV ;
 
 : SPRITES ( n -- )
