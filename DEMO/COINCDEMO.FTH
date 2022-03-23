@@ -12,15 +12,17 @@ MARKER /TEST
 DECIMAL
 : SP.STOP  ( spr# ) 0 0 ROT MOTION ;
 
-: TINK    GEN1 1600 HZ -6 DB 600 TICKS MUTE ;
+: TINK    GEN1 1600 HZ -6 DB 900 TICKS  ;
 : THUMP   GEN2  150 HZ  0 DB  ;
+
 
 : BOUNCE.X  ( spr# -- ) ]SMT.X  DUP VC@ NEGATE  SWAP VC! ;
 : BOUNCE.Y  ( spr# -- ) ]SMT.Y  DUP VC@ NEGATE  SWAP VC! ;
+: BOUNCE    ( spr# -- ) DUP BOUNCE.X BOUNCE.Y 500 TICKS ;
 
 : TRAPX ( spr# -- )
       DUP SP.X VC@
-      239 0 WITHIN IF   BOUNCE.X  TINK  EXIT THEN
+      239 0 WITHIN IF  BOUNCE.X  TINK  EXIT THEN
       DROP ;
 
 : TRAPY ( spr# -- )
@@ -42,13 +44,10 @@ DECIMAL
 
 
 : COLLISION ( spr1 spr2 -- )
-        2DUP 8 COINC
-        IF
-    ( spr2)  DUP BOUNCE.X BOUNCE.Y
-    ( spr1)  DUP SP.STOP                \ stop the sprite 1
-             DUP BOUNCE.X DUP BOUNCE.Y
-             DUP RAINBOW        \ show his displeasure :)
-             15 15 ROT MOTION   \ start up again
+        2DUP 9 COINC
+        IF   THUMP
+    ( spr2)  BOUNCE
+    ( spr1)  DUP BOUNCE RAINBOW
              EXIT
         THEN
         2DROP
@@ -61,7 +60,7 @@ DECIMAL
 : SPRITES ( n -- )
     0 ?DO
     (    char        colr          x   y  sp# )
-      [CHAR] A I +   I 3 + 15 AND  100  90  I SPRITE
+      [CHAR] A I +   I 3 + 15 AND  100  90 I 8* +  I SPRITE
    LOOP ;
 
 : MOVEALL   0 ?DO   RNDXY I MOTION  20 MS LOOP ;
@@ -73,13 +72,21 @@ DECIMAL
     PAGE ." CAMEL99 Forth"
     CR   ." Coincidence Test with Automotion"
     CR
-    0 23 AT-XY ." 'A' will collide with B & F"
+    0 23 AT-XY ." A B and F collide"
     6 DUP SPRITES MOVEALL
     AUTOMOTION
     BEGIN
-         0 TRAP  1 TRAP  2 TRAP  3 TRAP  4 TRAP   5 TRAP
-         0 1 COLLISION  0 5 COLLISION
-         ?TERMINAL
+       0 TRAP
+       0 1 COLLISION
+       1 TRAP
+       2 TRAP
+       3 TRAP
+       0 5 COLLISION
+       4 TRAP
+       5 TRAP
+       1 5 COLLISION
+       MUTE
+       ?TERMINAL
    UNTIL
    STOPMOTION
    8 SCREEN ;

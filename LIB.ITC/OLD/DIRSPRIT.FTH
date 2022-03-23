@@ -58,7 +58,8 @@ CR .( .)
 \ The following words are named like Extended BASIC
 \ ?NDX protection is removed for speed. Un-comment if you want it
 : POSITION  ( sprt# -- dx dy ) ( ?NDX)
-  S" SP.Y V@ SPLIT" EVALUATE ; IMMEDIATE
+\  S" SP.Y V@ SPLIT" EVALUATE ; IMMEDIATE
+   SP.Y V@ SPLIT ; 
 
 : LOCATE    ( dx dy sprt# -- )   FUSEXY SP.Y V! ;  ( 532 uS)
 : PATTERN   ( char sprt# -- )  ( ?NDX) SP.PAT VC! ;
