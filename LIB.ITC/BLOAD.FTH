@@ -1,4 +1,5 @@
-\ LOADER.FTH   E/A file loader                  Brian Fox
+\ LOADER.FTH  Loads a E/A file or files into VDP RAM              Brian Fox
+\ Does not run the program. At this stage.
 
 MARKER /LOADER
 
