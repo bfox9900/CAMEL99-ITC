@@ -1,7 +1,7 @@
-\ Multi-tasking TI sound list player demo in CAMEL99 Forth V2
-\ SEE: ISRSOUND.FTH for a better way to do this in your games.
+\ BACKGROUND TI sound list player in CAMEL99 Forth V2 March 30 2020 Brian Fox
+\ Modified Jan 2022: Replaced JIFFS with MS for V2.68
 
-INCLUDE DSK1.MTASK99
+NEEDS FORK  FROM DSK1.MTASK99
 
 \ 1. This player uses a final '0' to mark the end of the sound data
 \ 2. It turns off all sounds when the data is ended
@@ -10,24 +10,18 @@ INCLUDE DSK1.MTASK99
 \ 5. Player goes to sleep when sound Queue is empty
 \ 6. TWO end user comands: BGPLAY  >SNDQ
 
-\ To run demo:
-\ MULTI
-\ PACMAN >SNDQ
-\ MUNCHMAN >SNDQ
-\ PLAYQ
-
 \ ========================================================
 \ sound list player
 
 HEX
-: SILENT ( --)  9F SND!  BF SND!  DF SND! FF SND! ;  \ turn off all sounds
-: 16*    4 LSHIFT ; 
+: SILENT ( --) 9F SND!  BF SND!  DF SND! FF SND! ;  \ turn off all sounds
+
 : PLAY$ ( caddr -- )        \ play 1 sound string
         COUNT               \ -- addr len
-        2DUP + C@  >R       \ get duration at end of string, to milli-secs & Rpush
+        2DUP + C@  >R       \ get duration at end of string, Rpush
         BOUNDS              \ convert addr/len to end-addr. start-addr.
         DO  I C@ SND! LOOP  \ feed bytes to sound chip
-        R>  16* MS ;       \ use the delay from Rstack
+        R> 8* 2* MS ;          \ use the delay from Rstack
 
 : PLAYLIST   ( addr -- )    \ play a TI sound list
          BEGIN
@@ -55,23 +49,25 @@ CREATE SOUNDQ   20 CELLS ALLOT
 
 \ BackgroundPlayer
 : BGPLAYER ( -- )   \ play all lists in the Q then goto sleep
-           BEGIN
-           Q? WHILE
-             SOUNDQ Q@ PLAYLIST
+           BEGIN Q?
+           WHILE
+              SOUNDQ Q@ PLAYLIST
            REPEAT
+           SILENT
            MYSELF SLEEP
-           PAUSE ;      \ hand-off to next task
+           PAUSE ;  \ hand-off to next task
 
 
 \ === MULTI-TASKING SET-UP ===
 INIT-MULTI
 
-CREATE PLAYER    USIZE ALLOT  PLAYER FORK
+CREATE PLAYER USIZE ALLOT  PLAYER FORK
 
 ' BGPLAYER PLAYER ASSIGN
 
 \ ===============================================
 \ end user commands
+\ Usage:  MUNCHMAN BGPLAY  PACMAN BGPLAY  BGPLAY
 : >SNDQ  ( list -- ) SOUNDQ Q! ;
 : PLAYQ   ( list -- ) PLAYER RESTART ;
 : KILLQ  ( -- )      SHEAD @ STAIL ! ;
@@ -80,34 +76,21 @@ CREATE PLAYER    USIZE ALLOT  PLAYER FORK
 \ sound list examples
 : ?BYTE ( c -- ) FF00 AND  ABORT" Not a byte" ;
 
+CREATE NUMBUF  10 ALLOT
+
 : BYTE ( -- )
          BEGIN
-           [CHAR] , WORD DUP C@
+           [CHAR] , PARSE-WORD
+           DUP
          WHILE
-            HERE COUNT EVALUATE  DUP ?BYTE  C,
+            EVALUATE  DUP ?BYTE  C,
          REPEAT
          2DROP ;
 
 : /END   0 C,  ALIGN  ;   \ compile zero, force even memory boundary
 
-HEX
-CREATE MUNCHMAN
-       BYTE 08,85,2A,90,A6,08,B0,CC,1F,12
-       BYTE 08,85,2A,90,A4,1C,B0,C9,0A,12
-/END
-
-CREATE PACMAN
-       BYTE 06,86,0D,97,AC,1A,B7,08
-       BYTE 02,8F,08,02
-       BYTE 02,AB,23,05
-       BYTE 02,86,0D,04
-       BYTE 01,BF,03
-       BYTE 02,8E,0B,08
-       BYTE 02,8A,0A,02
-       BYTE 03,AC,1A,B7,08
-/END
-
-MUNCHMAN >SNDQ  PACMAN >SNDQ
-
-CR .( Type: MULTI)
-CR .( PLAYQ )
+\ HEX
+\ CREATE MUNCHMAN
+\       BYTE 08,85,2A,90,A6,08,B0,CC,1F,12
+\       BYTE 08,85,2A,90,A4,1C,B0,C9,0A,12
+\ /END
