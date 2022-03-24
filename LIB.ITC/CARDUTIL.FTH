@@ -64,7 +64,7 @@ HEX
                 CR  @ . ." , "      \ it's a number
              ELSE
                 CR COUNT TYPE      \ convert to addr,len & type with comma
-             THEN 
+             THEN
           REPEAT
           0SBZ
           DROP ;
@@ -86,7 +86,7 @@ CREATE DEV$ 8 ALLOT
              COUNT    \ test: 2DUP TYPE  SPACE
              DEV$ COUNT ROT MAX S=
              0= IF
-                DROP DROP
+                2DROP
                 DEV$ C@        \ return length of device string
                 EXIT
              THEN
