@@ -1,5 +1,6 @@
-\ CASEBFOX   uses EXIT to jump out as soon as match is found.
-\ like a switch statment
+\ CASEBFOX EXPERIMENT
+\  uses EXIT to jump out as soon as match is founD like a switch statment
+\ Conclusion:  >>>NOT WORTH THE TROUBLE<<<
 
 INCLUDE DSK1.CASE
 INCLUDE DSK1.ELAPSE
@@ -57,5 +58,3 @@ INCLUDE DSK1.ELAPSE
 
 : EAKER1 TMR@ 1 EAKER .TMR ;  \ 126
 : EAKER15 TMR@ 15 EAKER .TMR ; \ 340
-
-\ Not worth the trouble :) 
