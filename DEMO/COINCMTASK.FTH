@@ -46,7 +46,7 @@ DECIMAL
 : MOVEALL   0 ?DO   RNDXY I MOTION  20 MS LOOP ;
 
 \ create workspace for the task in low ram
-HEX 2000 CONSTANT TRAPPER
+HEX 2000 CONSTANT TASK1
 
 \ ADD pause to I/O functions for smooth multi-tasking
 : TINK  ( -- ) PAUSE GEN1 1600 HZ -6 DB  ; \ sound chip I/O
@@ -65,19 +65,20 @@ HEX 2000 CONSTANT TRAPPER
 
 \ Now it's multi-task friendly
 : SP.TRAP ( spr#)  DUP TRAPX TRAPY  ;
+\ : SP.TRAP ( spr#) PAUSE  0 OVER AT-XY SP.Y V@ . ;
+
 
 \ SPRITE-TRAP is a what the TRAPPER task does.
 \ Notice it's an endless loop
 DECIMAL
 : SPRITE-TRAP ( spr# -- )
+    HEX
     BEGIN
-      0 SP.TRAP
-      1 SP.TRAP
-      2 SP.TRAP
-      3 SP.TRAP
-      4 SP.TRAP
-      5 SP.TRAP
-      GEN1 MUTE
+      PAUSE
+       0 1 COLLISION
+       0 5 COLLISION
+       1 5 COLLISION
+
     AGAIN
 ;
 
@@ -90,11 +91,18 @@ DECIMAL
     CR
     0 23 AT-XY ." A B and F collide"
     6 DUP SPRITES MOVEALL
+   TASK1 DUP USIZE 0 FILL  FORK
+  ['] SPRITE-TRAP  TASK1 ASSIGN
+    MULTI  TASK1 WAKE
     AUTOMOTION
     BEGIN
-       0 1 COLLISION
-       0 5 COLLISION
-       1 5 COLLISION
+       0 SP.TRAP
+       1 SP.TRAP
+       2 SP.TRAP
+       3 SP.TRAP
+       4 SP.TRAP
+       5 SP.TRAP
+       GEN1 MUTE
        MUTE
        ?TERMINAL
    UNTIL
@@ -102,8 +110,7 @@ DECIMAL
    STOPMOTION
    8 SCREEN ;
 
-    TRAPPER DUP USIZE 0 FILL  FORK
-    ' SPRITE-TRAP  TRAPPER ASSIGN
+
 \    MULTI  TRAPPER WAKE
 
 CR .( Type RUN to start demo)
