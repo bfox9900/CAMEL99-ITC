@@ -1,0 +1,44 @@
+\ DEMO: Compile code in CPU RAM & SAMS memory and compare speed May 2022 BFox
+
+NEEDS FAR:  FROM DSK1.SAMSCODE
+
+INCLUDE DSK1.VALUES
+INCLUDE DSK1.ELAPSE
+
+HEX
+  5 CONSTANT FIVE
+100 CONSTANT MASK
+  0 VALUE BVAR
+
+: INNERBENCH
+    BEGIN
+      DUP SWAP DUP ROT DROP 1 AND
+      IF FIVE +
+      ELSE 1-
+      THEN TO BVAR
+      BVAR DUP MASK AND
+    UNTIL ;
+
+: BENCHIE  MASK 0 DO   1 INNERBENCH  DROP   LOOP ;
+
+\ __________________________________________
+
+F8 CODEPAGE
+
+FAR: INNERBENCH2
+    BEGIN
+      DUP SWAP DUP ROT DROP 1 AND
+      IF FIVE +
+      ELSE 1-
+      THEN TO BVAR
+      BVAR DUP MASK AND
+    UNTIL
+;FAR
+
+F9 CODEPAGE \ Force a call to another SAMS bank
+FAR: BENCHIE2  MASK 0 DO  1 INNERBENCH2  DROP  LOOP ;FAR
+
+CR .( To test: BENCHIE: )
+CR .( ELAPSE BENCHIE )
+CR .( ELAPSE BENCHIE2)
+CR .( ~25 seconds)
