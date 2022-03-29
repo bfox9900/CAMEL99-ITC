@@ -21,39 +21,48 @@ Example:
 c:\forth             has XFC99X.exe
 c:\forth\cc9900      contains the source files
 
-### Standard Kernel Build
+## Standard Kernel Build V2.69
 Loads and runs with normal Editor assembler cartridge. Entry=HEX A000
-In file FORTHITC.MAK set the compiler switches as shown below:
 
-  `TRUE  VALUE ITC`
+### To re-build Standard Kernel
+set the compiler switches as shown below in FORTHITC.MAK
+TRUE  VALUE ITC          \ used to prevent directly compiling HILEVEL.HSF
+FALSE VALUE SLOWER       \ TRUE saves 28 bytes
+FALSE VALUE HASHING      \ Not working yet
 
-  `FALSE VALUE SLOWER`
-
-  `FALSE VALUE HASHING`
-
-  `FALSE VALUE SUPERCART`
+TRUE \ true= standard kernel ;  false=non-standard kernel
+[IF]
+    A000 VALUE KERNORG
+    2000 VALUE HEAPORG
+[ELSE]
+		6000 VALUE KERNORG  \ the specific alternate load address to use
+		2000 VALUE HEAPORG  \ initial HEAP address when kernel boots
+[THEN]
 
 At the DOS prompt type:    XFC99X  fload cc9900\src.itc\forthitc.mak
 
 ### SuperCart Kernel Build
-Loads an runs with Editor assembler Super cartridge with 8K RAM installed.
+Loads an runs with Editor Assembler Super cartridge with 8K RAM installed.
 Entry=HEX 6000
-*This kernel does not work with DSK1.SAVESYS libary file.
+*This kernel does not work with DSK1.SAVESYS library file.
 
-In file FORTHITC.MAK set the compiler switches as shown below:
+ONLY one flag needs to change in FORTHITC.MAK as shown below:
 
-`\ compiler switches`
+TRUE  VALUE ITC          \ used to prevent directly compiling HILEVEL.HSF
+FALSE VALUE SLOWER       \ TRUE saves 28 bytes
+FALSE VALUE HASHING      \ Not working yet
 
-`TRUE  VALUE ITC`
+FALSE  \ **false=non-standard kernel**
+[IF]
+    A000 VALUE KERNORG
+    2000 VALUE HEAPORG
+[ELSE]
+		6000 VALUE KERNORG  \ the specific alternate load address to use
+		2000 VALUE HEAPORG  \ initial HEAP address when kernel boots
+[THEN]
 
-`FALSE VALUE SLOWER       \ TRUE saves 22 bytes`
 
-`FALSE VALUE HASHING`
-
-`TRUE VALUE SUPERCART`
-
-
-At the DOS prompt type:    XFC99X  fload cc9900\src.itc\forthitc.mak
+At the DOS prompt type:    XFC99X fload cc9900\src.itc\forthitc.mak
 
 *****************************************************
 ## Source LOG
