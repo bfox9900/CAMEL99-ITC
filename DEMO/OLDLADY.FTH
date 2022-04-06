@@ -58,7 +58,8 @@ DECIMAL
           REPEAT DROP ;
 
 : VERSE ( swallow-addr -- )
-        CR ." There was an old lady who swallowed a " DUP >ANIMAL TYPE ." ," 1000 MS
+        CR ." There was an old lady who swallowed a " DUP >ANIMAL TYPE ." ," 
+        1000 MS
         DUP >ASIDE CR TYPE  1000 MS
         REASONS
         CR ." Perhaps she'll die!"
