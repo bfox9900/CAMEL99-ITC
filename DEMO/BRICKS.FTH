@@ -2,10 +2,9 @@
 \ based on a BASIC demo by @sometimes99er  Atariage.com
 
 HERE  ( for measuring size of this code)
-
+\ INCLUDE DSK1.TOOLS
 INCLUDE DSK1.GRAFIX
 INCLUDE DSK1.RANDOM
-INCLUDE DSK1.MARKER
 \ INCLUDE DSK1.ELAPSE
 CR .( Compiling BRICKS...)
 
@@ -52,12 +51,18 @@ DECIMAL
 
 \ emit char & char+1 with one write
 : BRICK    ( char -- ) DUP 1+ SWAP FUSE VPOS V! ;
-: SHADOW?  ( Vaddr -- ?) DUP VC@ DUP 39 < ;
+: SHADOW?  ( Vaddr -- Vaddr ?) DUP VC@ DUP 39 < ;
 
 : ?DIAGLINE   SHADOW? IF   1 OR SWAP VC! EXIT   THEN  2DROP ;
 : ?DWNLINE    SHADOW? IF   2 OR SWAP VC! EXIT   THEN  2DROP ;
-: ?CLINE      SHADOW? IF   3 OR SWAP VC! EXIT   THEN  2DROP ;
+: ?CORNLINE   SHADOW? IF   3 OR SWAP VC! EXIT   THEN  2DROP ;
 : ?RLINE      SHADOW? IF   4 OR SWAP VC! EXIT   THEN  2DROP ;
+
+: EMPTY? ( X Y -- ?)
+      AT-XY          \ place cursor and retain in vcol & vrow variables
+      VPOS V@ SPLIT  ( -- c c) \ read 2 chars at once then split
+      40 < SWAP 40 < ( -- ? ?) AND
+;
 
 DECIMAL
 : GO
@@ -69,14 +74,12 @@ DECIMAL
     1025 0
     DO
     \ find empty screen location
-      30 RND 23 RND AT-XY
-      VPOS DUP VC@ 40 <   ( -- Vaddr ?)
-      SWAP 1+  VC@ 40 <   ( -- ? ?) AND
+     30 RND 23 RND EMPTY?
       IF
         7 RND 8* 40 + BRICK
         Right ?RLINE
         Down ?DWNLINE
-        Corner ?CLINE
+        Corner ?CORNLINE
         Diagonal ?DIAGLINE
       THEN
     LOOP
@@ -94,6 +97,7 @@ CR DECIMAL . .( bytes added to system)
 
  CR .( Locking dictionary )
 
+INCLUDE DSK1.MARKER
 LOCK
 
 INCLUDE DSK1.SAVESYS
