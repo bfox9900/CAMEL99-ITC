@@ -1,4 +1,4 @@
-CR .( blocks.fth  for CAMEL99 Forth     Aug 2021  BJFox)
+CR .( blocks.fth  for CAMEL99 Forth     Apr 2022  BJFox)
 
 \ Based on ideas from HsForth by Jim Kalihan (RIP)
 \ Oct 9 2019 reduced compiled size from 930 bytes to 890
@@ -7,6 +7,7 @@ CR .( blocks.fth  for CAMEL99 Forth     Aug 2021  BJFox)
 \ Feb 2021   Added MASK to replace "7FFF AND" 4x. Same size, faster
 \            Used DUP>R cuz it's now in Kernel 2.66
 \ Aug 2021   Added ?BLKFILE to test file in dir.
+\ Apr 2022   Added LOAD and --> to allow compiling from block files
 
 NEEDS OPEN-FILE  FROM DSK1.ANSFILES
 NEEDS .R         FROM DSK1.UDOTR
@@ -149,6 +150,19 @@ HEX
            FIRST CELL+ I (WBLK)
         LOOP
         CLOSE-BLOCKS ;
+DECIMAL
+\ added LOAD so we can compile code from BLOCKS
+   VARIABLE SCR
+64 CONSTANT B/L
+: LINE ( n -- addr) B/L *  SCR @ BLOCK  + ;
+: LOAD ( n -- )
+  SCR !
+  16 0 DO
+     I LINES ! ( keep track of line number )
+     I LINE B/L EVALUATE
+  LOOP ;
+
+: -->   ( n -- ) SCR @ 1+ LOAD ;
 
 HERE SWAP - DECIMAL  CR .  .( bytes)
 EMPTY-BUFFERS
