@@ -5,7 +5,7 @@ What started as a maintenance update became something bigger.
 
 #### JIFFS timer is Removed
 The JIFFS timer had more overhead than needed. It is replaced with TICKS.
-TICKS uses the 9901 timer as it's reference. TICKS is now used to create MS.
+TICKS uses the 9901 timer as its reference. TICKS is now used to create MS.
 MS resolution has been improved to ~10 milli-seconds .
 
 #### VDP Driver changes
