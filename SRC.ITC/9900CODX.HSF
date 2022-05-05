@@ -1,5 +1,5 @@
 \ ==========================================================
-\ T I - 9 9   C A M E L   F O R T H   P R I M I T I V E S
+\ T I - 9 9   C A M E L   F O R T H   P R I M I T I V E S    MAR 2022
 
 \ This code, compiled with a cross compiler built on HSF2012
 \ a re-build of HS/Forth for DOS by Brian Fox is
@@ -113,12 +113,11 @@ CROSS-COMPILING
 cr ." Assembling Forth Primitives"
 
 CROSS-ASSEMBLING
-          START.       \ sets a timer
-          NEW.         \ init target memory segment to FFFF
-SUPERCART
-[IF]     6000 ORIGIN.
-[ELSE]   A000 ORIGIN.
-[THEN]   TI-99.EA5
+
+        START.               \ sets a timer
+        NEW.                 \ init target memory segment to FFFF
+        KERNORG ORIGIN.
+        TI-99.EA5
 
 
 \ ==============================================================
@@ -142,12 +141,17 @@ TALIGN
 NEW-JMPTABLE
 XSTATE OFF
 l: _exit      IP RPOP,        \ >8388
-l: _next                      \ Forth ITC NEXT routine (>838A)
-@@9:         *IP+ W  MOV,     \ move CFA into Working register & incr IP \ 22
-             *W+  R5 MOV,     \ move contents of CFA to R5 & INCR W      \ 22
-             *R5  B,          \ branch to the address in R5              \ 12
-                                                                       \ = 56
- l: _?branch   \ Faster way to avoid penalty of TOS refill
+l: _next
+@@9:         *IP+ W  MOV,
+             *W   R5 MOV,
+             *R5  B,
+
+l: _enter     IP RPUSH,
+              W INCT,
+              W IP MOV,
+              @@9 JMP,
+
+l: _?branch   \ Faster way to avoid penalty of TOS refill
               TOS DEC,        \ After DEC if tos=0, this will cause a carry flag                     10
               TOS POP,        \ refill TOS changes L> A> EQ flags, BUT does not change carry flag    22
               @@2 JOC,        \                                                                      10
@@ -155,10 +159,6 @@ l: _branch   *IP IP ADD,      \ *IP points to an offset number in memory. Add to
               @@9 JMP,        \ *replaced NEXT, with short JMP. 20% faster! same size                10
 @@2:          IP INCT,        \ move IP forward past branch offset (don't branch)                    10
               @@9 JMP,        \ JMP to _next
-
-l: _enter     IP RPUSH,       \ push IP register onto the return stack      28
-              W IP MOV,       \ move PFA into Forth IP register             14
-              @@9 JMP,        \                                          =  42
 
 l: _lit       TOS     PUSH,   \ 28
              *IP+ TOS MOV,    \ 22
@@ -224,26 +224,29 @@ T' LIT RESOLVES 'LIT
   ( TCREATE  allows these words to have runnable code in the CFA )
 TCREATE: DOVAR  ( -- addr)    \ Executor that executes a "VARIABLE"
              TOS PUSH,        \ make room in TOS
-             W TOS MOV,       \ contents of PFA -> TOS
-             NEXT,
+           W TOS MOV,         \ contents of CFA -> TOS
+             TOS INCT,        \ convert to PFA
+                 NEXT,
              ENDCODE
 T' DOVAR  RESOLVES 'DOVAR     \ 'DOVAR is used by the cross-compiler
 
 
 TCREATE: DOCON   ( -- n )     \ Executor that executes a "CONSTANT"
               TOS PUSH,
-             *R8 TOS MOV,     \ Fetch contents of PFA->TOS
-              NEXT,
+                W INCT,       \ convert CFA to PFA
+           *W TOS MOV,        \ Fetch contents of PFA->TOS
+                  NEXT,
               ENDCODE
-T' DOCON RESOLVES 'DOCON     \ 'DOCON is used by the cross-compiler
+T' DOCON RESOLVES 'DOCON       \ 'DOCON is used by the cross-compiler
 
 
 \ In CAMEL99 the 9900 Workspace register (WP) doubles as USER pointer
 TCREATE: DOUSER ( -- addr)   \ USER variables are local to each task
               TOS PUSH,      \ Executor that executes a "USER VARIABLE"
               TOS STWP,
-              *W TOS ADD,    \ add USER VAR's offset to Workspace pointer
-              NEXT,
+                W INCT,
+           *W TOS ADD,    \ add USER VAR's offset to Workspace pointer
+                  NEXT,
               ENDCODE
 T' DOUSER  RESOLVES 'DOUSER  \ 'DOUSER is used by the cross-compiler
 
@@ -258,17 +261,17 @@ T' DOUSER  RESOLVES 'DOUSER  \ 'DOUSER is used by the cross-compiler
 \ DODOES moves register W to the TOP of Stack register. (R4 is TOS)
 \ So the high-level Forth code begins with the address of the parameter
 \ field on top of stack.
-\ Using BL automatically computes the new parameter field into R11
+\ Using BL automatically computed the new parameter field into R11
 \ which is exactly what we need to be the IP so we just do one MOV.
 TCREATE: DODOES  ( -- a-addr)
               TOS PUSH,       \ save TOS reg on data stack      28
-              W TOS MOV,      \ put defined word's PFA in TOS   14
+              W TOS MOV,      \ put defined word's CFA in TOS   14
+              TOS INCT,       \ convert to PFA
               IP RPUSH,       \ push old IP onto return stack   28
               R11 IP MOV,     \ R11 has the new PFA -> IP       14
               NEXT,                                       \     84
               ENDCODE
  T' DODOES RESOLVES 'DODOES   \ 'DODOES is used by the cross-compiler
-
 \ ***********************end of executors *************************
 
 \ =============[ Forth code primitives begin ] ====================
@@ -279,7 +282,7 @@ CODE EXECUTE ( xt -- )
 +CODE PERFORM ( 'xt -- )     \ fetch the XT from an address
              *TOS W MOV,      \ move the execution token in TOS into temp
 @@1:          TOS POP,        \ refill TOS
-             *W+ R5 MOV,      \ move contents of the XT (the address of the doer routine) to R5
+             *W  R5 MOV,      \ move contents of the XT (the address of the doer routine) to R5
              *R5 B,           \ branch to the address of the DOER routine
               ENDCODE
 
@@ -570,7 +573,7 @@ CODE 8*      ( n -- nx8)   \ use in graphics & sprite calculations
               ENDCODE
 
 CODE 2/      ( n -- n)     \ div instruction is 52 clocks minimum
-              TOS 1 SRA,    \ this is 14
+              TOS 1 SRL,   \ **BUG FIX**  was SRA. DUH!
               NEXT,
               ENDCODE
 

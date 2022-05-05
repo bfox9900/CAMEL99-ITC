@@ -17,21 +17,15 @@ CROSS-COMPILING
                  TRUE ABORT" Compile halted"
               THEN ;
 
-: (CODE:)      ;
-
-: CODE         !CSP              \ record the stack pointer for error checking
-               NEW-JMPTABLE      \ init the jump table
-               TCREATE:
-               THERE 2+ CFA,  \ the CFA of a code word, points to the next CELL address,
-
-               tcodewords 1+!    \ count the new code word for COMPILER report
-               DOES> TCODE-ERR ; \ if you try to run these words they error out
-
-: +CODE        !CSP
+: +CODE        !CSP              \ used to allow jumping between CODE/ENDCODE
                TCREATE:
                THERE 2+ CFA,
                tcodewords 1+!
                DOES> TCODE-ERR ;
+
+
+: CODE         NEW-JMPTABLE      \ init the jump table
+               +CODE ;
 
 : ENDCODE      ?CODE-ERR ;
 

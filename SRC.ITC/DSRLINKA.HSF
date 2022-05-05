@@ -12,6 +12,7 @@
 \ - saved 44 bytes!!                                        B. Fox
 \ Mar 25  Moved NAMBUF up to just below DSR Workspace in Hi RAM.
 
+[CC] HEX
 CROSS-ASSEMBLING  XASSEMBLER DEFINITIONS
 
 \ we need more labels than I normally use for Forth style CODE Words
@@ -46,10 +47,10 @@ l: H1300   DATA 1300
 
 \ use memory ABOVE Forth RETURN stack (ie: use high end of DATA stack)
 \ for workspace & name buffer
-[CC] RP0 0A +      [TC] EQU DREGS
-[CC] 4 2* DREGS + [TC] EQU DREG(4)  \ address of dsr wksp R4
-[CC] 5 2* DREGS + [TC] EQU DREG(5)  \ compute address of DREGS register 5
-[CC] DREGS 8 -    [TC] EQU NAMBUF
+[CC] RP0   02 +      [TC] EQU NAMBUF
+[CC] RP0   0A +      [TC] EQU DREGS
+[CC] 4 2* DREGS + [TC] EQU DREG(4)  \ address of DREGS register 4
+[CC] 5 2* DREGS + [TC] EQU DREG(5)  \ address of DREGS register 5
 
 NEW-JMPTABLE
 \ === DSR ENTRY POINT ===

@@ -8,8 +8,8 @@
 
 \ timer resolution:  64 clock periods, thus 64*333 = 21.3 microseconds
 \ Max Duration    :  ($3FFF) 16383 *64*333 ns = 349.2 milliseconds
-CROSS-ASSEMBLING
-[CC] DECIMAL [TC]
+[CC] DECIMAL
+TARGET-COMPILING
 CODE TMR!   ( n -- )         \ load TMS9901 timer from stack
              0 LIMI,
              R12 CLR,        \ CRU addr of TMS9901 = 0
@@ -33,8 +33,6 @@ CODE TMR@   ( -- n)         \ read the TMS9901 timer
              NEXT,
              ENDCODE
 
-
-[CC] DECIMAL [TC]
 : TICKS  ( n -- )   \ n must be less than 4000. 4000 TICKS ~= 100 mS
             TMR@ >R
             BEGIN
@@ -44,6 +42,5 @@ CODE TMR@   ( -- n)         \ read the TMS9901 timer
             R> 2DROP
 ;
 
-: MS   ( n -- ) 10 /  0 ?DO  420 TICKS LOOP ;
 
-[CC] HEX [TC]
+[CC] HEX

@@ -63,6 +63,7 @@ host: ;                            \ this the CROSS-compiler's ';'
                 'EXIT cfa,
                 ?CSP               \ check is stack is the same place as when we started the definition
                 T[                 \ reset XSTATE (TARGET STATE) to interpreting
+
 ;host   immediate
 
 ?stk
@@ -77,6 +78,3 @@ SYNONYM x:   :                        \ "TARGET-compiling colon"
 SYNONYM ;x   ;  IMMEDIATE             \ "TARGET-compiling semi-colon"
 
 \ .XMEM                               \ show the cross compiler memory. It should be empty.
-
-\                  C R O S S    C O M P I L E R    E N D S
-\ /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\

@@ -1,13 +1,10 @@
  \ FilesyX2.hsf                                              Apr 10 2021  Fox
  \ *New: [PAB FNAME] is passed to DSRLNK on the Forth stack
- \       Removed PSHPAB POPPAB to save space. Only used once in the file
  \ Added FOPEN and FGET, common factors for ANS files
 
-FORTH HEX
+[CC] HEX [TC]
 
-TARGET-COMPILING
-
-\ VARIABLE: ^PAB            \ *moved to CAMEL kernel file
+\ VARIABLE ^PAB            \ *moved to CAMEL kernel file
 
 \ To save kernel space we are reading/writing VDP directly using Forth words
 \ There is NO PAB duplicate in CPU RAM.
@@ -31,11 +28,13 @@ CODE [PAB   ( -- adr) TOS PUSH,  ^PAB @@ TOS MOV,  NEXT, ENDCODE
  CODE FNAME]  ( vaddr -- vaddr') TOS  9 ADDI,     NEXT, ENDCODE \ 9+   string    32
 
 \ control the PAB stack
+[CC] HEX [TC]
 12C CONSTANT PSZ       \ size of PAB+BUFFER
 
 \ generic file error handler
 : ?FILERR  ( ior -- )
            ?DUP IF CR CR T." * File Err #" .  ABORT THEN ;
+
 
 : VPLACE   ( $addr len Vaddr -- )  \ PLACE stack string in VDP RAM
            2DUP VC! 1+ SWAP VWRITE ;
@@ -55,7 +54,7 @@ CODE [PAB   ( -- adr) TOS PUSH,  ^PAB @@ TOS MOV,  NEXT, ENDCODE
           [PAB FLG]    VC!          \ set file access mode
           [PAB RECLEN] VC!          \ set bytes/rec
           [PAB FNAME] DUP           \ -- addr len Vaddr Vaddr
-          BL + [PAB FBUFF] V!       \ FBUFF=32 bytes past fname
+          020 + [PAB FBUFF] V!       \ FBUFF=32 bytes past fname
           VPLACE                    \ write string to [PAB FNAME]
           0 FILEOP                  \ open the file, return err code
 ;
@@ -66,7 +65,7 @@ CODE [PAB   ( -- adr) TOS PUSH,  ^PAB @@ TOS MOV,  NEXT, ENDCODE
 : FSTAT ( -- c)  9 FILEOP DROP [PAB STAT] VC@ ;
 
 : FGET  ( buffer -- len ) \ read PABbuffer->CPU ram, returns length
-         [PAB FBUFF] V@ SWAP [PAB CHARS] VC@ DUP>R VREAD R> ;
+         [PAB FBUFF] V@ SWAP [PAB CHARS] VC@  DUP>R  VREAD R> ;
 
 \ *G INCLUDED can bootstrap the system on startup. It is nestable.
 \ ** Saves all state info and allocates a new PAB in VDP RAM
@@ -83,9 +82,8 @@ CODE [PAB   ( -- adr) TOS PUSH,  ^PAB @@ TOS MOV,  NEXT, ENDCODE
            BEGIN
              2 FILEOP 0=                   \ file read operation
            WHILE
-             RP0 100 - DUP FGET              \ 160 bytes below top of RP works
-
-             ( -- addr len ) INTERPRET     \ interpret the buffer
+             RP0 100 - DUP FGET            \ use memory below RSTACK
+        ( -- addr len ) INTERPRET          \ interpret the buffer
              LINES 1+!                     \ count the line
            REPEAT
            PSZ ^PAB +!                     \ remove PAB from pab stack

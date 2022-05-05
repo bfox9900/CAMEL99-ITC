@@ -4,30 +4,30 @@
 \ These versions do not use compile-time checking like Fig-Forth.
 \ This improves compile time speed
 
-TARGET-COMPILING
+[CC] HEX [TC]
 : <BACK    ( addr --) HERE -  , ;   \ resolve branch backwards
 : AHEAD    COMPILE BRANCH HERE 0 , ;  XIMMEDIATE \ compile a jump forward
 
 \ CAMEL Forth LEAVE stack pointer is called LP. It is initialized by QUIT
-\ : >L        ( x -- ) ( L: -- x ) 2 LP +!   LP @ ! ;     \ LP stack grows up
-\ : L>        ( -- x ) ( L: x -- ) LP @ @  -2 LP +! ;
- CODE >L
-  R1 STWP,
-  3A (R1) INCT,
-  3A (R1) R0 MOV,
-   TOS *R0 MOV,
-   TOS POP,
-   NEXT,
- ENDCODE
+: >L        ( x -- ) ( L: -- x ) 2 LP +!   LP @ ! ;     \ LP stack grows up
+: L>        ( -- x ) ( L: x -- ) LP @ @  -2 LP +! ;
+\ CODE >L
+\  R1 STWP,
+\  3A (R1) INCT,
+\  3A (R1) R0 MOV,
+\   TOS *R0 MOV,
+\   TOS POP,
+\   NEXT,
+\ ENDCODE
 
- CODE L>
-   TOS PUSH,
-    R1 STWP,
-    3A (R1) TOS MOV,
-    *TOS TOS MOV,
-    3A (R1) DECT,
-    NEXT,
- ENDCODE
+\ CODE L>
+\   TOS PUSH,
+\    R1 STWP,
+\    3A (R1) TOS MOV,
+\    *TOS TOS MOV,
+\    3A (R1) DECT,
+\    NEXT,
+\ ENDCODE
 
 \ THEN resolves branches
 \ computes offset: (HERE - addr)  & stores result in addr
@@ -42,18 +42,18 @@ TARGET-COMPILING
 \       define the TARGET system LOOPS below.
 
 : RAKE    ( -- ) ( L: 0 a1 a2 .. aN -- )
-      BEGIN  L> ?DUP WHILE   t[COMPILE] THEN   REPEAT  ;  XIMMEDIATE
+      BEGIN  L> ?DUP WHILE    T[COMPILE] THEN  REPEAT ;
 
 \ ========================================================================
 \ DO/LOOP  COMPILERS
 \                 -compile this-   - run this now-
-: DO        ( -- ) ?COMP COMPILE <DO>     HERE 0 >L ;  XIMMEDIATE
-: ?DO       ( -- ) ?COMP COMPILE <?DO>    HERE 0 >L ;  XIMMEDIATE
+: DO        ( n n -- adr) ?COMP COMPILE <DO>   0 >L  HERE  ;  XIMMEDIATE
+: ?DO       ( n n -- adr) ?COMP COMPILE <?DO>  0 >L  HERE  ;  XIMMEDIATE
 : LEAVE     ( -- ) COMPILE UNLOOP  t[COMPILE] AHEAD >L ; XIMMEDIATE
 
 \ complete a DO loop
-: LOOP      ( -- )  COMPILE <LOOP>  <BACK  RAKE ; XIMMEDIATE
-: +LOOP     ( -- )  COMPILE <+LOOP> <BACK  RAKE ; XIMMEDIATE
+: LOOP      ( -- )  COMPILE <LOOP>  <BACK   RAKE ; XIMMEDIATE
+: +LOOP     ( -- )  COMPILE <+LOOP> <BACK   RAKE ; XIMMEDIATE
 
 \ SIMPLIFIED LOOPS
 \ Posted by dxforth comp.lang.forth

@@ -27,7 +27,7 @@
 \              >VPOS computes address from col,row & adds VPG
 \              added TOPLN code word to calc. topln of a screen
 \ Jan 28 2020  V2.59 Replaced ?NUMBER with NUMBER?
-\              Minor changes to <INTERPRET> Saved 34 bytes.
+\              Minor changes to <INTERP> Saved 34 bytes.
 \ Oct 2020     V.266 Added CONTEXT array and CURRENT to support wordlists
 \              Fixed bug in RAKE and fixed ISOLOOPS
 
@@ -49,15 +49,13 @@ TARGET-COMPILING
 \ S Y S T E M   C O N S T A N T S
 
 [CC] HEX
-cr .( Constants and VARIABLEs...)
+CR .( Constants and VARIABLEs...)
 
 TARGET-COMPILING
-
 \ fixed system memory locations
- FF00   CONSTANT TIB
- FF7C   CONSTANT SP0
- FEEE   CONSTANT RP0
-
+     FFF8   CONSTANT SP0    \ data stack
+     FF60   CONSTANT RP0    \ Return stack
+     FEA0   CONSTANT TIB    \ tib grows up towards RP0.
 
 \ Utility constants
       0 CONSTANT FALSE
@@ -124,7 +122,7 @@ VARIABLE L0  [CC] 4 CELLS TALLOT  [TC]
 VARIABLE ^PAB
 VARIABLE LINES
 VARIABLE C/SCR
-VARIABLE 'IV    \ *G interpretor vector. Holds address of <INTERPRET>
+VARIABLE 'IV    \ *G interpretor vector. Holds address of <INTERP>
 VARIABLE H
 VARIABLE VP
 VARIABLE CURS     [CC] 205F CURS T! [TC]  \ BLANK and '_' in one VARIABLE
@@ -148,12 +146,12 @@ SLOWER [IF]
 : C,        ( n -- ) HERE C! 1 ALLOT  ;
 : ALIGN     ( -- )   HERE ALIGNED DP ! ;
 : PAD       ( -- addr) HERE TPAD @ + ;
-: COMPILE   ( -- )  R> DUP 2+ >R @ COMPILE, ;
+: COMPILE   ( -- )  R> DUP 2+ >R @  , ;
 : IMMEDIATE ( --)   01 LATEST @ 1-  C! ;
-: LITERAL   ( n -- n|~) STATE @ IF  COMPILE LIT  COMPILE,  THEN ;  XIMMEDIATE
+: LITERAL   ( n -- n|~) STATE @ IF  COMPILE LIT  ,  THEN ;  XIMMEDIATE
 : ]         ( -- ) STATE ON  ;
 : [         ( -- ) STATE OFF ;  XIMMEDIATE
-: DEPTH     ( -- n ) SP0 SP@ 2+ - 2/ ;
+: DEPTH     ( -- n ) SP0 SP@ 2+ - 2/ ; \ ** needs signed shift
 
 \ ======================================================================
 \ PAB base address
@@ -266,7 +264,7 @@ TARGET-COMPILING
 : PLACE   ( src n dst -- ) 2DUP C! 1+ SWAP CMOVE ;
 
 SLOWER [IF]
-: /STRING ( caddr1 u1 n - caddr2 u2 ) TUCK - >R + R> ; \ 10 bytes
+: /STRING ( caddr1 u1 n - caddr2 u2 ) TUCK - >R + R> ;  \ 10 bytes
 
 [ELSE]
 
@@ -396,13 +394,15 @@ CODE DIGIT?   ( char -- n f )
 \ ======================================================================
 \ S I M P L E   S O U N D  I N T E R F A C E
 
-[CC] include cc9900\SRC.ITC\ticktock.hsf   \ hardware milli-second timer
-
 TARGET-COMPILING
 
 \ write a byte to address of TMS9919 chip
 : SND!   ( c -- )  8400 C!  ;  \ 4 bytes, 277 uS
 
+[CC] DECIMAL [TC]
+: MS   ( n -- ) 10 /  0 ?DO  420 TICKS LOOP ;
+
+[CC] HEX [TC]
 : BEEP     ( -- )
             80 SND! 5 SND!    \ pre-calculated values for OSC1 1390Hz
             91 SND!           \ turn on OSC1 at -2 dB level
@@ -455,7 +455,8 @@ CODE LASTLN ( -- vaddr)
 \ =====================================================================
 \ *G Scrolling has been implemented in Forth using VREAD & VWRITE
 \ ** Uses un-allocated Dictionary as a temporary buffer to hold lines of text
-: SCROLL ( buffer vaddr -- )
+0 [IF]
+: SCROLL ( -- )
        PAUSE
        HERE 100 +     \ grab some space above Forth PAD
        TOPLN C/SCR @  ( -- buffer Vstart len)
@@ -465,9 +466,18 @@ CODE LASTLN ( -- vaddr)
          DUP  I           C/L@ 4* VWRITE
        C/L@ 4* +LOOP
        DROP
-       0 17 2DUP AT-XY >VPOS C/L@ BL VFILL
+       0 17 AT-XY VPOS C/L@ BL VFILL
+;
+[ELSE]
+:  SCROLL ( -- )
+         PAUSE
+         VPG @  HERE 100 + DUP>R C/SCR @  VREAD
+         R> C/L@ +  VPG @  C/SCR @ C/L@ - VWRITE
+         0 17 AT-XY VPOS C/L@ BL VFILL
 ;
 
+
+[THEN]
 \ ======================================================================
 \ V D P   T E X T   O U T P U T
 
@@ -483,9 +493,11 @@ CODE LASTLN ( -- vaddr)
           DUP 08 = IF  DROP BS     EXIT THEN
          (EMIT) ;
 
-: TYPE ( addr cnt -- )
-\    DUP 0= IF  2DROP EXIT  THEN PAUSE
-    0 DO   COUNT (EMIT)   LOOP  DROP ;
+                               [PRIVATE]
+: (TYPE) ( addr cnt --)  0 ?DO   COUNT CPUT IF CR THEN   LOOP ;
+
+                              [PUBLIC]
+: TYPE ( addr cnt --) PAUSE (TYPE) DROP ;
 
 : SPACE  ( -- )   BL (EMIT) ;
 : SPACES ( n -- ) 0 MAX  0 ?DO  SPACE  LOOP ;
@@ -580,7 +592,8 @@ SLOWER [if]
 : SIGN   ( n -- ) 0< IF  T[CHAR] -  HOLD  THEN ;
 : UD.    ( d -- ) <#  #S  #> TYPE SPACE ;
 : U.     ( u -- ) 0 UD. ;
-: .      ( n -- ) DUP ABS 0 <#  #S ROT SIGN  #> TYPE SPACE ;
+: (.)    ( n -- caddr len)  DUP ABS 0 <#  #S ROT SIGN  #> ;
+: .      ( n -- ) (.)  TYPE SPACE ;
 
 \ ======================================================================
 \ M I S C E L L A N E O U S
@@ -599,7 +612,7 @@ SLOWER [if]
 \ Q U I T :  The  O U T E R   I N T E R P R E T E R
 
 : QUIT     ( -- )
-           L0 LP !   RP0 RP!
+           RP0 RP! L0 LP !
            SOURCE-ID OFF
            t[COMPILE] [
            BEGIN
@@ -762,7 +775,7 @@ TARGET-COMPILING
               0  2 VWTR  \ set VDP screen page
                VTOP OFF  \ topline VDP offset
                VPG  OFF  \ VDP screen page offset
-             12  7 VWTR  \ sets FG & BG color
+             17  7 VWTR  \ sets FG & BG color
              28 C/L!
              0 0 AT-XY
              2 VMODE !   \ 2=ID for 40 column "TEXT" mode
@@ -804,6 +817,8 @@ TARGET-COMPILING
 \ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 \  =====[ CANNOT DEFINE ANY CONSTANT, VARIABLE OR USER AFTER THIS ]=====
 \ //////////////////////////////////////////////////////////////////////
+
+
 \ ======================================================================
 \ D O E S   S U P P O R T
 : (;CODE) ( -- )  R> LATEST @ NFA>CFA !  ;
@@ -823,12 +838,12 @@ TARGET-COMPILING
 \  ===[ CANNOT COMPILE IF, ELSE, THEN, BEGIN UNTIL ETC. AFTER THIS ]===
 \ //////////////////////////////////////////////////////////////////////
 \ ======================================================================
-\ INIT: Set Workspace, copy code to scratch pad, set stacks, run BOOT
+\ COLD start. Sets Workspace, copy code to scratch pad, set stacks, run BOOT
 
 [cc] HEX
 
 TARGET-COMPILING
-CODE INIT
+CODE COLD
               WRKSP0 LWPI,
               R0 HSprims LI,   \ source
               R1 HSstart LI,   \ destination
@@ -850,42 +865,46 @@ CODE INIT
 \ *G ;CODE is moved to DSK1.SYSTEM ***
 
 \ *new* Added VER string for easy updates
-SUPERCART
+[CC] KERNORG 6000 =
 [IF]
-     : .VER   T." 2.69 SuperCart" ;
+    [TC] : .VER   T." 2.69.4522 SuperCart" ;
 [ELSE]
-     : .VER   T." 2.69" ;
+    [TC] : .VER   T." 2.69.4522" ;
 [THEN]
 
-[CC] HEX
+[CC]
 \ ======================================================================
 \ B O O T   U P   C O D E
+HEX
 TARGET-COMPILING
 
-\ *G restarts Forth but does not load DSK1.START
-: WARM       ( -- )
+\ *G (WARM) initializes variables and vectors
+: WARM      ( -- )
               80 83C2 C!
               26 TPAD !
               1000 VP !
               2000  H !
               3FFF TMR!
               VDPTOP ^PAB !
+              L0 LP !
               FLOOR ON
+              SOURCE-ID OFF
+
             t['] <INTERP> 'IV !
             t['] <FIND>   'FIND !
+
              DECIMAL
              ORGDP @ DP !
              ORGLAST @ LATEST !
              LATEST DUP CONTEXT ! CURRENT !
-             TEXT
-             TS" CAMEL99 Forth" TYPE .VER
+             TEXT TS" CAMEL99 Forth " TYPE .VER
 ;
 
-: COLD
-        WARM
-        HEX  CR HERE U.  LATEST @ U.  CONTEXT @  U.   CONTEXT @ @ U.
-        TS" DSK1.START" INCLUDED
-        ABORT ;
+\ G*  CAMEL99 is the primary boot word that starts Forth and loads extensions
+: LOADSYS
+            WARM
+            TS" DSK1.START" INCLUDED
+            CR QUIT ;
 
 \ =====================================================================
 \ define target comment words
@@ -905,64 +924,8 @@ TARGET-COMPILING
 
  X: ;        [  REVEAL COMPILE EXIT ?CSP ;X  XIMMEDIATE
 
+
 [CC]
 \           F O R T H   S Y S T E M   C O D E   E N D S
 \ /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 cr .( Forth Kernel compiled completely")
-
-\ ======================================================================
-\  P A T C H   T H E   T A R G E T  S Y S T E M   V A R I A B L E S
-
-[CC]
-  XLATEST @ DUP LATEST T! ORGLAST T! ( align TARGET dictionary to compiler)
-
- SUPERCART
- [IF]
-
-  THERE DP T!
-  HEX A000 ORGDP T!   ( SUPERCART must start dictionary in HI RAM )
-
- [ELSE]
-
-    THERE DUP DP T!  ORGDP T!
-
- [THEN]
-
- T' COLD BOOT T!  ( set the boot word to run )
-
-\ ======================================================================
-\ P A T C H   T A R G E T   I M A G E  F I L E   H E A D E R
-
-T' INIT  >BODY BOOT-ADDRESS T!
-
-SUPERCART
-[IF]
-     FILENAME: CAML99SC
-[ELSE]
-     FILENAME: CAMEL99
-[THEN]
-
-
-     END.       ( report compile time and stats)
-
-\ ======================================================================
-\ S A V E   B I N A R Y  I M A G E   F I L E
-
-         FILENAME$ $SAVE-EA5.     ( FILENAME$ was set by FILENAME: )
-
-\ ======================================================================
-\  C O P Y   T O   T I - 9 9   V I R T U A L   D I S K
-.( copying binary file to TI-99 Emulator DSK1.)
-
-\ build the copy command in host Forth PAD memory
-S" COPY " PAD PLACE   FILENAME$ COUNT PAD +PLACE
-S"  cc9900\CAMEL99.WIP\dsk1.itc\" PAD +PLACE
-
-CR PAD COUNT 2DUP TYPE SYSTEM
-
-CROSS-COMPILING
-
- CR ." === COMPILE ENDED PROPERLY ==="
-QUIT
-
-\ BYE  ( OR use this to return to DOS)

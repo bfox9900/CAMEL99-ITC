@@ -26,18 +26,24 @@
 \             - TOS is VDP address for all routines
 
 [CC] CR ." V D P  C H I P  I N T E R F A C E"
-TARGET-COMPILING
+
+\ Register Usage:
+\ R0  down counter
+\ R1  current workspace
+\ R3  VDP data port
+\ R4  VDP memory address
+
 \
 \ ================ LEAF SUB-ROUTINES  ** NOT NESTABLE ** ===================
-\
+TARGET-COMPILING
 \ VDP set-address sub-routines
 L: WMODE  ( Vaddr -- Vaddr)
            TOS 4000 ORI,
-L: RMODE   R1 STWP,               \ avoids 2 SWPB instructions
-           0 LIMI,
+L: RMODE   R1 STWP,           \ avoids 2 SWPB instructions
            R3 8C02 LI,
+           0 LIMI,
            9 (R1) *R3 MOVB,   \ write odd byte from TOS (ie: R4)
-           TOS *R3 MOVB,
+           TOS *R3 MOV,       \ MOV writes the even byte to the port address
            RT,
 
 L: _VMBR    R3 VDPRD LI,      \ put VDP read port address in R3. 12% faster
@@ -60,7 +66,7 @@ L: _VFILL  R3 VDPWD LI,          \ vdp addr. in a reg. makes this 12.9% faster
             BEGIN,
               W *R3 MOVB,        \ write byte to vdp ram
               R0 DEC,            \ dec the byte counter
-            EQ UNTIL,             \ jump back if not done
+            EQ UNTIL,            \ jump back if not done
             2 LIMI,
             RT,
 
@@ -84,7 +90,7 @@ CODE V@   ( VDPadr -- n)        \ video fetch 16bit int
 
 CODE VREAD   ( VDP-adr RAM-addr cnt  -- )
        TOS R0 MOV,              \ cnt->R0
-           R2 POP,              \ pop ram addr. to R1
+           R2 POP,              \ pop ram addr. to R2
           TOS POP,              \ VDP address to TOS
           R0 R0 MOV,            \ test cnt<>0
           NE IF,
@@ -96,7 +102,7 @@ CODE VREAD   ( VDP-adr RAM-addr cnt  -- )
           ENDCODE
 
 \ ===================================================================
-CR ." V D P   W R I T E"  ( VMBW )
+[CC] CR ." V D P   W R I T E"  ( VMBW ) [TC]
 
 CODE VWRITE  ( RAM-addr VDP-addr cnt -- )
            TOS R0 MOV,         \ cnt in R0
@@ -105,14 +111,22 @@ CODE VWRITE  ( RAM-addr VDP-addr cnt -- )
            R0 R0 MOV,
            NE IF,
               WMODE @@ BL,
-              _VMBW  @@ BL,
+              _VMBW @@ BL,
            ENDIF,
            TOS POP,            \ refill top of stack cache register
            NEXT,               \ return to Forth
            ENDCODE
 
 CODE VC! ( char vaddr --)
-          WMODE @@ BL,
+\ ----------------------
+\  *NEW* inline address setter.  6% faster on Tursi Sprite Benchmark
+          TOS 4000 ORI,
+          R1 STWP,           \ avoids 2 SWPB instructions
+          R3 8C02 LI,
+          0 LIMI,
+          9 (R1) *R3 MOVB,   \ write odd byte from TOS (ie: R4)
+          TOS *R3 MOV,       \ MOV writes the even byte to the port address
+\ --------------------------
           TOS POP,
           9 (R1) VDPWD @@ MOVB,  \ Odd byte R4, write to screen
           TOS POP,               \ refill TOS
@@ -149,7 +163,9 @@ CODE VFILL ( VDP-addr count char-- )
 \      32 USER: VROW
 \      34 USER: VCOL
 
-7E USER VPG  \ Free space in scratchpad RAM used for VDP page# USER VARIABLE
+\ 7E USER VPG  \ Free space in scratchpad RAM used for VDP page# USER VARIABLE
+
+VARIABLE VPG
 
 CODE >VPOS ( col row -- vaddr) \ compute a VDP screen address
          R1         STWP,
@@ -161,15 +177,23 @@ CODE >VPOS ( col row -- vaddr) \ compute a VDP screen address
          ENDCODE
 
 CODE CPUT ( char --  ?) \ write to screen, test for end of screen
-                 TOS PUSH,
+         TOS R0 MOV,
                  R1  STWP,    \ workspace is USER area base address
          32 (R1) R3  MOV,     \ vrow->r3
          2E (R1) R3  MPY,     \ vrow*c/l->R4
          34 (R1) TOS ADD,     \ add vcol
          7E (R1) TOS ADD,     \ add video page# VPG
-         WMODE @@ BL,
-         TOS POP,
-         9 (R1) VDPWD @@ MOVB,  \ !! Odd byte of R4, write to screen
+
+\  *NEW* inline address setter
+         TOS 4000 ORI,
+         R1 STWP,           \ avoids 2 SWPB instructions
+         R3 8C02 LI,
+         0 LIMI,
+         9 (R1) *R3 MOVB,   \ write odd byte from TOS (ie: R4)
+         TOS *R3 MOV,       \ MOV writes the even byte to the port address
+
+         R0 TOS MOV,
+         9 (R1) VDPWD @@ MOVB,  \ !! Odd byte W, write to screen
          2 LIMI,
          TOS CLR,
          34 (R1)  INC,          \ bump VCOL
@@ -190,7 +214,7 @@ CODE CPUT ( char --  ?) \ write to screen, test for end of screen
            ENDCODE
 
 \ * VDP write to register. Kept the TI name
-CODE VWTR   ( c reg -- )         \ Usage: 5 7 VWTR
+CODE VWTR   ( c reg -- )          \ Usage: 5 7 VWTR
            TOS SWPB,              \ register goes to left side
           *SP+ TOS ADD,
            0 LIMI,
@@ -209,7 +233,6 @@ CODE VWTR   ( c reg -- )         \ Usage: 5 7 VWTR
 \            NEXT,
 \            ENDCODE
 
-CROSS-ASSEMBLING
 \ FAST user variable for screen driver
 CROSS-ASSEMBLING
 CODE C/L@   ( -- n )        \ this is used 8 times in the KERNEL. Saves 24 bytes
@@ -220,7 +243,8 @@ CODE C/L@   ( -- n )        \ this is used 8 times in the KERNEL. Saves 24 bytes
           ENDCODE
 
 \ ===================================================================
-CR .( KSCAN KEY?  and  ?TERMINAL)
+[CC] CR .( KSCAN KEY?  and  ?TERMINAL) [TC]
+
 \ Camel99 interface to KSCAN. *Modified 13Jun2020 to save/restore GPL R11
 \ Removed R11 save. It's in the ROM code. Jan 2022
 \ See: KEY  in the Camel99 Kernel
@@ -235,8 +259,8 @@ CODE KEY? ( -- ?)  \ *WARNING* it takes 1,128uS for KEY? scan to run
           837C @@ R1 MOVB,    \ read GPL status byte (=2000 if key pressed)
           R1  3 SLA,          \ check the key bit
           OC IF,              \ if carry flag set
-               8375 @@ TOS MOVB, \ read the key
-               TOS SWPB,
+               8375 @@ TOS MOV, \ read the key
+\               TOS SWPB,
           ENDIF,
           2 LIMI,
           NEXT,               \ return
