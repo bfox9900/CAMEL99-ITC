@@ -27,7 +27,7 @@
 \ HARNESS99.FTH is my new FIG/ANS translation file
 
 \ Camel99 Forth Library requirements
-INCLUDE DSK1.TOOLS  \ for debugging only
+\ INCLUDE DSK1.TOOLS  \ for debugging only
 
 INCLUDE DSK1.CASE
 INCLUDE DSK1.UDOTR
