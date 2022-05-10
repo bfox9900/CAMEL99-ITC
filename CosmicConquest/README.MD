@@ -43,8 +43,9 @@ This list is extracted from the top of COMSIC99.FTH.
 - Wrote new INKEY.  7 bit output, uppercase ALPHA
 - re-factored extremely long words into smaller words
 - replaced a lot of code for variable updates with +! operator
-In the case of +! I think the original author did not know about it but
-it reduces expressions like:
+
+In the case of +! I think the original author did not know about it. (?)
+It reduces expressions like:
 ```
     X @ Y @ +  Y ! 
 to
