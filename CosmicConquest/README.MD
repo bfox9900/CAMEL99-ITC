@@ -49,7 +49,7 @@ it reduces expressions like:
     X @ Y @ +  Y ! 
 to
     X @ Y +! 
-
+```
 
 
 One tantalizing change, that is possible with Camel99, would be to let the
