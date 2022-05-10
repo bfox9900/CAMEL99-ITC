@@ -91,7 +91,7 @@ comments are not as necessary and we all know how fast comments go stale.
 
 BUT... **Do not omit the stack comments.**
 
-These are the key to remembering what goes in and what comes out of each
+Stack comments are the key to remembering what goes in and what comes out of each
 definition.
 
 ### To be continued...
