@@ -22,9 +22,34 @@ TI-99. Camel99 treats this as a HEAP. The data requires 7.3K and with the Forth
 kernel using 8K of the 24K at HEX A000 to FFFF, it was a very tight fit.  This
 change gives us a lot more room for future enhancements.
 
-There are a lot of optimizations have been made in converting to ANS Forth and
-re-writing the program in a more Forth appropriate style. This list is extracted 
-from the top of COMSIC99.FTH.
+There are a lot of optimizations have been made in converting to ANS Forth,
+using more of the special operators available in Forth and re-writing the 
+program in a more Forth appropriate style.
+
+This list is extracted from the top of COMSIC99.FTH.
+
+- Replaced all ROT ROT  with -ROT for speed and 20 bytes space saving
+- Replaced 0 FILL  with ERASE
+- Replace all 1 -   with 1-  save  14 bytes
+- Create names/syntax for accessing data rather than numbers
+- Removed Apple character configuration code
+- Replaced all 2 *  with CELLS
+- Replaced all 2 /  with 2/
+- Replaced all 4 *  with 4* (Camel99 code word)
+- Replaced all 8 *  with 8* (Camel99 code word)
+- Replaced ARRAY with MATRIX: (ARRAY is 1 dimension in Forth by convention)
+- Added new mapped characters to charset for "space" graphics
+- Added border characters to create a box on play screen
+- Wrote new INKEY.  7 bit output, uppercase ALPHA
+- re-factored extremely long words into smaller words
+- replaced a lot of code for variable updates with +! operator
+In the case of +! I think the original author did not know about it but
+it reduces expressions like:
+```
+    X @ Y @ +  Y ! 
+to
+    X @ Y +! 
+
 
 
 One tantalizing change, that is possible with Camel99, would be to let the
