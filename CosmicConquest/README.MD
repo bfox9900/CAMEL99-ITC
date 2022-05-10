@@ -22,8 +22,10 @@ TI-99. Camel99 treats this as a HEAP. The data requires 7.3K and with the Forth
 kernel using 8K of the 24K at HEX A000 to FFFF, it was a very tight fit.  This
 change gives us a lot more room for future enhancements.
 
-There are a lot of optimizations have been made in converting to ANS Forth.
-These have been noted in the change log at the top of COMSIC99.FTH.
+There are a lot of optimizations have been made in converting to ANS Forth and
+re-writing the program in a more Forth appropriate style. This list is extracted 
+from the top of COMSIC99.FTH.
+
 
 One tantalizing change, that is possible with Camel99, would be to let the
 computer play in the background as a separate task making the game truly
