@@ -14,15 +14,15 @@ programming languages begin using Forth. They quickly understand the simple
 operators and the branching and looping control words and jump right in.
 
 The results are what I see in the original code for Cosmic Conquest.
-That is they write the program in their favourite language, using Forth syntax.
+That is, they write the program in their favourite language, using Forth syntax.
 
 In the case of Cosmic Conquest I going to guess that the original author was a
 very good BASIC programmer. We can see that in the following give-aways:
 
-- matrix data is reference by indices rather than my names
+- matrix data is reference by indices rather than by name
 - the use of temporary variables to manage data stack shuffling
 - long and longer sub-routines
-- entire paragraphs of code duplicated in different sub-routines
+- entire paragraphs of code duplicated in different sub-routines (make more words for this)
 - no attempt to create a "meta langauge" to make writing a space game simpler
   (Code remains at what I call "raw" Forth level)
 
@@ -61,28 +61,33 @@ way in traditional procedural languages. The primary reason for that is the
 over- head for calling a sub-routine can be quite high in other languages.
 
 However Chuck Moore designed Forth to reduce that calling over-head. This gives
-the programmer more freedom to factor out common code from long sub- routines.
+the programmer more freedom to factor out common code from long sub-routines
+which creates a primitive but useful "language" of sorts for programming
+the problem at hand.
 
 ### More Re-usable Code
 As we can see in the example factoring out and naming these code pieces allows
-us to re-use them elsewhere as needed. Here we now have a test word for lower
-case letters and a word to convert lower case to upper case. The original code
-gave one "fossilized" sub-routine that could only do one thing.
+us to re-use them elsewhere as needed. Doing things the Forth way we we get a 
+test word for lower case letters and a word to convert lower case to upper case. 
+The original code gave one "fossilized" sub-routine that could only do one thing.
 
 ### Make Your Life Simpler
 Another reason for the Forth "style" is because stack programming is hard. There
-I said it.  Yes it is harder to code for a stack machine that using name
+I said it.  Yes it is harder to code for a stack machine that using named
 variables. The compensation for that is factoring. That is how the language
 designer wanted us to use Forth.  By cutting things into small pieces
-stack contents become much simpler almost trivial. If you can remember what is
+stack contents become much simpler; almost trivial. If you can remember what is
 on the top of the data stack 20 lines into a sub-routine then you are a genius
 but us mere mortals don't need to do that. We just factor the code into more
 understandable pieces.
 
 ### Less Comments Required
-On of the side-effects of one line definitions is that you can understand them
-almost instantly. This means expansive text comments are not as necessary and we
-all know how fast comments go stale. BUT... Do not omit the stack comments.
+On of the side-effects of one line definitions, if you choose your names wisely,
+is that you can understand them almost instantly. This means expansive text 
+comments are not as necessary and we all know how fast comments go stale. 
+
+BUT... **Do not omit the stack comments.**
+
 These are the key to remembering what goes in and what comes out of each
 definition.
 
