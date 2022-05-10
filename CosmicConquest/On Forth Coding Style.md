@@ -54,6 +54,9 @@ Forth style:
   : INKEY   ( -- c)    KEY 7F AND TOUPPER ;
   DECIMAL
 ```
+Which one is easier to understand?
+Which one provides more utility to the programmer?
+
 
 ## What difference does it make?
 The differences above are quite striking. You don't typically chop up code this
