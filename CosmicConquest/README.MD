@@ -12,6 +12,8 @@ The exact platform is unknown at this time.
 The original byte article is available here:
 https://archive.org/details/byte-magazine-1982-12/page/n131/mode/1up?q=cosmic+conquest
 
+## TI-99 Version 
+
 The translation Harness for Camel99 Forth has been removed and replaced with
 definitions in the COSMIC99.FTH source file. It was not too difficult to make
 the adjustments to get Rick's GForth code to compile on the old TI-99 under our
