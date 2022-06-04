@@ -14,8 +14,6 @@ https://archive.org/details/byte-magazine-1982-12/page/n131/mode/1up?q=cosmic+co
 
 ## TI-99 Version 
 
-https://github.com/bfox9900/CAMEL99-ITC/blob/master/CosmicConquest/Screen_capture_V0.8.png
-
 The translation Harness for Camel99 Forth has been removed and replaced with
 definitions in the COSMIC99.FTH source file. It was not too difficult to make
 the adjustments to get Rick's GForth code to compile on the old TI-99 under our
