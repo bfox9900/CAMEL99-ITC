@@ -109,6 +109,7 @@ Version 2.69 now has the "isn't unique" warning added to the compiler. This was 
   LOADSYS does a WARM boot and INCLUDEs DSK1.START
   Source code re-partitioned to use FORTHITC.MAK file
   A version for SuperCart can be built by changing one value in the FORTHITC.MAK file.
+  Two more words (! and DROP) now reside in 16bit "scatchpad RAM" for a speed improvement
 
 ### V2.68G
 What started as a maintenance update became something bigger.
