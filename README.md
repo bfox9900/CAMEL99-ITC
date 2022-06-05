@@ -102,14 +102,14 @@ Source code will load/compile at the blazing speed of about 14 lines per second.
 Version 2.69 now has the "isn't unique" warning added to the compiler. This was left out to save space but as the author's coding skills improved space became available.  If a duplicate word is found during compilation a warning is sent to the screen "<word> isn't unique"  and compilation continues.
 
 #### Other Changes
-  VDP library has been further simplified for speed.
-  Review and corrections on demo programs DSK3. 
-  COLD now does a proper reboot of the system.
-  WARM does system Initialization.
-  LOADSYS does a WARM boot and INCLUDEs DSK1.START
-  Source code re-partitioned to use FORTHITC.MAK file
-  A version for SuperCart can be built by changing one value in the FORTHITC.MAK file.
-  Two more words (! and DROP) now reside in 16bit "scatchpad RAM" for a speed improvement
+ - VDP library has been further simplified for speed.
+ - Review and corrections on demo programs DSK3. 
+ - COLD now does a proper reboot of the system.
+ - WARM does system Initialization.
+ - LOADSYS does a WARM boot and INCLUDEs DSK1.START
+ - Source code re-partitioned to use FORTHITC.MAK file
+ - A version for SuperCart can be built by changing one value in the FORTHITC.MAK file.
+ - Two more words (! and DROP) now reside in 16bit "scatchpad RAM" for a speed improvement
 
 ### V2.68G
 What started as a maintenance update became something bigger.
