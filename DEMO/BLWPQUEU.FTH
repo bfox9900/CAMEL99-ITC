@@ -18,7 +18,8 @@ QSIZE 1-   CONSTANT QMASK  \ used for wrap pointer wrap around
 
 \ data is allocated in Lo memory with MALLOC
   QSIZE MALLOC CONSTANT Q
-  20    MALLOC CONSTANT QREGS
+  20    MALLOC CONSTANT QREGS  \ workspace register space for the queue
+
 \ ============================
 \ Compiler Directive to create sub-programs (have their own workspace)
 \ ... that can be called from FORTH like a Forth word.  Pretty cool!
@@ -63,8 +64,8 @@ QREGS PROG: ENQ ( c -- ? ) \ put byte in Q, return error code
 ;PROG
 
 \ DEQ requires we put a zero on the Forth stack.
-\ This makes room on the Forth stack for the return data
-QREGS PROG: DEQ ( 0 -- c) \ 0 means bad data
+\ A '0' is needed to make room on the Forth stack for the return data
+QREGS PROG: DEQ ( 0 -- c)
         R9 R10 CMP,             \ is there room in Q
         NE IF,
              R10 INC,           \ bump out pointer
