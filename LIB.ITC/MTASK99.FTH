@@ -1,4 +1,4 @@
-\ MTASK99.HSF for CAMEL99                              06JAN2017 Brian Fox
+CR .( MTASK99.FTH  CAMEL99  *DTC VERSION ONLY* Apr 2022 Brian Fox)
 \ SEE: Manual "CAMEL99 for TI-BASIC Programmers" for full explanation
 
 \ May 15 2017  RE-wrote for use with new Kernel that includes USER variables
@@ -9,6 +9,7 @@
 \ Apr 2018    Ported to V2 and used machine code. No need for assember
 \ May 17, 2018  fixed RESTART, BYE, COLD.
 \ Jun  8. 2018  replaced assembler with machine code to ease of use.
+\ Apr 2022    Ported to Direct thread Forth
 
 \ Each task has a Process ID (PID)
 \ In this system we use the workspace address as the PID

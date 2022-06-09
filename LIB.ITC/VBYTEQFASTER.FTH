@@ -3,9 +3,10 @@
 NEEDS .S      FROM DSK1.TOOLS
 NEEDS VALLOT  FROM DSK1.VDPMEM
 NEEDS MOV,    FROM DSK1.ASM9900
-NEEDS ELAPSE  FROM DSK1.ELAPSE 
+NEEDS ELAPSE  FROM DSK1.ELAPSE
 
-\ use VDP memory to create 1k BYTE Queues that are managed by variables in CPU RAM
+\ use VDP memory to create 1k BYTE Queues that are managed by
+\ variables in CPU RAM
 
 DECIMAL
 \ create data structure
@@ -55,7 +56,7 @@ CODE HEAD+!  ( fifo -- )
            TOS POP,
            NEXT,
            ENDCODE
-           
+
 CODE TEST   *TOS BLWP,  RTWP,  NEXT, ENDCODE
 
 CODE ^TAIL ( fifo -- vaddr)
@@ -94,4 +95,3 @@ CODE ^HEAD ( fifo -- vaddr)
 : 3DUP     2 PICK 2 PICK 2 PICK ;
 
 : FILLQ  ( cadr len FIFO -- )  20 0 DO   3DUP Q$!  LOOP   2DROP DROP ;
-

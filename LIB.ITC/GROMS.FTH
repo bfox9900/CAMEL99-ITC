@@ -15,8 +15,9 @@ HEX
 : GTYPE  ( adr cnt -- )
          GROM
          0 DO
-              GC@+ DUP  BL 1-  [CHAR] ~ WITHIN 0=  \ check for printable char (from SPACE to ASCII '~'
-              IF DROP  [CHAR] .                    \ replace unprintable chars with '.'
+            \ check for printable char (from SPACE to ASCII '~'
+              GC@+ DUP  BL 1-  [CHAR] ~ WITHIN 0=
+              IF DROP  [CHAR] .  \ replace unprintable chars with '.'
               ELSE EMIT
               THEN
          LOOP ;

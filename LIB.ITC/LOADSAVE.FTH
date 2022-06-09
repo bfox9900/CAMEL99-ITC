@@ -23,7 +23,7 @@ HEX
            [PAB FNAME] VPLACE  \ set file name
 ;
 
-: SAVE-FILE ( file$ len VDPaddr size -- ior)
+: SAVE-FILE ( file$ len VDPaddr #bytes -- ior)
        W/O100 NEWPAB  6 FILEOP  30 ^PAB +! ;
 
 : LOAD-FILE ( file$ len VDPaddr size -- ior)

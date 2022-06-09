@@ -3,7 +3,8 @@
 \           99 TO W   1 +TO W
 HERE
  .( .)
-: VALUE   CONSTANT ;
+'  CONSTANT ALIAS VALUE 
+
 : TO  ( n -- )
            '  >BODY   \ compute PFA at compile time
            STATE @

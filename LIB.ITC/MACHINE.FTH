@@ -100,7 +100,7 @@ CR .( D A T A   S T A C K)
               W   *SP MOV,          \ 18
               ;
 
-: ROT,    ( n1 n2 n3 --  n2 n3 n1)
+: ROT    ( n1 n2 n3 --  n2 n3 n1)
               2 (SP)    W MOV,      \ move bottom n1 to TEMP             14+8 =   22
              *SP   2 (SP) MOV,      \ move n2 to bottom position         14+4+8 = 26
               TOS     *SP MOV,      \ n3 moves to second                 14+4   = 18
@@ -131,7 +131,7 @@ CR .( D A T A   S T A C K)
               W PUSH,              \ push onto task
               ;
 
-: 2SWAP,   ( n1 n2 n3 n4-- n3 n4 n1 n2)
+: 2SWAP   ( n1 n2 n3 n4-- n3 n4 n1 n2)
               TOS       R0 MOV,     \ n4  14
              *SP        R1 MOV,     \ n3  14
               2 (SP)   TOS MOV,     \ n2  22
@@ -140,7 +140,7 @@ CR .( D A T A   S T A C K)
               R1    4 (SP) MOV,     \     22
               ;
 
-: 2OVER,  ( d1 d2 -- d1 d2 d1)
+: 2OVER  ( d1 d2 -- d1 d2 d1)
              *SP W MOV,             \ d2 lsb -> temp                             18
               W   PUSH,             \ push temp                                  28
               TOS PUSH,             \ push d2 MSBits                             28
@@ -148,7 +148,7 @@ CR .( D A T A   S T A C K)
               6 (SP) *SP MOV,       \ pick 6th item, d1 LSBits to next on stack  26
               ;
 
-: PICK,   ( n -- n)             \ interesting: GForth ITC takes 10 intel instructions for PICK
+: PICK   ( n -- n)             \ interesting: GForth ITC takes 10 intel instructions for PICK
               TOS W MOV,
               W 1 SLA,   \ 2*
               SP W ADD,
@@ -186,14 +186,14 @@ CR .( R E T U R N   S T A C K)
 \ ==========================================================================
 CR .( Shift right & left)
 
-: RSHIFT,  ( n bits -- n')
+: RSHIFT  ( n bits -- n')
               TOS R0  MOV,            \ 14 the shift bits MUST be in R0 to do this
              *SP+ W   MOV,            \ 22
               W   R0 SRL,             \ x
               W   TOS MOV,            \ 14
               ;
 
-: LSHIFT,  ( n bits -- n')
+: LSHIFT  ( n bits -- n')
                TOS R0 MOV,            \ the shift bits MUST be in R0 to do this
               *SP+ W  MOV,
                W  R0  SLA,
@@ -271,3 +271,8 @@ CR .( A R I T H M E T I C)
               R1 TOS MOV,
               R2 *SP MOV,
               ;
+
+
+
+
+

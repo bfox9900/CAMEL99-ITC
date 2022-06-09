@@ -4,26 +4,26 @@
 \ Added Perfom for Camel99 Forth V2.5...
 
 : CASE:  ( -- <name> ) CREATE  ;
-: |      ( <name> )  '  ,  ;
+: |      ( <name> )  '   ,  ;
 
 \ !! no runtime error checking !!
-: ;CASE   ( n -- )  DOES> SWAP 2* + PERFORM ; \  @ EXECUTE ;
+: ;CASE   ( n -- )  DOES> SWAP CELLS + PERFORM ;
 
 \ example code:
- : FOO   ." FOO" ;
- : BAR   ." BAR" ;
- : FIZZ  ." FIZZ" ;
- : BUZZ  ." BUZZ" ;
+\ : FOO   ." FOO" ;
+\ : BAR   ." BAR" ;
+\ : FIZZ  ." FIZZ" ;
+\ : BUZZ  ." BUZZ" ;
 
 \ NO ERROR PROTECTION
- CASE: CHOICE  ( n -- ) | FOO  | BAR | FIZZ | BUZZ  ;CASE
+\ CASE: CHOICE  ( n -- ) | FOO  | BAR | FIZZ | BUZZ  ;CASE
 
 \ simple error protection
-: OOPS!    TRUE ABORT" choice error" ;
-CASE: TABLE  ( n -- ) | OOPS! | FOO  | BAR | FIZZ | BUZZ  | OOPS! ;CASE
+\ : OOPS!    TRUE ABORT" choice error" ;
+\ CASE: TABLE  ( n -- ) | OOPS! | FOO  | BAR | FIZZ | BUZZ  | OOPS! ;CASE
 
-: CLIP      ROT MIN MAX ;
-: CHOICES    0  5 CLIP  TABLE ;
+\ : CLIP      ROT MIN MAX ;
+\ : CHOICES    0  5 CLIP  TABLE ;
 
 \ Usage:   3 CHOICES  ( executes BUZZ)
 \ equivalent with Eaker CASE statement

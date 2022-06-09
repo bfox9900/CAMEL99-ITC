@@ -3,10 +3,10 @@
 \ this method moves the VDP buffer pointer through VDP pattern table
 \ to get at the data without copying it to a new buffer
 
-INCLUDE DSK1.TOOLS.F
-INCLUDE DSK1.ANSFILES.F
-INCLUDE DSK1.CASE.F
-INCLUDE DSK1.CATALOG.F
+INCLUDE DSK1.TOOLS
+INCLUDE DSK1.ANSFILES
+INCLUDE DSK1.CASE
+INCLUDE DSK1.CATALOG
 
 
 HEX
@@ -29,5 +29,5 @@ HEX
            RELATIVE 100 FIXED W/O BIN CREATE-FILE ?FILERR >R
            WRITE-PATTERNS
            R> CLOSE-FILE ?FILERR ;
-           
+
 S" DSK2.TESTFILE"  100 FIXED W/O BIN CREATE-FILE

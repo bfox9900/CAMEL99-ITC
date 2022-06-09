@@ -27,7 +27,7 @@ DECIMAL
 : SQRT ( n -- )
   DUP
   IF
-     DUP >R
+     DUP>R
   \    INIT-SEED   ( optimized seed value) \ 64516 SQRT : 5000x 16.4 seconds
       1   ( default seed value )          \ 64516 SQRT : 5000x 31.1 seconds
      R@ OVER U/ OVER + 2/ NIP ( DUP . ) \ debug viewing
@@ -43,4 +43,4 @@ DECIMAL
   THEN ;
 
 \ speed testing
-: ROOTS ( n1 cnt -- n) 0 ?DO  DUP SQRT DROP  LOOP DROP ;
+\ : ROOTS ( n1 cnt -- n) 0 ?DO  DUP SQRT DROP  LOOP DROP ;

@@ -1,11 +1,10 @@
 \ SPLIT & FUSE  handy words
-\ In Kernel 2.5 and above
 
  CODE SPLIT  ( AABB --  BB AA )     \ used in \LIB\SOUND.FTH
               C204 ,      \ TOS W MOV,   \ make a copy
               0984 ,      \ TOS 8 SRL,   \ slide 'AA' to the right
               0248 , FF , \ W FF ANDI,          \ mask out AA from the copy
-              0646 ,
+              0646 , 
               C588 ,      \ W PUSH,
               NEXT,
               ENDCODE

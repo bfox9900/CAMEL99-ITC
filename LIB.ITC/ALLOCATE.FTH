@@ -1,23 +1,44 @@
 \ Minimalist ALLOCATE FREE RESIZE for Camel99 Forth B Fox Sept 3 2020
-\ One-time Static allocation
+\ Static allocation, size function and crude re-sizing
+\ Use with VALUE to retain the pointers
 
 NEEDS VALUE FROM DSK1.VALUES
 
-HERE
 HEX
-: HEAP,    ( n --) H @ !  [ 1 CELLS ] LITERAL  H +! ;
-: ALLOCATE ( n -- addr ?) DUP HEAP, H @   SWAP H +!  FALSE ;
+HERE
+: HEAP   ( -- addr)  H @ ;  \ equivalent to HERE in HI memory
+: HALLOT ( n -- )    H +! ; \ equivalent to ALLOT in HI memory
+: HALIGN ( -- )   HEAP ALIGNED H ! ;
+
+\ heap number "compilers". Put a number in memory & advance the pointer
+: H,     ( n -- )  HEAP !   2 HALLOT ;
+: HC,    ( n -- )  HEAP C!  1 HALLOT ;
+
+: ALLOCATE ( n -- addr ?) DUP H, HEAP SWAP HALLOT FALSE ;
 \ *warning* FREE removes everything above it as well
-: FREE     ( addr -- ?) 2- DUP OFF  H ! FALSE ;
+ : FREE     ( addr -- ?) 2- DUP OFF  H ! FALSE ;
 \ *warning* RESIZE will fragment the HEAP
-: RESIZE   ( n addr -- addr ?) DROP ALLOCATE ;
-: SIZE     ( addr -- n) 2- @ ; \ not ANS/ISO commonly found
+ : RESIZE   ( n addr -- addr ?) DROP ALLOCATE ;
+ : SIZE     ( addr -- n) 2- @ ; \ not ANS/ISO commonly found
 
-\ A bit of protection and syntax sugar.
+\ A bit of protection  and syntax sugar
  : ?ALLOC ( ? --) ABORT" Allocate error" ;
-
-\ Use -> as replacement for 'TO' values 
-\ Example: 99 -> X
  : ->     ( -- addr ?) ?ALLOC  POSTPONE TO ; IMMEDIATE
+ CR HERE SWAP - DECIMAL . .( bytes)
 
-CR HERE SWAP - DECIMAL . .( bytes)
+
+\ DEMO CODE
+HEX 2000 H !   \ reset heap pointer to the where you want the heap
+
+DECIMAL
+0 VALUE A$  ( create a null pointer )
+0 VALUE B$
+ 80 ALLOCATE -> A$
+ 40 ALLOCATE -> B$
+ A$ SIZE .
+ B$ SIZE .
+
+ S" This is string A$" A$ PLACE
+ S" B$ is my name" B$ PLACE
+ CR A$ COUNT TYPE
+ CR B$ COUNT TYPE

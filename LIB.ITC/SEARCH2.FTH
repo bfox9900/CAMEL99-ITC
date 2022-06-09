@@ -12,7 +12,6 @@ NEEDS S=     FROM DSK1.COMPARE
 
 MARKER /SEARCH
 
-\ S= is CAMEL Forth primitive
 : 2OVER    ( d d2 -- d d2 d) S" 4TH 4TH" EVALUATE ; IMMEDIATE
 : 4DUP     (  d d2  --  d d2 d d2) 2OVER 2OVER ;
 : 2NIP     2SWAP 2DROP ;
@@ -25,7 +24,7 @@ MARKER /SEARCH
              4DUP COMPARE
              0= IF 2NIP TRUE EXIT THEN  ( jump to ';')
              1 /STRING             ( cut caddr1 u1)
-          REPEAT 
+          REPEAT
           2SWAP 2DROP
           FALSE
 ;

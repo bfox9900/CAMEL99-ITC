@@ -1,13 +1,12 @@
 \ ASMLABELS.FTH   numbered labels for ASM9900           Apr 3 2021 Fox
 \ Original idea from DxForth. Complete rewrite uses a stack for forward refs.
-CR .( 15 Enumerated labels)
+CR .( Enumerated labels)
 
 NEEDS MOV, FROM DSK1.ASM9900
 
-HERE
 DECIMAL
-15 CONSTANT #LABELS
-#LABELS 2* CONSTANT #FWD
+25 CONSTANT #FWD
+20 CONSTANT #LABELS
 
 \ Make a stack to handle jumps
 CREATE FS0    #FWD CELLS ALLOT
@@ -34,7 +33,7 @@ CREATE LABELS   #LABELS CELLS ALLOT
 : RESOLVER ( -- )
        BEGIN
        FSDEPTH WHILE
-           FS> ]LBL @ ?LABEL
+           FS> ]LBL @ ?LABEL 
          ( lbladdress ) FS> TUCK - RESOLVE
        REPEAT
 ;
@@ -43,5 +42,3 @@ CREATE LABELS   #LABELS CELLS ALLOT
 : CODE    ( <name> ) NEWLABELS CODE ;
 : ENDCODE ( -- ) ?CSP RESOLVER ;
 : L:      ( <text> ) CREATE ;
-
-HERE SWAP - DECIMAL .  .( bytes)

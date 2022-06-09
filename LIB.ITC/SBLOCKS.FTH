@@ -1,9 +1,10 @@
 \ BLOCK  as a method to manage SAMS pages    Jan 15 2021 Brian Fox
+\ Jan 2022 Fixed SAMSINI to access registers properly
 
-\ NEEDS .S   FROM DSK1.TOOLS
+ NEEDS .S   FROM DSK1.TOOLS
 \ NEEDS MOV, FROM DSK1.ASM9900
+NEEDS SAMSINI  FROM DSK1.SAMSINI
 
-NEEDS SAMSINI FROM DSK1.SAMSINI
 HERE
 \ ==========================================
 \ BLOCK is the entire SAMS manager
@@ -17,12 +18,12 @@ CODE BLOCK ( bank -- buffer)
  8110 ,
  1603 ,
     0204 , 2000 ,
-    NEXT,
+    045A ,
  05C0 ,
  8110 ,
  1603 ,
      0204 , 3000 ,
-     NEXT,
+     045A ,
  0208 , 0001 ,
  2A20 , USE ,
  C808 , USE ,
@@ -40,6 +41,9 @@ CODE BLOCK ( bank -- buffer)
  NEXT,
  ENDCODE
 
+ : !L  ( n d --) BLOCK + ! ;
+ : @L  ( d -- n) BLOCK + @ ;
+
  VARIABLE SEG
 \ safely set the 64K segment that you want to use
  : SEGMENT ( 1..F -- ) \ don't allow segment 0
@@ -48,7 +52,8 @@ CODE BLOCK ( bank -- buffer)
  1 SEGMENT
 
  HEX
-: PAGED  ( virtual-addr -- real-addr)
+ : PAGED  ( virtual-addr -- real-addr)
          SEG @ 1000 UM/MOD ( -- offset bank#) BLOCK + ;
-
 HERE SWAP - DECIMAL  CR .  .( bytes)
+SAMS-OFF SAMSINI SAMS-ON
+CR .( SAMS card initialized)

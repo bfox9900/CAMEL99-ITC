@@ -6,6 +6,10 @@
 \     Compare instruction has been changed to CMP,
 \     Changed  A, and S, to ADD, SUB,
 
+NEEDS MARKER FROM DSK1.MARKER
+
+MARKER /ASM
+
 CR .( CAMEL99 Assembler V2.2 Dec 2020)
 
 HERE   \ save the dictionary pointer for size calc. at end

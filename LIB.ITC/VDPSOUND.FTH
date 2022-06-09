@@ -1,7 +1,4 @@
 \ TI sound list player using VDP RAM    CAMEL99 Forth V2
-\ Jan 2022 Removed Jiffs timer, replaced with TICKS for V2.68
-CR .( Depracated: Use DSK1.ISRSOUND)
-
 \ INCLUDE DSK1.TOOLS
 INCLUDE DSK1.VDPMEM
 
@@ -14,7 +11,7 @@ HEX
        2DUP + VC@  >R        \ get duration at end of string, Rpush
        BOUNDS                \ convert addr/len to end-addr. start-addr.
        DO  I VC@ SND! LOOP   \ feed bytes to sound chip
-       R> 8* 2* MS ;         \ time units are 16mS
+       R> JIFFS ;            \ use the delay from Rstack (JIFF=1/60)
 
 : VPLAYLIST   ( addr -- )    \ play a TI sound list
          BEGIN DUP VC@

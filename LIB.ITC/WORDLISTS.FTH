@@ -4,7 +4,7 @@
 \ Jan 5, 2020: back migrated some enhancements from CODEX work
 \ Jun 4, 2021: Changed order of patching to work with TTY version
 \ Sep 25, 2021: Corrected SET-CONTEXT, Removed ROOT to save space.
-\ Feb 23, 2022: Added INIT-WORDLISTS for binary program startup
+\ Jun  8, 2022: Put ROOT back. Added INIT-WORDLISTS for program startup
 \ --------
 \ 'wid' is a word-list ID.
 \ In Camel Forth, wid is a pointer to a Name Field Address (NFA)
@@ -20,16 +20,19 @@ DECIMAL
 CREATE #ORDER  1 ,  \ No. of active wordlists starts at 1
 VARIABLE WID-LINK   \ Pointer to the most recently defined wordlist
 
-CREATE FORTH-WORDLIST    0 ,  0 ,  LATEST @ ,
- FORTH-WORDLIST WID-LINK !  \ set first WID in the chain
-
 : WORDLIST ( -- wid)
    HERE
    0 ,               \ init nfa of last word in wordlist
    WID-LINK @ ,      \ compile link to previous wordlist
    DUP WID-LINK !    \ link to previous wordlist
-   0 ,               \ name of this wordlist. Must be patched
+   0 ,               \ name of this wordlist. Must be patched with WID-NAME!
 ;
+
+\ patch LASTEST NFA into wordlist name fld
+: WID-NAME! ( wid -- )  LATEST @ SWAP 4 + ! ;
+
+CREATE ROOT            WORDLIST  WID-NAME!
+CREATE FORTH-WORDLIST  WORDLIST  WID-NAME!
 
 HEX
 : .WID  ( wid -- )
@@ -40,7 +43,7 @@ HEX
 \ : ]CONTEXT ( n -- addr) CELLS CONTEXT + ; \ context as array
 HEX ( Machine code is same size but faster)
 CODE ]CONTEXT ( n -- addr)
-     A104 ,            \ TOS TOS ADD,
+     0A14 ,            \ TOS 1 SLA,  ( tos = n x 2 )
      0224 , CONTEXT ,  \ TOS CONTEXT AI,
      NEXT,
      ENDCODE
@@ -51,7 +54,7 @@ CODE ]CONTEXT ( n -- addr)
 
 DECIMAL
 : SET-ORDER ( wid1x ... wid1 n -- )  \ n cannot be 0
-     DUP 0< IF DROP  FORTH-WORDLIST DUP 2  THEN
+     DUP TRUE = IF DROP  ROOT FORTH-WORDLIST 2  THEN
      DUP #ORDER !  0 ?DO  I ]CONTEXT !  LOOP
 ;
 
@@ -62,16 +65,15 @@ DECIMAL
      R> SWAP SET-ORDER      \ put 'wid' first
 ;
 
-\ User API ...
-: ALSO        ( -- ) GET-ORDER OVER SWAP 1+ SET-ORDER ;
+\ User API
+: ALSO ( -- ) GET-ORDER OVER SWAP 1+ SET-ORDER ;
 : PREVIOUS    ( -- ) GET-ORDER NIP 1- SET-ORDER ;
 : DEFINITIONS ( -- ) CONTEXT @ CURRENT ! ;
 .( .)
 \ non-standard but nice to have
-: VOCABULARY  ( <text> )
+: VOCABULARY  ( wid -- )
    CREATE
-   WORDLIST
-   LATEST @ SWAP 4 + !  \ update wordlist name field
+   WORDLIST   WID-NAME!   \ update wordlist name field
    DOES> SET-CONTEXT ;
 
 : ORDER ( -- )
@@ -82,8 +84,9 @@ DECIMAL
 
 \ patch FORTH-WORDLIST to existing dictionary
    CONTEXT @ @ FORTH-WORDLIST !
+
 \ set the new search order and current vocabulary
-   FORTH-WORDLIST DUP 2 SET-ORDER  DEFINITIONS
+ONLY FORTH DEFINITIONS
 
 \ Forth 2012 6.1.1550, Extend FIND to search all active wordlists
 : FIND12 ( FIND12) ( c-addr -- c-addr 0 | xt 1 | xt -1 )
@@ -101,7 +104,17 @@ DECIMAL
       2 +LOOP ;
 
 ' FIND12 'FIND !
-ONLY FORTH DEFINITIONS
+
+ ROOT CURRENT !  \ compile into ROOT-WORDLIST
+\ " minimum search order shall include the words FORTH-WORDLIST & SET-ORDER"
+: FORTH-WORDLIST  FORTH-WORDLIST ;
+: SET-ORDER       SET-ORDER ;
+: FORTH  FORTH ;
+: ROOT   ROOT  ;
+: ONLY   ONLY  ;
+: ORDER  ORDER ;
+\ : ALSO   ALSO  ;
+\ : DEFINITIONS  DEFINITIONS ;
 
 : INIT-WORDLISTS
     ['] FIND12 'FIND !
@@ -109,7 +122,7 @@ ONLY FORTH DEFINITIONS
     ONLY FORTH DEFINITIONS
 ;
 
-INIT-WORDLISTS
+ INIT-WORDLISTS
 
 CR HERE SWAP - DECIMAL SPACE . .( bytes)
 HEX

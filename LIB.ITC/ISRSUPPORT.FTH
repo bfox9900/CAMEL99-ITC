@@ -11,12 +11,13 @@
 \ We can install an ISR of our own by placing its address in address >83C4.
 
 \ Example of a simple ISR than increments a variable continuously
-\ INCLUDE DSK1.ASM9900
-\ VARIABLE X
-\ CODE COUNTER ( -- )
-\    X @@ INC,
-\    RT,
-\    ENDCODE
+ INCLUDE DSK1.LOWTOOLS
+
+ VARIABLE t       \ Fetch 't' to get a time
+ CODE timer ( -- )
+    t @@ INC,
+    RT,
+    ENDCODE
 
 : ?CODE ( cfa -- ) DUP @ 2- - ABORT" Not code word" ;
 
@@ -25,6 +26,9 @@
         ?EXEC
         BL WORD  FIND  0= ABORT" ISR not found"
         DUP ?CODE >BODY ; IMMEDIATE
-
+HEX
 : INSTALL ( isr-addr -- ) 83C4 ! ;
-\ Usage:   ISR' COUNTER INSTALL
+\ Usage:
+  ISR' timer INSTALL
+
+DETACH

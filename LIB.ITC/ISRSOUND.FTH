@@ -31,7 +31,7 @@ CODE 2LIMI ( -- )  0300 , 0002 , NEXT, ENDCODE
 \ ........................................
 \  ISR Sound List Player
 HEX
-: ISRPLAY ( vaddr -- )
+: ISRPLAY ( addr -- )
             0LIMI                     \ interrupts off
             83CC !                    \ Vaddr -> sound table
             AMSQ C@  5 AND AMSQ C!    \ enable sound interrupts

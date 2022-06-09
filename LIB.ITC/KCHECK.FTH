@@ -4,7 +4,7 @@
 
 NEEDS  MOV,  FROM DSK1.ASM9900
 
-CODE KCHECK ( -- 0 | n) \ 191 uS, but you need a lookup table
+CODE KCHECK ( -- 0 | n) \ 191 uS
        R12  RPUSH,             \ SAVE R12
        TOS PUSH,
        TOS CLR,                \ TOS is for output
@@ -17,8 +17,7 @@ CODE KCHECK ( -- 0 | n) \ 191 uS, but you need a lookup table
           TOS 8    STCR,       \ Get 8 row values
           TOS      INV,        \ pressed keys read as 0
           NE IF,
-               R12 RPOP,
-               NEXT,
+               R1 500 LI,      \ A key was pressed, jmp out
           ENDIF,
           R1  0100 AI,         \ Next column
           R1  0600 CI,         \ test column
@@ -26,14 +25,4 @@ CODE KCHECK ( -- 0 | n) \ 191 uS, but you need a lookup table
        R12 RPOP,               \ restore R12
        NEXT,                   \ No key pressed: return (with EQ bit set)
        ENDCODE
-
-: TEST BEGIN  KCHECK .  ?TERMINAL UNTIL ;
-
-
-: WAITNOKEY  BEGIN KCHECK 0= UNTIL ;
-: WAITKEY    BEGIN PAUSE KCHECK UNTIL ;
-
-: BETTERKEY
-      BEGIN KCHECK 0= UNTIL
-      BEGIN PAUSE KCHECK UNTIL
-      KEY? ;
+       

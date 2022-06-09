@@ -53,6 +53,7 @@ HEX
 : GEN3    ( -- )  OSC3  ATT3  GEN! ;
 : GEN4    ( -- )  OSC4  ATT4  GEN! ;
 
+HEX
 : NOISE   ( n -- ) 0F AND  GEN4  OSC @ OR  SND! ;
 
 : (HZ)    ( f -- n)   HZ>CODE  OSC @ OR  ;          \ convert freq. add OSC
@@ -63,12 +64,14 @@ HEX
 : MUTE    ( -- )  -30 DB ;
 : SILENT  ( --)  9F SND!  BF SND!  DF SND!  FF SND! ;
 
+\ Test programs
 GEN1
-
 DECIMAL
 : WOOP   110 HZ 0 DB 500 111 DO  I HZ  LOOP MUTE ;
 
-: SWEEP  SWAP ?DO  I HZ  LOOP MUTE ;
+: SWEEP  ( f1 f2 )
+   DEPTH 2 < ABORT" Frequencies expected"
+   GEN1 0 DB SWAP ?DO  I HZ   LOOP MUTE ;
 
 : SIREN
         110 HZ 0 DB

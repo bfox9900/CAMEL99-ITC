@@ -1,12 +1,7 @@
-\ SAMS CARD support. 64K segmented memory fetch and store
-
+\ SAMS CARD support. 64K segmented memory fetch and store  2022 Brian Fox
 \ 1 sams page only.  Set to >3000 by PMEM (paged memory)
 
-\ ******************************************************
-\ *** RUN SAMSINI before using the card ON REAL TI99 ***
-\ ******************************************************
-
-\ NEEDS DUMP  FROM DSK1.TOOLS  \ debugging only
+NEEDS SAMSINI FROM DSK1.SAMSINI
 
 HERE
 HEX
@@ -25,33 +20,6 @@ PMEM 0B RSHIFT 4000 + CONSTANT SREG
 
 1 SEGMENT
 
-\ using machine code so we don't need the CRU library
-CODE SAMS-OFF  ( --) \ disable mapped memory
-       020C , 1E00 , \ R12 1E00 LI,
-       1E01 ,        \ 1 SBZ,
-       NEXT,
-       ENDCODE
-
-CODE SAMS-ON ( -- )  \ enable mapped memory
-       020C , 1E00 , \ R12 1E00 LI,
-       1D01 ,        \ 1 SBO,
-       NEXT,
-       ENDCODE
-
-\ * AMSINI sets ams card to "power-up" condition
-CODE SAMSINI
-       020C , 1E00 , \ R12 1E00 LI,
-       1D00 ,        \ 0 SBO,       ( turn on Sams card )
-       04C1 ,        \ R1 CLR,
-       0200 , 4000 , \ R0 4000 LI,  ( CARD memory)
-                     \ BEGIN,
-       CC01 ,        \ R1 R0 *+ MOV, ( move to mem-mapper)
-       0221 , 0101 , \ R1 0101  AI, ( add 1 page)
-       0280 , 4020 , \ R0 4020 CI,  ( all done? )
-       16FA ,        \ EQ UNTIL,    ( no, init more)
-       1E00 ,        \ 0 SBZ,       ( turn off SAMS card)
-       NEXT,         \ return
-       ENDCODE
 HEX
 CODE PAGED  ( addr -- paged_address )
      0200 , 1000 ,  \ R0  4K LI,         \ 4K divisor ->R0
@@ -78,6 +46,10 @@ CODE PAGED  ( addr -- paged_address )
 \ : @P     ( addr -- n)    PAGED @ ;    \ fetch an int
 \ : !P     ( n 32addr -- ) PAGED ! ;    \ store an int
 
-\ SAMSINI  SAMS-ON ( only on real iron)
-CR .( SAMS card initialized)
-CR HERE SWAP - DECIMAL . .( bytes)  \  314 BYTES
+CR HERE SWAP - DECIMAL . .( bytes)
+SAMS-OFF SAMSINI SAMS-ON
+1 SEGMENT
+CR .( SAMS card activated)
+CR .( Window = ) PMEM HEX U.
+CR .( Segment = ) SEG @  DECIMAL U.
+CR 

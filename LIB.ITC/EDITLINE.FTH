@@ -16,7 +16,7 @@ VARIABLE CURTIM   FF CURTIM !
 
 : EDKEY
         BEGIN
-          ECURS@ VPUT                   \ show the flashing cursor
+          ECURS@ VPUT                  \ show the flashing cursor
           PAUSE                        \ multi-tasking switch
           KEY?
           ?DUP
@@ -26,7 +26,7 @@ VARIABLE CURTIM   FF CURTIM !
 
 : EDITLINE ( addr len pos -- addr len)
            OVER + 1- OVER
-           BEGIN 
+           BEGIN
               EDKEY DUP 0D <>
            WHILE
               DUP EMIT
@@ -38,4 +38,3 @@ VARIABLE CURTIM   FF CURTIM !
               ENDCASE
            REPEAT
            DROP NIP SWAP -  ;
-

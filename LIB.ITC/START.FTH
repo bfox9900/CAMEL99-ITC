@@ -18,4 +18,4 @@ HEX
 CR 4000 H @ - DECIMAL SPACE . ." Low RAM free"
 CR VDPTOP  VP @ - DECIMAL  . ." VDP RAM free"
 CR CR .( Ready)
-HEX
+DECIMAL 

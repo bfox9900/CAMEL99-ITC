@@ -1,10 +1,11 @@
-\ +CONSTANT  an incrementing decrementing constants
-: +CONSTANT     CREATE   ,  DOES> @ + ;
+\ +CONSTANT creates incrementing or decrementing constants
+\ : +CONSTANT     CREATE   ,  DOES> @ + ;
+HEX
+: +CONSTANT   CREATE   ,   ;CODE A118 , ( *W TOS ADD,) NEXT, ENDCODE
+: +NOS        CREATE   ,   ;CODE A598 , ( *W *SP ADD,) NEXT, ENDCODE
 
-\  faster code below. Longer compile time to loading assembler etc.
-\  NEEDS MOV, FROM DSK1.LOWTOOLS
-\ ALSO ASSEMBLER
-
-\ : +CONSTANT     CREATE   ,  ;CODE *W TOS ADD, NEXT, ENDCODE
-
-\  REMOVE-TOOLS  ( removes wordlists and assembler)
+CODE UNDER+   (  a b n -- a+n)
+          1984 , 0002 , \  TOS 2 (SP) ADD,
+          C136 ,        \         TOS POP,
+          NEXT,
+ENDCODE

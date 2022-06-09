@@ -1,20 +1,32 @@
-CR .( GRAPHIX.FTH for CAMEL99 V2.X  July 6, 2021 BFox )
-CR  \ added VWRAP to speed up VCHAR by 4X
+CR .( GRAPHIX.FTH for CAMEL99 V2.X  Mar 2022 BFox )
+CR  \ added protections to HCHAR & VCHAR to stop writing off screen
 HERE
 NEEDS VC, FROM DSK1.VDPMEM  \ use by new CALLCHAR
 
 HEX
- 0380 CONSTANT CTAB      \ colour table VDP address
- 0800 CONSTANT PDT       \ "pattern descriptor table" VDP address
 
-\ access VDP tables like arrays. Usage:  9 ]CTAB returns VDP addr
- : ]CTAB  ( set# -- 'ctab[n])   CTAB + ;    \ 1 byte fields
- : ]PDT   ( char# -- 'pdt[n] )  8* PDT + ;  \ 8 byte fields
+\ access VDP memory as fast arrays
+: TABLE: ( Vaddr -- )
+     CREATE     ,               \ compile base address in VDP RAM
+     ;CODE ( n -- Vaddr')       \ RUN time
+         A118 ,  \ *W TOS ADD,  \ W hold the PFA of the word.
+         NEXT,
+ENDCODE
 
-\ ABORT to Forth with a msg if input is bad
+: TABLE8: ( addr -- )    \ create a table of 8 byte records
+     CREATE    ,
+        ;CODE ( n -- Vaddr')     \ RUN time
+         0A34 ,     \ TOS 3 SLA,  ( TOS 8* )
+         A118 ,     \ *W TOS ADD,
+         NEXT,
+ENDCODE
+
+ 0380 TABLE:  ]CTAB     \ colour table VDP address
+ 0800 TABLE8: ]PDT      \ "pattern descriptor table" VDP address
+
+ \ ABORT to Forth with a msg if input is bad
 : ?MODE  ( n -- )      VMODE @ <>   ABORT" Bad mode" ;
 : ?COLOR ( n -- n )    DUP 16 U>    ABORT" Bad Color" ;
-: ?SCR   ( vdpadr -- ) C/SCR @ CHAR+ > ABORT" too many chars" ;
 
 ( takes fg nibble, bg nibble, convert to TI hardware no.)
 ( test for legal values, and combine into 1 byte)
@@ -43,16 +55,19 @@ HEX
  : GRAPHICS  ( -- )
       1 VMODE !
       0 3C0  0 VFILL \ erase the entire 40 col. screen space
+\      4 DUP 2 VWTR 400 * VPG ! \ alternate page
+      00  2 VWTR     \ page zero, same as text mode
       E0 DUP 83D4 C! \ KSCAN re-writes VDP Reg1 with this byte
 ( -- E0) 1 VWTR      \ VDP register 1  bit3 = 0 = Graphics Mode
       0E 3 VWTR        \ color table
       01 4 VWTR        \ pattern table
       06 5 VWTR        \ sprite attribute table
       01 6 VWTR        \ set sprite pattern table to 1x$800=$800
-      CTAB 10 10 VFILL \ color table: black on transparent [1,0]
+      0 ]CTAB 10 10 VFILL \ color table: black on transparent [1,0]
       8 SCREEN         \ cyan SCREEN
       20 C/L!          \ 32 chars/line
-      CLEAR ;
+      CLEAR
+ ;
 
 : >DIG  ( char -- n) DIGIT? 0= ABORT" Bad digit" ;
 : CALLCHAR ( addr len char --) \ can be used for longstrings (128 bytes)
@@ -68,16 +83,18 @@ HEX
 ;
 .( .)
 \ PATTERN: is deprecated. Use CREATE and comma
- : PATTERN: ( u u u u -- ) CREATE  >R >R >R  , R> , R> , R> , ;
+\ : PATTERN: ( u u u u -- ) CREATE  >R >R >R  , R> , R> , R> , ;
 
 : CHARDEF  ( addr char# --)  ]PDT      8 VWRITE ; \ write pattern to PDT
 : CHARPAT  ( addr char# --)  ]PDT SWAP 8 VREAD ;  \ read pattern to 'addr'
 : GCHAR    ( col row -- char) >VPOS VC@ ; \ does not affect VROW,VCOL
 
-: HCHAR   ( col row char cnt -- )
-          2SWAP >VPOS   ( -- char cnt vdp_addr)
-          2DUP + ?SCR
-         -ROT SWAP VFILL ;
+: HCHAR   ( col row char cnt -- ) \ *new* added automatic size protection
+          2SWAP >VPOS   ( -- char cnt vdp1)
+          DUP>R         ( -- char cnt vdp1)  ( r: vdp1)
+          OVER +        ( -- char cnt vdp_end)
+          C/SCR @  -   0 MAX - ( char cnt' )
+          R> -ROT SWAP VFILL ;
 
 \ change to Graphics mode (C/SCR = HEX300) to compile VCHAR correctly
 GRAPHICS
@@ -94,8 +111,10 @@ CODE VWRAP   \ 4x faster than Forth
   NEXT,
 ENDCODE
 
-: (VCHAR) ( char vdp_addr cnt --) 0 ?DO   2DUP VC!   VWRAP   LOOP ;
-: VCHAR   ( col row char cnt -- ) 2SWAP >VPOS SWAP (VCHAR) 2DROP ;
+: (VCHAR) ( col row char cnt --)
+  2SWAP >VPOS  SWAP 0 ?DO  2DUP VC!  VWRAP  LOOP ;
+
+: VCHAR     (VCHAR) 2DROP ;
 
 CR .( GRAPHICS 1 Mode READY)
 CR HERE SWAP - DECIMAL . .( bytes)

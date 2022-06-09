@@ -6,7 +6,8 @@ HERE
 : CASE    ( -- 0 ) 0 ; IMMEDIATE
 
 : OF      ( -- )
-   POSTPONE OVER   POSTPONE =  POSTPONE IF  POSTPONE DROP ; IMMEDIATE
+   POSTPONE OVER   POSTPONE =
+   POSTPONE IF POSTPONE DROP ; IMMEDIATE
 
 \ MPE Forth extension
 : ?OF     ( flag -- here )

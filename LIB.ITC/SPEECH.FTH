@@ -1,5 +1,5 @@
 \ SPEECH.FTH   Interface to the speech synthesize on the TI-99
-      **WORK_IN_PROGRESS**
+
 \  Binary byte  hex  Operation
 \  x111xxxx      7x    Reset
 \  x100aaaa      4x    Load-Address (needs 4 more bytes)
@@ -44,10 +44,10 @@ HEX
 ; Upon testing, it appears that the synth reports idle *just before* it really
 ; is finished.
 ; This causes a problem, as TurboForth is fast enough to start feeding new data
-; immediately when it detects the synth as idle, thus chopping off the end of
-; streamed speech.
-; To protect against this, it uses the hardware busy signal from the synth,
-; *and* the number of bytes/words currently outstanding in any data that is
+; immediately when it detects the synth as idle, thus chopping off the end of 
+; streamed speech. 
+; To protect against this, it uses the hardware busy signal from the synth, 
+; *and* the number of bytes/words currently outstanding in any data that is 
 ; currently being fed to the synth. If either>0 then a busy is returned.
  _spkng  dect stack                  ; make space on data stack
         mov @synyes,r0              ; synth fitted?
@@ -91,7 +91,7 @@ _strem  mov *stack+,r0              ; pop speech buffer count
         jmp sayxit
 ;]
 
-;[ speech support routines
+;[ speech support routines    
 ; routine to see if speech synth is fitted
 ; on exit sets r0: 0=not detected >ffff=detected
 isspch  clr @synyes                 ; assume no speech synth detected
@@ -115,7 +115,7 @@ readsp  mov r11,r8                  ; save return address
         movb @spchrd,r0             ; read the byte from the speech synth
         b *r8                       ; return to caller
 
-
+        
 ; routine to load an address into the speech synth's address register
 ; the address to load is passed in r0
 spaddr  li r2,4                     ; 4 nybbles to load

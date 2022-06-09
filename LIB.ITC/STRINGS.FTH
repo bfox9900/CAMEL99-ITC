@@ -68,6 +68,7 @@ HEX 3FFF SSW +  CONSTANT $STACK
 : CPOS     ( $ char -- n) >R COUNT 2DUP R> SCAN NIP - NIP ;
 
 : COPY$    ( $1 $2 -- )  >R COUNT R> PLACE ;
+: !$      >R COUNT R> PLACE  COLLAPSE ; 
 
 \ compare strings also use S=
 : COMPARE$ ( $1 $2 -- flag) DUP C@ 1+ S= ;

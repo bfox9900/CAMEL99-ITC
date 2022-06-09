@@ -2,6 +2,8 @@
 \  written using LMI PC/FORTH 3.2
 \  Heinrich Hohl, Lucent Technologies
 
+** NEEDS A NEW INTERPRETER THAT CAN HANDLE DOUBLES **
+
 \ Modified for use with CAMEL99 Forth BJF Dec 29 2017
 
 \ The floating point numbers used in this package are composed of

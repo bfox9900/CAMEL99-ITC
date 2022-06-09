@@ -1,43 +1,10 @@
 # TI-99 Library Files
 
-This folder contains the TI-99 files found in the DSK1 folder plus more.
-It represents not only finished work but also work in progress so my apology
-if something here does not work as advertised.
+These files has no extension because the TI-99 file system uses the '.'
+character to delimit device names and parameters. These files are all in the
+default format for assembler source code on the TI-99. This format is described
+as DISPLAY, VARIABLE 80 or DV80 as a short form.
 
-
-To use these files in CLASSIC99 emulator
-
--Start the CLASSIC99 Emulator Program
--Under CARTRIDGE select APPS->Editor/Assembler
--Press a key
--Press 2 to start Editor Assembler
--Press 5  RUN PROGRAM FILE
-
-You will see the prompt "FILE NAME?" enter:
-
-DSK1.CAMEL99
-(use the DSK# where you put the CAMEL99 binary file.
-
-With CAMEL99 running...
-Open the source file you want to load with a text editor.
-Copy the entire source file file using CTRL A
-
-Paste the file into CAMEL99 using the EDIT->PASTE tab on the Emulator window.
-
----------------------------------------------
-IF THERE ARE ERRORS IN THE CODE...We apologize.
-
-If you hear a TI-99 honk sound while the file is pasting there has been an
-error of some kind.
-
-In the CAMEL99 program type the command COLD <ENTER>
-
-This will reset Forth back to a clean system.
-
-Try pasting the file into CAMEL99, pieces at a time from the top of file until
-you find the line with the error. Then you will have to fix the error in the
-source code and test it by reloading.
-
-If you need help contact theBF on
-
-http://atariage.com/forums/forum/119-ti-994a-development/
+DV80 means ASCII text characters are the only characters in the file and the
+records are 80 bytes long. They are edited with the Editor assembler Editor
+program (EDIT1) or the third party 80 column editor called EDIT80. 

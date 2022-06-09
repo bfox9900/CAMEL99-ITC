@@ -1,10 +1,9 @@
 \ SAMS CARD support for CAMEL99 Forth         May 2020  B Fox
-\ Written in Forth so you can see how it works
-\ see: SAMSFAST32 for Assembler version. 2X faster
-\ INCLUDE DSK1.TOOLS
-
+\ Written in Forth so you can see how it works.
+INCLUDE DSK1.TOOLS
 NEEDS SAMSINI FROM DSK1.SAMSINI
 HERE
+
 HEX
   3000 CONSTANT PMEM  \ paged memory block location
 \ compute SAMS register based on PMEM address
@@ -14,7 +13,7 @@ VARIABLE BANK#      \ current mapped bank
 
 HEX
 : DPAGED  ( 32bitaddr -- addr')
-         1000 UM/MOD ( -- offset bank#)
+         1000 UM/MOD    ( -- offset bank#)
          DUP BANK# @ =      \ are we using the same PAGE
          IF
              DROP           \ Yes! Drop bank# and get out
@@ -36,11 +35,3 @@ CR HERE SWAP - DECIMAL . .( bytes)
 
 SAMS-OFF SAMSINI SAMS-ON
 CR .( SAMS card activated)
-
-HEX
-\ test code
-\ : STORESAMS     FFFF 0 DO     I  I 1 !L       2 +LOOP ; \ 32.8 secs
-\ : FETCHSAMS     FFFF 0 DO        I 1 @L DROP  2 +LOOP ; \ 31.3 secs
-
-\ regular ram comparison
-\ : FETCHRAM      FFFF 0 DO    I @  DROP        2 +LOOP ; \  8 secs

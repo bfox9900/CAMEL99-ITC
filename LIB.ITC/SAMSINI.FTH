@@ -1,5 +1,5 @@
-\ SAM 1M memory card COMMON CODE              Feb 2 2022 Brian Fox
-\ This file gives us the basics to test the card and turn it on/off
+\ SAM 1M memory card common code              Feb 2 2022 Brian Fox
+\ This file is common code for all other SAMS extensions
 DECIMAL
   24 USER 'R12  \ address of R12 in any Forth workspace
 HEX

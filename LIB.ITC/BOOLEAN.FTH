@@ -1,6 +1,6 @@
 \ BOOLEAN array creator and access words               Brian Fox  2018
 \ Tested with  CAMEL99 Forth 16 bits, Gforth 32 bits, iForth 64 bits
-\ July 2019, removed Rstack juggling BSET, BRST, BTOG. 
+\ July 2019, removed Rstack juggling BSET, BRST, BTOG.
 \ Relaced with OVER. 20% faster
 
 HEX
@@ -26,8 +26,3 @@ HEX
 : BSET ( bit# bits[] -- )  BITFLD SWAP BITMASK        OVER @  OR SWAP ! ;
 : BRST ( bit# bits[] -- )  BITFLD SWAP BITMASK INVERT OVER @ AND SWAP ! ;
 : BTOG ( bit# bits[] -- )  BITFLD SWAP BITMASK        OVER @ XOR SWAP ! ;
-
-
-
-
-

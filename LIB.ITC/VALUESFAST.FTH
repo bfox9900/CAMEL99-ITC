@@ -3,37 +3,35 @@
 \ Usage:  0 VALUE W
 \           99 TO W   1 +TO W
 
-\ NEEDS MOV, FROM DSK1.SUPERTOOLS
-
 HERE
 HEX
-CODE LIT!  ( n addr -- ) \ combine function of LIT and !
+CODE LIT!  (  n -- ) \ combine function of LIT and !
     C079 , \ *IP+  R1 MOV,
     C444 , \  TOS  R1 ** MOV,
     C136 , \  TOS POP,
     NEXT,
 ENDCODE
- .( .)
-: VALUE   CONSTANT ;
+.( .)
+: VALUE  ( n --)  HEADER  COMPILE DOCON  COMPILE, ;
 
 : TO  ( n -- )
            ' >BODY   \ compute PFA at compile time
            STATE @
-           IF  COMPILE LIT!  COMPILE,  EXIT
+           IF  POSTPONE LIT!  COMPILE,  EXIT
            THEN  ! ; IMMEDIATE
  .( .)
- \ comment these if you don't need them
- CODE LIT+!  ( n addr --) \ combine functions LIT and +!
-  C079 ,  \  *IP+  R1 MOV,
-  A444 ,  \  TOS  R1 ** ADD,
-  C136 ,  \  TOS POP,
-  NEXT,
+\ comment these if you don't need them
+CODE LIT+!  ( n addr --) \ combine functions LIT and +!
+    C079 ,  \  *IP+  R1 MOV,
+    A444 ,  \  TOS  R1 ** ADD,
+    C136 ,  \  TOS POP,
+    NEXT,
 ENDCODE
 
 : +TO      ( n -- )
            ' >BODY
            STATE @
-           IF   POSTPONE LIT+!   ,   EXIT
+           IF   POSTPONE LIT+!  COMPILE,  EXIT
            THEN  +! ; IMMEDIATE
  .( .)
 HERE SWAP -  SPACE DECIMAL . .( bytes) HEX
