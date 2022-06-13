@@ -1,19 +1,25 @@
-\ QUEUES    Sep 14 2019  B Fox
+\ Simple byte QUEUE   Sep 14 2019  B Fox
 
 NEEDS DUMP   FROM DSK1.TOOLS
 
+\ all FIFOs will be the same length. 
+\ Must be power of 2: HEX 400,200,100,80,40,20,10
+
+100 CONSTANT QSIZE
+QSIZE 1- CONSTANT QMASK 
+
 HEX
-: FIFO:  ( n -- )   \ must be power of 2
+: FIFO:  ( -- )  
 \               TAIL  HEAD
-         CREATE  0 ,   0 ,  CELLS ALLOT  ;
+         CREATE  0 ,   0 ,  QSIZE CELLS ALLOT  ;
 
 \ circular BYTE Q access words
-: Q+!    ( fifo -- n) DUP @ 2+ 1F AND DUP ROT ! ;
-: Q@     ( fifo -- n) DUP Q+! + CELL+ @ ;  \ bump tail and fetch data
+: Q+!    ( fifo -- n) DUP @ CELL+  QMASK AND DUP ROT ! ;
+: Q@     ( fifo -- n) DUP Q+! + CELL+ @ ;        \ bump tail and fetch data
 : Q!     ( n fifo --) DUP CELL+ Q+! + CELL+ ! ;  \ bump head and add to FIFO
-: Q?     ( fifo -- ?) 2@ <> ;              \ is data ready?
+: Q?     ( fifo -- ?) 2@ <> ;                    \ is data ready?
 
-100 FIFO: QQ
+FIFO: QQ
 
 : LOADQ  ( ADR LEN -- )
         BOUNDS
