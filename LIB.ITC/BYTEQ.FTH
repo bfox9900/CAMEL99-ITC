@@ -1,6 +1,7 @@
-\ Simple byte QUEUE   Sep 14 2019  B Fox
+\ Simple integer QUEUE   Sep 14 2019  B Fox
+\ can be used for bytes but wastes some space
 
-NEEDS DUMP   FROM DSK1.TOOLS
+\ NEEDS DUMP   FROM DSK1.TOOLS  \ debugging 
 
 \ all FIFOs will be the same length. 
 \ Must be power of 2: HEX 400,200,100,80,40,20,10
