@@ -2,7 +2,6 @@
 ( Uses power of 2 size buffers only!.  2 4 8 16 32 64 etc.
 ( Ported to Camel99 forth  11JUN2020, revised for ISO compliance June 13 2022 )
 
-
 : ?POT ( n --) DUP 0> SWAP DUP 1- AND AND  ABORT" Not power of 2" ;  
 
 HEX
@@ -60,8 +59,3 @@ HEX
 \        Q1 PRINTQ 3 SPACES
 \        KEY?
 \      UNTIL ;
-      
-      
-      
-      
-      
