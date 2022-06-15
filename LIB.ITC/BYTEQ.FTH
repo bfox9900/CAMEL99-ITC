@@ -1,36 +1,67 @@
-\ Simple integer QUEUE   Sep 14 2019  B Fox
-\ can be used for bytes but wastes some space
+( Circular byte queue for general purpose stuff  21MAR94 FOX )
+( Uses power of 2 size buffers only!.  2 4 8 16 32 64 etc.
+( Ported to Camel99 forth  11JUN2020, revised for ISO compliance June 13 2022 )
 
-\ NEEDS DUMP   FROM DSK1.TOOLS  \ debugging 
 
-\ all FIFOs will be the same length. 
-\ Must be power of 2: HEX 400,200,100,80,40,20,10
-
-100 CONSTANT QSIZE
-QSIZE 1- CONSTANT QMASK 
+: ?POT ( n --) DUP 0> SWAP DUP 1- AND AND  ABORT" Not power of 2" ;  
 
 HEX
-: FIFO:  ( -- )  
-\               TAIL  HEAD
-         CREATE  0 ,   0 ,  QSIZE CELLS ALLOT  ;
+: BYTEQ: ( n -- <text>)
+    DUP ?POT 
+    CREATE
+        0 ,          ( write pointer {TAIL} )
+        0 ,          ( read  pointer {HEAD} )
+        DUP 1- ,     ( mask value    )
+        ALLOT        ( data field    )
+;
 
-\ circular BYTE Q access words
-: Q+!    ( fifo -- n) DUP @ CELL+  QMASK AND DUP ROT ! ;
-: Q@     ( fifo -- n) DUP Q+! + CELL+ @ ;        \ bump tail and fetch data
-: Q!     ( n fifo --) DUP CELL+ Q+! + CELL+ ! ;  \ bump head and add to FIFO
-: Q?     ( fifo -- ?) 2@ <> ;                    \ is data ready?
+(Field offsets to the Queue data structure )
+: ->HEAD ( q -- adr )      ;  \ syntax sugar
+: ->TAIL ( q -- adr ) [ 1 CELLS ] LITERAL + ;
+: ->MSK  ( q -- adr ) [ 2 CELLS ] LITERAL + ;
+: ->DATA ( q -- adr ) [ 3 CELLS ] LITERAL + ;
 
-FIFO: QQ
+\ Circular pointer incrementing
+: HEAD++ ( q -- )  DUP>R ->HEAD @ 1+  R@ ->MSK @ AND R> ->HEAD ! ;
+: TAIL++ ( q -- )  DUP>R ->TAIL @ 1+  R@ ->MSK @ AND R> ->TAIL ! ;
+: QMORE? ( q -- ?) 2@ <> ; 
 
-: LOADQ  ( ADR LEN -- )
-        BOUNDS
-        DO
-           I C@  QQ Q!
-        LOOP ;
+: QC@    ( q -- c )
+       DUP>R TAIL++
+       R@ ->DATA R> ->TAIL @ +  \ [data+tail]= adr
+       C@ ;                     \ fetch the byte
 
+: QC!    ( c q -- )
+       DUP>R HEAD++
+       R@ ->DATA R> ->HEAD @ +  \ [data+head]= adr
+       C! ;                     \ store the byte
 
-: PRINTQ  BEGIN
-             QQ Q?
-          WHILE
-             QQ Q@ EMIT
-          REPEAT ;
+: WRITEQ  ( addr len queue -- )
+          -ROT BOUNDS
+          ?DO
+             I C@ OVER QC!
+          LOOP
+          DROP ;
+
+: PRINTQ  ( queue -- )
+        BEGIN
+           DUP QMORE? 
+        WHILE
+           DUP QC@ EMIT
+        REPEAT
+        DROP ;
+
+\ DEMO code
+\ DECIMAL 256 BYTEQ: Q1
+\ : TEST
+\      BEGIN
+\        S" Now is the time for all good men..." Q1 WRITEQ
+\        S" to come to the aid of their country." Q1 WRITEQ
+\        Q1 PRINTQ 3 SPACES
+\        KEY?
+\      UNTIL ;
+      
+      
+      
+      
+      
