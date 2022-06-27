@@ -5,12 +5,14 @@
 \ It's removed here for more speed so be careful
 
 \ Aug 17 2018
-\   - STRING stack lives in free dictionary
+\   - STRING stack lives in HIGH heap memory. (*SAMS conflict*)
 \   - DIM creates static string in dictionary
 \   - HDIM uses MALLOC to create static string in HEAP
 \ Aug 21 2018 - fixed bug in POS$
 \ Nov 25, 2018 - MOVED string stack to top of HEAP (un-allocated)
 \ Apr 15, 2020 - added NEEDS/FROM for V2.59
+\ Jun 24, 2022 - added PUSH$
+
 NEEDS S=     FROM DSK1.COMPARE
 NEEDS MALLOC FROM DSK1.MALLOC
 
@@ -20,7 +22,7 @@ DECIMAL
             255 CONSTANT MXLEN   \ 255 bytes is longest string
 
 MXLEN 1+ NEGATE CONSTANT SSW     \ negative width of string stack
-HEX 3FFF SSW +  CONSTANT $STACK
+HEX 3FFE SSW +  CONSTANT $STACK
 
                 VARIABLE SSP     \ the string stack pointer
 
@@ -37,6 +39,7 @@ HEX 3FFF SSW +  CONSTANT $STACK
 : SPUSH    ( addr len -- top$ ) NEW: TOP$ DUP >R PLACE R> ;
 : ?SSP     ( -- ) SSP @ 0= ABORT" Empty $ stack" ;
 : DROP$    ( -- ) ?SSP MXLEN NEGATE SSP +! ;
+: PUSH$    ( $ --) COUNT SPUSH ;
 
 \ Replicate TI-BASIC string functions ====
 : LEN      ( $ -- n )  C@ ;
@@ -66,12 +69,12 @@ HEX 3FFF SSW +  CONSTANT $STACK
 
 \ much faster find position of char in $
 : CPOS     ( $ char -- n) >R COUNT 2DUP R> SCAN NIP - NIP ;
-
 : COPY$    ( $1 $2 -- )  >R COUNT R> PLACE ;
-: !$      >R COUNT R> PLACE  COLLAPSE ; 
 
 \ compare strings also use S=
 : COMPARE$ ( $1 $2 -- flag) DUP C@ 1+ S= ;
+\  CHAR Q " !@#$%^&*" VALIDATE$ 
+: VALIDATE$ ( char $ -- ?) COUNT  ROT SCAN NIP 0> ;
 
 .( ..)
 : =$       ( $1 $1 -- flag)  COMPARE$ 0= ;
@@ -92,12 +95,12 @@ HEX 3FFF SSW +  CONSTANT $STACK
 \ HDIM  creates a static named string in the HEAP (low mem)
 : HDIM    ( n -- ) DUP ?$IZE  1+ ALIGNED MALLOC CONSTANT ;
 
-: PUT      ( $1 $2 -- ) COPY$ COLLAPSE ;
 .( ..)
 \ print a string, but do NOT collapse string stack
 : PRINT$   ( $ -- )  COUNT TYPE ;
 
-\ high level string print, collapses stringstack
+\ high level string PRINT and PUT, collapse the stringstack
+: PUT      ( $1 $2 -- ) COPY$ COLLAPSE ;
 : PRINT    ( $ -- )  CR PRINT$ COLLAPSE ;
 
 : (")      ( -- ) R> DUP COUNT + ALIGNED >R ;
@@ -112,6 +115,6 @@ HEX 3FFF SSW +  CONSTANT $STACK
 COLLAPSE  \ initialize the string stack
 
 HERE SWAP - DECIMAL .  .( Bytes)
- 20 DIM A$  A$ =" This is A$"
+\  20 DIM A$  A$ =" This is A$"
 \ 20 DIM B$  B$ =" This is B$."
 \ 50 DIM C$  A$ B$ & C$ PUT

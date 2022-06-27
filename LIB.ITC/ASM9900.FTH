@@ -47,7 +47,7 @@ HEX
 2000 GROP COC,  2400 GROP CZC,  2800 GROP XOR,
 3800 GROP MPY,  3C00 GROP DIV,  2C00 GROP XOP,
 
-: GGOP     CREATE ,
+: GGOP     CREATE ,    \ Format I
            DOES> @ SWAP DUP ADR?
                  IF   40 * + SWAP >R GOP' R> ,
                  ELSE 40 * + GOP'  THEN ;

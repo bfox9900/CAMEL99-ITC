@@ -130,16 +130,16 @@ DECIMAL
 : V$!    ( addr len Vaddr len -- )  DROP 1-  VPLACE ;
 : :="    ( vaddr len -- ) DROP 1- [CHAR] " PARSE ROT VPLACE ;
 
-\ Neil Baud's toolbelt compare, modded for VDP RAM
+\ Neil Baud's toolbelt modified to compare RAM string to VDP string
 \  0 means adr1 = adr2
 \ -1 means adr1 < adr2
 \  1 means adr1 > adr2
-: VCOMPARE  ( Vadr1 n1 Vadr2 n2 -- -1|0|1 )
+: VCOMPARE  ( $adr1 n1 Vadr2 n2 -- -1|0|1 )
     ROT  2DUP - >R            ( a1 a2 n2 n1) ( R: n2-n1)
     MIN                       ( a1 a2 n3)
-    BOUNDS
+    BOUNDS  ( I will become the VDP address)
     ?DO                       ( a1)
-        VCOUNT  I VC@  -      ( a1 diff)
+        COUNT  I VC@ -      ( a1 diff)
         DUP IF
             NIP  0< 1 OR      ( -1|1)
             UNLOOP

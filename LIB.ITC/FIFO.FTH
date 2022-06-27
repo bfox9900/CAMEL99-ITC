@@ -3,7 +3,7 @@
 \ fifo "first in, first out"
 
 HEX
-: QUEUE: ( n -- <text>)
+: BYTE-QUEUE: ( n -- <text>)
     CREATE
         DUP 10 MOD ABORT" Queue size must be power of 2"
         0 ,          ( write pointer {TAIL} )
@@ -23,13 +23,13 @@ HEX
 : TAIL++ ( q -- )  DUP >R  ->TAIL @ 1+  R@ ->MSK @ AND R> ->TAIL ! ;
 
 : QC@    ( q -- c )
-       DUP >R TAIL++
+       DUP>R TAIL++
        R@ ->DATA
        R> ->TAIL @ +       \ [data+tail]= adr
        C@ ;                \ fetch the byte
 
 : QC!    ( c q -- )
-       DUP >R HEAD++
+       DUP>R HEAD++
        R@ ->DATA
        R> ->HEAD @ +       \ [data+head]= adr
        C! ;                \ store the byte
@@ -50,7 +50,7 @@ HEX
         DROP ;
 
 \ DEMO code
-100 QUEUE: QX
+100 BYTE-QUEUE: QX
 
 : TEST
       BEGIN

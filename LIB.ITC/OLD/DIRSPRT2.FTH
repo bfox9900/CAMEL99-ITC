@@ -1,13 +1,12 @@
-\ direct SPRITE control lexicon
+\ direct SPRITE control lexicon  BASED ON TI-FORTH      2017
 \ control by writing direct to VDP RAM
 \ - simpler to understand.
 \ - Less efficient when moving big no. of sprites
 
 \ this version uses some machine code words for a more speed
 
-INCLUDE DSK1.TOOLS.F
-INCLUDE DSK1.GRAFIX.F
-INCLUDE DSK1.CODE.F
+INCLUDE DSK1.TOOLS
+INCLUDE DSK1.GRAFIX
 
 HEX
 8802   CONSTANT VDPSTS   \ vdp status register memory mapped address
@@ -35,7 +34,7 @@ CODE SP.X ( char# -- vaddr)
 
 \ named fields for sprite record.  Usage:  12 ]SDT ->PAT
 : ->PAT   ( addr -- addr+2) POSTPONE 2+  ; IMMEDIATE
-: ->COLR  ( addr -- addr+3) POSTPONE 3 POSTPONE + ; IMMEDIATE
+: ->COLR  ( addr -- addr+3)  3 + ;
 
 : SP.X@  ( spr# -- sprx) SP.X VC@ ;    \ fetch X
 : SP.Y@  ( spr# -- spry) SP.Y VC@ ;       \ fetch Y
@@ -77,7 +76,7 @@ CODE DUP>R ( n -- ) ( r-- n)
              IF   SPR# ! THEN      ;  \ update last spr#
 
 \ like Extended BASIC Magnify
-: MAGNIFY  ( mag-factor -- ) 
+: MAGNIFY  ( mag-factor -- )
            VDPR1 C@ 0FC AND +  DUP 1 VWTR
            VDPR1 C! ;
 
@@ -124,4 +123,3 @@ CODE RANGE? ( n n n -- n') \ FORTH: OR OR 8000 AND
 
 \ bit set if any two sprites overlap
 : COINCALL  ( -- ? ) VDPSTS C@ 20 AND ;
-

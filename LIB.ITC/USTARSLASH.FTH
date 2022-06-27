@@ -1,6 +1,9 @@
 \ usigned star-slash. Faster than floored version in Kernel
 
-CODE: U*/ ( n n n -- n )
+NEEDS DUMP  FROM DSK1.TOOLS
+NEEDS MOV,  FROM DSK1.ASM9900
+
+CODE U*/ ( n n n -- n )
               R4  R0 MOV,      \ move TOS cache register R0 (divisor)
              *SP+ R1 MOV,      \ POP multiplier to R1
              *SP+ R4 MOV,      \ multiplicand -> TOS
@@ -8,4 +11,13 @@ CODE: U*/ ( n n n -- n )
               R5  R3 MOV,      \ low order word to R3
               R0  R4 DIV,      \ unsigned division
               NEXT,
-              END-CODE
+              ENDCODE
+
+
+CODE U/ ( n n -- n ) \ unsigned divide. FASTER but be careful
+              TOS  R0 MOV,     \ divisor->R0                 14
+                  TOS CLR,
+             *SP+  R5 MOV,     \ MOVE low word to r5         18
+              R0  TOS DIV,     \ perform unsigned division  124
+              NEXT,
+              ENDCODE

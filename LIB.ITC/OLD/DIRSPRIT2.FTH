@@ -7,15 +7,14 @@
 \ July 2018  Removed DXY from Kernel and put machine code here
 \ July 2019  Simplfied DIST for 20% speedup.
 \ Aug 2020   Re-wrote COINCXY COINC to be faster
-\            Removed SP.X@, SP.Y@.  Use VC@ with them, faster.
-\ Dec 2021   Removed INC from SP.X // changed base address instead
+MARKER /DIRSPRIT
 
 NEEDS HCHAR  FROM DSK1.GRAFIX  \ must be in Graphics 1 mode
 
 HERE
 CR .( Compiling direct sprite lexicon)
 HEX
-837B   CONSTANT VDPSTS   \ copy of vdp status register
+8802   CONSTANT VDPSTS   \ vdp status register, memory mapped address
 300    CONSTANT SAT      \ sprite attribute table VDP RAM base address
 20 4*  CONSTANT SATsize  \ size of the table, 32 sprites x 4 bytes/record
 1F     CONSTANT MAX.SP   \ 32 sprites, 0 .. 31
@@ -33,12 +32,12 @@ VARIABLE SPR#            \ holds the last sprite defined by SPRITE
            NEXT,
            ENDCODE
 
- CODE SP.X ( spr# -- vaddr) \ : SP.X   4* SAT + 1+ ;
+CODE SP.X ( spr# -- vaddr) \ : SP.X   4* SAT + 1+ ;
            0A24 ,         \  TOS  2 SLA,
-           0224 , SAT 1+ ,   \  TOS SAT AI,
+           0224 , SAT ,   \  TOS SAT AI,
+           0584 ,         \  TOS INC,
            NEXT,
            ENDCODE
-
 \ ****************************************************************
 \ Use SP.X and SP.Y with VC@ to position coordinates individually
 \ SP.Y V@ reads both X and Y for speed and can SPLIT
@@ -46,16 +45,6 @@ VARIABLE SPR#            \ holds the last sprite defined by SPRITE
 
 : SP.PAT  ( n spr# -- vaddr) SP.X 1+ ; \ address of pattern byte
 : SP.COLR ( n spr# -- vaddr) SP.X 2+ ; \ address of colr byte
-
-
-HEX
- CODE FUSEXY ( x y spr# -- yyxx spr#) \ speeds up LOCATE by 14%
-      C036 , \ *SP+ R0 MOV,
-      06C0 , \  R0  SWPB,
-      A016 , \ *SP R0 ADD,
-      C580 , \  R0 *SP MOV,
-      NEXT,
-      ENDCODE
 
 \ finger trouble protection. Runtime array index test.
 : ?NDX  ( n -- n ) MAX.SP OVER < ABORT" Bad SPR#" ;
@@ -69,11 +58,12 @@ CR .( .)
           SPR# OFF ;            \ #sprites=0
 
 \ The following words are named like Extended BASIC
-\ They are index protected by the word ?NDX. For more speed use SP.Y etc.
+\ (remove ?NDX if you need more speed, but you loose protection)
 : POSITION  ( sprt# -- dx dy ) ( ?NDX) SP.Y V@ SPLIT ;
-: LOCATE    ( dx dy sprt# -- ) FUSEXY SP.Y V! ;
+: LOCATE    ( dx dy sprt# -- ) ( ?NDX) SP.Y >R FUSE R> V! ;
 : PATTERN   ( char sprt# -- )  ( ?NDX) SP.PAT VC! ;
 : SP.COLOR  ( col sprt# -- )   ( ?NDX) >R 1- R> SP.COLR VC! ;
+
 .( .)
 : SPRITE  ( char colr x y sp# -- ) \ create a SPRITE, sp# = 0..31
           ?NDX
@@ -108,47 +98,35 @@ CODE DXY  ( x2 y2 x1 y1 --- dx dy )   \ Common factor for SP.DIST,SP.DISTXY
 .( .)
 \ factored DIST out for re-use
 \ With new machine code words and no Rstack operations it is 2X faster
-: DIST   ( x2 y2 x1 y1 -- distance^2) \ distance between 2 coordinates
-          DXY  2DUP +                 \ sum the squares
-          DUP RANGE?                  \ check if out of range
-          IF  DROP 7FFF               \ throw away the copy, return 32K
-          THEN ;                      \ otherwise return the calculation
+: DIST     ( x2 y2 x1 y1 -- distance^2) \ distance between 2 coordinates
+            DXY  2DUP +                  \ sum the squares
+            DUP RANGE?                   \ check if out of range
+            IF  DROP 7FFF                \ throw away the copy, return 32K
+            THEN ;                       \ otherwise return the calculation
 
-: SP.DISTXY ( x y spr# -- dist^2 )    SP.Y V@ SPLIT DIST ;
-: SP.DIST   ( spr#1 spr#2 -- dist^2 ) SP.Y V@ SPLIT ROT SP.DISTXY ;
+: SP.DIST   ( spr#1 spr#2 -- dist^2 ) POSITION ROT POSITION DIST ;
 
-\ 0 in all these words means no coincidence
+: SP.DISTXY ( x y spr# -- dist^2 )    POSITION DIST ;
+
 \ VDP status bit set if any two sprites overlap
+\ 0 in all these words means no coincidence
 : COINCALL  ( -- ? ) VDPSTS C@ 20 AND ;
 
+: COINCXY   ( dx dy sp# tol -- ? )
+        >R
+        SP.Y V@ SPLIT
+      ( -- col row col row )
+        ROT - ABS R@ <
+       -ROT - ABS R> <
+        AND ;
+
 : COINC ( spr#1 spr#2 tol -- ?)
-        COINCALL
-        IF
-          >R
-          POSITION ROT POSITION ( -- x1 y1 x2  y2 )
-          ROT - ABS R@ <
-         -ROT - ABS R> <
-          AND
-          EXIT          \ get out
-        THEN            \ if coincall=true then do this
-        2DROP DROP      \ drop parameters
-        FALSE           \ return false flag
- ;
-
-\ : TESTC   TMR@  0 1 8 COINC TMR@ NIP - . ;  \ 1406 uS
-
- : COINCXY   ( dx dy sp# tol -- ? )
-        COINCALL
-        IF >R
-           POSITION   ( -- x1 y1 x2  y2 )
-           ROT - ABS R@ <
-          -ROT - ABS R> <
-           AND
-           EXIT           \ get out
-        THEN              \ if coincall=true then do this
-        2DROP 2DROP    \ drop parameters
-        FALSE          \ return false flag
- ;
+        >R  SP.Y V@ SPLIT
+        ROT SP.Y V@ SPLIT
+        ( -- col row  col row)
+        ROT - ABS R@ <
+       -ROT - ABS R> <
+        AND ;
 
 HERE SWAP -
 CR

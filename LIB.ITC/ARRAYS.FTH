@@ -15,7 +15,7 @@ HEX
 
 \ ARRAY  creates a fast cell size array.
 : ARRAY ( n -- )
-      CREATE 2+ CELLS ALLOT      \ compile time
+      CREATE  2+ CELLS ALLOT   \ compile time
 ;CODE ( n -- addr)             \ RUN time
        A104 ,   \  R4 R4 ADD,  \ 2*  ie: CELLS
        A108 ,   \  W  R4 ADD,  \ base-address+tos=address'
