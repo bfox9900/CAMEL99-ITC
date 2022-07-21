@@ -91,7 +91,7 @@ CODE FAREXIT             \ exit for SAMS word
 ENDCODE
 \ \\\\\\\\\\\\\\\\ finished with assembler //////////////////
                          DETACH
-
+\ FAR: headers resided in CPU RAM and are 2 bytes bigger than : headers
 : FAR: ( -- ) \ special colon for words in FAR memory
      !CSP
      HEADER             \ compile Forth header with name

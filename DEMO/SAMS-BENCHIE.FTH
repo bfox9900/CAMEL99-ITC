@@ -20,11 +20,13 @@ HEX
       BVAR DUP MASK AND
     UNTIL ;
 
-: BENCHIE  MASK 0 DO   1 INNERBENCH  DROP   LOOP ;
+: BENCHIE
+   CR ." RAM memory"
+   MASK 0 DO   1 INNERBENCH  DROP   LOOP ;
 
 \ __________________________________________
 
-F8 CODEPAGE
+F8 CODEPAGE  \ code on page F8
 
 FAR: INNERBENCH2
     BEGIN
@@ -37,9 +39,21 @@ FAR: INNERBENCH2
 ;FAR
 
 F9 CODEPAGE \ Force a call to another SAMS bank
-FAR: BENCHIE2  MASK 0 DO  1 INNERBENCH2  DROP  LOOP ;FAR
+FAR: BENCHIE2
+   CR ." CODE in SAMS card with PAGING"
+   MASK 0 DO  1 INNERBENCH2  DROP  LOOP ;FAR
 
-CR .( To test: BENCHIE: )
+PAGE
+CR CR .( Compare CODE SPEED in RAM vs SAMS)
+CR
+CR .( BENCHIE is a program in CPU RAM.)
+CR
+CR .( BENCHIE2 is a program split onto two)
+CR .( SAMS pages using FAR:  ;FAR.)
+CR
+CR .( To run the comparison type:)
 CR .( ELAPSE BENCHIE )
 CR .( ELAPSE BENCHIE2)
-CR .( ~25 seconds)
+CR .( Both run in about 25 seconds)
+CR .( showing that FAR: definitions are fast.)
+CR
