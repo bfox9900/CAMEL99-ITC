@@ -4,7 +4,7 @@ NEEDS ELAPSE FROM DSK1.ELAPSE
 
 \ array fetch and store as text macros run 19% faster
  : [@] ( n addr --�n ) S" + C@" EVALUATE ; IMMEDIATE
- : [!] ( n addr -- )   S" + C!" EVALUATE ; IMMEDIATE
+ : [!] ( n addr -- )     S" + C!" EVALUATE ; IMMEDIATE
 
 \ : [@] ( n addr --�n )  + C@ ;
 \ : [!] ( n addr -- )     + C! ;

@@ -1,7 +1,6 @@
 \ Dutch flag DEMO using CAMEL99 Forth using Dijkstra's Algorithm
 \ *SORTS IN PLACE FROM Video MEMORY*
 \ This version uses VALUES, optimized exchanges, faster VALUE INCR & DECR
-\ Runtime ~6.6 seconds 
 
 \ INCLUDE DSK1.TOOLS ( for debugging)
  INCLUDE DSK1.GRAFIX
@@ -9,7 +8,6 @@
  INCLUDE DSK1.CASE
  INCLUDE DSK1.ELAPSE
  INCLUDE DSK1.VALUES
- INCLUDE DSK1.INLINE
 
 \ TMS9918 Video chip Specific code
 HEX
@@ -49,8 +47,8 @@ SQUARE WHTSQR CHARDEF
            REPEAT ;
 
 : NOTREDWHT    ( -- n ) \ return rnd index that is not RED or BLU
-           BEGIN
-              RNDI DUP VC@  DUP REDSQR  =
+           BEGIN  RNDI DUP
+              VC@  DUP REDSQR =
               SWAP WHTSQR = OR
            WHILE
               DROP
@@ -72,20 +70,21 @@ SQUARE WHTSQR CHARDEF
 : CHECKERED  ( -- ) \ red,wht,blue checker board
          SIZE 0
          DO
-             BLUSQR I VC!
-             WHTSQR I 1+ VC!
-             REDSQR I 2+ VC!
+            BLUSQR I VC!
+            WHTSQR I 1+ VC!
+            REDSQR I 2+ VC!
          3 +LOOP ;
 
 : RUSSIAN  \ Russian flag
-         0  0 WHTSQR 256 HCHAR
-         0  8 BLUSQR 256 HCHAR
-         0 16 REDSQR 256 HCHAR ;
+            0  0 WHTSQR 256 HCHAR
+            0  8 BLUSQR 256 HCHAR
+            0 16 REDSQR 256 HCHAR ;
 
 : FRENCH  \ kind of a French flag
-          0  0 BLUSQR 256 VCHAR
-         10 16 WHTSQR 256 VCHAR
-         21  8 REDSQR 256 VCHAR ;
+           0  0 BLUSQR 256 VCHAR
+          10 16 WHTSQR 256 VCHAR
+          21  8 REDSQR 256 VCHAR ;
+
 
 \ Algorithm Dijkstra(A)  \ A is an array of three colors
 \ begin
@@ -114,13 +113,13 @@ SQUARE WHTSQR CHARDEF
 \ Optimizations .......................
 \ 5% faster using values instead of variables
 \ address pointers
-0 CONSTANT R
-0 CONSTANT B
-0 CONSTANT W
+0 VALUE R
+0 VALUE B
+0 VALUE W
 
 \ 5% faster with optimized exhanges
-: R<->W    R VC@  W VC@  R VC! W VC!  ;
-: W<->B    W VC@  B VC@  W VC! B VC!  ;
+: R<->W     R VC@  W VC@  R VC! W VC! ;
+: W<->B     W VC@  B VC@  W VC! B VC! ;
 
 \ 5% faster again using custom incrementors
 : INCR     ( n -- )

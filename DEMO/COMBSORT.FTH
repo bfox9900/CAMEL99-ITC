@@ -18,8 +18,11 @@ DECIMAL
 
 SIZE 4 + ARRAY ]Q
 
-: XCHG  ( adr1 adr2 n1 n2-- )
+: XCHG  ( adr1 adr2 -- )
         S" OVER @ OVER @ SWAP ROT !  SWAP !" EVALUATE ; IMMEDIATE
+
+\ : EXCHANGE ( A1 A2 -- ) \ leo wong. Touch slower than mine :)
+\        S" 2DUP 2>R  @ SWAP @  R> !  R> ! "  EVALUATE ; IMMEDIATE
 
 \ usage:   X Y XCHG  \ moves contents from X->Y & Y->X
 \ makes sort 6% faster than the Forth macro on 1000 item reversed sort
@@ -68,12 +71,12 @@ SIZE 4 + ARRAY ]Q
 
 \ GAP calculation makes the sort faster
 \ 100/135 is the fastest GAP ratio I have found. (versus 10/13)
-: /1.3 ( N -- N ) S" 100 135 */  1 MAX " EVALUATE ;  IMMEDIATE
+: /1.3 ( N -- N ) S" 100 135 */  1 MAX " EVALUATE ; IMMEDIATE
 
 : COMBSORT ( n -- )
     DUP 1+ TO GAP
     BEGIN
-        GAP  /1.3  TO GAP                 \ additional line
+        GAP  /1.3  TO GAP            \ additional line
         SFLAG ON
         DUP GAP -  0
         DO
@@ -86,5 +89,3 @@ SIZE 4 + ARRAY ]Q
         SFLAG @  GAP 1 = AND     \ additional conditional
    UNTIL
    DROP ;
-
-: GO    TICKER OFF   SIZE COMBSORT   .ELAPSED ;

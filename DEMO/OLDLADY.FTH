@@ -1,10 +1,7 @@
 \ there was an old lady, in ANS Forth,  from Rosetta Code
 \ ported to CAMEL99 Forth V2.
-
-\ store a stack string at HERE , with a count
-: STRING, ( c-addr u -- ) DUP C, HERE SWAP DUP ALLOT CMOVE ;
-
-\ create doubly linked list in the Forth dictionary:
+DECIMAL
+\ create doubly linked list in the Forth dictionary: 
 \ structure:  0|prev, 0|next, aside?, $tring animal; $tring aside
 
 \ Note:  make ASIDE? field true if the aside is always displayed.
@@ -22,16 +19,17 @@ VARIABLE FIRST
         IF    HERE SWALLOWED @ CELL+ !
         ELSE  HERE FIRST !
         THEN  HERE SWALLOWED @ , SWALLOWED !
-        0 , 0 , BL PARSE-WORD STRING, ; \ data structure still needs the aside
+
+              0 , 0 , BL PARSE-WORD S, ; \ data structure MUST have the aside
 
 \ set the ASIDE? field of last-defined SWALLOW to true
 : ALWAYS ( -- ) SWALLOWED @ 2 CELLS + ON ;
 
 \ compile the string for the "ASIDE" portion of the song
-: ASIDE ( "aside" -- ) 0 PARSE STRING, ;
+: ASIDE ( "aside" -- ) 0 PARSE S, ; \ STRING, ;
 
 \ write/compile the data base
-SWALLOW fly    ALWAYS ASIDE But I don't know why she swallowed a fly,
+SWALLOW fly    ALWAYS ASIDE But I don't know why she swallowed a fly, 
 SWALLOW spider ALWAYS ASIDE That wriggled and jiggled and tickled inside her;
 SWALLOW bird   ASIDE Quite absurd, she swallowed a bird;
 SWALLOW cat    ASIDE Fancy that, she swallowed a cat;
@@ -56,11 +54,12 @@ DECIMAL
             @ DUP >ANIMAL TYPE ." ," DUP ?ASIDE
             500 MS
           REPEAT DROP ;
-
+ 
 : VERSE ( swallow-addr -- )
         CR ." There was an old lady who swallowed a " DUP >ANIMAL TYPE ." ," 
         1000 MS
-        DUP >ASIDE CR TYPE  1000 MS
+        DUP >ASIDE CR TYPE  
+        1000 MS
         REASONS
         CR ." Perhaps she'll die!"
         CR ." -------------------"
@@ -68,8 +67,9 @@ DECIMAL
 
 : SONG ( -- )
        PAGE
-       FIRST @ BEGIN DUP VERSE CR >NEXT DUP 0= UNTIL DROP
+       FIRST @ BEGIN  DUP VERSE CR >NEXT DUP  0= UNTIL DROP
        CR ." There was an old lady who swallowed a"
        CR ." horse..."  1000 MS
        CR
        CR ." SHE'S DEAD, OF COURSE!" ;
+  

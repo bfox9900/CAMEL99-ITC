@@ -1,9 +1,9 @@
-\ tower os Hanoi from Rosetta Code
+\ Towers of Hanoi from Rosetta Code
 
 : LEFT   ." LEFT" ;
 : RIGHT  ." RIGHT" ;
 : MIDDLE ." MIDDLE" ;
- 
+
 : MOVE-DISK ( V T F N -- V T F )
             DUP 0= IF DROP EXIT THEN
             1-       >R
@@ -18,5 +18,5 @@
      ['] RIGHT  ['] MIDDLE  ['] LEFT  ( xt1 xt2 xy3 --)
      R> MOVE-DISK
      DROP DROP DROP ;
-     
+
 \  Usage:   3 HANOI

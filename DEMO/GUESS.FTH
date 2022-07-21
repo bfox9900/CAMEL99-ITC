@@ -38,15 +38,13 @@ DECIMAL
           CR ." You got it in " .TRIES
           CR ;
 
-: Y/N?   ( -- flag)
-          KEY [CHAR] Y =  \ wait for a key, compare to "Y"
-          0=  ;           \ If it's 0 return true
+: Y/N?   ( -- flag)  KEY [CHAR] N = ;
 
 : PLAYAGAIN? ( -- flag)
           CR ." Want to play again? (Y/N)"  Y/N?  ;
 
 HEX
-: BLK/YEL   1B 7 VWTR ;  \ BLACK (1) with yellow (B) bg
+: BLK/YEL   1B 7 VWTR ;  \ CLEAR, yellow bg
 
 DECIMAL
 : RUN ( -- )

@@ -1,15 +1,13 @@
-\ PI.FTH  from DxForth with thanks to Ed from Oz.    Jul 2021
-\ This program un-covered a bug in V2.67. Fixed in V2.68
-
+\ PI.FTH from DxForth.
+\ Thanks to Ed from Australia for finding the bug in my D+
+\
 \ Revised 2015-02-09  es
-\ Revised for Camel99  2021-07-21
-
+\
 \ Compute Pi to an arbitrary precision. Uses Machin's
 \ formula:  pi/4 = 4 arctan(1/5) - arctan(1/239)
 \
-
-\ Compile with CAMEL99 Forth:
-\ INCLUDE DSK*.PI  ( where * is your drive no.)
+\ Compile with 16-bit DX-Forth: FORTH - INCLUDE PI.F BYE
+\ Compile with CAMEL99 Forth: INCLUDE DSK*.PI  ( where * is your drive no.)
 \
 \ This 16-bit implementation allows up to 45,808 digits
 \ to be computed before arithmetic overflow occurs.
@@ -35,13 +33,24 @@
 \ This code is PUBLIC DOMAIN. Use at your own risk.
 
 \ Modified for Camel99 Forth  Mar 2021 Fox
-\ NEEDS DUMP  FROM DSK1.TOOLS  for debugging 
-NEEDS D.	  FROM DSK1.DOUBLE
-NEEDS VALUE FROM DSK1.VALUES
-NEEDS .R    FROM DSK1.UDOTR
+NEEDS DUMP   FROM DSK1.TOOLS
+NEEDS VALUE  FROM DSK1.VALUES
+NEEDS D=     FROM DSK1.DOUBLE
+NEEDS .R     FROM DSK1.UDOTR
 NEEDS ELAPSE FROM DSK1.ELAPSE
+NEEDS MALLOC FROM DSK1.MALLOC
+
+\ proper MOVE for 9900, cell wide
+\ HEX
+\ CODE MOVE
+\    C036 , C076 , C104 , 1306 , 0584 ,
+\    0244 , FFFE , CC31 , 0644 , 15FD ,
+\    C136 ,
+\ NEXT,
+\ ENDCODE
 
 DECIMAL
+
 0 VALUE POWER  ( adr)
 0 VALUE TERM   ( adr)
 0 VALUE RESULT ( adr)
@@ -50,18 +59,16 @@ DECIMAL
 VARIABLE CARRY
 
 : ADD ( -- )
-  0 CARRY !
-  RESULT
-  0 SIZE 1- DO
+  CARRY OFF
+  RESULT   0 SIZE 1- DO
     I CELLS OVER + ( res) DUP @ 0
     I CELLS TERM + @ 0  D+  CARRY @ M+
     ( hi) CARRY !  ( lo) SWAP ( res) !
   -1 +LOOP  DROP ;
 
 : SUBTRACT ( -- )
-  0 CARRY !
-  RESULT
-  0 SIZE 1- DO
+  CARRY OFF
+  RESULT   0 SIZE 1- DO
     I CELLS OVER + ( RES) DUP @ 0
     I CELLS TERM + @ 0  D-  CARRY @ M+
     ( HI) CARRY !  ( LO) SWAP ( RES) !
@@ -78,17 +85,15 @@ VARIABLE CARRY
     UNTIL
     THEN ;
 
-: (DIVIDE)
+: DIVIDE ( ADR FACTOR -- )
+  TO FACTOR
+  CARRY OFF
+  +INDEX ( adr index ) SIZE SWAP
   ?DO
      I CELLS OVER + ( res)
      DUP @  CARRY @  FACTOR  UM/MOD
     ( quot) ROT ( res) !  ( rem) CARRY !
-  LOOP ;
-
-: DIVIDE ( ADR FACTOR -- )
-  TO FACTOR   0 CARRY !  +INDEX
-  ( adr index )  SIZE SWAP
-  (DIVIDE)
+  LOOP
   DROP ;
 
 \ scan backward for cell containing non-zero
@@ -101,8 +106,8 @@ VARIABLE CARRY
     THEN ;
 
 : MULTIPLY ( adr factor -- )
-  TO FACTOR   0 CARRY !  -INDEX
-  ( adr index )  0 SWAP
+  TO FACTOR   CARRY OFF
+  -INDEX ( adr index ) 0 SWAP
   DO
     I CELLS OVER + ( res)
     DUP @  FACTOR  UM*  CARRY @ M+
@@ -110,9 +115,10 @@ VARIABLE CARRY
   -1 +LOOP
   DROP ;
 
-: COPY ( -- ) POWER TERM SIZE CELLS CMOVE ; \ changed CMOVE to MOVE
+: COPY ( -- ) POWER TERM SIZE CELLS CMOVE ;
 
-: ZERO? ( result -- f )  +INDEX NIP SIZE = ;
+\ : ZERO? ( result -- f )  +INDEX NIP SIZE = ;
+: ZERO? ( result -- F ) SIZE CELLS 0 SKIP NIP 0= ;
 
 0 VALUE PASS
 VARIABLE EXP
@@ -152,44 +158,41 @@ VARIABLE SIGN
     UNTIL
   LOOP ;
 
-\ Camel99 has OUT but I don't use in the Video driver
-\ : CR  CR  OUT OFF ;
-\ : #   #   OUT 1+! ;
+\ VARIABLE OUT
+\ : CR  CR  0 OUT ! ;
+\ : #   #   1 OUT +! ;
 
 DECIMAL
-: (PRINT)
-   ?DO
+: PRINT ( -- )
+  CR
+  RESULT  DUP @ 0 .R  [CHAR] . EMIT CR
+  NDIGIT 0
+  ?DO
     0 OVER !
     DUP 10000 MULTIPLY
     DUP @  0 <# # # # # #> TYPE SPACE
-    VCOL @ 3 + C/L @ > IF CR THEN
-  4  +LOOP ;
-
-: PRINT ( -- )
-  CR
-  RESULT  DUP @ 0 .R  [CHAR] . EMIT SPACE
-  NDIGIT 0 (PRINT)
+\    OUT @ C/L @ > IF CR THEN  \ not needed for Camel99
+    4  +LOOP
   DROP  CR ;
+
+: GetNumber ( -- n )
+  CR ." How many digits do you want? "
+  PAD DUP 20 ACCEPT NUMBER? ABORT" Invalid" CR ;
 
 : PI ( n -- )
 ( GetNumber ) DUP TO NDIGIT
 
   \ array size = ceil(ndigit / log10(2^16))
   109 UM* 525 UM/MOD SWAP ( rem) IF  1+  THEN
-  2+  TO SIZE    ( extra for accurate last digits)
+  ( extra for accurate last digits)
+  2 +  TO SIZE
 
-  50 ALLOT  ( expand the HOLD buffer space)
-
-  HERE TO POWER   SIZE CELLS ALLOT
-  HERE TO TERM    SIZE CELLS ALLOT
-  HERE TO RESULT  SIZE CELLS ALLOT
-
-  TICKER OFF
+  \ create arrays in un-allocated memory
+  HERE TO POWER   SIZE 20 + CELLS ALLOT
+  HERE TO TERM    SIZE 20 + CELLS ALLOT
+  HERE TO RESULT  SIZE 20 + CELLS ALLOT
+  50 ALLOT  ( hold buffer space)
   CalcPi
-  .ELAPSED
-  PRINT
+\  PRINT
 ;
-DECIMAL
-CR
-CR .( Usage:  100 PI )
-CR .( *This takes ~7.6 secs)
+\ end

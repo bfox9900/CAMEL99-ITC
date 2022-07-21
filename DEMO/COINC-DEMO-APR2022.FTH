@@ -1,0 +1,70 @@
+\ Sprite COINC and TRAP Demo
+
+NEEDS DUMP       FROM DSK1.TOOLS
+NEEDS SPRITE     FROM DSK1.DIRSPRIT
+NEEDS AUTOMOTION FROM DSK1.AUTOMOTION
+NEEDS HZ         FROM DSK1.SOUND
+NEEDS MARKER     FROM DSK1.MARKER
+NEEDS RND        FROM DSK1.RANDOM
+
+MARKER /TEST
+
+DECIMAL
+: BOUNCE.X  ( spr# --) ]SMT.X  DUP VC@ NEGATE  SWAP VC! ;
+: BOUNCE.Y  ( spr# --) ]SMT.Y  DUP VC@ NEGATE  SWAP VC! ;
+: BOUNCE    ( spr# --) DUP BOUNCE.X BOUNCE.Y  ;
+
+
+: TINK    GEN1  1500 HZ  -6 DB  1000 TICKS  ;
+: BONK    GEN2  110 HZ   -4 DB  50 MS MUTE ;
+
+: TRAPX ( spr# -- )
+      DUP SP.X VC@
+      239 0 WITHIN IF   BOUNCE.X  TINK EXIT THEN
+      MUTE DROP  ;
+
+: TRAPY ( spr# -- )
+      DUP SP.Y VC@
+      185 0 WITHIN IF  BOUNCE.Y   TINK  EXIT THEN
+      MUTE DROP  ;
+
+: TRAP ( spr# -- ) DUP TRAPX TRAPY   ;
+
+DECIMAL
+: RNDV   ( -- x y)  60 RND 10 + 25 -  ;
+: RNDXY  ( -- dx dy)  RNDV RNDV ;
+
+: SPRITES ( n -- ) \ makes n sprites
+      (    char   colr  x   y  sp#         X/Y  spr#   )
+      [CHAR] 0     3   100  90  0 SPRITE  RNDXY  0 MOTION
+      [CHAR] 1     5   100  90  1 SPRITE  RNDXY  1 MOTION
+      [CHAR] 2     7   100  90  2 SPRITE  RNDXY  2 MOTION
+      [CHAR] 3    11   100  90  3 SPRITE  RNDXY  3 MOTION
+      [CHAR] 4    16   100  90  4 SPRITE  RNDXY  4 MOTION
+      [CHAR] 5     6   100  90  5 SPRITE  RNDXY  5 MOTION
+
+;
+
+: RUN ( -- )
+    2 SCREEN
+    1 MAGNIFY
+    PAGE ." CAMEL99 Forth"
+    CR   ." Trap/Coinc Test with Automotion"
+    CR
+    SPRITES
+
+    AUTOMOTION
+    BEGIN
+         0 TRAP
+         0 1 7 COINC IF 0 BOUNCE 1 BOUNCE BONK THEN  1 TRAP
+         0 2 7 COINC IF 0 BOUNCE 2 BOUNCE BONK THEN  2 TRAP
+         1 2 7 COINC IF 1 BOUNCE 2 BOUNCE BONK THEN  3 TRAP
+         4 TRAP
+         ?TERMINAL
+         5 TRAP
+    UNTIL
+    STOPMOTION
+\    DELALL
+    8 SCREEN ;
+
+CR .( Type RUN to start demo)

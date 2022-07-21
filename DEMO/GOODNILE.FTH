@@ -1,26 +1,26 @@
 \ FORTH STYLE TRANSLATION OF DENILE.BAS
 \ Orignal program by RETROSPECT, Atariage.com
+ 
+NEEDS HCHAR FROM DSK1.GRAFIX
+NEEDS CHARSET FROM DSK1.CHARSET
+\ DSK1.STRINGS \ We don't strings for this version.
 
-INCLUDE DSK1.GRAFIX
-\ INCLUDE DSK1.STRINGS.F \ We don't strings for this version.
-INCLUDE DSK1.CHARSET
-
-\ Character DATA patterns are named in CAMEL99 Forth
+\ CREATE  named character DATA patterns with numbers not strings
 HEX
-0102 0709 1F24 7F92  PATTERN: RSLOPE
-8040 E090 F824 FE49  PATTERN: LSLOPE
-FF92 FF24 FF92 FF49  PATTERN: STONE
-AA55 4489 2002 4801  PATTERN: GRASS
-0002 1735 7CFC 44AA  PATTERN: Camel
-0008 081C 2A08 1414  PATTERN: LittleMan
-0083 C7AE FBEF BDF7  PATTERN: WAVES1
-0007 8F5D F7DF 7BEF  PATTERN: WAVES2
-000E 1FBA EFBF F6DF  PATTERN: WAVES3
-001C 3E75 DF7F EDBF  PATTERN: WAVES4
-0038 7CEA BFFE DB7F  PATTERN: WAVES5
-0070 F8D5 7FFD B7FE  PATTERN: WAVES6
-00E0 F1AB FEFB 6FFD  PATTERN: WAVES7
-00C1 E357 FDF7 DEFB  PATTERN: WAVES8
+CREATE RSLOPE     0102 , 0709 , 1F24 , 7F92 ,
+CREATE LSLOPE     8040 , E090 , F824 , FE49 ,
+CREATE STONE      FF92 , FF24 , FF92 , FF49 ,
+CREATE GRASS      AA55 , 4489 , 2002 , 4801 ,
+CREATE Camel      0002 , 1735 , 7CFC , 44AA ,
+CREATE LittleMan  0008 , 081C , 2A08 , 1414 ,
+CREATE WAVES1     0083 , C7AE , FBEF , BDF7 ,
+CREATE WAVES2     0007 , 8F5D , F7DF , 7BEF ,
+CREATE WAVES3     000E , 1FBA , EFBF , F6DF ,
+CREATE WAVES4     001C , 3E75 , DF7F , EDBF ,
+CREATE WAVES5     0038 , 7CEA , BFFE , DB7F ,
+CREATE WAVES6     0070 , F8D5 , 7FFD , B7FE ,
+CREATE WAVES7     00E0 , F1AB , FEFB , 6FFD ,
+CREATE WAVES8     00C1 , E357 , FDF7 , DEFB ,
 
 
 DECIMAL
@@ -35,7 +35,6 @@ DECIMAL
        STONE     [CHAR] D CHARDEF
        Camel     [CHAR] E CHARDEF
        LittleMan [CHAR] F CHARDEF
-
        WAVES1    [CHAR] h CHARDEF   \ CHAR 104
        WAVES2    [CHAR] i CHARDEF
        WAVES3    [CHAR] j CHARDEF
@@ -44,11 +43,12 @@ DECIMAL
        WAVES6    [CHAR] m CHARDEF
        WAVES7    [CHAR] n CHARDEF
        WAVES8    [CHAR] o CHARDEF  \ CHAR 111
+\ we will make the GRASS yellow and the sky blue.
+:      GRASS     [CHAR] ~ CHARDEF ;
 
-       GRASS      [CHAR] ~ CHARDEF   \ we will make the GRASS yellow and the sky blue.
-;
-
-: TAB ( n -- ) 0 ?DO SPACE LOOP ; \ we don't have a TAB word so make one
+\ we don't have a TAB word so make one. 
+\ Just move the VCOL variable ( VCOL is video column)
+: TAB ( n -- ) VCOL +! ;
 
 \ the original version of PYRAMID used string CONCATENATION
 \ to combine the characters needed to draw each row of stones
@@ -79,15 +79,15 @@ DECIMAL
 
 : .MAN   ( -- )  1 19 [CHAR] F 1  HCHAR ;
 : .CAMEL ( -- )  0 19 [CHAR] E 1  HCHAR ;
-
-
+\
 \ This is an example of Forth Style.
 \ Factor out the common LIMITER routine so you can use it twice.
 \
 : LIMITER   ( n -- n')
              DUP 111 >    \ is n greater than ascii 111
-             IF DROP 104  \ reset it to 104
-             THEN ;
+             IF           \ if true...
+                DROP 104  \ drop the no. and replace with 104
+             THEN ;       \ then continue. In this case do return
 
 \ Forth Style:
 \ Create custom variable incrementers, that limit themselves!
@@ -116,9 +116,9 @@ VARIABLE Y
            INIT-WAVES
            BEGIN
              .WAVES
-             100 MS            \ slow things down
-             KEY?              \ press any key to end the loop
-           UNTIL ;
+             100 MS                   \ slow things down a bit
+             ?TERMINAL                \ check for BREAK key
+           UNTIL ;                    \ GOTO BEGIN :)
 
 : RUN     ( -- )
           CLEAR
@@ -128,8 +128,11 @@ VARIABLE Y
          [CHAR] ~ SET# 13 4 COLOR  \ grass by the river is green
           PYRAMID .CAMEL .MAN
           FLOW
-
           8 SCREEN              \ this resets the screen like BASIC
           4 19 2 1 COLORS       \ reset printable character's colors
-          CHARSET               \ reset character patterns
-;
+          CHARSET              \ reset character patterns
+          TRUE ABORT" BREAK" ;
+
+CR .( Type RUN to start. FCTN BREAK to stop)
+
+

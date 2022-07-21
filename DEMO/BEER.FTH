@@ -1,6 +1,6 @@
 \ 99 bottles of beer.  Create a beer language and write the program
 
-INCLUDE DSK1.CASE
+NEEDS CASE FROM DSK1.CASE
 
 DECIMAL
 : BOTTLES ( n -- )
@@ -11,26 +11,28 @@ DECIMAL
                  . ." bottles "    \ DEFAULT CASE
         ENDCASE ;
 
-: ,   [CHAR] , EMIT  SPACE 100 MS CR ;
-: .   [CHAR] . EMIT  300 MS  CR CR CR ;
+: ,   [CHAR] , EMIT  SPACE ( 100 MS) CR ;
+: .   [CHAR] . EMIT  ( 300 MS)  CR CR CR ;
 
-: HANGOVER    ." :-("  CR QUIT ;
+: HANGOVER    ." :-("  CR ;
 
 : OF       ." of "   ;     : BEER     ." beer " ;
 : ON       ." on "   ;     : THE      ." the "  ;
 : WALL     ." wall" ;      : TAKE     ." take " ;
 : ONE      ." one "  ;     : DOWN     ." down, " ;
 : PASS     ." pass " ;     : IT       ." it "   ;
-: AROUND   ." around" ;
+: AROUND   ." around" ;    
+
+-1 CONSTANT -1
 
 : POPONE    1 SWAP CR ;
 : DRINK     POSTPONE DO ; IMMEDIATE
-: ANOTHER   S" -1 +LOOP" EVALUATE ; IMMEDIATE
+: ANOTHER   POSTPONE -1  POSTPONE +LOOP ; IMMEDIATE
 : HOWMANY   S" I " EVALUATE ; IMMEDIATE
 : ONELESS   S" I 1- " EVALUATE ; IMMEDIATE
-: BINARY    2 BASE ! ;
+: BINARY    2 BASE ! ; 
 
-: BEERS ( n -- )   \ Usage:  99 BEERS
+: BEERS ( n -- )
       POPONE
       DRINK
          HOWMANY BOTTLES OF BEER ON THE WALL ,
@@ -39,3 +41,6 @@ DECIMAL
          ONELESS BOTTLES OF BEER ON THE WALL .
       ANOTHER
       HANGOVER ;
+
+CR .( Usage:  99 BEERS)
+

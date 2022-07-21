@@ -7,6 +7,10 @@ NEEDS HCHAR    FROM DSK1.GRAFIX
 NEEDS SPRITE   FROM DSK1.DIRSPRIT
 NEEDS AUTOMOTION FROM DSK1.AUTOMOTION
 
+: PATTERN:
+  CREATE
+   >R >R >R  , R> , R> , R> , ;
+
 HEX
 0103 070F 1F3F 7FFF PATTERN: CH40   \ LEFT-TRIANGLE
 FFFF FFFF FFFF FFFF PATTERN: BOX1
@@ -51,7 +55,7 @@ DECIMAL
       "FO" 80 CHARDEF    "RT" 81 CHARDEF  "H" 82 CHARDEF
       ROCK 88 CHARDEF    BOX1 96 CHARDEF
 
-     STUMP 104 CHARDEF  
+     STUMP 104 CHARDEF
     CLOUD1 105 CHARDEF
      TIRE  106 CHARDEF
       CAR1 107 CHARDEF
@@ -132,7 +136,7 @@ DECIMAL
         2DUP    AT-XY ." 9:::;"
         1+ 2DUP AT-XY ." HPQR<"
         1+      AT-XY ." ?>>>=" ;
-
+ 
 .( Main... )
 DECIMAL
 : RUN   ( -- )
@@ -146,7 +150,7 @@ DECIMAL
         1 MAGNIFY
         MAKE-SPRITES
         AUTOMOTION
-        BEGIN ( with automotion we only need to change characters)
+        BEGIN ( with automotion we only need change charsacters)
            TIRE 106 CHARDEF
            FLAP 100 MS
            TIRE2 106 CHARDEF
@@ -155,4 +159,3 @@ DECIMAL
         UNTIL
         STOPMOTION
         DEFAULTS ;
-

@@ -4,24 +4,21 @@ INCLUDE DSK1.TOOLS
 INCLUDE DSK1.GRAFIX
 INCLUDE DSK1.RANDOM
 INCLUDE DSK1.MARKER
-INCLUDE DSK1.UDOTR
 
 MARKER ALPHA
 \ ==================================
 \ character patterns
-HEX
- 00FE FEFE FEFE FEFE PATTERN: REDBRICK
- 3C7E DBFF DBE7 7E3C PATTERN: HAPPYFACE
- 3C7E DBFF E7DB 7E3C PATTERN: SADFACE
-
-\ named chars
 DECIMAL
 160 CONSTANT ALPHA-GUY
 168 CONSTANT BRICK
 
-\ define chars
- REDBRICK  BRICK CHARDEF   BRICK SET# 7 15 COLOR
+ S" 00FEFEFEFEFEFEFE" BRICK CALLCHAR  BRICK SET# 7 15 COLOR
 
+ HEX
+CREATE HAPPYFACE  3C7E , DBFF , DBE7 , 7E3C ,
+CREATE SADFACE    3C7E , DBFF , E7DB , 7E3C ,
+
+DECIMAL
 : CLIP   ( n low hi -- n') ROT MIN MAX ;
 
 : RNDX   ( -- x)  23 RND 2 22 CLIP ;
@@ -78,10 +75,14 @@ CREATE MY-XY  RNDY , RNDX ,    \ independant cursor for alpha guy
 DECIMAL
 VARIABLE TRYS
 VARIABLE SPEED
-: .BRAIN     ( -- )
-    0 0
-    2DUP >VPOS C/L@ BL VFILL
-    AT-XY  ." Vector"  VECTOR 2@  2 .R ." ," 2 .R  SPACE ." Trys " TRYS @ 2 .R  ;
+
+\ print right justified n spaces
+: .R   ( n n -- )  >R DUP ABS 0 <# #S ROT SIGN #>  R> OVER - SPACES TYPE ;
+: CLRLN  ( x y --) >VPOS C/L@ BL VFILL ;
+
+: .BRAIN ( -- )
+ 0 0 2DUP CLRLN
+ AT-XY ." Vector"  VECTOR 2@  2 .R ." ," 2 .R  SPACE ." Trys " TRYS @ 2 .R  ;
 
 : ALPHA-COLOR  ( n -- )  ALPHA-GUY SET# SWAP 1 COLOR ;
 : SAD         ALPHA-GUY  SADFACE   OVER CHARDEF    SET#  7 1 COLOR  ;
@@ -95,7 +96,7 @@ VARIABLE SPEED
             SAD                        \ change face & color while thinking
             TRYS OFF                   \ reset the trys counter
             BEGIN
-              10 MS                   \ slow down to see sad face
+              100 MS                   \ slow down to see sad face
               CHANGE-DIR               \ get new direction
               1 TRYS +!                \ count the try
               TRYS @ ALPHA-COLOR       \ change color with each try
@@ -103,8 +104,6 @@ VARIABLE SPEED
               CLEAR-AHEAD?
             UNTIL
             HAPPY  ;
-
-25 SPEED !
 
 DECIMAL
 : RUN      ( -- )
@@ -114,11 +113,12 @@ DECIMAL
            PAGE  .BORDER  .WALLS
            HAPPY SHOW-MAN
            CHANGE-DIR
+           10 SPEED !
            BEGIN
               CLEAR-AHEAD?
               IF   MOVE-MAN
               ELSE ALPHA-THINK
-              THEN SPEED @ MS    \ delay
+              THEN \ SPEED @ MS    \ delay
               KEY?
            UNTIL
            ?BREAK

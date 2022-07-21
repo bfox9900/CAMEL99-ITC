@@ -4,9 +4,9 @@ CR .( For use with CAMEL99 V2.0.17 or greater)
 CR
 CR
 
- INCLUDE DSK1.DIRSPRIT
- INCLUDE DSK1.RANDOM
- INCLUDE DSK1.MOTION
+NEEDS LOCATE FROM DSK1.DIRSPRIT
+NEEDS RND    FROM DSK1.RANDOM
+NEEDS MOTION FROM DSK1.MOTION
 
 \ ========================================
 \ demo code
@@ -56,56 +56,65 @@ DECIMAL
 : MY-MOTIONS ( -- )
         \ dy dx   spr#
         \ ----------------------
-          1   0    0 MOTION   \ only sprite 0 moves this way.
-          1   0    1 MOTION
-          1   0    2 MOTION
-          1   0    3 MOTION
-          1   0    4 MOTION
-          1   0    5 MOTION
-          1   0    6 MOTION
-          1   0    7 MOTION
-          1   0    8 MOTION
-          1   0    9 MOTION
-          1   0   10 MOTION
-          1   0   11 MOTION
-          1   0   12 MOTION
-          1   0   13 MOTION
-          1   0   14 MOTION
-          1   0   15 MOTION
-         -1   0   16 MOTION
-         -1   0   17 MOTION
-         -1   0   18 MOTION
-         -1   0   19 MOTION
-         -1   0   20 MOTION
-         -1   0   21 MOTION
-         -1   0   22 MOTION
-         -1   0   23 MOTION
-         -1   0   24 MOTION
-         -1   0   25 MOTION
-         -1   0   26 MOTION
-         -1   0   27 MOTION
-         -1   0   28 MOTION
-         -1   0   29 MOTION
-         -1   0   30 MOTION
-         -1   0   31 MOTION
+         10   0    0 MOTION   \ only sprite 0 moves this way.
+          5   0    1 MOTION
+          5   0    2 MOTION
+          5   0    3 MOTION
+          5   0    4 MOTION
+          5   0    5 MOTION
+          5   0    6 MOTION
+          5   0    7 MOTION
+          5   0    8 MOTION
+          5   0    9 MOTION
+          5   0   10 MOTION
+          5   0   11 MOTION
+          5   0   12 MOTION
+          5   0   13 MOTION
+          5   0   14 MOTION
+          5   0   15 MOTION
+         -5   0   16 MOTION
+         -5   0   17 MOTION
+         -5   0   18 MOTION
+         -5   0   19 MOTION
+         -5   0   20 MOTION
+         -5   0   21 MOTION
+         -5   0   22 MOTION
+         -5   0   23 MOTION
+         -5   0   24 MOTION
+         -5   0   25 MOTION
+         -5   0   26 MOTION
+         -5   0   27 MOTION
+         -5   0   28 MOTION
+         -5   0   29 MOTION
+         -5   0   30 MOTION
+         -15   0   31 MOTION
 ;
 
 : SET-MOTIONS   1 0 0 31 MOTIONS ;
 
-: RUN
-         CLEAR ." 32 sprites moving in Forth"
-         CR    ." Sprite 0 is 2X faster"
+: EXPLANATION
+         CLEAR ." 32 Sprites Moving in Forth"
+         CR
+         CR    ." Motion is controlled manually"
+         CR    ." Forth is doing the work with"
+         CR    ." the DSK1.MOTION library file"
+         CR    ." and the word TRANSLATE."
+         CR
+         CR    ." Sprite  0 is 2X faster"
          CR    ." Sprite 31 is 3X faster"
          CR
          CR    ." Press FNCT 4 to halt demo"
          CR    ." Type: MY-MOTIONS RUN"
+         CR    ." to see things moving faster"
+;
 
+: RUN    EXPLANATION
          DELALL  MAKE-SPRITES
          250 MS
          0 MAGNIFY
          BEGIN
            ALL-SPRITES TRANSLATE    \ move everybody
-           0 SP.MOVE                \ move Spr#0 once more
+            0 SP.MOVE               \ move Spr#0 once more
            31 SP.MOVE 31 SP.MOVE    \ Move Spr#31 2x more
            ?TERMINAL ABORT" BREAK"
          AGAIN ;

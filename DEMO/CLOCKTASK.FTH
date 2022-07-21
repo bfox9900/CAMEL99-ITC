@@ -1,64 +1,72 @@
-\ A simple Clock based on the TI-99 Interrupt counter  Updated Mar 10 2022 
-\ Runs as a separate task
+CR .( Clock based on the TI-99 Interrupt counter)
+CR .( Updated 5JUL2022  B Fox)
+CR .( Uses ISR and background task)
 
-NEEDS FORK  FROM DSK1.MTASK99
-NEEDS MALLOC FROM DSK1.MALLOC
+NEEDS FORK    FROM DSK1.MTASK99
+NEEDS MALLOC  FROM DSK1.MALLOC
+NEEDS INSTALL FROM DSK1.ISRSUPPORT
 
-CREATE SECONDS  0 , 0 ,   \ 2 CELLS holds a 32bit integer
+\ LOWTOOLS uses TRANSIENT/PERMANENT
+INCLUDE DSK1.LOWTOOLS
 
-: SECONDS++  ( -- )  SECONDS 2@ 1 M+  SECONDS 2! ;
+\ isr routine increments the double integer FRAMES
+CREATE FRAMES  0 , 0 ,
 
-HEX
-8379 CONSTANT TICKER   \ interval is 1/60 second
-
-\ wait until ticker changes. subtract old value from new value
-: 1/60  ( -- )
-        TICKER DUP @   \ dup ticker & fetch initial timer value
-        BEGIN
-             PAUSE    \ give up CPU to other tasks while we wait
-             OVER @   \ read it again
-             OVER -   \ subtract initial value
-        UNTIL         \ loop until result is not zero
-        2DROP ;        \ drop the initial value
+CODE FRAMES++ ( -- ) \ this is the ISR
+        FRAMES 2+ @@ INC,
+        OC IF,
+           FRAMES @@ INC,
+        ENDIF,
+        RT,
+ENDCODE
 
 DECIMAL
-: 1SEC  ( -- )  60 0 DO  1/60  LOOP   SECONDS++  ;
-
 : SEXTAL   6 BASE ! ;
 : <:>     [CHAR] : HOLD ;
-: <.>     [CHAR] . HOLD ;
-: ##:     # SEXTAL # DECIMAL <:> ;
+: ##:     DECIMAL # SEXTAL #  <:> ;
 
 : .TIME   ( d -- )
+          FRAMES 2@
           BASE @ >R
-          <#  ##: ##:  # #  #> TYPE
+        \     frm sec min     hrs
+          <#  ##: ##: ##: DECIMAL #S #> TYPE
           R> BASE ! ;
 
+\ the background time printer task
 DECIMAL
 : CLOCK  ( -- )
          BEGIN
-            1SEC
-            32 0 AT-XY SECONDS 2@ .TIME
+            100 MS
+            28 0 AT-XY  .TIME
          AGAIN
 ;
 
 DECIMAL
-: SETCLOCK  ( hrs mins -- )
-      >R           \ move minutes out the way to return stack
-      3600 UM*     \ compute hrs as seconds giving 32bit int
-      R> 60 *      \ get mins back, as seconds giving 16bit int
-      M+           \ MIXED addition: 32bit+16bit giving 32bit
-      SECONDS 2! ; \ store in our 2 CELL variable
+: TIME>D  ( hr min sec -- d)  \ convert time format to seconds as double int.
+          -ROT SWAP
+          60 * +  ( sec mins')  \ hrs->mins + mins
+        3600  UM*  2>R          \ Mins to frames & push
+          60  UM*               \ seconds to frames
+          2R> D+  ;             \ frames + frames
+
+: SETCLOCK  ( hr min sec -- ) TIME>D  FRAMES 2! ;
+
+: COLD    0 INSTALL  COLD ;     \ disable counter before restarting
+
+DETACH  \ removes tools & Assembler from low-memory
 
 USIZE MALLOC CONSTANT BGCLOCK  \ allocate memory and name our task
-BGCLOCK FORK                   \ make a copy of Forth's task memory
+BGCLOCK FORK                   \ duplicate Forth's user area into BGCLOCK
 
 ' CLOCK BGCLOCK ASSIGN         \ Assign execution token of CLOCK to our task
 
+ISR' FRAMES++ INSTALL          \ start the counter
 MULTI                          \ enable mutlti-tasker
 
-CR .( Set clock example:  9 45 SETCLOCK )
+CR .( Set clock with:  SETCLOCK )
 CR .( Start clock with BGCLOCK WAKE )
 
+PAGE
+BGCLOCK WAKE
 
-BGCLOCK WAKE                   \ wake up BGCLOCK
+10 43 29 SETCLOCK

@@ -1,4 +1,4 @@
-\ ELIZA in CAMEL99 Forth updated from V2.68 July 2021 Brian Fox
+\ ELIZA in CAMEL99 Forth
 
 \ This implementation uses the Forth dictionary as a big case statement
 \ Eliza's KEYWORD phrases are converted to Forth words by removing the spaces.
@@ -8,17 +8,17 @@
 \ we need is a word in the dictionary called ICANT to make something
 \ happen.
 
-
 \ This allows synonyms to be created using a colon definition and adding
 \ the new keyword to the KEYWORDS list.
 \ Example:  : ICANT    ICANNOT  ;
 \ The definition for ICANNOT will do the same thing as ICAN'T
 
+NEEDS DUMP      FROM DSK1.TOOLS
+NEEDS -TRAILING FROM DSK1.TRAILING
+NEEDS S=        FROM DSK1.COMPARE
+NEEDS MARKER    FROM DSK1.MARKER
 
-INCLUDE DSK1.TOOLS  \  for debugging
-INCLUDE DSK1.MALLOC
-INCLUDE DSK1.COMPARE
-INCLUDE DSK1.TRAILING
+MARKER PREAMBLE
 
 \ ======[ punctuation characters ]======
 DECIMAL
@@ -34,7 +34,7 @@ CREATE INPUT$  81 ALLOT  \ holds the "clean" reply from the patient
      255 CONSTANT MXLEN   \ 255 bytes is longest string
 MXLEN 1+ CONSTANT SSW     \ width of string stack items
 
-SSW 10 * MALLOC CONSTANT $STAK  \ ten strings deep  (2.5 Kbytes!)
+( SSW 10 * MALLOC ) 0 CONSTANT $STAK  \ ten strings deep  (2.5 Kbytes!)
 
 : NEW:     ( -- ) SSW SSP +! ;  \ bump string stack pointer by 256
 : COLLAPSE ( -- ) SSP OFF  ;    \ reset string stack pointer to zero
@@ -61,9 +61,9 @@ SSW 10 * MALLOC CONSTANT $STAK  \ ten strings deep  (2.5 Kbytes!)
 \ ---[ utility words ]---
 \
 : LEN      ( $ -- length)  C@ ;
-: LASTCHAR ( $ -- c)  DUP LEN + C@ ;              \ get last char in a string
-: BETWEEN  ( n min max -- ?)  1+ WITHIN ;         \ is n between or equal-to mix
-: FORALLCHARS ( $ -- end start) COUNT BOUNDS  ;   \ convert $ to 2 addresses foP
+: LASTCHAR ( $ -- c)  DUP LEN + C@ ;             \ get last char in a string
+: BETWEEN  ( n min max -- ?)  1+ WITHIN ;        \ is n between or equal-to mix
+: FORALLCHARS ( $ -- end start) COUNT BOUNDS ;   \ convert $ to 2 addresses foP
 
 : >=      ( n n -- ? ) 1- > ;
 : <=      ( n n -- ? ) 1+ < ;
@@ -93,7 +93,7 @@ HEX
           BOUNDS DO  I C@ UPPER I C!  LOOP ;
 
 : TOLOWER ( addr len --  ) \  convert STACK$ to uppercase
-            BOUNDS DO  I C@ LOWER I C!  LOOP ;
+          BOUNDS DO  I C@ LOWER I C!  LOOP ;
 
 \ convert counted string copy
 : UPPER$  ( $ -- $') COUNT SPUSH DUP COUNT TOUPPER ;
@@ -122,36 +122,38 @@ HEX
             FORALLCHARS
             DO
                2DUP I C@ MEMBER? 0=
-               IF   I C@ TOP$ APPEND-CHAR
+               IF
+                 I C@ TOP$ APPEND-CHAR
                THEN
             LOOP
             2DROP
             TOP$  ;
+
 \
 \ ---[ list words ]---
 \
-CREATE {NIL}   0 ,                      \ nil list
+CREATE {NIL}  0 , 0 ,                 \ nil list
 
-: {   ( -- ) ALIGN !CSP  ;    \ list starts with 0 in link-fld, record stack po.
-: }   ( -- ) ALIGN {NIL} @ , ?CSP ;     \ ends list, check stack
+: CAR  ( list -- next) @ ;
+: CDR  ( list -- addr) CELL+ ;
 
+: '{  ( -- addr)  HERE ALIGN !CSP  ;  \ starts a new list
+
+: }   ( addr -- )
+     ALIGN {NIL} , ?CSP             \ end list, check stack
+    ( CAR -- ) CREATE DUP , CDR ,  ;  \ compile a tuple ie: a list
 
 : "   ( -- )                 \ compile a linked-list string
       HERE 0 ,               \ make space for link
       [CHAR] " WORD DUP C@ 1+ ALLOT ALIGN
-      HERE SWAP 2- ! DROP ;   \ fill in the link
+      HERE SWAP 2- ! DROP ;  \ fill in the link
 
+: {NEXT} ( list -- list' )  @ ;  \ get next string in a list
+: {$}    ( link -- $)  CELL+ ;
 
-\ : CAR  ( list -- next)  @ ;
-\ : CDR  ( list -- addr) CELL+ ;
+: {NTH}  ( car n -- car' ) 0 ?DO  CAR  LOOP  ;
 
-: {NEXT}   ( list -- list' )  @  ;  \ get next string in a list
-: {$}     ( link -- $)  CELL+ ;
-
-: {NTH}    ( list n -- $addr )  \ the nth string in a list
-             0  ?DO  {NEXT}  LOOP ;
-
-: {PRINT} ( link -- ) {$} COUNT CR TYPE ;
+: {PRINT} ( link -- ) CDR COUNT CR TYPE ;
 
 : {LEN}   ( list -- n )  \ count the no. of items in a list
           0 >R
@@ -162,15 +164,15 @@ CREATE {NIL}   0 ,                      \ nil list
           DROP
           R> 1- ;
 
-: {LIST} ( list -- )  \ for view
+: {VIEW} ( list -- )  \ view a list
           CR
           0 >R
           BEGIN
              DUP @
           WHILE
-            DUP {$} COUNT
+            DUP CDR COUNT
             DUP 4 + C/L@ > IF  CR THEN TYPE ." , "
-            {NEXT}
+            CAR
             R> 1+ >R
           REPEAT
           DROP
@@ -194,9 +196,9 @@ CREATE {NIL}   0 ,                      \ nil list
           R> DROP
           DROP ;
 
-VARIABLE MFLAG     \ simpler that stack juggling :-)
+VARIABLE MFLAG     \ simpler than stack juggling :-)
 VARIABLE POSITION  \ ALSO record the position keyword in $
-: {MEMBER}  ( $ {list} -- -1 | ndx )  \ is ANY member of {list} in $
+: {MEMBER}  ( $ {list} -- -1 | ndx ) \ is ANY member of {list} in $
           MFLAG ON                   \ -1 flag means not found
           SWAP COUNT NEW: TOP$ PLACE \ $ goes on string stack
           0 >R                       \ counter on rstack
@@ -217,10 +219,18 @@ VARIABLE POSITION  \ ALSO record the position keyword in $
           R> DROP
           MFLAG @  ;           \ return the mflag value
 .( .)
+
+
+: {SIZEOF} ( list -- n) CELL+ @ ;
+
+\ : {NTH}      ( addr -- $addr)
+\             DUP >R
+\             {SIZEOF} CELL+ @ OVER U< ABORT" List index error"
+\             R> @ SWAP {NTH} {$} ;
+
 \ ==============================================
 \  --- REFLECTIONS ---
-CREATE PHRASES
-    { " I AM"      \ 0
+    '{ " I AM"      \ 0
       " I HAVE"    \ 1
       " I'VE"      \ 2
       " I'M"       \ 3
@@ -236,14 +246,11 @@ CREATE PHRASES
       " IS"        \ 13
       " MY"
       " I "
-     }
+     } LIST: ]PHRASES
 
-\    S" I AM  I HAVE  I'VE  I'M  I WILL I'D I'LL "
-\    S" MINE  ARE    WERE YOU ME YOUR IS MY  I "
 
-CREATE CONJUGATIONS
-    { " YOU ARE"    \ 0
-      " YOU HAVE"     \ 1
+    '{ " YOU ARE"    \ 0
+      " YOU HAVE"   \ 1
       " YOU'VE"     \ 2
       " YOU'RE"     \ 4
       " YOU'LL"     \ 5
@@ -258,13 +265,13 @@ CREATE CONJUGATIONS
       " BEING"      \ 13
       " YOUR"
       " YOU"
-     }
+     } LIST: ]CONJUGATE
 
 
-CONJUGATIONS {LEN} CONSTANT #CONJUGATES
+' ]CONJUGATE 2 CELLS + @ CONSTANT #CONJUGATES
 
-: ]PHRASE     ( n -- $) PHRASES SWAP {NTH} {$} ;
-: ]CONJUGATE  ( n -- $) CONJUGATIONS SWAP {NTH} {$} ;
+\ : ]PHRASE     ( n -- $) PHRASES SWAP {NTH} {$} ;
+\ : ]CONJUGATE  ( n -- $) CONJUGATIONS SWAP {NTH} {$} ;
 
 
 \ ---[ Traditional Eliza Banner Printer ]===
@@ -335,7 +342,8 @@ CREATE KEYWORDS
               KEYWORDS SWAP {NTH} {$}
            THEN ;
 
-\ convert keyword# into a FORTH word
+\ convert keyword# n, into a FORTH word by STRIPPING noise characters and spaces
+\ Example: I CAN'T -> ICANT
 \ output is a stack string for EVALUATE to use
 : >ACTION  ( n -- addr len )
             DUP 0< ABORT" >ACTION ndx err"
@@ -344,10 +352,9 @@ CREATE KEYWORDS
 \ ==============================================
 \        --- REPLIES SUPPORT CODE ---
 
-\ Replies create a FORTH word with a 2 CELL header structure
+\ Replies create a FORTH word with a 3 CELL header structure
 \ followed by a list of counted strings.
 
-: '{    HERE {  ;
 : REPLY: ( LIST -- )   DUP {LEN} 1-  0 ROT CREATE ,  ,  ,   ;
 
 \ given a reply address these words compute the offset of the fields
@@ -397,23 +404,28 @@ VARIABLE ROGERIAN      \ set if Rogerian answer is needed
 
 .( .)
 : GREETING  ( -- )
+            CR ." ==================================="
             CR
             CR ." Hi! My name is Eliza."
             CR ." Can I help you?" ;
 
 : $ACCEPT ( $addr -- ) DUP  1+ 80 ACCEPT  SWAP C!  ;
 
-: TRIM     ( addr len -- addr' len')
-            BL SKIP -TRAILING ;
+: -TRAILING  ( adr len -- adr len') \ remove trailing blanks (spaces)
+             BEGIN  2DUP + 1- C@  BL =
+             WHILE  1-
+             REPEAT ;
 
-: MASSAGE  ( $ --  addr len)  COUNT 2DUP TOUPPER TRIM ;
+: TRIM     ( addr len -- addr' len')  BL SKIP -TRAILING ;
 
-: LISTEN   ( -- )
+: LISTEN   ( -- $ )
            BEGIN
-             CR BEEP ." >"  TOP$ $ACCEPT
-             PAD LEN
+             CR BEEP ." >"  INPUT$ DUP $ACCEPT
+             LEN 0>
            UNTIL
-           TOP$ MASSAGE TOP$ PLACE ;
+           INPUT$ COUNT 2DUP TOUPPER TRIM
+           INPUT$ PLACE
+           INPUT$ ;
 
 \ cut INPUT$, return everything after the keyword phrase
  : /TAIL  ( keyword input$ -- adr len)   \ "cut tail"
@@ -458,17 +470,47 @@ VARIABLE ROGERIAN      \ set if Rogerian answer is needed
 
 DECIMAL
 
-: END_SESSION  TEXT  BYE ;  \  can change this to BYE
+\ everthing is handled by {MEMBER} which scans $ for any MEMBER of the list
+: ANALYZE   ( $ -- 0 | ndx) KEYWORDS {MEMBER} ;
 
-: BYE    CR ." OK. Thanks for chatting."
-         CR ." Bye bye!"  700 MS
-         CR ." ...Oh and by the way..."
-         1000 MS
-         CR
-         CR ." My bill is $400.00.
-         CR ." (I accept Paypal) :-)"
-         1500 MS
-         END_SESSION ;
+\ =======================================================
+\ A minimal set of key words are needed to compile the program
+
+\ Replies for unknown token
+     '{ " What does that suggest to you?"
+        " I see."
+        " I'm not sure I understand you fully."
+        " Topic shift: How is your love life?"
+        " Can you expand on that a bit?"
+        " That is quite interesting. Tell me more. "
+        " Are you being honest?"
+      } REPLY: TAPDANCE
+
+\ bad words list
+     '{ " Hey now. we don't use that kind of language here."
+        " I told you to watch your language!"
+        " That's it. I don't have to listen to this!"
+        "   "
+      } REPLY: SHIT
+
+\ all these words cause SHIT to happen :-)
+ : FUCK     SHIT ;
+ : ASS      SHIT ;
+ : BASTARD  SHIT ;
+ : HELL     SHIT ;
+ : DICK     SHIT ;
+
+: END_SESSION  TEXT  QUIT ;  \  can change this to BYE
+
+: BYE   CR ." OK. Thanks for chatting."
+        CR ." Bye bye!"  700 MS
+        CR ." ...Oh and by the way..."
+        1000 MS
+        CR
+        CR ." My bill is $400.00.
+        CR ." (I accept Paypal) :-)"
+        1500 MS
+        END_SESSION ;
 
 : GOODBYE   BYE ;
 
@@ -479,33 +521,7 @@ DECIMAL
             CR ." CAMEL99 FORTH"
             CR  QUIT ;
 
-\ The defines the behaviour when Eliza does not understand
-'{ " What does that suggest to you?"
-   " I see."
-   " I'm not sure I understand you fully."
-   " Topic shift: How is your love life?"
-   " Can you expand on that a bit?"
-   " That is quite interesting. Tell me more. "
-   " Are you being honest?"
- } REPLY: TAPDANCE
-
-\ This is the naught word behaviour.
-'{ " Hey now. we don't use that kind of language here."
-   " I told you to watch your language!"
-   " That's it. I don't have to listen to this!"
-   "   "
- } REPLY: SHIT
-
-\ all these words cause SHIT to happen :-)
-\ Add words as you see fit
- : FUCK     SHIT ;
- : ASS      SHIT ;
- : BASTARD  SHIT ;
- : HELL     SHIT ;
- : DICK     SHIT ;
-
-\ everthing is handled by {MEMBER} which scans $ for any MEMBER of the list
-: ANALYZE   ( $ -- 0 | ndx) KEYWORDS {MEMBER} ;
+\ =========================================================
 
 : REPLY   ( n -- )  \ n= keyword index
            DUP -1 =
@@ -531,26 +547,21 @@ DECIMAL
           3000 MS
           END_SESSION
        THEN ;
+
 .( .)
-
 DECIMAL
-: SPLASH
-        TEXT  WHT/BLK
-        S" Eliza" BIG.TYPE CR
-        CR ." Standy while I read your file..."
-        CR   1000 MS ." Hmm..." 1000 MS
-        CR ." ==================================="
-        CR  ." ...interesting..."
-;
-
 : ELIZA    ( -- )
         SHIT ->USE# OFF
-        SPLASH
+        SSW 10 * MALLOC ['] $STAK >BODY !
+        TEXT  WHT/BLK
+        S" Eliza" BIG.TYPE CR
+        ." Hang on a minute,"
+        ." I am reviewing your files"
+         400 MS
+      \  S" DSK2.ELIZADATA" INCLUDED
         GREETING
         BEGIN
           ?BADWORDS
            COLLAPSE  ( the string stack)
-           LISTEN
-           TOP$ ANALYZE ( ndx)
-           REPLY
+           LISTEN ( $) ANALYZE ( ndx) REPLY
        AGAIN ;

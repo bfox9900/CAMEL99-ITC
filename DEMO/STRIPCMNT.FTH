@@ -10,23 +10,30 @@
 
 \ SCAN is not a standard function but is part of the CAMEL99 KERNEL.
 
-: LASTCHAR ( addr len -- addr len c) 2DUP + 1- C@ ;
- 
-: COMMENT? ( char -- ? )  S" #;"  ROT SCAN NIP ; \ is char '#' or ';'
+: LASTCHAR ( addr len -- addr len c) 2DUP + C@ ;
+: COMMENT? ( char -- ? )  S" #;"  ROT SCAN NIP ;    \ test char for "#;" 
+: -LEADING ( addr len -- addr' len') 2DUP BL SKIP ; \ remove leading space characters
  
 : -COMMENT   ( addr len -- addr len') \ removes # or ; comments
-            BEGIN  
-              LASTCHAR COMMENT? 0= 
-            WHILE                    \ while not a comment char...
+            1-
+            BEGIN
+              LASTCHAR COMMENT? 0=
+            WHILE                     \ while not a comment char...
                 1-                    \ reduce length by 1
             REPEAT
             1-  ;                     \ remove 1 more (the comment char)
 
-: -TRAILING  ( adr len -- adr len')    \ remove trailing spaces
+: -TRAILING  ( adr len -- adr len')   \ remove trailing spaces
+             1-
              BEGIN
-               LASTCHAR BL = 
-             WHILE                     \ while lastchar = blank 
-               1-                      \ reduce length by 1
-             REPEAT  ;
- 
-: COMMENT-STRIP ( addr len -- addr 'len)  -COMMENT  -TRAILING ;
+               LASTCHAR BL =
+             WHILE                    \ while lastchar = blank
+               1-                     \ reduce length by 1
+             REPEAT  
+             1+ ;
+
+
+: COMMENT-STRIP ( addr len -- addr 'len) -LEADING -COMMENT -TRAILING  ;
+
+S"      X=X+1 # This is the comment"  COMMENT-STRIP CR CR TYPE CR
+S"      MOV AX,BX  ; assembly language comment" COMMENT-STRIP CR CR TYPE CR

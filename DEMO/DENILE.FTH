@@ -1,5 +1,6 @@
 \ LITERAL TRANSLATION OF DENILE.BAS using variables
 \ Orignal program by RETROSPECT, Atariage.com
+\ **THIS IS NOT GOOD FORTH** It is a literal TRANSLATION of the BASIC program
 
 INCLUDE DSK1.GRAFIX
 INCLUDE DSK1.STRINGS
@@ -7,6 +8,10 @@ INCLUDE DSK1.CHARSET
 
 \ 60 DATA 010207091F247F92,8040E090F824FE49,FF92FF24FF92FF49,AA55448920024801,
 \         000217357CFC44AA,0008081C2A081414
+
+\ PATTERN: was removed from GRAFIX.
+\ CREATE and comma are all that's really needed
+: PATTERN:  CREATE    >R >R >R  , R> , R> , R> , ;
 
 \ Character DATA patterns are named in CAMEL99 Forth
 HEX
@@ -24,6 +29,7 @@ AA55 4489 2002 4801  PATTERN: SAND
 0070 F8D5 7FFD B7FE  PATTERN: WAVES6
 00E0 F1AB FEFB 6FFD  PATTERN: WAVES7
 00C1 E357 FDF7 DEFB  PATTERN: WAVES8
+
 
 DECIMAL
 : CHANGE-CHARS ( -- )
@@ -50,7 +56,7 @@ DECIMAL
 \ ALL variables must be defined first
 VARIABLE X
 VARIABLE C
-VARIABLE T  
+VARIABLE T
 VARIABLE Y
 
 32 DIM A$    \ Not standard Forth. Language extension
@@ -68,7 +74,7 @@ VARIABLE Y
       C$ " CC" &       C$ PUT  \ 190 C$=C$&"CC"
      " A" C$ &  " B" & B$ PUT  \ 200 B$="A"&C$&"B"
       CR   X @ TAB  B$ PRINT$  \ 210 PRINT TAB(X);B$
-COLLAPSE
+      COLLAPSE                 \ clear the string stack
       1 C +!                   \ 220 C=C+1
      -1 X +!                   \ 230 X=X-1
       C @ 14 =                 \ 240 IF C=13 THEN 250 ELSE 190
@@ -95,7 +101,7 @@ COLLAPSE
     0 21 T @ 32 HCHAR          \ 380 CALL HCHAR(22,1,T,32)
     0 22 Y @ 32 HCHAR          \ 390 CALL HCHAR(23,1,Y,32)
     100 MS
-    KEY?
+    KEY?                       \ loop until a key is pressed
  UNTIL                         \ 400 GOTO 320
 ;
 
@@ -112,6 +118,3 @@ COLLAPSE
    8 SCREEN               \ BASIC does this automatically
    CHARSET                \ Forth must be told.
 ;
-
-
-

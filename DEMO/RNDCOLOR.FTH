@@ -18,8 +18,8 @@
 \ Random Color Dots
 NEEDS RND      FROM DSK1.RANDOM
 NEEDS HZ       FROM DSK1.SOUND
-NEEDS CHARSET  FROM DSK1.CHARSET
 NEEDS COLOR    FROM DSK1.GRAFIX
+NEEDS CHARSET  FROM DSK1.CHARSET
 
 DECIMAL
 : SET-COLORS ( -- )
@@ -37,27 +37,15 @@ DECIMAL
 : SOUND  ( dur freq att --) DB  HZ  MS MUTE ;
 
 : RUN ( -- )
-\      RANDOMIZE
       16 SCREEN  CLEAR
       SET-COLORS
       BEGIN
-	       COL ROW CHR 1 HCHAR
-         GEN1 150 Y -2 SOUND \ Select sound Generator #1
-	       ?TERMINAL     \ check for the break key
+	 COL ROW CHR 1 HCHAR
+         GEN1 150 Y -2 SOUND
+        ?TERMINAL
       UNTIL
-      8 SCREEN         \ restore things like BASIC
+      8 SCREEN
       4 19 2 1 COLORS
       CHARSET ;
 
-: FASTRUN ( -- )
-\      RANDOMIZE
-      16 SCREEN  CLEAR
-      SET-COLORS
-      BEGIN
-         CHR COL ROW >VPOS VC!  \ use this for fastet 1 char placement
-\         GEN1 20 Y -6 SOUND \ Select sound Generator #1
-	 ?TERMINAL     \ check for the break key
-      UNTIL
-      8 SCREEN         \ restore things like BASIC
-      4 19 2 1 COLORS
-      CHARSET ;
+
