@@ -9,8 +9,8 @@ VARIABLE ^P   \ the memory pointer
 : RESET ( -- ) MEMORY DUP 2000 0 FILL  ^P ! ;
 : PEEK  ( -- ) ^P @ C@ ;
 : POKE  ( -- ) ^P @ C! ;
-: >     ( -- ) ^P @ 1+ ^P ! ;           \ increment the ^P
-: <     ( -- ) ^P @ 1- ^P ! ;           \ decrement the ^P
+: >     ( -- )  1 ^P +! ;               \ increment the ^P
+: <     ( -- ) -1 ^P +! ;               \ decrement the ^P
 : +     ( -- ) PEEK 1+ POKE ;           \ increment the byte at the ^P
 : -     ( -- ) PEEK 1- POKE ;           \ decrement the byte at the ^P
 : .     ( -- ) PEEK EMIT ;              \ output the byte at the ^P
