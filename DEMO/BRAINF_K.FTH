@@ -1,4 +1,4 @@
-\ brainfuk.f in ANS Forth based on work by Mark Wills
+\ brainfuk.fth in ANS Forth based on work by Mark Wills
 \ Thanks to Willsy on Atariage.com who wrote this in TurboForth
 \  A M A Z I N G  !!!!!!!!!!!
 
