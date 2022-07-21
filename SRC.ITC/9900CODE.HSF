@@ -116,7 +116,7 @@ CROSS-ASSEMBLING
 
         START.               \ sets a timer
         NEW.                 \ init target memory segment to FFFF
-        KERNORG ORIGIN.
+        CODESEG ORIGIN.
         TI-99.EA5
 
 \ ==============================================================
@@ -169,7 +169,7 @@ l: _DUP      TOS PUSH,
              @@9 JMP,
 
 l: _PLUS    *SP+ TOS ADD,     \ ADD 2nd item to TOS and incr stack pointer.
-                           @@9 JMP,
+             @@9 JMP,
 l: _HSend    \ this label tells the compiler where the high speed code ends
 
 \ ==============================================================
@@ -218,7 +218,7 @@ CODE LIT     ( -- w )         \ Execute a LITERAL number in the Forth program
               ENDCODE
 T' LIT RESOLVES 'LIT
 
-( TCREATE:  allows these words to have runnable code in the CFA )
+( TCREATE: puts runnable code in the CFA. These are NOT Forth CODE words )
 TCREATE: DOVAR  ( -- addr)    \ Executor that executes a "VARIABLE"
              TOS PUSH,        \ make room in TOS
              W TOS MOV,       \ contents of PFA -> TOS
@@ -236,7 +236,8 @@ T' DOCON RESOLVES 'DOCON     \ 'DOCON is used by the cross-compiler
 
 
 \ In CAMEL99 the 9900 Workspace register (WP) doubles as USER pointer
-TCREATE: DOUSER ( -- addr)   \ USER variables are local to each task
+\ USER variables are local to each task
+TCREATE: DOUSER ( -- addr)
               TOS PUSH,      \ Executor that executes a "USER VARIABLE"
               TOS STWP,
               *W TOS ADD,    \ add USER VAR's offset to Workspace pointer
@@ -488,7 +489,7 @@ CODE 2SWAP   ( n1 n2 n3 n4-- n3 n4 n1 n2)
               ENDCODE
 
 CODE PICK   ( n -- n)   \ GForth ITC takes 8 intel instructions for PICK
-              TOS TOS ADD,   \ 14  (" n CELLS")
+              TOS  1 SLA,   \ 14  (" n CELLS")
               SP TOS ADD,    \ 14
              *TOS TOS MOV,   \ 18
               NEXT,         \  46
@@ -529,7 +530,7 @@ CODE 1-      ( n -- n') TOS DEC,       NEXT, ENDCODE
 CODE 2+      ( n -- n') TOS INCT,      NEXT, ENDCODE
 CODE 2-      ( n -- n') TOS DECT,      NEXT, ENDCODE
 
-CODE 2*      ( n -- n)   TOS TOS ADD,  NEXT, ENDCODE
+CODE 2*      ( n -- n)   TOS 1 SLA,  NEXT, ENDCODE
 CODE 4*      ( n -- nx4) TOS 2 SLA,    NEXT, ENDCODE
 CODE 8*      ( n -- nx8) TOS 3 SLA,    NEXT, ENDCODE
 
@@ -575,6 +576,7 @@ CODE -       ( u1 u2 -- u )
               TOS NEG,    \ sign is wrong when subtracting memory from register
               NEXT,
               ENDCODE
+
 \ D+ is a better primitive for 9900 CPU than M+
 CODE D+   ( lo hi lo' hi' -- d)
              *SP+    R0  MOV,
@@ -818,6 +820,22 @@ CODE CMOVE>  ( src dst n -- )  \ move chars from end of string and go backwards
              NEXT,
              ENDCODE
 
+0 [IF]
+\ fills CELLs. If len is ODD, one extra byte is filled. BE careful
+CODE FILLW ( adr len c --)
+         *SP+ R0 MOV,
+         *SP+ W MOV,
+          TOS R3 MOV,
+          R3 SWPB,
+          R3 TOS ADD,     \ dup bytes in the TOS
+          BEGIN,
+            TOS *W+ MOV,  \ 2 chars are in TOS register
+            R0 DECT,      \ decr. count by two
+          NC UNTIL,       \ loop until r0=0
+          NEXT,
+         ENDCODE
+[THEN]
+
 CODE FILL   ( addr cnt char -- )
             *SP+ R0 MOV,       \ pop cnt->R0                   22
             *SP+ R1 MOV,       \ pop addr->R1                  22
@@ -829,6 +847,7 @@ CODE FILL   ( addr cnt char -- )
              TOS POP,          \ refill the TOS register       22
              NEXT,             \                             =116
              ENDCODE
+
 
 \ =================================================================
 cr .( ANS Forth DO/LOOP )
@@ -960,9 +979,9 @@ CODE SKIP  ( c-addr u char -- c-addr' u')    \ skip matching chars
 
 -1 [IF]
 CODE SCAN   ( adr len char -- adr' len' )     \ find matching char
-              TOS SWPB,                       \ silly machine needs this to compare memory to register
-              2 (SP) R8 MOV,                   \ get address->w
-             *SP+ R1 MOV,                     \ POP count into R1, char is already in TOS
+              TOS SWPB,                       \ CHAR is in TOS register
+              2 (SP) R8 MOV,                  \ get address->w
+             *SP+ R1 MOV,                     \ POP len to R1
               NE IF,                          \ R1<>0 ?
                   BEGIN,
                     *R8 TOS CMPB,             \ does character match?
@@ -971,7 +990,7 @@ CODE SCAN   ( adr len char -- adr' len' )     \ find matching char
                      R1 DEC,                  \ dec. loop counter
                   EQ UNTIL,                   \ hit end of string, jmp out
               ENDIF,
- @@2:          W *SP  MOV,                    \ store updated address on stack
+ @@2:         W *SP  MOV,                     \ store updated address on stack
               R1 TOS MOV,                     \ updated count to TOS
               NEXT,
               ENDCODE
@@ -984,7 +1003,7 @@ CODE SCAN  ( adr len char -- adr' len' )    \ find matching char
                   R1 R1 MOV,
                NE WHILE, ( len<>0)
                     *W TOS CMPB,
-               NE WHILE, ( *R8<>R1)
+               NE WHILE, ( *R8<>char)
                     ( do: 1 /STRING )
                      W INC,       \ inc. adr
                      R1 DEC,      \ dec. len

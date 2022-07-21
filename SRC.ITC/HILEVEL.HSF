@@ -51,11 +51,12 @@ TARGET-COMPILING
 [CC] HEX
 CR .( Constants and VARIABLEs...)
 
+
 TARGET-COMPILING
-\ fixed system memory locations
-     FFF8   CONSTANT SP0    \ data stack
-     FF60   CONSTANT RP0    \ Return stack
-     FEA0   CONSTANT TIB    \ tib grows up towards RP0.
+  'SP0  CONSTANT SP0    \ ^^^  data stack, 28 cells deep,
+  'RP0  CONSTANT RP0    \ ^^^ Return stack 96 cells max, shares space with TIB
+  'TIB  CONSTANT TIB    \ tib grows up towards RP0. Never more that
+\  'FIB  CONSTANT FIB
 
 \ Utility constants
       0 CONSTANT FALSE
@@ -118,7 +119,7 @@ VARIABLE BOOT
 
 [CC] HEX [TC]
 VARIABLE VMODE
-VARIABLE L0  [CC] 4 CELLS TALLOT  [TC]
+VARIABLE L0       [CC] 4 CELLS TALLOT  [TC]
 VARIABLE ^PAB
 VARIABLE LINES
 VARIABLE C/SCR
@@ -127,23 +128,48 @@ VARIABLE H
 VARIABLE VP
 VARIABLE CURS     [CC] 205F CURS T! [TC]  \ BLANK and '_' in one VARIABLE
 VARIABLE VTOP
-\ VARIABLE WID-LINK
+VARIABLE WARNINGS [CC] -1 WARNINGS T! [TC]
 
 ?stk
 \ ======================================================================
 [CC] cr .( Hi-level FORTH Primitives...)
 TARGET-COMPILING
 SLOWER [IF]
-    : HERE   ( -- addr) DP @  ;
+
+    : HERE      ( -- addr) DP @  ;
+    : ALLOT     ( n --)   DP +! ;
+    : ,         ( n -- )  HERE ! 2 ALLOT ;
+
 [ELSE]
- ( faster HERE speeds up the compiler)
- CODE HERE   ( -- addr) TOS PUSH, TOS STWP,  24 (TOS) TOS MOV,  NEXT, ENDCODE
+
+( faster HERE speeds up the compiler)
+CODE HERE   ( -- addr) \ : HERE   ( -- addr) DP @  ;
+      TOS PUSH,
+      TOS STWP,
+      24 (TOS) TOS MOV,
+      NEXT,
+ENDCODE
+
+CODE ALLOT  ( n --)
+      R1 STWP,
+      TOS 24 (R1) ADD,
+      TOS POP,
+     NEXT,
+ENDCODE
+
+CODE ,  ( n --)
+   R1 STWP,
+   24 (R1) R2 MOV,
+   TOS *R2 MOV,
+   24 (R1) INCT,
+   TOS POP,
+   NEXT,
+ENDCODE
+
 [THEN]
 
-: ALLOT     ( n --)   DP +! ;
-: ,         ( n -- )  HERE ! 2 ALLOT ;
-: COMPILE,  ( n -- )  , ;
 : C,        ( n -- ) HERE C! 1 ALLOT  ;
+: COMPILE,  ( n -- )  , ;
 : ALIGN     ( -- )   HERE ALIGNED DP ! ;
 : PAD       ( -- addr) HERE TPAD @ + ;
 : COMPILE   ( -- )  R> DUP 2+ >R @  , ;
@@ -337,8 +363,8 @@ SLOWER [IF]
 
 SLOWER [IF]
 
-: DIGIT?  ( c -- n -1) \ if c is a valid digit
- \             -- x  0  \ otherwise
+: DIGIT?  ( c -- n -1)   \ if c is a valid digit
+ \             -- x  0   \ otherwise
   DUP  39 > 100 AND +    \ silly looking
   DUP 140 > 107 AND -  t[CHAR] 0 -   \ but it works!
   DUP BASE@ U< ;         \ 48 Bytes
@@ -346,27 +372,25 @@ SLOWER [IF]
 [ELSE]
 
 CODE DIGIT?   ( char -- n f )
+            R1 STWP,           \ multi-tasking friendly for USER VARS
             TOS PUSH,          \  dup char
             TOS -30 ADDI,      \  convert char to number
             TOS 9 CMPI,
-            HI IF,
+            HI IF,             \ > 9 ?
                TOS -7 ADDI,
                TOS 9 CMPI,
-               LO IF,
-                   TOS CLR,  \ bad result
-                   NEXT,
-               ENDIF,
+               @@1 JL,         \ less than 9, jump out
             ENDIF,
-            R1 STWP,       \ multi-tasking friendly
             TOS 2A (R1) CMP, \ USER var 2A (BASE)
-            HE IF,
-               TOS CLR,    \ bad result
-               NEXT,
-            ENDIF,
+            @@2 JHE,       \ tos>base, jump out
+
             TOS *SP MOV,   \ replace char with no.
             TOS SETO,      \ set flag to true
             NEXT,
-            ENDCODE        \ 4 bytes bigger than Forth, much faster
+            ( error out here)
+@@1: @@2:   TOS CLR,
+            NEXT,
+            ENDCODE        \ 36 bytes, much faster
 
 [THEN]
 
@@ -468,6 +492,7 @@ CODE LASTLN ( -- vaddr)
        DROP
        0 17 AT-XY VPOS C/L@ BL VFILL
 ;
+
 [ELSE]
 :  SCROLL ( -- )
          PAUSE
@@ -599,7 +624,7 @@ SLOWER [if]
 \ M I S C E L L A N E O U S
 [cc] HEX [tc]
 
-: RECURSE     ( -- ) LATEST @ NFA>CFA COMPILE,  ; XIMMEDIATE
+: RECURSE     ( -- ) LATEST @ NFA>CFA ,  ; XIMMEDIATE
 : DECIMAL     ( -- ) 0A BASE ! ;
 : HEX         ( -- ) 10 BASE ! ;
 
@@ -616,7 +641,7 @@ SLOWER [if]
            SOURCE-ID OFF
            t[COMPILE] [
            BEGIN
-              TIB DUP 80 ACCEPT SPACE    \ TIB is $80 (128) bytes long
+              TIB DUP 52 ACCEPT SPACE
             ( addr len) INTERPRET
               STATE @ 0= IF  T."  ok"  THEN CR
            AGAIN ;
@@ -790,19 +815,28 @@ TARGET-COMPILING
 \ ======================================================================
 \ D I C T I O N A R Y   C R E A T I O N
 
+TARGET-COMPILING
+
 : HEADER, ( addr len --)
       ALIGN
-      CURRENT @  DUP>R   \ Fetch CURRENT wid, make a copy for later
-\ === compile the header fields ===
-      @ ,                  \ fetch the NFA & compile in the LFA field
+      CURRENT @ @ ,        \ get last NFA & compile in this LFA field
       0 C,                 \ compile the precedence byte (immediate flag)
-      HERE DUP LATEST !    \ HERE is now a new NFA, store NFA in LATEST
-      R>  !                \ & also in the current 'WID' we saved earlier
-      S, ;                 \ compile the (addr len) string as the name.
+      HERE >R              \ save HERE (ie: new NFA location)
+      S,                   \ compile (addr len) as counted string
+      WARNINGS @
+      IF
+        R@ FIND ( xt ?) NIP ( ?)
+        IF
+          SPACE  R@ COUNT 1F AND TYPE  T."  isn't unique "
+        THEN
+      THEN
+      R@ LATEST !       \ HERE now is the last word defined
+      R> CURRENT @ !    \ Also store in the current 'WID'
+;
 
-: HEADER   BL PARSE-WORD HEADER, ;
+: HEADER ( <TEXT> )  BL PARSE-WORD HEADER, ;
 
-
+\ =======================================================
 \ T A R G E T   S Y S T E M   D E F I N I N G   W O R D S
 \                    text    runtime-action   parameter
 \                   -------  --------------- -----------
@@ -811,7 +845,7 @@ TARGET-COMPILING
  : CREATE    ( -- )   HEADER  COMPILE DOVAR              ;
  : VARIABLE  ( -- )   CREATE                  0 COMPILE, ;
 
-\ (:noname) came from studying gforth. It's a nice factor.
+\ (:noname) from studying gforth. It's a nice factor.
  : (:NONAME) ( -- )  T['] DOCOL @ COMPILE,  HIDE  ]  ;
 
 \ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
@@ -832,7 +866,7 @@ TARGET-COMPILING
 \ ======================================================================
 \ LOOPS AND BRANCH COMPILERS FOR THE TI-99 SYSTEM
 
-[CC]  include cc9900\SRC.ITC\ISOLOOPS.HSF
+[CC]  include cc9900\SRC.ITC\ISOLOOPX.HSF
 
 \ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 \  ===[ CANNOT COMPILE IF, ELSE, THEN, BEGIN UNTIL ETC. AFTER THIS ]===
@@ -855,7 +889,7 @@ CODE COLD
               RP  RP0  LI,     \ return stack
               R10 NEXT2 LI,    \ inner interpreter
               IP  BOOT  LI,    \ load interpreter pointer with boot word
-             *R10 B,           \ run Forth (inner interpreter)
+             *R10 B,           \ run Forth NEXT (inner interpreter)
               ENDCODE
 
 \ *G MOVED TO DSK1.SYSTEM ** loads on Forth startup
@@ -865,11 +899,11 @@ CODE COLD
 \ *G ;CODE is moved to DSK1.SYSTEM ***
 
 \ *new* Added VER string for easy updates
-[CC] KERNORG 6000 =
+[CC] CODESEG 6000 =
 [IF]
-    [TC] : .VER   T." 2.69.4522 SuperCart" ;
+    [TC] : .VER   T." 2.69.05JUL22 SuperCart" ;
 [ELSE]
-    [TC] : .VER   T." 2.69.4522" ;
+    [TC] : .VER   T." 2.69.05JUL22" ;
 [THEN]
 
 [CC]
@@ -878,7 +912,7 @@ CODE COLD
 HEX
 TARGET-COMPILING
 
-\ *G (WARM) initializes variables and vectors
+\ *G  WARM initializes variables and vectors
 : WARM      ( -- )
               80 83C2 C!
               26 TPAD !
@@ -900,7 +934,7 @@ TARGET-COMPILING
              TEXT TS" CAMEL99 Forth " TYPE .VER
 ;
 
-\ G*  CAMEL99 is the primary boot word that starts Forth and loads extensions
+\ G*  LOADSYS is the primary boot word that starts Forth and loads extensions
 : LOADSYS
             WARM
             TS" DSK1.START" INCLUDED

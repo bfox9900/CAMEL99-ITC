@@ -5,16 +5,32 @@ CROSS-COMPILING
 \ compiler switches control HOW the system will be built
 \ **********************************************************************
 TRUE  VALUE ITC          \ used to prevent directly compiling HILEVEL.HSF
-FALSE VALUE SLOWER       \ TRUE saves 28 bytes
+0 VALUE SLOWER           \ TRUE saves 38 bytes, FALSE 14% FASTER compile times
 FALSE VALUE HASHING      \ Not working yet
 
-TRUE  \ true= standard kernel ;  false=non-standard kernel
+\ ======================================================================
+\ TIB and Stack locations
+
+CROSS-COMPILING
+HEX
+        FFFC    EQU EMEM     \ EMEM = "end of memory"
+        0050    EQU TIBSIZE
+EMEM TIBSIZE -  EQU 'TIB    \ Terminal input buffer just below
+
+     'TIB  2 -  EQU 'SP0    \ FORTH DATA stack base address
+     'SP0 6E -  EQU 'RP0    \ FORTH RETURN stack base address
+
+
+\ ======================================================================
+\ Target memory location
+
+FALSE \ true= standard kernel ;  false=non-standard kernel
 [IF]
-    A000 VALUE KERNORG
-    2000 VALUE HEAPORG
+    A000 VALUE CODESEG
+    2000 VALUE HEAPSEG
 [ELSE]
-		6000 VALUE KERNORG  \ the specific alternate load address to use
-		2000 VALUE HEAPORG  \ initial HEAP address when kernel boots
+		6000 VALUE CODESEG  \ the specific alternate load address to use
+		2000 VALUE HEAPSEG  \ initial HEAP address when kernel boots
 [THEN]
 
 \ *******************************************************************
@@ -40,29 +56,31 @@ TRUE  \ true= standard kernel ;  false=non-standard kernel
 \
 
  [CC] XLATEST @ DUP
- [TC] LATEST T! ORGLAST T!   ( align TARGET dictionary to compiler)
+ [TC] LATEST T! ORGLAST T!
 
- T' LOADSYS  BOOT T!  ( set the boot word to run )
-
-  KERNORG A000 <>
+ T' LOADSYS  BOOT T!
+CROSS-COMPILING
+  CODESEG A000 <>
   [IF]
     [CC] THERE    [TC] DP T!
-    [CC] HEX A000 [TC] ORGDP T!  ( SUPERCART must start dictionary in HI RAM )
+    [CC] HEX A000 [TC] ORGDP T!
   [ELSE]
      [CC] THERE 2+ DUP
 		 [TC] DP T!  ORGDP T!
   [THEN]
 
- \ ======================================================================
- \ P A T C H   T A R G E T   I M A G E  F I L E   H E A D E R
+[CC]
+\ ======================================================================
+\ P A T C H   T A R G E T   I M A G E  F I L E   H E A D E R
 
  T' COLD >BODY BOOT-ADDRESS T!
 
- [CC] KERNORG A000 <>
+CROSS-COMPILING
+  CODESEG A000 <>
  [IF]
       FILENAME: CAML99SC
  [ELSE]
-      FILENAME: CAMEL99X
+      FILENAME: CAMEL99
  [THEN]
       END.       ( report compile time and stats)
 

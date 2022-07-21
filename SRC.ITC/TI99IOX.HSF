@@ -34,7 +34,7 @@
 \ R4  VDP memory address
 
 \
-\ ================ LEAF SUB-ROUTINES  ** NOT NESTABLE ** ===================
+\ ================ LEAF SUB-ROUTINE  ** NOT NESTABLE ** ===================
 TARGET-COMPILING
 \ VDP set-address sub-routines
 L: WMODE  ( Vaddr -- Vaddr)
@@ -65,8 +65,8 @@ CODE V@   ( VDPadr -- n)        \ video fetch 16bit int
             ENDCODE
 
 CODE VREAD   ( VDP-adr RAM-addr cnt  -- )
-       TOS R0 MOV,              \ cnt->R0
-           R2 POP,              \ pop ram addr. to R2
+          TOS R0 MOV,           \ cnt->R0
+          R2 POP,               \ pop ram addr. to R2
           TOS POP,              \ VDP address to TOS
           R0 R0 MOV,            \ test cnt<>0
           NE IF,
@@ -104,13 +104,15 @@ CODE VWRITE  ( RAM-addr VDP-addr cnt -- )
            ENDCODE
 
 CODE VC! ( char vaddr --)
+          WMODE @@ BL,
 \ ----------------------
 \  *NEW* inline address setter.  6% faster on Tursi Sprite Benchmark
-          TOS 4000 ORI,
-          R1 STWP,           \ avoids 2 SWPB instructions
-          0 LIMI,
-          9 (R1) 8C02 @@ MOVB,   \ write odd byte from TOS (ie: R4)
-          TOS 8C02 @@ MOV,       \ MOV writes the even byte to the port
+\          TOS 4000 ORI,
+\          R1 STWP,           \ avoids 2 SWPB instructions
+\          R3 8C02 LI,
+\          0 LIMI,
+\          9 (R1) *R3 MOVB,   \ write odd byte from TOS (ie: R4)
+\          TOS *R3 MOV,       \ MOV writes the even byte to the port address
 \ --------------------------
           TOS POP,
           9 (R1) VDPWD @@ MOVB,  \ Odd byte R4, write to screen
@@ -119,7 +121,7 @@ CODE VC! ( char vaddr --)
           NEXT,
           ENDCODE
 
-CODE V! ( n Vaddr  -- )      \ Video store 16BIT int
+CODE V! ( n Vaddr  -- )       \ Video store 16BIT int
          WMODE @@ BL,         \ branch to setup VDP write address
          R3 VDPWD LI,
          TOS POP,
@@ -135,7 +137,7 @@ CODE VFILL ( VDP-addr count char-- )
         TOS W MOV,
         R0 POP,               \ R0=count
         TOS POP,              \ VDP-addr popped into TOS
-        WMODE @@ BL,          \ setup VDP write address IN R0
+        WMODE @@ BL,          \ setup VDP write address in TOS register
         R3 VDPWD LI,          \ vdp addr. in a reg. makes this 12.9% faster
         BEGIN,
               W *R3 MOVB,     \ write byte to vdp ram
@@ -153,8 +155,6 @@ CODE VFILL ( VDP-addr count char-- )
 \      32 USER: VROW
 \      34 USER: VCOL
 
-\ 7E USER VPG  \ Free space in scratchpad RAM used for VDP page# USER VARIABLE
-
 VARIABLE VPG
 
 CODE >VPOS ( col row -- vaddr) \ compute a VDP screen address
@@ -167,20 +167,21 @@ CODE >VPOS ( col row -- vaddr) \ compute a VDP screen address
          ENDCODE
 
 CODE CPUT ( char --  ?) \ write to screen, test for end of screen
-         TOS R0 MOV,
+         TOS     R0  MOV,
                  R1  STWP,    \ workspace is USER area base address
          32 (R1) R3  MOV,     \ vrow->r3
          2E (R1) R3  MPY,     \ vrow*c/l->R4
          34 (R1) TOS ADD,     \ add vcol
          7E (R1) TOS ADD,     \ add video page# VPG
+            WMODE @@ BL,    \ SEVENS 52.75
 
-\  *NEW* inline address setter
-         TOS 4000 ORI,
-         R1 STWP,           \ avoids 2 SWPB instructions
-         R3 8C02 LI,
-         0 LIMI,
-         9 (R1) *R3 MOVB,   \ write odd byte from TOS (ie: R4)
-         TOS *R3 MOV,       \ MOV writes the even byte to the port address
+\ *NEW* inline address setter ( SEVENS 53.63 not enough improvement)
+\         TOS 4000 ORI,
+\         R1 STWP,           \ avoids 2 SWPB instructions
+\         R3 8C02 LI,
+\         0 LIMI,
+\         9 (R1) *R3 MOVB,   \ write odd byte from TOS (ie: R4)
+\         TOS *R3 MOV,       \ MOV writes the even byte to the port address
 
          R0 TOS MOV,
          9 (R1) VDPWD @@ MOVB,  \ !! Odd byte W, write to screen

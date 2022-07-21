@@ -82,7 +82,7 @@ CODE [PAB   ( -- adr) TOS PUSH,  ^PAB @@ TOS MOV,  NEXT, ENDCODE
            BEGIN
              2 FILEOP 0=                   \ file read operation
            WHILE
-             RP0 100 - DUP FGET            \ use memory below RSTACK
+             RP@ 80 -  DUP FGET            \ space above Rstack is the buffer 
         ( -- addr len ) INTERPRET          \ interpret the buffer
              LINES 1+!                     \ count the line
            REPEAT
