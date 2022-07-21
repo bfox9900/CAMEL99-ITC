@@ -1,57 +1,45 @@
-\ LITERAL TRANSLATION OF DENILE.BAS using variables
+\ LITERAL TRANSLATION OF DENILE.BAS using variables and strings
 \ Orignal program by RETROSPECT, Atariage.com
-\ **THIS IS NOT GOOD FORTH** It is a literal TRANSLATION of the BASIC program
 
-INCLUDE DSK1.GRAFIX
-INCLUDE DSK1.STRINGS
-INCLUDE DSK1.CHARSET
+NEEDS CLEAR   FROM DSK1.GRAFIX
+NEEDS DIM     FROM DSK1.STRINGS
+NEEDS CHARSET FROM DSK1.CHARSET
 
-\ 60 DATA 010207091F247F92,8040E090F824FE49,FF92FF24FF92FF49,AA55448920024801,
-\         000217357CFC44AA,0008081C2A081414
+\ 60 DATA 010207091F247F92,8040E090F824FE49,FF92FF24FF92FF49,
+\         AA55448920024801,000217357CFC44AA,0008081C2A081414
 
-\ PATTERN: was removed from GRAFIX.
-\ CREATE and comma are all that's really needed
-: PATTERN:  CREATE    >R >R >R  , R> , R> , R> , ;
-
-\ Character DATA patterns are named in CAMEL99 Forth
+\ *different than BASIC* Named character DATA patterns
 HEX
-0102 0709 1F24 7F92  PATTERN: RSLOPE
-8040 E090 F824 FE49  PATTERN: LSLOPE
-FF92 FF24 FF92 FF49  PATTERN: STONE
-AA55 4489 2002 4801  PATTERN: SAND
-0002 1735 7CFC 44AA  PATTERN: Camel
-0008 081C 2A08 1414  PATTERN: LittleMan
-0083 C7AE FBEF BDF7  PATTERN: WAVES1
-0007 8F5D F7DF 7BEF  PATTERN: WAVES2
-000E 1FBA EFBF F6DF  PATTERN: WAVES3
-001C 3E75 DF7F EDBF  PATTERN: WAVES4
-0038 7CEA BFFE DB7F  PATTERN: WAVES5
-0070 F8D5 7FFD B7FE  PATTERN: WAVES6
-00E0 F1AB FEFB 6FFD  PATTERN: WAVES7
-00C1 E357 FDF7 DEFB  PATTERN: WAVES8
-
+CREATE RSLOPE     0102 , 0709 , 1F24 , 7F92 ,
+CREATE LSLOPE     8040 , E090 , F824 , FE49 ,
+CREATE STONE      FF92 , FF24 , FF92 , FF49 ,
+CREATE SAND       AA55 , 4489 , 2002 , 4801 ,
+CREATE Camel      0002 , 1735 , 7CFC , 44AA ,
+CREATE LittleMan  0008 , 081C , 2A08 , 1414 ,
+ 
 
 DECIMAL
 : CHANGE-CHARS ( -- )
 \ CHARDEF takes a defined pattern and the ascii number
-       RSLOPE     65 CHARDEF \ 20 FOR L=65 TO 70
-       LSLOPE     66 CHARDEF \ 30 READ Q$
-       STONE      67 CHARDEF \ 40 CALL CHAR(L,Q$)
+                             \ 20 FOR L=65 TO 70
+      ( not needed )         \ 30 READ Q$
+       RSLOPE     65 CHARDEF \ 40 CALL CHAR(L,Q$)
+       LSLOPE     66 CHARDEF \ ...
+       STONE      67 CHARDEF \ ...
        SAND       68 CHARDEF \ ...
        Camel      69 CHARDEF \ ...
        LittleMan  70 CHARDEF \ ....
                              \ 50 NEXT L
 
-       WAVES1   104 CHARDEF  \ 70 CALL CHAR(104,"0083C7AEFBEFBDF7")
-       WAVES2   105 CHARDEF  \ 80 CALL CHAR(105,"00078F5DF7DF7BEF")
-       WAVES3   106 CHARDEF  \ 90 CALL CHAR(106,"000E1FBAEFBFF6DF")
-       WAVES4   107 CHARDEF  \ 100 CALL CHAR(107,"001C3E75DF7FEDBF")
-       WAVES5   108 CHARDEF  \ 110 CALL CHAR(108,"00387CEABFFEDB7F")
-       WAVES6   109 CHARDEF  \ 120 CALL CHAR(109,"0070F8D57FFDB7FE")
-       WAVES7   110 CHARDEF  \ 130 CALL CHAR(110,"00E0F1ABFEFB6FFD")
-       WAVES8   111 CHARDEF  \ 140 CALL CHAR(111,"00C1E357FDF7DEFB")
+S" 0083C7AEFBEFBDF7" 104 CALLCHAR  \ 70 CALL CHAR(104,"0083C7AEFBEFBDF7")
+S" 00078F5DF7DF7BEF" 105 CALLCHAR  \ 80 CALL CHAR(105,"00078F5DF7DF7BEF")
+S" 000E1FBAEFBFF6DF" 106 CALLCHAR  \ 90 CALL CHAR(106,"000E1FBAEFBFF6DF")
+S" 000E1FBAEFBFF6DF" 107 CALLCHAR  \ 100 CALL CHAR(107,"000E1FBAEFBFF6DF")
+S" 00387CEABFFEDB7F" 108 CALLCHAR  \ 110 CALL CHAR(108,"00387CEABFFEDB7F")
+S" 0070F8D57FFDB7FE" 109 CALLCHAR  \ 120 CALL CHAR(109,"0070F8D57FFDB7FE")
+S" 0070F8D57FFDB7FE" 110 CALLCHAR  \ 130 CALL CHAR(110,"0070F8D57FFDB7FE")
+S" 00C1E357FDF7DEFB" 111 CALLCHAR  \ 140 CALL CHAR(111,"00C1E357FDF7DEFB")
 ;
-
 
 \ ALL variables must be defined first
 VARIABLE X
@@ -74,7 +62,7 @@ VARIABLE Y
       C$ " CC" &       C$ PUT  \ 190 C$=C$&"CC"
      " A" C$ &  " B" & B$ PUT  \ 200 B$="A"&C$&"B"
       CR   X @ TAB  B$ PRINT$  \ 210 PRINT TAB(X);B$
-      COLLAPSE                 \ clear the string stack
+      COLLAPSE
       1 C +!                   \ 220 C=C+1
      -1 X +!                   \ 230 X=X-1
       C @ 14 =                 \ 240 IF C=13 THEN 250 ELSE 190
@@ -93,15 +81,16 @@ VARIABLE Y
     106 Y !                    \ 310 Y=106
  BEGIN
     1 T +!                     \ 320 T=T+1
-    T @ 111 >                  \ 330 IF T>111 THEN 340 ELSE 350
-    IF  104 T ! THEN           \ 340 T=104
-    2 Y +!                     \ 350 Y=Y+2
+    T @ 111 >                  \ 330 IF T>111
+    IF                         \ THEN 340 ELSE 350
+        104 T !                \ 340 T=104
+    THEN 2 Y +!                \ 350 Y=Y+2
     Y @ 111 >                  \ 360 IF Y>111 THEN 370 ELSE 380
     IF  104 Y ! THEN           \ 370 Y=104
     0 21 T @ 32 HCHAR          \ 380 CALL HCHAR(22,1,T,32)
     0 22 Y @ 32 HCHAR          \ 390 CALL HCHAR(23,1,Y,32)
     100 MS
-    KEY?                       \ loop until a key is pressed
+    ?TERMINAL                  \ check for BREAK key
  UNTIL                         \ 400 GOTO 320
 ;
 
@@ -110,11 +99,13 @@ VARIABLE Y
    4 SCREEN               \ BASIC does when running.
    CHANGE-CHARS           \ line 20 to 140
    13 6 5 COLOR           \ 150 CALL COLOR[10,6,5]
-                           ( Forth has different character sets)
+                          \ Forth has different character sets numbers
 
    PYRAMID                \ 500 GOSUB PYRAMID
-   RIVER                  \ 600 GOSUB RIVERFLOW
+   RIVER                  \ 600 GOSUB RIVER
 
    8 SCREEN               \ BASIC does this automatically
    CHARSET                \ Forth must be told.
 ;
+
+CR .( Type RUN to start. FCTN BREAK to stop)
