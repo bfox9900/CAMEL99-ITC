@@ -25,4 +25,6 @@ VARIABLE OLDLINK    \ link field of a dummy word after PERMANENT
 ;
 
 \ removes everything from TRANSIENT to this definition
-: DETACH    [ LATEST @ ] LITERAL  OLDLINK @ ! ;
+: DETACH
+      CR ." TRANSIENT code removed"
+      [ LATEST @ ] LITERAL  OLDLINK @ ! ;
