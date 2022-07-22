@@ -1,3 +1,3 @@
 \ tobody.fth  ANS Forth standard word
-\ moved to KERNEL in V2.0.25 as code word alias to 2+ 
+\ moved to DSK1.SYSTEM in V2.69 as code word.
 : >BODY  2+ ;
