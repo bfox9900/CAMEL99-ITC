@@ -23,12 +23,12 @@ DECIMAL
 \ >FCODE re-arranges freq. value nibbles (4bits) for the TMS9919
 HEX
  CODE >FCODE ( 0abc -- 0cab) \ version by Farmer Potato Atariage
-             0B44 , \ TOS 4 SRC,    \ C0AB
-             C204 , \ TOS W MOV,    \ DUP
-             0948 , \  W 4 SRL,     \ 0C0A
-             D108 , \  W TOS MOVB,  \ 0CAB
-            NEXT,   \ 8 BYTES, 28 uS :-)
-            ENDCODE
+           0B44 , \ TOS 4 SRC,    \ C0AB
+           C204 , \ TOS W MOV,    \ DUP
+           0948 , \  W 4 SRL,     \ 0C0A
+           D108 , \  W TOS MOVB,  \ 0CAB
+           NEXT,   \ 8 BYTES, 28 uS :-)
+           ENDCODE
 
 \ we set the "ACTIVE CHANNEL" with these variables
  VARIABLE OSC               \ holds the active OSC value
@@ -63,22 +63,3 @@ HEX
 : DB      ( level -- ) (DB)  SND! ; \ Usage: -6 DB
 : MUTE    ( -- )  -30 DB ;
 : SILENT  ( --)  9F SND!  BF SND!  DF SND!  FF SND! ;
-
-\ Test programs
-GEN1
-DECIMAL
-: WOOP   110 HZ 0 DB 500 111 DO  I HZ  LOOP MUTE ;
-
-: SWEEP  ( f1 f2 )
-   DEPTH 2 < ABORT" Frequencies expected"
-   GEN1 0 DB SWAP ?DO  I HZ   LOOP MUTE ;
-
-: SIREN
-        110 HZ 0 DB
-        BEGIN
-            1100  111 DO   I HZ   2 +LOOP
-            110  1100 DO   I HZ  -2 +LOOP
-            ?TERMINAL
-        UNTIL
-        MUTE
-;
