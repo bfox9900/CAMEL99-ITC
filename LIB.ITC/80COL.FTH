@@ -1,13 +1,12 @@
 \ 80 column mode for F18A video card (tested on Classic99)
 \ Register DATA taken from Turbo Forth by Mark Wills
-( default colors changed to green on black screen)
 HEX
 CREATE 40COL
        08 C,  \ count
 \ ---------------------
        00 C,  \ TEXT MODE no external video
-       F0 C,  \ 16k mem, interrupts on
-       00 C,  \ Text screen address
+       F0 C,  \ 16k mem, interrupts on VR1
+       00 C,  \ Text screen address VR2
        00 C,  \ no color table
        01 C,  \ Pattern table at $800
        00 C,  \ Sprite Att. table
@@ -34,6 +33,15 @@ CREATE 80COL
        00 C,  \ VR15
 
 : VREGS    ( addr n -- ) 0 DO  COUNT  I VWTR   LOOP DROP ;
+\ default 40 column mode is called text
 DECIMAL
-: 40COLS   ( -- ) 40COL COUNT VREGS  40 C/L!  2 VMODE !  PAGE ;
-: 80COLS   ( -- ) 80COL COUNT VREGS  80 C/L! 80 VMODE !  PAGE ;
+: TEXT   ( -- ) 40COL COUNT VREGS  40 C/L!  2 VMODE !  PAGE ;
+
+: 80COLS   ( -- )
+     80COL COUNT VREGS
+     80 C/L!
+     80 L/SCR *  C/SCR !
+     80 VMODE !
+     PAGE ;
+
+80COLS
