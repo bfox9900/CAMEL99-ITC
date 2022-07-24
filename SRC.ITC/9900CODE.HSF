@@ -132,7 +132,8 @@ ORG-ADDR@ 2 cells + equ HSprims   \ beginning of the code to be copied to HS ram
 \ ==============================================================
 \ FAST CODE PRIMITIVES. Concept from TI-Forth and TURBO Forth by Mark Wills
 
-\ The following code is copied into TI-99 "PAD" memory chip by INIT to address _HSstart (8388)
+\ The following code is copied into TI-99 "PAD" memory chip by COLD
+\ (see HILEVEL.HSF) to address _HSstart (8388)
 \ TI-99 "PAD" is the ONLY zero wait-state 16 bit buss wide memory chip in the TI-99.
 \ But there is only 256 bytes! (shame)
 \ Having these critical routines in fast memory makes more difference than ANY other improvements
