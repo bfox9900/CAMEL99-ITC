@@ -201,7 +201,7 @@ CR .( FORTH PRIMITIVES BEGIN)
 \ we resolve the reference for the cross-compiler to use later on.
 
 \ ******************** EXECUTORS ARE SPECIAL CASES *************************
-\ *           EXECUTOR word's CFA MUST point to runnable CODE              *
+\ *           EXECUTOR word's CFA MUST start with runnable CODE            *
 \ **************************************************************************
 
 CODE EXIT    ( -- )         \ compiled when ';' is executed
