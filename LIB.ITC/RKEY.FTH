@@ -18,7 +18,7 @@ HEX
         R> 1- DUP>R        \ dec counter
     WHILE ( not expired)
         83C8 ON  83CA ON   \ clear key buffers
-        700 TICKS          \ sets the speed of the loop
+        220 TICKS          \ sets the speed of the loop
         KEY? DUP OUTKEY !
         OLDKEY @ =         \ compare to oldkey
     WHILE ( key is same)
