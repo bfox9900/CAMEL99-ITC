@@ -1,0 +1,92 @@
+  ED9940   v1.7 40/80 Column Editor
+   for TI-99 with SAMS 1M memory
+-----------------------------------------
+
+Function               Key
+---------             ---------
+ESCAPE                 Esc    Goto Command Line
+
++TAB                   TAB      / FCNT 7
+-TAB                   CTRL TAB / CTRL 7
+PGDN                   FCTN 6
+DEL-CHAR               PC Delete / FCTN 1
+Insert/Overwrite       PC Insert / FCTN 2
+Insert NEW-LINE        FCTN 8
+DEL-LINE               FCTN 3
+Cursor LEFT            PC Arrow / FCTN S
+Cursor RIGHT           PC Arrow / FCTN D
+Cursor DOWN            PC Arrow / FCTN X
+Cursor UP              PC Arrow / FCNT E
+Previous Page          PGUP     / FCTN 4
+ENTER                  ENTER  (Inserts new line)
+
+COPYALL                Ctrl A Copy the entire file to clipboard.
+BOTTOM-OF-FILE         Ctrl B GOTO end of file
+TOP-OF-FILE            Ctrl T Goto top of file
+COPY-LINE              Ctrl C ( non-destructive) to clipboard
+
+DESTRUCTIVE BACKSPACE  Ctrl Backspace / CTRL S
+PASTEALL               Ctrl P  Paste entire clipboard to END of current file
+(*Note: PASTEALL is an append operation for now. Inser-line is too slow)
+
+Start of line          Ctrl U / PC Home
+Goto end of line       Ctrl D / PC Right arrow
+
+Find NEXT              Ctrl F  Find the next occurrence of LOC <text> command
+
+PASTE                  Ctrl V
+CUT                    Ctrl Y
+Next File No.          Ctrl >
+Previous File No.      Ctrl <
+
+ED99  Command Line commands
+-----------------------------
+: BYE    exit ED99, return to MENU screen
+: GET    <dsk?.path>   load file, remain in interpreter
+: EDIT   [ <dsk?.path? ] Optional file path. Edit the current file OR Load path
+
+Notice the parameter comes first.
+: GO     ( line# GO )   GOTO the line # in the file
+: FILE   ( file# FILE ) select the file# segment
+
+: >>     Goto next file#
+: <<     Goto previous file#
+
+: SAVEAS <dsk*.path> save current file as new file path name
+: SAVE   Save the current file with current file path.
+
+: PURGE  Erase memory for the current file number.
+
+: PURGEALL  Erase the memory segments for r l files.
+
+: SAVEALL   Save all files that have been updated
+
+: DIR  <dsk*.path>  Shows disk directory in three columns
+
+: CAT  <dsk*.path>  Shows catalog of disk with size and type
+
+: PRINT <device>  Print the current file number to the device parameter
+                  The data is taken from memory NOT the saved file.
+                  Device can be a file path or valid TI-99 device.
+                  Examples:
+                     PRINT PIO
+                     PRINT RS232.BA=9600
+                     PRINT DSK2.MYCOPY
+
+
+: LOC  <text>     Search for first occurrence of <text> in the file on screen
+                  Use Ctrl F to find next occurrence inside the editor screen
+
+DSK1.ED99CONFIG
+----------------
+ED99 Looks for this file when it starts.
+1. Set the FONT with the LOAD-FONT command.
+2. Set the FG and BG colour variables for the editor
+3. Set the COMMAND Mode window colors.
+
+Valid colour values
+--------------------
+TRANS   BLACK    GREEN   LTGRN
+BLUE    LTBLUE   RED     CYAN
+RED     LTRED    YEL     LTYEL
+DKGRN   MAGENTA  GRAY    WHITE
