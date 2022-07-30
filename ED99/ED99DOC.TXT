@@ -79,7 +79,7 @@ Notice the parameter comes first.
 
 : CSPEED          Forth VALUE that controls the key repeat speed.
                   Usage:   200 TO CSPEED is the default.
-                            0 gives maximum speed. 2000 is about 500mS delay.     
+                            0 gives maximum speed. 2000 is about 500mS delay.
 
 DSK1.ED99CONFIG
 ----------------
@@ -92,5 +92,5 @@ Valid colour values
 --------------------
 TRANS   BLACK    GREEN   LTGRN
 BLUE    LTBLUE   RED     CYAN
-RED     LTRED    YEL     LTYEL
+MEDRED  LTRED    YEL     LTYEL
 DKGRN   MAGENTA  GRAY    WHITE
