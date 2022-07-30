@@ -77,6 +77,10 @@ Notice the parameter comes first.
 : LOC  <text>     Search for first occurrence of <text> in the file on screen
                   Use Ctrl F to find next occurrence inside the editor screen
 
+: CSPEED          Forth VALUE that controls the key repeat speed.
+                  Usage:   200 TO CSPEED is the default.
+                            0 gives maximum speed. 2000 is about 500mS delay.     
+
 DSK1.ED99CONFIG
 ----------------
 ED99 Looks for this file when it starts.
