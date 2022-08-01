@@ -1,4 +1,4 @@
-\ ED99 common code   Jul 30 2022  Brian Fox 
+\ ED99 common code   Jul 30 2022  Brian Fox
 
 NEEDS LOCK      FROM DSK1.MARKER
 NEEDS CASE      FROM DSK1.CASE
@@ -371,7 +371,10 @@ DECIMAL
 \ editor functions
 DECIMAL
 .( .)
-: WRITECHAR  ( c -- ) DUP !CHAR VPUT  RIGHT UPDATED ;
+: WRITECHAR  ( c -- )
+     DUP BL 127 CLIP
+\    DUP 127 BL ABORT" NON-text char"
+     DUP !CHAR VPUT  RIGHT UPDATED ;
 
 : DELCHAR    ( -- )
      RIGHTSIDE  1 /STRING  \ get string right of cursor, cut leading char
@@ -585,51 +588,54 @@ HEX
 0F CONSTANT <ESC>
 VARIABLE LOWLINE
 VARIABLE HILINE
-: MARKERS  ( -- n n ) HILINE @ 1+ LOWLINE @ 2DUP < IF SWAP THEN ;
-: UN-MARK     ( -- ) MARKERS ?DO   I ]RECORD #80 NORMAL  LOOP ;
+: SELECTION ( -- n n )
+       LOWLINE @ HILINE @ 1+
+       2DUP > IF   SWAP  THEN ;
 
+: UN-MARK  ( -- ) ?DO   I ]RECORD #80 NORMAL  LOOP ;
 
+VARIABLE OUTFLAG
 : MARK ( -- )
        REC# DUP LOWLINE !  HILINE !
+       OUTFLAG OFF
+       EDLINE REVERSE
        ARROW CURSOR
        BEGIN
-         LIST .LINE#
+         LIST .LINE# .STATUS
          PROMPT: ." Mark: Up/Down, ^C(copy),^X, Del, ESC"
          PUTCURS
-         RKEY DUP <ESC> <>
-       WHILE
-          CASE
-( Fnct X)   0A OF EDLINE ( prev-line len)
-                  REC# HILINE !  \ record position
+         RKEY
+         CASE
+( Fnct X)   0A OF
                   CURSDWN
-                  REVERSE                 ENDOF
-
-( Fnct E)   0B OF
-                  CURSUP
                   EDLINE REVERSE
                   REC# HILINE !           ENDOF
 
-    ( ^C)   83 OF UN-MARK
-                  MARKERS COPYLINES
-                  LIST .STATUS            BREAK;
+( Fnct E)   0B OF
+                  EDLINE REVERSE
+                  CURSUP
+                  REC# HILINE !           ENDOF
 
-    ( ^X)   98 OF UN-MARK
-                  MARKERS COPYLINES
-                  LOWLINE @ DUP
-                  MARKERS -  DEL-LINES
-                  TOPLINE !  EROW OFF
-                  LIST .STATUS            BREAK;
+    ( ^C)   83 OF SELECTION COPYLINES     ENDOF
 
-  ( delete) 03 OF UN-MARK
+    ( ^X)   98 OF SELECTION COPYLINES
                   LOWLINE @ DUP
-                  MARKERS -  DEL-LINES
+                  SELECTION -  DEL-LINES
                   TOPLINE !  EROW OFF
-                  LIST .STATUS            BREAK;
-          ENDCASE
-       REPEAT
-      .STATUS
-       HILINE @ LOWLINE @ <>
-       IF UN-MARK LIST THEN
+                                          ENDOF
+
+  ( delete) 03 OF LOWLINE @ DUP
+                  SELECTION -  DEL-LINES
+                  TOPLINE !  EROW OFF
+                                          ENDOF
+
+         <ESC> OF  OUTFLAG ON             ENDOF
+         ENDCASE
+
+      OUTFLAG @ UNTIL
+      SELECTION UN-MARK
+      EDLINE NORMAL
+      LIST .STATUS
 ;
 
 DEFER LOCATE \ stub word. Will be assigned a function later
