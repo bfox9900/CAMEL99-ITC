@@ -4,16 +4,17 @@ NEEDS DUMP  FROM DSK1.TOOLS
 NEEDS COLOR FROM DSK1.GRAFIX
 NEEDS RND   FROM DSK1.RANDOM
 NEEDS HZ    FROM DSK1.SOUND
-NEEDS .R    FROM DSK1.UDOTR 
+NEEDS .R    FROM DSK1.UDOTR
+NEEDS DATA  FROM DSK1.DATABYTE
 
 VARIABLE SPEED
- 
+
 \ ==================================
 \ sound words
 DECIMAL
 : SNDINIT     GEN4 3 NOISE MUTE
               GEN3 1500 HZ MUTE ;
- 
+
 : BUZZ        GEN3 1250 SPEED @ - HZ   GEN4 14 4 RND + DB ;
 : ANGRY       GEN3 1350 200 RND + HZ   GEN4  6 2 RND + DB ;
 
@@ -27,9 +28,9 @@ DECIMAL
 \ ==================================
 \ character patterns
 HEX
- 00FE FEFE FEFE FEFE PATTERN: REDBRICK
- 3C7E DBFF DBE7 7E3C PATTERN: HAPPYFACE
- 3C7E DBFF E7DB 7E3C PATTERN: SADFACE
+CREATE REDBRICK  00FE , FEFE , FEFE , FEFE ,
+CREATE HAPPYFACE 3C7E , DBFF , DBE7 , 7E3C ,
+CREATE SADFACE   3C7E , DBFF , E7DB , 7E3C ,
 
 \ 8 fly patterns for 8 compass points
 CREATE NFLY  2418 , 3C7E , FFDB , 1800 ,
@@ -44,8 +45,8 @@ CREATE SEFLY 0C6C , 7C3C , FCFF , 0404 ,
 DECIMAL
 CREATE DIRS  \ 2d array of fly patterns in 8 compass directions
     0000 ,   0000 ,  0000  ,  0000 ,
-    NWFLY ,  NFLY ,  NEFLY ,  WFLY ,  
-    0000  ,  EFLY ,  SWFLY ,  SFLY ,  
+    NWFLY ,  NFLY ,  NEFLY ,  WFLY ,
+    0000  ,  EFLY ,  SWFLY ,  SFLY ,
     SEFLY ,  0000 ,  0000  ,  0000 ,
 
 DECIMAL
@@ -69,7 +70,7 @@ DECIMAL
              0  23 BRICK 32 HCHAR
              0   1 BRICK 23 VCHAR
             31   1 BRICK 23 VCHAR ;
- 
+
 : .WALLS
             RNDY  RNDX BRICK 10 VCHAR
             RNDY  RNDX BRICK 18 HCHAR
@@ -84,10 +85,10 @@ DECIMAL
 \ double variable hold Y and X
 CREATE VECTOR 0 , 0 ,
 CREATE MY-XY  10 , 10 ,    \ independant cursor for alpha guy
- 
+
 : RNDV     ( -- -1 0 1 )  3 RND 1- ;
 : NON-0    ( -- n)  BEGIN  RNDV ?DUP UNTIL ;
- 
+
 : NEW-VECTORS  ( -- X Y)      \ we need to prevent a (0,0) vector condition
                RNDV DUP 0=    \ If 1st # is 0
                IF    NON-0    \ wait for a non-zero 2nd #
@@ -123,7 +124,7 @@ CREATE MY-XY  10 , 10 ,    \ independant cursor for alpha guy
 
 : READ-CHAR    ( Y X -- c) >VPOS VC@ ;  \ read char without moving cursor
 : NEXT-POS     ( -- Y X ) GETXY VECTOR@ VECT+  ;
- 
+
 : MOVE-FLY    ( -- )  ERASE-FLY  NEXT-POS MY-XY 2!  SHOW-FLY ;
 
 DECIMAL
@@ -139,7 +140,7 @@ VARIABLE TRYS
 : LOOK-AHEAD   ( -- c) NEXT-POS READ-CHAR ;
 
 : CLEAR-AHEAD? ( -- ?) LOOK-AHEAD  BL = ;
- 
+
 : ALPHA-THINK  ( -- )
             SAD                        \ change face & color while thinking
             TRYS OFF                   \ reset the trys counter
@@ -191,6 +192,3 @@ DECIMAL
         AGAIN ;
 CR
 CR .( -- Type RUN to start the program)
- 
- 
- 
