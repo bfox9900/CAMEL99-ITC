@@ -179,15 +179,6 @@ l: _HSend    \ this label tells the compiler where the high speed code ends
 \   **********************************************************
 CR .( FORTH PRIMITIVES BEGIN)
 
-\ The following words have been called "DOERS" by many in the past. I don't like
-\ the name. I have chosen to call them "EXECUTORS". They are the EXECUTION CODE
-\ that runs for the various types of words in a Forth system.
-
-\ The cross-compiler needs the addresses of these words but they are EMPTY
-\ place-holders in the cross-compiler. So after each EXECUTOR is defined,
-\ we resolve the reference for the cross-compiler to use later on.
-
-
 CODE EXIT    ( -- )         \ compiled when ';' is executed
       _exit >HSRAM CFA!
 ENDCODE
@@ -198,9 +189,17 @@ CODE LIT     ( -- w )         \ Execute a LITERAL number in the Forth program
              ENDCODE
 T' LIT RESOLVES 'LIT
 
+\ *************************************************************************
+\ The following words have been called "DOERS" by many in the past. I don't like
+\ the name. I have chosen to call them "EXECUTORS". They are the EXECUTION CODE
+\ that runs for the various types of words in a Forth system.
+
+\ The cross-compiler needs the addresses of these words but they are EMPTY
+\ place-holders in the cross-compiler. So after each EXECUTOR is defined,
+\ we resolve the reference for the cross-compiler to use later on.
 
 \ ******************** EXECUTORS ARE SPECIAL CASES *************************
-\ *           EXECUTOR word's CFA MUST point to runnable CODE              *
+\ *           EXECUTOR word's CFA MUST contain runnable CODE               *
 \ **************************************************************************
 
 TCREATE: DOCOL ( a -- )     \ Executor that executes a "colon" definition.
