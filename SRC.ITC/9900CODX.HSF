@@ -157,7 +157,7 @@ l: _dup      TOS PUSH,
              @@9 JMP,
 
 l: _plus    *SP+ TOS ADD,     \ ADD 2nd item to TOS and incr stack pointer.
-                           @@9 JMP,
+             @@9 JMP,
 l: _HSend    \ this label tells the compiler where the high speed code ends
 
 \ ==============================================================
