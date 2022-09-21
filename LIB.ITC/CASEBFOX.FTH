@@ -3,7 +3,7 @@
 
 \ INCLUDE DSK1.TOOLS
 
-: CASE:  ( -- )
+: :CASE  ( -- )
           POSTPONE OVER   POSTPONE =
           POSTPONE IF POSTPONE DROP   ; IMMEDIATE
 
@@ -14,4 +14,4 @@
 \        1 :CASE ." ONE"   BREAK;
 \        2 :CASE ." TWO"   BREAK;
 \        3 :CASE ." THREE" BREAK;
-\               ." ???"   DROP ;
+\               ." ???"   DROP ; ( default condition)
