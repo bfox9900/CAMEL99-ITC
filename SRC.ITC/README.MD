@@ -7,62 +7,84 @@ folder is rather messy but it works.
 ### Disk System Organization
 The newest version of the cross-compiler is XFC99X.exe.
 It is in the xfc99x.zip file.
+
 The cross-compiler runs on MS DOS. Hey it's retro computing. I used DOSBOX.
 In DOS Box create the CC9900 folder tree as it exists in GitHub.
 (OLD and WIP folders are not needed)
 
 All paths in the source files are explicitly spelled out in the form:
+
+`CC9900\SRC.ITC\HILEVEL.HSF`
+	  
 (.HSF files are for Harvard Softworks Forth)
 
-          CC9900\SRC.ITC\HILEVEL.HSF
 
-Therefore unzip XFC99X.ZIP in a folder below CC9900.
-Example:
-c:\forth             has XFC99X.exe
-c:\forth\cc9900      contains the source files
+#### Assumed file paths:
+```
+    c:\forth\                  has XFC99X.exe compiler    
+    c:\forth\cc9900\           Project folder
+    c:\forth\cc9900\src.itc\   all Camel99 source files for ITC
+```    
+
+Therefore unzip XFC99X.ZIP in the \forth\ directory
 
 ## Standard Kernel Build V2.69
 Loads and runs with normal Editor assembler cartridge. Entry=HEX A000
 
 ### To re-build Standard Kernel
 set the compiler switches as shown below in FORTHITC.MAK
-TRUE  VALUE ITC          \ used to prevent directly compiling HILEVEL.HSF
-FALSE VALUE SLOWER       \ TRUE saves 28 bytes
-FALSE VALUE HASHING      \ Not working yet
 
-TRUE \ true= standard kernel ;  false=non-standard kernel
-[IF]
-    A000 VALUE KERNORG
-    2000 VALUE HEAPORG
-[ELSE]
-		6000 VALUE KERNORG  \ the specific alternate load address to use
-		2000 VALUE HEAPORG  \ initial HEAP address when kernel boots
-[THEN]
+ ```
+ TRUE  VALUE ITC          \ used to prevent directly compiling HILEVEL.HSF
+ FALSE VALUE SLOWER       \ TRUE saves 28 bytes
+ FALSE VALUE HASHING      \ Not working yet
+ TRUE \ true= standard kernel ;  false=non-standard kernel
+ [IF]
+     A000 VALUE KERNORG
+     2000 VALUE HEAPORG
+ [ELSE]
+      6000 VALUE KERNORG  \ the specific alternate load address to use
+      2000 VALUE HEAPORG  \ initial HEAP address when kernel boots
+ [THEN]
+```
 
-At the DOS prompt type:    XFC99X  fload cc9900\src.itc\forthitc.mak
+At the DOS prompt type:    
+```
+XFC99X  fload cc9900\src.itc\forthitc.mak
+```
+Enjoy the prompts scrolling by. 
+This will create a PROGRAM file called CAMEL99
 
 ### SuperCart Kernel Build
-Loads an runs with Editor Assembler Super cartridge with 8K RAM installed.
-Entry=HEX 6000
-*This kernel does not work with DSK1.SAVESYS library file.
+SuperCart Kernel is a binary image that loads and runs with Editor 
+Assembler Super Cartridge that has 8K RAM installed. This is puts
+Camel99 in the cartridge memory space and gives you access to the
+"entire" 32K of RAM. :)
 
-ONLY one flag needs to change in FORTHITC.MAK as shown below:
+*The SUPERCART kernel is not compatible with DSK1.SAVESYS library file. (YET)
 
+ONLY one flag needs to change in FORTHITC.MAK to build Camel99 for SuperCart.
+```
 TRUE  VALUE ITC          \ used to prevent directly compiling HILEVEL.HSF
 FALSE VALUE SLOWER       \ TRUE saves 28 bytes
 FALSE VALUE HASHING      \ Not working yet
 
-FALSE  \ **false=non-standard kernel**
+FALSE  \ **set to false for SuperCart kernel**
 [IF]
     A000 VALUE KERNORG
     2000 VALUE HEAPORG
 [ELSE]
-		6000 VALUE KERNORG  \ the specific alternate load address to use
-		2000 VALUE HEAPORG  \ initial HEAP address when kernel boots
+     6000 VALUE KERNORG  \ the specific alternate load address to use
+     2000 VALUE HEAPORG  \ initial HEAP address when kernel boots
 [THEN]
+```
 
+At the DOS prompt type:    
+```
+XFC99X fload cc9900\src.itc\forthitc.mak
+```
+This will create a PROGRAM file call CAML99SC 
 
-At the DOS prompt type:    XFC99X fload cc9900\src.itc\forthitc.mak
 
 *****************************************************
 ## Source LOG
@@ -80,6 +102,7 @@ return to how Brad Rodriguez partitioned his versions of Camel Forth.
 ### Camel V2.68 Notes
 July 20, 2021
 Found a bug in M+ after working on porting a PI digit calculator.
+Thanks to Ed at DxForth who wrote the PI code and spotted my bug.
 M+ is also used in >NUMBER and so was a ticking bomb all this time.
 
 #### 9900CODE.HSF  
@@ -88,7 +111,7 @@ M+ is now a secondary definition in CAMEL268.HSF
 
 #### CAMEL268.HSF
 Changed compiler switch to SLOWER. TRUE to SLOWER compiles more Forth code and
-saves 30 bytes in the kernel. FALSE to SLOWER compiles more code primitives in
+saves ~28 bytes in the kernel. FALSE to SLOWER compiles more code primitives in
 the file.
 
 ###SOURCE Camel99 V2.67 Source Code Notes
@@ -98,15 +121,15 @@ Improvements to the Video driver to improve overall speed.
 Improvements to the compiling speed on the TI-99.
 Improvements to many of the library files and some new libraries:
 
-WORDLIST support.      DSK1.WORDLISTS
-Smaller Assembler      DSK1.ASM9900
-Assembler labels       DSK1.ASMLABELS
-Simpler TI BASIC files DSK1.TIFILES  
-Smaller ANS file lib   DSK1.ANSFILES
-Multiple Video pages   DSK1.SCREENS
-Better inlining        DSK1.INLINE   \ inlines CODE, variables, constants
-                                     \ and USER vars.
+- WORDLIST support.      DSK1.WORDLISTS
+- Smaller Assembler      DSK1.ASM9900
+- Assembler labels       DSK1.ASMLABELS
+- Simpler file access    DSK1.TIFILES  
+- Smaller ANS file lib   DSK1.ANSFILES
+- Multiple Video pages   DSK1.SCREENS
+- Better inlining        DSK1.INLINE   \ inline CODE, variables, constants, USER vars.
 
-Better SAMS memory    DSK1.SAMS      \ machine code. fastest access
-                      DSK1.SAMSFTH   \ written in Forth for understanding
-                      DSK1.SBLOCKS   \ SAMS virtual memory. Uses BLOCK
+#### Better SAMS Memory Managers  
+- DSK1.SAMS      \ machine code. fastest access                      
+- DSK1.SAMSFTH   \ written in Forth to show how it works
+- DSK1.SBLOCKS   \ SAMS virtual memory with two 4K buffers in low RAM.

@@ -84,15 +84,57 @@ on the top of the data stack 20 lines into a sub-routine then you are a genius
 but us mere mortals don't need to do that. We just factor the code into more
 understandable pieces.
 
+### Create higher level language for yourself
+Forth is a low level language but many newbie programmers miss the fact that
+it was designed to pull itself up to higher levels very quickly.  This requires
+thinking differently and using your imagination to make what you need at the language
+level not just at the "running code" level. This pays off later when you come back to the code.
+
+In the game I made some simple changes to make accessing data higher level.
+The constants [MY   and  [his are used instead of 1 and 2 to access
+parts of the matrix that are "mine"  or "his" (the enemy)
+```
+  1 CONSTANT [MY   ( human side of matrix)
+  2 CONSTANT [HIS  ( enemy side of matrix)
+```
+On the other side we named the data structures with a ']' character to
+remind us that these words are used together. In effect we have made a data
+structure syntax out of primitive pieces. 
+(We could add compile-time testing to enforce matching '[ ]' but I chose not to)
+
+```
+  : X]       ( n -- addr) 1 FLEETS ; 
+  : Y]       ( n -- addr) 2 FLEETS ; 
+
+  \ We can simplify the code and save space
+  : X]@    X] @ ;
+  : Y]@    Y] @ ;
+  : XY]@  ( n -- x y)  DUP Y]@ SWAP X]@ ;
+
+  : SHIPS]   ( n -- addr) 3 FLEETS ; \ cell
+  : SHIPS]@  ( ndx -- n) SHIPS] @  ;
+
+  : LEGIONS]  ( n -- addr) 5 FLEETS ; \ cell
+  : LEGIONS]@ ( ndx -- x) LEGIONS] @ ;
+```
+Now accessing data looks like this:
+```
+  [MY XY]@                      ( get my position coordinates)
+ 
+  [MY SHIPS]@                   ( fetch the number of ships I have )
+  [HIS SHIPS]@  [MY SHIPS]@ >   ( does he have more ships that me?)
+  1 [MY SHIPS] +!               ( increment my ship count)
+  -2 [HIS SHIPS] +!             ( reduce enemy ships by 2) 
+```
+
 ### Less Comments Required
-On of the side-effects of one line definitions, if you choose your names wisely,
-is that you can understand them almost instantly. This means expansive text 
-comments are not as necessary and we all know how fast comments go stale. 
+On of the side-effects of one line definitions and syntax enhancments is that 
+if you choose your names wisely, you can understand the code easier when you come back to it. 
+This means expansive text comments are not as necessary and we all know how fast comments go stale. 
 
 BUT... **Do not omit the stack comments.**
 
-Stack comments are the key to remembering what goes in and what comes out of each
-definition.
+Stack comments are the key to remembering what goes in and what comes out of each definition.
 
 ### To be continued...
 As I think find more examples of good Forth coding style I will put them here.
