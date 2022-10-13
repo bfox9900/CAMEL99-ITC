@@ -1,58 +1,36 @@
-\ camel99 ITC version locals implementation per Forth 2012
+\ locals.fth for Camel99 Forth                      Oct 2022 Brian Fox
+\ non-standard but TINY for TI-99. (74 bytes)
+\ *Care is required with DO LOOPS*
+\ create a stack frame on the return stack
+\ create named local variables that index the stack frame
+\ Each local returns the address of a cell in the stack frame
 
-\ locals will be 2 CELL structures work like variables
-\ meaning they include runtime code to place their address on the stack
+HERE
+HEX
+CODE LOCALS ( n --) \ build a stack frame n cells deep
+\ RP R0 MOV, TOS 1 SLA, TOS RP SUB, R0 RPUSH,     TOS POP,
+  C007 ,      0A14 ,     61C4 ,     0647 , C5C0 , C136 ,  NEXT,  ENDCODE
+
+\ collapse stack frame: *RP RP MOV,
+CODE /LOCALS  ( -- )   C1D7 , NEXT,
+
+: LOCAL:  ( n -- ) \ name some local variables
+  CREATE  2* ,
+  ;CODE
+\ TOS PUSH,     RP TOS MOV, *W TOS ADD,
+    0646 , C584 , C107 ,     A118 ,
+    NEXT,
+  ENDCODE
 
 DECIMAL
-VARIABLE LCP                       \ locals data stack pointer
-VARIABLE LASTL                     \ last local in wordlist
+HERE SWAP - SPACE . .( bytes )
 
-CREATE LC0    10 CELLS ALLOT       \ locals data stack space for 8 locals+1 cell
-
-CREATE LOCALS 256 ALLOT            \ local wordlist space
-
-\ heap # compilers
-: HEAP ( -- addr) H @ ; 
-: H,   ( n -- )  2 MALLOC !  ;
-: HC,  ( c -- )  1 MALLOC C! ;
-
-: (LFIND)
-         LASTL @ (FIND)
-
-\ uses the CAMEL Forth header/linked list so local names can be searched by (FIND)
-: (LOCAL)  ( adr len -- )           \ create a named local variable in the heap
-            LASTL @ ,               \ record the LASTL NFA as the LINK in this new word
-            0 HC,                   \ create the immediate field  1 BYTE
-            HEAP LASTL !            \ update the LATEST variable to this new definition's NFA
-            CHAR+ S,                \ compile the string label
-            
-            0 LPUSH
-
-: LOCAL ( "NAME" -- )  BL WORD COUNT (LOCAL) ;
-
-: {HELPER ( -- FINAL-OFFSET )
-    >IN @
-    BL WORD COUNT
-    2DUP S" --" COMPARE 0= 
-    IF
-	2DROP [CHAR] } PARSE 2DROP TRUE
-    ELSE
-	S" }" COMPARE 0=
-    THEN
-    IF
-	DROP >IN @
-    ELSE
-	RECURSE
-	SWAP >IN ! LOCAL
-    THEN ;
-
-: { ( -- )
-    {HELPER >IN ! 0 0 (LOCAL) ; IMMEDIATE
-
-\ : TEST-SWAP { A B -- B A } ." XXX"
-\     B A ;
-
-\ 1 2 test-swap . . .s cr
-: INIT-LOCALS 
-             LC0 LCP !
-             LOCALS
+\ example:
+\ 1 LOCAL: X1   2 LOCAL: X2
+\ DECIMAL
+\ : ADD ( n n -- n )
+\   2 LOCALS
+\    X1 ! X2 !
+\    X1 @ X2 @ +
+\  /LOCALS
+\ ;
