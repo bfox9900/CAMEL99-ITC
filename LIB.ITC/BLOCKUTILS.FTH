@@ -1,110 +1,74 @@
-\ simple block editor words
+\ Block utilities
 
-: <LINE>  ( l# s# - addr #c )
-        BLOCK  SWAP  C/L @ *  + 40  C/L @ ;
+NEEDS DUMP      FROM DSK1.TOOLS
+NEEDS BLOCK     FROM DSK1.BLOCKS
+NEEDS -TRAILING FROM DSK1.TRAILING
+NEEDS 80COLS     FROM DSK1.80COL
 
-: .LINE   ( l# s# - )
-        <LINE> -TRAILING  TYPE  #LINE 1+! ;
+DECIMAL
+: COLD  TEXT COLD ;
+
+63 CONSTANT L/PAGE
+
+VARIABLE #LINE
+VARIABLE #PAGE
+
+: LINE  ( l# -- addr n)  64 *  SCR @ BLOCK + 64   ;
+: .LINE   ( l# -- ) LINE -TRAILING 0 MAX TYPE  ;
+
+: CR   CR  #LINE 1+! ; \ count lines
 
 : LIST  ( s# - )
         CR
-        DUP SCR ! ." SCR#"  U.
-        10 0
-         DO
-             CR  I 3 .R SPACE   I SCR @ .LINE
-         LOOP
-         CR ;
+        DUP SCR ! ." SCR#"  3 .R
+        16 0 DO  CR  I 3 .R  [CHAR] | EMIT I .LINE  LOOP
+        CR ;
 
+: BLANK ( n -- ) 0 FILL ;
+: CELL-  2- ;
+: CLEAR ( n -- ) BUFFER B/BUF BLANK  UPDATE ;
+: COPY  ( n -- ) FLUSH  SWAP  BLOCK CELL- !  UPDATE ;
+: THRU  ( 1st-block last-block -- )  1+ SWAP DO  I DUP . LOAD  LOOP ;
 
-: PP       0 TEXT PAD 1+ SWAP   scr @ <LINE> CMOVE UPDATE ;
+: CR'S  ( n -- )  0 ?DO   CR  LOOP ;
 
-: PL
-        0D EMIT OUT 0!
-        C/L @ SPACES
-        0D EMIT
-        [char] ? EMIT
-        0D EMIT
-        DUP SCR @ <LINE> PAD 2dup C! 1+ SWAP CMOVE <IN$>
-        1+ SWAP scr @ <LINE> CMOVE UPDATE ;
+: FORM-FEED      12 EMIT  #PAGE 1+!   #LINE OFF ;
+: .PAGE#         #PAGE @ IF ." Page:" #PAGE @ 3 .R THEN ;
 
-: .INDEX   0 SWAP .LINE ;                              \      scr -
-
-: CLEAR ( n -- )
-        BUFFER B/BUF BLANK  UPDATE ;                \      scr -
-
-: COPY  ( n -- )
-        SAVE-BUFFERS    SWAP  BLOCK  2-  !  UPDATE ;   \  from to -
-
-: THRU  ( 1st-block last-block -- )
-        1+ SWAP
-        DO
-            I U. I LOAD
-        LOOP ;
-
-: CR'S  ( n -- )
-        0 DO
-             CR #LINE 1+!
-          LOOP ;
-
-: FORM-FEED
-        0C EMIT  #PAGE 1+!   #LINE 0!  ;
-
-: .PAGE#
-        #PAGE @ IF ." page:" #PAGE @ 3 .R THEN ;
-
-: .HEADER
-        CR  ACTIVE $.
-        TAB  TAB  TIME@ TIME->$ $. SPACE SPACE DATE@ DATE->$ $. ;
+: .HEADER    CR  ACTIVE COUNT TYPE ;
 
 : .FOOTER
-        CR  CR
-        L/PAGE #LINE @ -  CR'S
-        0F CTAB ." HS/FORTH V5.0" 10 SPACES ." Intelect Systems"
-        CR 40 CTAB .PAGE#
-        FORM-FEED ;
+   CR  CR
+   L/PAGE #LINE @ -  CR'S
+   4 SPACES ." Camel99 Forth"  40 SPACES ." Brian Fox 2022"
+   CR 35 SPACES .PAGE# ;
 
-: ?FORMFEED  #LINE @  L/PAGE > IF .FOOTER .HEADER  THEN ;
+: ?FORMFEED  #LINE @  L/PAGE > IF .FOOTER FORM-FEED .HEADER  THEN ;
+
+: .INDEX   0 .LINE ;
 
 : INDEX    ( from,to -- )
            DECIMAL
            HIGHBLK @ 1- MIN
            OVER L/PAGE / 1+ #PAGE !      \ calculate page# for 1st blk
-           #LINE 0!
+           #LINE OFF
            .HEADER CR CR
            1+ SWAP
-           DO  CR  I 4 .R  4 SPACES  I .INDEX  ?FORMFEED  1 /LOOP
+           DO  CR  I 4 .R  4 SPACES  I SCR !  .INDEX  ?FORMFEED  LOOP
           .FOOTER ;
 
 : 3'S    3 / 3 * ;
 
 : TRIAD  ( scr# -- )
         DECIMAL
-        #PAGE 0! .HEADER
-        3'S DUP 3 + SWAP
-        DO CR I LIST LOOP
+        #PAGE OFF
+        .HEADER
+        3'S DUP 3 + SWAP   DO CR I LIST LOOP
         .FOOTER ;
 
-: TRIADS  ( from,to -- )
-           3'S  1+ SWAP  3'S   DO  I TRIAD  3 +LOOP ;
+: TRIADS  ( from,to -- )  3'S  1+ SWAP  3'S DO  I TRIAD  3 +LOOP ;
 
 : LISTING  0 HIGHBLK @ 2 - TRIADS ;
-
-[then]
-
-
-false [if]
-
-
-: \     ( -- )
-        source-id @ ABS 1-
-        IF      [COMPILE] \
-        ELSE    >IN @ 40 + -40 AND  >IN !
-        THEN ;
-        IMMEDIATE
-
-: \S    ( -- )
-        B/BUF >IN ! ; IMMEDIATE
-
 
 \ ---- screen to file conversion
 \ $" sourcef"   OPEN-BLOCKS                               To copy screens
@@ -112,46 +76,13 @@ false [if]
 \                    OUTPUT @ scr#  BLOCKS->FILE          Do for each screen
 \              CLOSE-OUTPUT         CLOSE-SCREEN
 
-VARIABLE CTRL-Z  1A CTRL-Z !
+: WRITEBLK ( n - )
+        CR
+        DUP SCR ! ." \ SCR#"  3 .R
+        16 0 DO  CR  I .LINE  LOOP
+        CR ;
 
-: BLOCKS->FILE  ( n scr# -- )
-        FIRST cell+ SWAP  RSCRNF                     \  >handle  scr# --
-        LISTS @  SWAP                             \   >handle seg buf
-        10 0
-        DO
-          2dup  40 -TRAILING ?DUP
-          IF
-             2dup + DUP>R DUP@ >R 0A0D SWAP !  cell+ DUP>R
-             6 PICK WRITEH R> - ABORT" Write Failed"    DR> !
-          ELSE  2drop
-          THEN  40 +
-        LOOP
-        2drop LISTS @ CTRL-Z 1 4 PICK WRITEH DROP
-        0 0 3 PICK LSEEK++ -1 -1 D+ ROT LSEEK 2drop ;
-
-SF-IO  F-IO
-\ ---- prompted screen to file conversion
-: BLOCKS-TO-FILE ( -- )
-        CR ." Source file for screens" IN$  OPEN-BLOCKS
-        CR ." Append to old destination file? " ?YN
-        CR ." Destination file" IN$ SWAP
-        IF
-            OPEN-OUTPUT -1 -1 OUTPUT @ LSEEK+  2drop
-        ELSE
-            MAKE-OUTPUT
-        THEN
-        BEGIN
-          CR ." First screen to copy (0 to end)" #IN ?DUP
-        WHILE
-          ."  Last screen" #IN  2dup <=
-          IF
-              1+ SWAP
-              DO
-                  OUTPUT @ I BLOCKS->FILE
-              LOOP
-          THEN
-        REPEAT
-        CLOSE-OUTPUT CLOSE-BLOCKS ;
-DECIMAL
-
-[then]
+: BLOCKS2FILE  ( from to -- )
+        ." \ " .HEADER
+        1+ SWAP
+        DO  I WRITEBLK LOOP ;
