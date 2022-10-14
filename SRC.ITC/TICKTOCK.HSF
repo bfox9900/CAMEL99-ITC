@@ -33,14 +33,26 @@ CODE TMR@   ( -- n)         \ read the TMS9901 timer
              NEXT,
              ENDCODE
 
-: TICKS  ( n -- )   \ n must be less than 4000. 4000 TICKS ~= 100 mS
-            TMR@ >R
-            BEGIN
+[CC] DECIMAL [TC]
+: TICK ( -- )
+            TMR@
+            BEGIN   \ inner loop ~ 10 mS
+              TMR@ OVER - ABS 423 <
+            WHILE
               PAUSE
-              TMR@ R@ - ABS  OVER >
-            UNTIL
-            R> 2DROP
+            REPEAT
+            DROP
 ;
+
+\ OLD VERSION
+\ : TICKS  ( n -- )   \ n must be less than 4000. 4000 TICKS ~= 100 mS
+\            TMR@ >R
+\            BEGIN
+\              PAUSE
+\              TMR@ R@ - ABS  OVER >
+\            UNTIL
+\            R> 2DROP
+\ ;
 
 
 [CC] HEX

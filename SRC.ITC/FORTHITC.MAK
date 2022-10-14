@@ -5,7 +5,7 @@ CROSS-COMPILING
 \ compiler switches control HOW the system will be built
 \ **********************************************************************
 TRUE  VALUE ITC          \ used to prevent directly compiling HILEVEL.HSF
-0 VALUE SLOWER           \ TRUE saves 38 bytes, FALSE 14% FASTER compile times
+FALSE VALUE SLOWER       \ TRUE saves 28 bytes, FALSE ->14% FASTER compile times
 FALSE VALUE HASHING      \ Not working yet
 
 \ ======================================================================
@@ -24,7 +24,7 @@ EMEM TIBSIZE -  EQU 'TIB    \ Terminal input buffer just below
 \ ======================================================================
 \ Target memory location
 
-FALSE \ true= standard kernel ;  false=non-standard kernel
+0 \ true= standard kernel ;  false=non-standard kernel
 [IF]
     A000 VALUE CODESEG
     2000 VALUE HEAPSEG
@@ -42,10 +42,10 @@ FALSE \ true= standard kernel ;  false=non-standard kernel
 \ *******************************************************************
 \ Make Forth kernel
  [CC] INCLUDE CC9900\SRC.ITC\9900CODE.HSF   \ ASM primitives for TMS9900
- [CC] INCLUDE CC9900\SRC.ITC\BOOTSTRX.HSF   \ cross-compiler loops & branch
+ [CC] INCLUDE CC9900\SRC.ITC\BOOTSTRx.HSF   \ cross-compiler loops & branch
  [CC] include cc9900\SRC.ITC\ticktock.hsf   \ 9901 hardware timer
  [CC] INCLUDE CC9900\SRC.ITC\TI99IOX.HSF    \ VDP primitives & KEY
- [CC] INCLUDE CC9900\SRC.ITC\HILEVEL.HSF    \ CORE Forth words
+ [CC] INCLUDE CC9900\SRC.ITC\HILEVELX.HSF   \ CORE Forth words
 
 \ ======================================================================
 \  P A T C H   T H E   T A R G E T  S Y S T E M   V A R I A B L E S
@@ -75,14 +75,13 @@ CROSS-COMPILING
 
  T' COLD >BODY BOOT-ADDRESS T!
 
-CROSS-COMPILING
-  CODESEG A000 <>
- [IF]
-      FILENAME: CAML99SC
- [ELSE]
-      FILENAME: CAMEL99
- [THEN]
-      END.       ( report compile time and stats)
+CROSS-COMPILING HEX
+
+  CODESEG A000 = [IF]  FILENAME: CAMEL99  [THEN]
+  CODESEG 6000 = [IF]  FILENAME: CAML99SC [THEN]
+  CODESEG 2000 = [IF]  FILENAME: CAML99LR [THEN]
+
+    END.       ( report compile time and stats)
 
  \ ======================================================================
  \ S A V E   B I N A R Y  I M A G E   F I L E

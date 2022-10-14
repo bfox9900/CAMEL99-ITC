@@ -9,15 +9,15 @@
 [CC] HEX
 TARGET-COMPILING
 \ ----------------------------------------------------------------------
-: <BACK    ( addr --) HERE - , ;  \ resolve branch backwards
-: AHEAD    ( -- addr) HERE 0 , ;  \ compile empty jump forward
+\ : <BACK    ( addr --) HERE - , ;  \ resolve branch backwards
+: AHEAD    ( -- addr)   HERE 0 , ;  \ compile empty jump forward
 
 \ THEN resolves forward branches
 \ computes offset: (HERE -  addr)  & stores result in addr
 : THEN  ( addr -- )  HERE OVER - SWAP ! ;  XIMMEDIATE
 
 \ CAMEL Forth LEAVE stack pointer is called LP. It is initialized by QUIT
-0 [if]
+SLOWER [if]
 : >L        ( x -- ) ( L: -- x ) 2 LP +!   LP @ ! ;     \ LP stack grows up
 : L>        ( -- x ) ( L: x -- ) LP @ @  -2 LP +! ;
 
@@ -56,10 +56,10 @@ TARGET-COMPILING
 \ Posted by dxforth comp.lang.forth
 \ Modded for XFC99 cross-compiler that has no POSTPONE
 : BEGIN   HERE ;                                XIMMEDIATE
-: IF      COMPILE ?BRANCH HERE 0 , ;            XIMMEDIATE
-: ELSE    COMPILE BRANCH  AHEAD SWAP T[COMPILE] THEN ; XIMMEDIATE
-: AGAIN   COMPILE BRANCH  <BACK ;               XIMMEDIATE
-: UNTIL   COMPILE ?BRANCH <BACK ;               XIMMEDIATE
+: IF      COMPILE ?BRANCH AHEAD ;               XIMMEDIATE
+: ELSE    COMPILE BRANCH AHEAD SWAP T[COMPILE] THEN ; XIMMEDIATE
+: AGAIN   COMPILE BRANCH HERE - ,  ;            XIMMEDIATE
+: UNTIL   COMPILE ?BRANCH HERE - ,  ;           XIMMEDIATE
 : WHILE   T[COMPILE] IF SWAP ;                  XIMMEDIATE
 : REPEAT  T[COMPILE] AGAIN T[COMPILE] THEN ;    XIMMEDIATE
 
@@ -71,5 +71,5 @@ TARGET-COMPILING
 : LEAVE     ( -- ) COMPILE UNLOOP  COMPILE BRANCH AHEAD >L ; XIMMEDIATE
 
 \ complete a DO loop
-: LOOP      ( -- )  COMPILE <LOOP>  <BACK   RAKE ; XIMMEDIATE
-: +LOOP     ( -- )  COMPILE <+LOOP> <BACK   RAKE ; XIMMEDIATE
+: LOOP      ( -- )  COMPILE <LOOP>  HERE - ,    RAKE ; XIMMEDIATE
+: +LOOP     ( -- )  COMPILE <+LOOP> HERE - ,    RAKE ; XIMMEDIATE
