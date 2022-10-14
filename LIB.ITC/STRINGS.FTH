@@ -73,7 +73,7 @@ HEX 3FFE SSW +  CONSTANT $STACK
 
 \ compare strings also use S=
 : COMPARE$ ( $1 $2 -- flag) DUP C@ 1+ S= ;
-\  CHAR Q " !@#$%^&*" VALIDATE$ 
+\  CHAR Q " !@#$%^&*" VALIDATE$
 : VALIDATE$ ( char $ -- ?) COUNT  ROT SCAN NIP 0> ;
 
 .( ..)
@@ -115,6 +115,6 @@ HEX 3FFE SSW +  CONSTANT $STACK
 COLLAPSE  \ initialize the string stack
 
 HERE SWAP - DECIMAL .  .( Bytes)
-\  20 DIM A$  A$ =" This is A$"
+\ 20 DIM A$  A$ =" This is A$"
 \ 20 DIM B$  B$ =" This is B$."
 \ 50 DIM C$  A$ B$ & C$ PUT

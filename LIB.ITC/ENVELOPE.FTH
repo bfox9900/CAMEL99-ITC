@@ -1,41 +1,24 @@
 \ SOUND Envelope control
 
+NEEDS DB FROM DSK1.SOUND
+
 DECIMAL
-: DELAYS   ( -- ) 0 ?DO LOOP ;  \ simple delay loop ~106uS/loop
+: DELAYS   ( -- ) 0 ?DO 4 TICKS LOOP ;  \ simple delay loop ~106uS/loop
 
 : ATTACK ( time -- )
-         ?DUP 0>  \ if it's zero attack time, just skip it
-         IF  0 15 DO   I ATTENUATE  DUP TICKS    -1 +LOOP DROP
-         THEN ;
+         ?DUP 0= IF 0 DB EXIT THEN
+         0 15 DO   I DB  DUP DELAYS    -1 +LOOP DROP  ;
 
-: ONTIME ( time -- ) ?DUP 0> IF   MS  THEN  ;
+: ONTIME ( time -- ) ?DUP 0> IF  DELAYS   THEN  ;
 
 : DECAY  ( time -- )
-         ?DUP 0>
-         IF    15 0 DO  I DB DUP DELAYS   LOOP DROP MUTE
-         ELSE  MUTE
-         THEN ;
+         ?DUP 0= IF MUTE  EXIT THEN
+         15 0 DO  I DB DUP DELAYS   LOOP DROP MUTE ;
 
-VARIABLE ATAK   VARIABLE ONTM   VARIABLE DCAY
+: ENVELOPE ( attack on decay -- )
+         >R >R  ATTACK  R> ONTIME R> DECAY ;
 
-
-: ENV-PLAY  ( -- )
-
-             ATAK @ ATTACK
-             ONTM @ ONTIME
-             DCAY @ DECAY ;
-
-: DUP3   ( a b c -- a b c a b c )  2 PICK 2 PICK 2 PICK ;
-
-: ENVELOPE ( att% on% dec% -- )
-           DUP3 + + 100 > ABORT" Envelope>100%"
-           NOTE >R    ( R-- note_duration)
-           R@ SWAP %  ATAK !
-           R@ SWAP %  ONTM !
-           R> SWAP %  DCAY ! ;
-
-
-: PING  ( HZ -- )  HZ  1200 DECAY ;
-: BLIP  ( HZ -- )  HZ  0 10 90 ENVELOPE ;
-
-
+DECIMAL
+: PING  (  -- )  1200 HZ  0 30 70 ENVELOPE  ;
+: BLIP  ( --  ) 2000 HZ  0 40 0  ENVELOPE ;
+: BONG          110 HZ   0 50 100 ENVELOPE ;

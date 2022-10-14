@@ -56,14 +56,14 @@ HEX
 \ : SND!  ( c -- )  ." >"  BASE @ >R  HEX DUP U. 8400 C! R> BASE ! ;
 
 \ TMS9919 is a memory mapped device on the TI-99 @ >8400
-\ : SND!    ( c -- ) 8400 C! ;
+\ : SND!    ( c -- ) PAUSE 8400 C! ;
 
-CODE SND! ( c -- )
-           TOS SWPB,
-           TOS 8400 @@ MOVB,
-           TOS POP,
-           NEXT,
-           ENDCODE
+\ CODE SND! ( c -- )
+\           TOS SWPB,
+\           TOS 8400 @@ MOVB,
+\           TOS POP,
+\           NEXT,
+\           ENDCODE
 
 \ Set the sound "GENerator that is active by assigning
 \ timer, attenuator and oscillator
@@ -76,7 +76,9 @@ CODE GEN! ( osc att tmr -- )
           TOS POP,
           NEXT,
           ENDCODE
-
+\ ===================================
+\ ISR downcounter
+\ ===================================
 CREATE MUTE-ISR     \ creates a label for this sub-routine
      R1 TIMERS LI,  \ R1=timer array address
      R2 8400   LI,  \ R2=sound port address
@@ -142,16 +144,16 @@ HEX
 : SND3  ( dur freq vol  -- ) VOX3 SWAP HZ PLAY ;
 
 \ 1 1 1 0 0 w r r
-\  >E      | | |
-\          | 0 0 : 0  6991 Hz
-\          | 0 1 : 1  3496 Hz
-\          | 1 0 : 2  1748 Hz
-\          | 1 1 : track freq of gen.3
-\          1 0 0 : 4 low freq white noise
-\          1 0 1 : 5 med freq white noise
-\          1 1 0 : 6 hi  freq white noise
-\          0 : Periodic noise                                
-\          1 : White noise    7 = tracking white noise
+\  >E       | | |
+\           | 0 0 : 0  6991 Hz
+\           | 0 1 : 1  3496 Hz
+\           | 1 0 : 2  1748 Hz
+\           | 1 1 : track freq of gen.3
+\           1 0 0 : 4 low freq white noise
+\           1 0 1 : 5 med freq white noise
+\           1 1 0 : 6 hi  freq white noise
+\           0 : Periodic noise
+\           1 : White noise    7 = tracking white noise
 
 : NOISETYPE ( n -- ) OSC4 OR SND! ;   \ faster create for noise byte
 
@@ -162,11 +164,11 @@ DECIMAL
 
 : BASS ( dur freq vol -- ) \ steal VOX3 & VOX4 to play low freq
          VOX3 SWAP >BASS HZ MUTE
-         VOX4 3 NOISETYPE  DB  MS  ;
+         VOX4 3 NOISETYPE  PLAY  ;
 
 : WHITE ( dur freq vol -- ) \ steal VOX3 & VOX4. Pitched white noise
          VOX3 SWAP 4* HZ MUTE
          VOX4 7 NOISETYPE  PLAY ;
 
-HERE SWAP - .  .( bytes)
+HERE SWAP - DECIMAL .  .( bytes)
 BG-ON CR .( Background interrupt installed)
