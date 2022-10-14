@@ -35,7 +35,6 @@ VARIABLE #PAGE
 : FORM-FEED      12 EMIT  #PAGE 1+!   #LINE OFF ;
 : .PAGE#         #PAGE @ IF ." Page:" #PAGE @ 3 .R THEN ;
 
-: .HEADER    CR  ACTIVE COUNT TYPE ;
 
 : .FOOTER
    CR  CR
@@ -69,20 +68,3 @@ VARIABLE #PAGE
 : TRIADS  ( from,to -- )  3'S  1+ SWAP  3'S DO  I TRIAD  3 +LOOP ;
 
 : LISTING  0 HIGHBLK @ 2 - TRIADS ;
-
-\ ---- screen to file conversion
-\ $" sourcef"   OPEN-BLOCKS                               To copy screens
-\ $" dest-file" MAKE-OUTPUT                                      into a file
-\                    OUTPUT @ scr#  BLOCKS->FILE          Do for each screen
-\              CLOSE-OUTPUT         CLOSE-SCREEN
-
-: WRITEBLK ( n - )
-        CR
-        DUP SCR ! ." \ SCR#"  3 .R
-        16 0 DO  CR  I .LINE  LOOP
-        CR ;
-
-: BLOCKS2FILE  ( from to -- )
-        ." \ " .HEADER
-        1+ SWAP
-        DO  I WRITEBLK LOOP ;
