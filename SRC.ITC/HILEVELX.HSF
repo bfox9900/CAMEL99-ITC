@@ -41,11 +41,7 @@
   ITC
 
 TARGET-COMPILING
-
    VARIABLE STATE
-
-   STATE [CC] TO XSTATE
-
 \ ======================================================================
 \ S Y S T E M   C O N S T A N T S
 
