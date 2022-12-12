@@ -13,18 +13,23 @@ HEX
 \ compute SAMS register based on DMEM address
 DMEM 0B RSHIFT 4000 + CONSTANT DREG
 
-HEX
-: PAGED  ( virtual-addr -- real-addr)
-      SEG @ 1000 UM/MOD  ( -- offset bank#)
-      DUP BANK# @ -     \ different page?
+\ map takes a 32bit address, which can also be viewed as (offset,page#)
+: MAP ( d -- )  \ -or-  ( offset page# -- )
+      DUP BANK# @ =     \ different page?
       IF
+         DROP DMEM + EXIT
+      THEN
         DUP BANK# !
         SAMSCARD 0SBO   \ card on, enable registers
 ( bank#) >< DREG !      \ swap bytes & store in SAMS register
-         0SBZ           \ card off
-      ELSE DROP
-      THEN DMEM +       \ then add offset to paged mem block
+        0SBZ            \ card off
+        DMEM +          \ then add offset to paged mem block
 ;
+
+HEX
+: PAGED  ( virtual-addr -- real-addr)
+      SEG @ 1000 UM/MOD  ( -- offset bank#) MAP ;
+
 \ safely set the 64K segment that you want to use
 : SEGMENT ( 1..F -- ) \ don't allow segment 0
       DUP 01 10 WITHIN 0= ABORT" SAMS segment err"
@@ -34,6 +39,6 @@ CR HERE SWAP - DECIMAL . .( bytes)
 SAMS-OFF SAMSINI SAMS-ON
 1 SEGMENT
 CR .( SAMS card activated)
-CR .( Window = ) DMEM HEX U.
+CR .( Window = >) DMEM HEX U.
 CR .( Segment = ) SEG @  DECIMAL U.
 CR

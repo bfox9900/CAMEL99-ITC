@@ -2,7 +2,7 @@
 \ Works the same way as the Forth dictionary
 \ Best for static allocation
 
-VARIABLE VP    \ VDP memory pointer (4K block)
+\ VARIABLE VP    \ VDP memory pointer in KERNEL 
 
 HEX 1000 VP !   \ start of free VDP RAM
 

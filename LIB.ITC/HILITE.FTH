@@ -10,14 +10,14 @@ HEX
 400 CONSTANT 1K
 
 : INVERTFONT ( -- )
-        1K MALLOC >R                \ get a 1K buffer
-        0 ]PDT R@  1K VREAD         \ copy VDP patterns to RAM
-         R@  1K  BOUNDS             \ loop thru 1K byte by byte
-         DO
-           I DUP C@ INVERT SWAP C!  \ invert char pattern
-         LOOP
-         R@  80 ]PDT  1K VWRITE     \ write RAM back to VDP upper charset
-         R> MFREE ;                 \ release the memory
+      1K MALLOC >R               \ get a 1K buffer
+      0 ]PDT R@  1K VREAD        \ copy VDP patterns to RAM
+      R@  1K  BOUNDS             \ loop thru 1K byte by byte
+      DO
+        I DUP C@ INVERT SWAP C!  \ invert char pattern
+      LOOP
+      R@  80 ]PDT  1K VWRITE     \ write RAM back to VDP upper charset
+      R> MFREE ;                 \ release the memory
 
 INVERTFONT    ( change the VDP memory)
  /REMOVE      ( remove the above code from the Forth dictionary)

@@ -9,7 +9,7 @@ CR .( MTASK99.FTH  CAMEL99  *DTC VERSION ONLY* Apr 2022 Brian Fox)
 \ Apr 2018    Ported to V2 and used machine code. No need for assember
 \ May 17, 2018  fixed RESTART, BYE, COLD.
 \ Jun  8. 2018  replaced assembler with machine code to ease of use.
-\ Apr 2022    Ported to Direct thread Forth
+\ Aug 2022    Added RESET-STACKS to improve RESTART 
 
 \ Each task has a Process ID (PID)
 \ In this system we use the workspace address as the PID
@@ -77,20 +77,24 @@ HERE  02A1 ,         \ R1 STWP,             \ HERE on stack for later
 \ - copy the the calling task's USER area into a new workspace.
 \ - SET both stack addresses to the proper registers in the user area,
 \ - insert PID into the round-robin list
-\ - your program needs allot USIZE (176) bytes somewhere.
+\ - your program needs to allot USIZE (176) bytes somewhere.
 \ - the address of your memory block will become the PID.
 
 \          *** THESE ARE VERY SMALL TASK BLOCKS ***
 \ 20 stack items is the theoretical minimum for a Forth process
+: RESET-STACKS ( PID -- )
+       DUP>R USIZE +  ( addr )              \ calc. end of task block
+       DUP R@ 'RP LOCAL !                   \ dup & store in local RP
+     ( RPaddr) 20 CELLS -                   \ calc. Pstack addr
+       R> 'SP LOCAL !                       \ store in local SP register
+;
+
 : FORK ( PID -- )
        DUP >R                               \ copy PID to RSTACK
       ( PID) USIZE 0 FILL                   \ erase new task block
        MYSELF R@ USIZE CMOVE                \ copy myself to the new task
 
-       R@ USIZE +  ( addr )                 \ calc. end of task block
-       DUP R@ 'RP LOCAL !                   \ dup & store in local RP
-     ( RPaddr) 20 CELLS -                   \ calc. Pstack addr
-       R@ 'SP LOCAL !                       \ store in local SP register
+       R@ RESET-STACKS
 
 \ insert this task into round-robin list of tasks
        TLINK @                 ( -- link)   \ get round-robin link
@@ -105,13 +109,9 @@ HERE  02A1 ,         \ R1 STWP,             \ HERE on stack for later
 : ASSIGN ( xt pid -- )
        JOB->IP  JOB LOCAL ! ; \ store the XT in the PID's JOB user var.
 
-: RESTART ( pid -- )
-       JOB->IP
-       DUP USIZE +  OVER 'RP LOCAL !  \ reset local Rstack
-       WAKE ;                         \ pid wake
-
-: COLD  ( -- ) SINGLE  COLD ;  \ stop multi-tasker before quitting Forth
-: BYE   ( -- ) SINGLE  BYE ;
+: RESTART ( pid -- ) JOB->IP  DUP RESET-STACKS  WAKE ;
+: COLD    ( -- ) SINGLE  COLD ;
+\ : BYE     ( -- ) SINGLE  BYE ;
 
 INIT-MULTI
 CR .( Multi-tasker initialized)

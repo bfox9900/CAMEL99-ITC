@@ -28,7 +28,7 @@ DECIMAL
   DUP
   IF
      DUP>R
-  \    INIT-SEED   ( optimized seed value) \ 64516 SQRT : 5000x 16.4 seconds
+\     INIT-SEED   ( optimized seed value) \ 64516 SQRT : 5000x 16.4 seconds
       1   ( default seed value )          \ 64516 SQRT : 5000x 31.1 seconds
      R@ OVER U/ OVER + 2/ NIP ( DUP . ) \ debug viewing
      BEGIN
@@ -42,5 +42,17 @@ DECIMAL
      R> DROP
   THEN ;
 
-\ speed testing
-\ : ROOTS ( n1 cnt -- n) 0 ?DO  DUP SQRT DROP  LOOP DROP ;
+\ recursive version by Gerry Jackson comp.lang.forth 
+: USQRT ( u -- u1 )
+   DUP 2 U< IF EXIT THEN
+   DUP >R 2 RSHIFT RECURSE
+   2*                ( -- u sm )
+   1+ DUP            ( -- u la la )
+   DUP *             ( -- u la la^2 )
+   R> U> IF 1- THEN  ( -- u1 )
+;
+
+\ for speed testing
+: ROOTS1 ( n1 cnt -- n) 65516 1000 0 DO  DUP SQRT DROP  LOOP DROP ;
+
+: ROOTS2 ( n1 cnt -- n) 65516 1000 0 DO  DUP USQRT DROP  LOOP DROP ;

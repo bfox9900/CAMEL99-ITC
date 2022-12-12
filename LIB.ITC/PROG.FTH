@@ -3,8 +3,6 @@
 \ You MUST define a 32 byte workspace to use with PROGS.
 \ Different PROG:s then can use the same workspace because it is a parameter
 \ at compile time.
-NEEDS R13 FROM DSK1.ASM9900
-
 : PROG: ( wksp -- )
    CREATE    ,  HERE CELL+ ,  !CSP
   ;CODE   0418 ,  ( *W BLWP, )  NEXT, ENDCODE

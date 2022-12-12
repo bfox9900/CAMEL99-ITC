@@ -8,7 +8,6 @@ CR .( blocks.fth  for CAMEL99 Forth     Apr 2022  BJFox)
 \            Used DUP>R cuz it's now in Kernel 2.66
 \ Aug 2021   Added ?BLKFILE to test file in dir.
 \ Apr 2022   Added LOAD and --> to allow compiling from block files
-\ Jul 2022   Added USE <PATH>  for compatabilty with Starting Forth
 
 NEEDS OPEN-FILE  FROM DSK1.ANSFILES
 NEEDS .R         FROM DSK1.UDOTR
@@ -164,7 +163,6 @@ DECIMAL
   LOOP ;
 
 : -->   ( n -- ) SCR @ 1+ LOAD ;
-: USE   ( <path>) PARSE-NAME  OPEN-BLOCKS ; 
 
 HERE SWAP - DECIMAL  CR .  .( bytes)
 EMPTY-BUFFERS

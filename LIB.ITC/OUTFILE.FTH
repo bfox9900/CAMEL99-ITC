@@ -33,8 +33,8 @@ DECIMAL
 : >>OUT ( caddr len -- )
        OUTH DUP 0= ABORT" Output file not open"
        SELECT
-       TUCK  ( -- len caddr len )  \ get a copy of the length
-       OUTBUFF SWAP VWRITE  \ write string to buffer
+       TUCK  ( -- len caddr len )       \ get a copy of the length
+       OUTBUFF SWAP VWRITE              \ write string to buffer
        ( len) DUP [PABCHARS]+! OUT +! ; \ update Char count
 HEX
 : FLUSH-BUFFER ( -- )

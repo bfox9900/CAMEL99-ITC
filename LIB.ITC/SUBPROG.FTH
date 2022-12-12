@@ -1,4 +1,6 @@
 \ SUBPROG.FTH    create ASM sub-routines that are called from Forth
+NEEDS BLWP,  FROM DSK1.ASM9900
+
 
 : PROG: ( wksp -- )
        CREATE

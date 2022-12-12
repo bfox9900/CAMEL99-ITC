@@ -6,7 +6,7 @@ CODE 1-DUP   ( n -- n )
              TOS PUSH,     \ DUP
              NEXT,
              ENDCODE
-
+\ these are probably stupid. Just use WHILE REPEAT not DUP0= UNTIL 
 CODE DUP0=   ( n -- n ?)
              TOS PUSH,          \ DUP
              TOS TOS MOV,       \ 0=

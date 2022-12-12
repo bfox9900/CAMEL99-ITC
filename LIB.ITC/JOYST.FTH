@@ -7,12 +7,17 @@
 \ 04 = Right
 \ 08 = Down
 \ 10 = Up
+\ 0A = down+left
+\ 0C = down+right
+\ 12 = up+left
+\ 14 = up+right
+
 HEX
-CODE JOYST ( joystick# -- value ) \ #0 = joyst1, #1 = joyst2
+CODE JOYST ( joystick# -- value )   \ #0 = joyst1, #1 = joyst2
    0224 , 0006 ,  \ TOS  06 AI,     \ joyst# to real CRU adress
    06C4 ,         \ TOS     SWPB,   \
    020C , 0024 ,  \ R12  24 LI,     \ joystick i/o address
-   30C4 ,         \ TOS  03 LDCR,   \ write 3 bits to enable joysticks
+   30C4 ,         \ TOS  03 LDCR,   \ write 3 bits to enable joystick#
    020C , 0006 ,  \ R12  06 LI,     \ select column 6
    3544 ,         \ TOS  05 STCR,   \ get 5 bits from joystick
    06C4 ,         \ TOS     SWPB,   \ swap byte

@@ -21,7 +21,7 @@ HEX
 
 CONSOLE   \ init the vectors now
 
-: PERFORM ( addr -- ) @ EXECUTE ;
+\ : PERFORM ( addr -- ) @ EXECUTE ; \ IN KERNEL 
 
 \ re-define FORTH I/O words to use vectors
 : EMIT    ( -- )  'EMIT PERFORM ;

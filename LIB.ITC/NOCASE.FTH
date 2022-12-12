@@ -8,6 +8,3 @@ HEX
 
 : UCASE     ['] <INTERP>    'IV ! ;
 : NOCASE    ['] <LOINTERP>  'IV ! ;
-
-: UCASE     ['] <INTERP>    'IV ! ;
-: NOCASE    ['] <LOINTERP>  'IV ! ;

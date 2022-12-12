@@ -2,8 +2,7 @@
 
 \ Line editor Short commands
 
-\ LS  ( n --) shortform for LIST
-\ RL  ( -- )  Re-list currect block
+\ L  ( -- )  Re-list currect block
 \ >>  ( -- )  List next block
 \ <<  ( -- )  List previous block
 \ P   ( l# -- <text>) Put <text> into line# ( 5 P This goes to line 5 )
@@ -28,12 +27,17 @@
 \ HELP   Show the short commands block
 
 NEEDS DUMP       FROM DSK1.TOOLS
+NEEDS VOCABULARY FROM DSK1.WORDLISTS
 NEEDS BUFFER     FROM DSK1.BLOCKS
 NEEDS 80COLS     FROM DSK1.80COL
 NEEDS .R         FROM DSK1.UDOTR
 NEEDS -TRAILING  FROM DSK1.TRAILING
 
 80COLS
+
+VOCABULARY EDITOR
+
+ALSO EDITOR DEFINITIONS
 
 HERE
 DECIMAL
@@ -47,28 +51,31 @@ DECIMAL
 : 4LINES  ( l# -- l#') .LINE .LINE .LINE .LINE ;
 : 16LINES ( -- )  0 4LINES 4LINES 4LINES 4LINES DROP ;
 : (CP)    ( L1 L2 -- ) LINE SWAP LINE SWAP B/L CMOVE ;
-: .HEAD   ( n -- )
-   ." SCR#" 4 .R 50 SPACES  ACTIVE COUNT TYPE CR ;
+: .HEAD   ( n -- )   ." SCR#" 4 .R 50 SPACES  ACTIVE COUNT TYPE CR ;
 : .NDX    ( blk# --)  BLOCK CR  0 .LINE ;
 
 \ editor commands
 : USE ( <path> )  BL PARSE-WORD  OPEN-BLOCKS ;
 : LIST ( n -- ) PAGE DUP SCR ! .HEAD  16LINES ;
-: LS   LIST ;
-: RL  ( -- ) SCR @ LIST ;
-: >>  ( -- )  1 SCR +! RL ;
-: <<  ( -- )  SCR @ 1- 0 MAX  SCR ! RL ;
-: P   ( l# -- ) 1 PARSE ROT LINE SWAP CMOVE UPDATE  RL ;
-: DL  ( l# -- ) LINE B/L BLANK UPDATE RL ;
-: CP  ( L1 L2 -- ) (CP) UPDATE  RL ;
+: L    SCR @ LIST  ;
+: >>  ( -- )  1 SCR +! L ;
+: <<  ( -- )  SCR @ 1- 0 MAX  SCR ! L ;
+: P   ( l# -- ) 1 PARSE ROT LINE SWAP CMOVE UPDATE  L ;
+
+: ED  ( l# )
+  CR VROW 2@  DUP .LINE
+  AT-XY DUP LINE B/L ACCEPT DROP
+  UPDATE ;
+
+: DL  ( l# -- ) LINE B/L BLANK UPDATE L ;
+: CP  ( L1 L2 -- ) (CP) UPDATE  L ;
 : MV  ( L1 L2 -- ) OVER >R (CP) R> DL ;
 : O   ( <TEXT> )  PARSE-NAME OPEN-BLOCKS ;
 : RO  ( -- ) ACTIVE COUNT OPEN-BLOCKS ;
 : EB  ( blk --) ?BLK  BLOCK B/BUF BLANK UPDATE ;
-: UNDO ( -- ) EMPTY-BUFFERS RL ;
+: UNDO ( -- ) EMPTY-BUFFERS L ;
 
 \ Higher order function maps function onto each line
-
 : EACH ( n1 n2 XT --) \ MAP xt to range of blocks
       -ROT 1+ SWAP
       ?DO

@@ -23,19 +23,27 @@
 \        B   *R11                 * BRANCH TO NEXT SECTION OF CODE
 \ FILEDV TEXT "DSK1."             * File device
 
-INCLUDE DSK1.TOOLS
+\ INCLUDE DSK1.TOOLS
 
-MARKER REMOVE
+\ get current drive# in Forth 
+DECIMAL
+24 USER 'R12
 
 HEX
-24 USER 'R12  \ address of R12 in any Forth workspace
-HEX
+\ 83D0 CONSTANT DISKCARD
+\ 83D2 CONSTANT DEVLIST
+
 CODE 0SBO  ( -- ) 1D00 ,  NEXT, ENDCODE
 CODE 0SBZ  ( -- ) 1E00 ,  NEXT, ENDCODE
 
-HEX
-: CARDON    83D0 @ 'R12 !   0SBO 83D2 @  ;
+: ?DISK    4000 C@ AA <> IF 0SBZ TRUE ABORT" No disk" THEN ;
 
-: DSK?. ( -- addr len)
-
-          0SBZ ;
+: DSK$  ( -- addr len)
+         83D0 @ 'R12 !
+         0SBO
+         ?DISK 
+         83D2 @ 2 CELLS + COUNT PAD PLACE
+         0SBZ
+         PAD COUNT 
+;
+ 

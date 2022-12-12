@@ -6,7 +6,7 @@ DECIMAL
 CREATE SINTAB   ( 182 bytes)
 \  0      1      2      3      4      5      6      7      8      9
 \ --------------------------------------------------------------------
-  0000 , 0174 , 0349 , 0523 , 0698 , 0872 , 1045 , 1219 , 1392 , 1564 ,
+  0000 , 0175 , 0349 , 0523 , 0698 , 0872 , 1045 , 1219 , 1392 , 1564 ,
   1736 , 1908 , 2079 , 2249 , 2419 , 2588 , 2756 , 2924 , 3090 , 3256 ,
   3420 , 3584 , 3746 , 3907 , 4067 , 4226 , 4384 , 4540 , 4695 , 4848 ,
   5000 , 5150 , 5299 , 5456 , 5592 , 5736 , 5878 , 6018 , 6157 , 6293 ,
@@ -18,14 +18,14 @@ CREATE SINTAB   ( 182 bytes)
   10000 ,
 
 HEX
-\ machine Forth "compilers" make it easy to create VERY fast arrays
-\ R4 is CAMEL99 Forth cache register for Top of stack
+\ machine Forth instruction "compilers" make it easy to create VERY fast arrays
+\ R4 is CAMEL99 Forth cache register for the Top of stack
 : 2*,   ( n -- 2(n)  A104 , ;             \ A R4,R4
 : +@,   ( addr -- )  C124 , ( addr) , ;   \ MOV addr@(R4),R4
 
 DECIMAL
 CODE ]SIN  ( ndx -- sin) 2*,  SINTAB +@,  NEXT, ENDCODE
-\  : ]SIN  ( ndx -- sin) 2*   SINTAB + @ ;  \ FORTH equivalent
+\  : ]SIN  ( ndx -- sin) 2*   SINTAB + @ ; \ FORTH equivalent
 
 \ save space by defining these constants
  90 CONSTANT 90^   180 CONSTANT 180^   360 CONSTANT 360^
@@ -41,3 +41,6 @@ CODE ]SIN  ( ndx -- sin) 2*,  SINTAB +@,  NEXT, ENDCODE
          THEN ;
 
 : COS ( n -- n )  360^ MOD 90^ + SIN ;
+
+314 CONSTANT PI
+: rad>deg ( radians -- degrees) 18000 PI */ ;

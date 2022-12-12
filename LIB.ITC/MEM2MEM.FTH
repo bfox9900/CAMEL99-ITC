@@ -1,4 +1,3 @@
-\ ========================================================================
 \ D I R E C T   M E M O R Y   O P E R A T I O N S
 \ TMS9900 indirect addressing mode we can do things faster to variables
 \ by transfering: memory->memory  verus  memory->stack->memory

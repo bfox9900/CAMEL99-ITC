@@ -1,25 +1,9 @@
 CR .( GRAPHIX.FTH for CAMEL99 V2.X  Mar 2022 BFox )
 CR  \ added protections to HCHAR & VCHAR to stop writing off screen
 HERE
-NEEDS VC, FROM DSK1.VDPMEM  \ use by new CALLCHAR
-
+NEEDS VC,    FROM DSK1.VDPMEM  \ use by new CALLCHAR
+NEEDS TABLE: FROM DSK1.TABLES
 HEX
-
-\ access VDP memory as fast arrays
-: TABLE: ( Vaddr -- )
-     CREATE     ,               \ compile base address in VDP RAM
-     ;CODE ( n -- Vaddr')       \ RUN time
-         A118 ,  \ *W TOS ADD,  \ W hold the PFA of the word.
-         NEXT,
-ENDCODE
-
-: TABLE8: ( addr -- )    \ create a table of 8 byte records
-     CREATE    ,
-        ;CODE ( n -- Vaddr')     \ RUN time
-         0A34 ,     \ TOS 3 SLA,  ( TOS 8* )
-         A118 ,     \ *W TOS ADD,
-         NEXT,
-ENDCODE
 
  0380 TABLE:  ]CTAB     \ colour table VDP address
  0800 TABLE8: ]PDT      \ "pattern descriptor table" VDP address
@@ -76,8 +60,8 @@ ENDCODE
         HEX               \ we are converting hex numbers in the string
         BOUNDS
         DO
-           I    C@ >DIG  4 LSHIFT
-           I 1+ C@ >DIG  OR VC,
+           I    C@ >DIG  4 LSHIFT \ convert, move to right nibble
+           I 1+ C@ >DIG  OR VC,   \ combine with left nibble and compile to VDP
         2 +LOOP
         2R> VP ! BASE !  \ restore the variables
 ;
@@ -96,7 +80,7 @@ ENDCODE
           C/SCR @  -   0 MAX - ( char cnt' )
           R> -ROT SWAP VFILL ;
 
-\ change to Graphics mode (C/SCR = HEX300) to compile VCHAR correctly
+\ change to Graphics mode (C/SCR = HEX300) to compile VWRAP correctly
 GRAPHICS
 
 HEX
@@ -114,7 +98,7 @@ ENDCODE
 : (VCHAR) ( col row char cnt --)
   2SWAP >VPOS  SWAP 0 ?DO  2DUP VC!  VWRAP  LOOP ;
 
-: VCHAR     (VCHAR) 2DROP ;
+: VCHAR  ( col row char cnt --) (VCHAR) 2DROP ;
 
 CR .( GRAPHICS 1 Mode READY)
 CR HERE SWAP - DECIMAL . .( bytes)

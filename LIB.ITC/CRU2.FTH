@@ -5,9 +5,6 @@ DECIMAL
   24 USER 'R12  \ address of R12 in any Forth workspace
 
 HEX
-: CRU!  ( CRUaddr -- ) 'R12 !  ; \ load CRU adr to R12
-: CRU@  ( -- CRUaddr ) 'R12 @ ;  \ read R12 to TOS
-
 \ *set the CRU address before using these words*
 
 \ fastest for bit 0
@@ -75,9 +72,8 @@ CODE STCR ( bits cru --- n )
      06C0 ,        \          R0 SWPB,
                    \     ENDIF,
                    \ ENDIF,
-     C100 ,        \ R0 TOS MOV,
+     C100 ,         \ R0 TOS MOV,
      NEXT,
      ENDCODE
-
 
 HERE SWAP - DECIMAL  CR . .( BYTES)

@@ -25,7 +25,7 @@ S" /PAD" ENVIRONMENT? 0= [IF] 84 [THEN] CONSTANT PADLENGTH
 : ARRAY  \ DEFINE AN ARRAY OF N CELLS
    CREATE ( +N -- ) CELLS ALLOT
    DOES> ( +N -- A ) SWAP CELLS + ;
-  
+
 : ,S  ( X1 ... XN N -- )  \ COMPILE N VALUES
    BEGIN ?DUP WHILE  DUP ROLL ,  1-  REPEAT ;
 
@@ -47,17 +47,17 @@ S" /PAD" ENVIRONMENT? 0= [IF] 84 [THEN] CONSTANT PADLENGTH
 
 : ALIASES  ( XT -- XT )  DUP ALIAS ;
 
-: <NEXT>  BL WORD COUNT ;
+: <NEXT>    BL WORD COUNT ;
 
-: PREPARSE >IN @ >R <NEXT> R> >IN ! ;
+: PREPARSE  >IN @ >R <NEXT> R> >IN ! ;
 
 : MANY:  ( ... -- ... )   \ usage: many <word> ... ;
    ' >R
    BEGIN
      PREPARSE 2DUP S" ;" COMPARE
    WHILE
-     2DUP S" (" S= IF 2DROP POSTPONE (  ELSE
-     2DUP S" \" S= IF 2DROP POSTPONE \  ELSE
+     2DUP S" (" S= IF 2DROP POSTPONE (  ELSE   ( fix colorizer :)
+     2DUP S" \" S= IF 2DROP POSTPONE \  ELSE 
                NIP IF R@ EXECUTE        ELSE
                       REFILL 0= ABORT" ; MISSING AFTER MANY"
      THEN THEN THEN

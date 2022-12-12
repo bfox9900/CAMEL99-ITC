@@ -38,7 +38,7 @@ DECIMAL
           VPLACE                    \ write string to [PAB FNAME]
           0 FILEOP ?FILERR ;        \ open the file, return err code
 
-: READ   ( buffer -- len ) 2 FILEOP ?FILERR  FGET ;
+: READ   ( buffer -- buffer len ) 2 FILEOP ?FILERR  FGET ;
 : WRITE  ( addr len --)
          DUP [PAB CHARS] VC!
          [PAB FBUFF] V@ SWAP VWRITE
@@ -52,12 +52,12 @@ DECIMAL
 HERE SWAP - DECIMAL .
 
 \ Usage:
-\ CREATE A$  80 ALLOT
-\ : SEEFILE ( addr len )
-\          #1 DV80 OPEN
-\          BEGIN
-\            A$ DUP #1 READ CR TYPE
-\            #1 EOF
-\          UNTIL
-\          #1 CLOSE
-\ ;
+ CREATE A$  80 ALLOT
+ : SEEFILE ( addr len )
+          #1 DV80 OPEN
+          BEGIN
+            A$ #1 READ CR TYPE
+            #1 EOF
+          UNTIL
+          #1 CLOSE
+ ;

@@ -1,19 +1,9 @@
-\ The optional Double-Number word set
+CR .( Optional Double-Number word set)
 
 \ INCLUDE DSK1.TOOLS  \ for debugging
 
 HERE
 HEX
-\ CODE D+   ( lo hi lo' hi' -- d) \ Moved to kernel
-\  C036 , \  *SP+    R0  MOV,  \              22
-\  A136 , \  *SP+    TOS ADD,  \ add hi #s    22
-\  A580 , \  R0      *SP ADD,  \ add lo #s    18
-\  1701 , \  OC IF,            \ carry set?   10
-\  0584 , \     TOS INC,       \ incr hi      10
-\         \  ENDIF,
-\  NEXT,                           \          82
-\ ENDCODE
-
 : 2LITERAL  ( d -- )
             ?COMP SWAP
             POSTPONE LITERAL
@@ -23,7 +13,7 @@ HEX
 : 2VARIABLE  ( d -- <text>) CREATE 0 , 0 , ;
 
 : D0<  ( d -- ? )  NIP 0< ;
-: S>D  ( n -- d )  DUP 0< ;
+\ : S>D  ( n -- d )  DUP 0< ;
 : D2*  ( d -- d')  SWAP S>D NEGATE SWAP 2* ROT 2* ROT + ;
 
 : D2/  ( d -- d')
@@ -74,12 +64,13 @@ CODE 2OVER ( d1 d2 -- d1 d2 d1)   \ 2x faster
             1 0 D+
           THEN
           DNEGATE
-       ELSE
-          DROP
-       THEN ;
+          EXIT
+       THEN
+       DROP ;
 
-\ print un-signed DOUBLE
-: D.R  ( d n --) >R TUCK DABS <# #S ROT SIGN #> R> OVER - SPACES TYPE ;
+: RJUST ( addr len n -- ) OVER - SPACES TYPE ;
+: UD.R ( d n --) >R <# #S #> R> RJUST ;
+: D.R  ( d n --) >R TUCK DABS <# #S ROT SIGN #> R> RJUST ;
 : D.   ( d  -- ) 0 D.R SPACE ;
 
 : 4DUP   ( d d -- d d d d ) 2OVER 2OVER ;

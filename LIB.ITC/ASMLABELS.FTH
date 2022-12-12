@@ -5,8 +5,8 @@ CR .( Enumerated labels)
 NEEDS MOV, FROM DSK1.ASM9900
 
 DECIMAL
-25 CONSTANT #FWD
-20 CONSTANT #LABELS
+        20 CONSTANT #LABELS
+#LABELS 2* CONSTANT #FWD
 
 \ Make a stack to handle jumps
 CREATE FS0    #FWD CELLS ALLOT
@@ -33,7 +33,7 @@ CREATE LABELS   #LABELS CELLS ALLOT
 : RESOLVER ( -- )
        BEGIN
        FSDEPTH WHILE
-           FS> ]LBL @ ?LABEL 
+           FS> ]LBL @ ?LABEL
          ( lbladdress ) FS> TUCK - RESOLVE
        REPEAT
 ;

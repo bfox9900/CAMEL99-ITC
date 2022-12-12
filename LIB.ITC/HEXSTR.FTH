@@ -1,7 +1,7 @@
 \ create BASIC style CHARPAT strings
 
-INCLUDE DSK1.STRINGS.F
-INCLUDE DSK1.GRAFIX.F
+INCLUDE DSK1.STRINGS
+INCLUDE DSK1.GRAFIX
 
 : HEX$     ( n -- top$) HEX  0  <# # # # # #> SPUSH ;
 

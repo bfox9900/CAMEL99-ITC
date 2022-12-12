@@ -1,6 +1,6 @@
 CR .( ANS/ISO Loop & Branch)
 
-: AHEAD    ( -- addr) HERE   0 , ;
+: AHEAD ( -- addr) HERE   0 , ;
 : <BACK ( addr --) HERE -  , ;
 
 : THEN   ( addr -- ) HERE OVER - SWAP ! ;     IMMEDIATE

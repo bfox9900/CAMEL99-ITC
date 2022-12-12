@@ -26,6 +26,7 @@ CODE PAGED  ( addr -- paged_address )
      C144 ,         \ TOS R5 MOV,        \ address to r5
      C120 , SEG ,   \ SEG @@ TOS MOV,    \ segment# to R4,
      3D00 ,         \ R0 TOS DIV,        \ TOS=bank#, R5=offset
+
      8804 , BANK# , \ TOS BANK# @@ CMP,  \ switch page ?
      1309 ,         \ NE IF,
      C804 , BANK# , \    TOS BANK# @@ MOV, \ YES, update BANK#
@@ -52,4 +53,4 @@ SAMS-OFF SAMSINI SAMS-ON
 CR .( SAMS card activated)
 CR .( Window = ) PMEM HEX U.
 CR .( Segment = ) SEG @  DECIMAL U.
-CR 
+CR

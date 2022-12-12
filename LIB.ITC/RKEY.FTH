@@ -12,8 +12,8 @@ HEX
 : BLINK  ( char -- ) TMR@ 1FFF > IF DROP  CURS @  THEN VPUT ;
 
 : RKEY?  ( -- char)
-    SCHAR @ BLINK
     RPT @ >R    \ delay counter to rstack
+    SCHAR @ BLINK
     BEGIN
         R> 1- DUP>R        \ dec counter
     WHILE ( not expired)
@@ -27,22 +27,22 @@ HEX
     0A RPT !     \ set long delay (initial delay)
     THEN         \ end time expired loop
     R> DROP
-    OUTKEY @
-    DUP OLDKEY !
-    OUTKEY OFF
+    OUTKEY @ DUP OLDKEY !
 ;
 
 : RKEY ( -- char)
-   VPOS VC@ SCHAR !
+   'CHAR C@ SCHAR !
    BEGIN
       RKEY? DUP
    0= WHILE
      PAUSE
      DROP
+     OUTKEY OFF
    REPEAT
    SCHAR @ VPUT
+
 ;
 
 HERE SWAP - DECIMAL SPACE .
 
-: TEST    BEGIN  RKEY EMIT  ?TERMINAL UNTIL ;
+\ : TEST    BEGIN  RKEY EMIT  ?TERMINAL UNTIL ;

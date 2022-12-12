@@ -3,29 +3,28 @@
 \ like CMOVE but 2x faster because it moves 2 bytes per iteration
 \ TMS9900 does not like this for strings.
 
-NEEDS MOV,  FROM DSK1.ASM9900
-NEEDS .S    FROM DSK1.TOOLS
-NEEDS ELAPSE FROM DSK1.ELAPSE
+INCLUDE DSK1.ELAPSE
+INCLUDE DSK1.TOOLS
+INCLUDE DSK1.ASM9900
 
 \ Test results
 \ A000 2000 2000 ELAPSE CMOVE
-\ Elapsed time =0:00.26 ok
+\ Elapsed time =0:00.21 ok
 
 \ A000 2000 2000 ELAPSE MOVE16
 \ Elapsed time =0:00.11 ok
 
 \ A000 2000 2000 ELAPSE MOVE32
-\ Elapsed time =0:00.10 ok
+\ Elapsed time =0:00.8 ok
 
 HEX
-CODE MOVE16  ( src dst n -- ) \ n= no. of bytes to move
-    TOS  1 SRA,  \ divide by 2
+CODE MOVEW  ( src dst n -- ) \ n= no. of bytes to move
    *SP+ R0 MOV,
    *SP+ R1 MOV,
     BEGIN,
        R1 *+ R0 *+ MOV,
-       TOS DEC,
-    EQ UNTIL,
+       TOS DECT,
+    NC UNTIL,
     TOS POP,
     NEXT,
 ENDCODE
@@ -36,28 +35,27 @@ CODE MOVE32  ( src dst n -- )  \ n= no. of bytes to move
       *SP+ R0 MOV,       \ pop DEST into R0
       *SP+ R1 MOV,       \ pop source into R1
       BEGIN,
-        TOS DEC,
-      OC WHILE,
           R1 *+ R0 *+ MOV,  \ memory to memory move, auto increment
           R1 *+ R0 *+ MOV,  \ memory to memory move, auto increment
-      REPEAT,
+          TOS DEC,
+      NC UNTIL,
       TOS POP,
       NEXT,
 ENDCODE
 
-\ Speed test
-\
-HEX
-\ 2000 3000 1000 ELAPSE CMOVE  15 ms
-\ 2000 3000 1000 ELAPSE MOVE16  6 ms
-\ 2000 3000 1000 ELAPSE MOVE32  6 ms
-
-CODE MOVE16> ( src dst n -- )
-    C036 , C076 , C104 , 130C , 0584 ,
-    0244 , FFFE , A004 , 0640 , A044 ,
-    0641 , C411 , 0641 , 0640 , 0644 ,
-    15FB , C136 ,
-NEXT,
+CODE MOVE64  ( src dst n -- )  \ n= no. of bytes to move
+       TOS 3 SRA,        \ divide by 8
+      *SP+ R0 MOV,       \ pop DEST into R0
+      *SP+ R1 MOV,       \ pop source into R1
+      BEGIN,
+          R1 *+ R0 *+ MOV,  \ memory to memory move, auto increment
+          R1 *+ R0 *+ MOV,  \ memory to memory move, auto increment
+          R1 *+ R0 *+ MOV,  \ memory to memory move, auto increment
+          R1 *+ R0 *+ MOV,  \ memory to memory move, auto increment
+          TOS DEC,
+      NC UNTIL,
+      TOS POP,
+      NEXT,
 ENDCODE
 
 \ OVERLAP safe MOVE16

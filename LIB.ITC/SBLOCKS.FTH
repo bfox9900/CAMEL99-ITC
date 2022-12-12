@@ -1,7 +1,7 @@
 \ BLOCK  as a method to manage SAMS pages    Jan 15 2021 Brian Fox
-\ Jan 2022 Fixed SAMSINI to access registers properly
+\ Jun 2022  Added 32 bit FAR address memory operators
 
- NEEDS .S   FROM DSK1.TOOLS
+\ NEEDS .S   FROM DSK1.TOOLS
 \ NEEDS MOV, FROM DSK1.ASM9900
 NEEDS SAMSINI  FROM DSK1.SAMSINI
 
@@ -41,19 +41,24 @@ CODE BLOCK ( bank -- buffer)
  NEXT,
  ENDCODE
 
- : !L  ( n d --) BLOCK + ! ;
- : @L  ( d -- n) BLOCK + @ ;
-
  VARIABLE SEG
 \ safely set the 64K segment that you want to use
- : SEGMENT ( 1..F -- ) \ don't allow segment 0
+: SEGMENT ( 1..F -- ) \ don't allow segment 0
          DUP 01 10 WITHIN 0= ABORT" SAMS segment err"
          SEG ! ;
  1 SEGMENT
 
  HEX
- : PAGED  ( virtual-addr -- real-addr)
-         SEG @ 1000 UM/MOD ( -- offset bank#) BLOCK + ;
+: >REAL  ( addr seg -- virtual-address) 1000 UM/MOD BLOCK + ;
+: PAGED  ( virtual-addr -- real-addr) SEG @ >REAL ;
+
+\ True "FAR" memory access words operate on 32 bit address
+: !L    ( n Daddr --)  >REAL ! ;   \ store int
+: C!L   ( c Daddr --)  >REAL C! ;  \ store char
+: 2!L   ( d Daddr --)  >REAL 2@ ;  \ store double
+
+: @L    ( Daddr -- n)  >REAL @ ;
+: C@L   ( Daddr -- c)  >REAL C@ ;
+: 2@L   ( Daddr -- d)  >REAL 2@ ;
+
 HERE SWAP - DECIMAL  CR .  .( bytes)
-SAMS-OFF SAMSINI SAMS-ON
-CR .( SAMS card initialized)

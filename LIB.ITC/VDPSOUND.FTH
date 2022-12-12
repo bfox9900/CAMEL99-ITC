@@ -11,7 +11,7 @@ HEX
        2DUP + VC@  >R        \ get duration at end of string, Rpush
        BOUNDS                \ convert addr/len to end-addr. start-addr.
        DO  I VC@ SND! LOOP   \ feed bytes to sound chip
-       R> JIFFS ;            \ use the delay from Rstack (JIFF=1/60)
+       R> TICKS ;            \ use the delay from Rstack (JIFF=1/60)
 
 : VPLAYLIST   ( addr -- )    \ play a TI sound list
          BEGIN DUP VC@

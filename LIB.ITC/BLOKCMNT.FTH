@@ -1,6 +1,6 @@
 \ Conditional compilation
 
-\ INCLUDE DSK1.TOOLS.F
+\ INCLUDE DSK1.TOOLS
 
 : COMPARE ( a1 n1 a2 n2 -- -1|0|1 ) \  0 = match, -1 = a1<a2, 1 = a1>a2
     ROT  2DUP - >R            ( a1 a2 n2 n1)( R: n2-n1)

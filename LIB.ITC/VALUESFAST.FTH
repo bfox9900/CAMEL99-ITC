@@ -11,6 +11,7 @@ CODE LIT!  (  n -- ) \ combine function of LIT and !
     C136 , \  TOS POP,
     NEXT,
 ENDCODE
+
 .( .)
 : VALUE  ( n --)  HEADER  COMPILE DOCON  COMPILE, ;
 

@@ -1,5 +1,4 @@
-\ SAM 1M memory card common code              Nov 24 2022 Brian Fox
-\ This file is common code for all other SAMS extensions
+\ SAM 1M memory card INIT & common code    Nov24 2022 Brian Fox
 DECIMAL
   24 USER 'R12  \ address of R12 in any Forth workspace
 HEX
@@ -15,21 +14,27 @@ HEX
 : SAMS-ON   ( -- ) SAMSCARD 1SBO ;  \ enable mapper
 : SAMS-OFF  ( -- ) SAMSCARD 1SBZ ;  \ disable mapper
 
-\ * SAMSINI sets 1Mbyte card to "pass-through" condition
+HEX
+\ 4000 CONSTANT SAMSREGS
+
+\ * SAMSINI sets card to "pass-through" condition
+\   Tests the size of the SAMS card upto 1.4 Mbytes
+DECIMAL
 : SAMSINI ( -- n)
        SAMSCARD          \ select SAMS card
-       SAMS-OFF          \ disable mapping
-       0SBO              \ enable registers
+       SAMS-OFF
+       0SBO              \ turn card on, enable registers
        0                 \ register value stays on stack
-       4000 20           \ register address, # SAMS regs
-       BOUNDS ( -- 4100 4000)
+       4000  22 CELLS    \ registers base address, # SAMS regs
+       BOUNDS ( -- >4030 >4000)
        DO
            DUP >< I !    \ swap bytes and write 16 bits to reg
-           I C@  OVER <> ABORT" SAMSINI failed"
-           01 +          \ next passthru value
+           I C@  OVER <>  ABORT" *SAMS Card ERROR*"
+           1+
        2 +LOOP
        DROP
-       0SBZ              \ disable registers
+       0SBZ
+       SAMS-ON
 ;
-CR .( Init 1M card) SAMSINI
-SAMS-ON  CR .( Mapper enabled )
+
+SAMSINI

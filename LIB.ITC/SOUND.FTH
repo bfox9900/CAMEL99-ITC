@@ -1,7 +1,7 @@
 \ TMS9919 SOUND CHIP DRIVER and CONTROL LEXICON     Jan 2017 BJF
 \ TMS9919 is a memory mapped device on the TI-99 @ >8400
-\ SND! is in the CAMEL99 Kernel as  : SND!     8400 C! ;
-
+\ SND! is in the CAMEL99 Kernel as  : SND!    PAUSE 8400 C! ;
+HERE
 \ frequency code must be ORed with these numbers to create a sound
 HEX
   8000 CONSTANT OSC1      A000 CONSTANT OSC2   ( oscillators take 2 nibbles)
@@ -12,23 +12,20 @@ HEX
     90 CONSTANT ATT1         B0 CONSTANT ATT2
     D0 CONSTANT ATT3         F0 CONSTANT ATT4  ( OSC4 volume adjust)
 
-\ f(clk) for sound chip is 111,860.8 Hz.
-\ we round it up to 111,861 Hz. Seems to work ok.
 DECIMAL
-\ create a 32bit variable from primitives
-0 0  S" 111861" >NUMBER 2DROP CREATE (CLK)  ,  ,
-
-: f(clk) ( -- d)  (CLK) 2@  ;  \ fetch the clk variable, 32 bit integer
+\ f(clk) for sound chip is 111,860.8 Hz. Round it up to 111,861 works ok.
+\ create a 32bit LITERAL from primitives
+: f(clk) ( -- d)  [ 0 0  S" 111861" >NUMBER 2DROP SWAP ] LITERAL LITERAL ;
 
 \ >FCODE re-arranges freq. value nibbles (4bits) for the TMS9919
 HEX
  CODE >FCODE ( 0abc -- 0cab) \ version by Farmer Potato Atariage
-           0B44 , \ TOS 4 SRC,    \ C0AB
-           C204 , \ TOS W MOV,    \ DUP
-           0948 , \  W 4 SRL,     \ 0C0A
-           D108 , \  W TOS MOVB,  \ 0CAB
-           NEXT,   \ 8 BYTES, 28 uS :-)
-           ENDCODE
+             0B44 , \ TOS 4 SRC,    \ C0AB
+             C204 , \ TOS W MOV,    \ DUP
+             0948 , \  W 4 SRL,     \ 0C0A
+             D108 , \  W TOS MOVB,  \ 0CAB
+            NEXT,    \  28 uS
+            ENDCODE
 
 \ we set the "ACTIVE CHANNEL" with these variables
  VARIABLE OSC               \ holds the active OSC value
@@ -53,13 +50,16 @@ HEX
 : GEN3    ( -- )  OSC3  ATT3  GEN! ;
 : GEN4    ( -- )  OSC4  ATT4  GEN! ;
 
-HEX
-: NOISE   ( n -- ) 0F AND  GEN4  OSC @ OR  SND! ;
+: (NOISE)   ( n -- ) 0F AND  GEN4  OSC @ OR  ;
 
 : (HZ)    ( f -- n)   HZ>CODE  OSC @ OR  ;          \ convert freq. add OSC
 : (DB)    ( level -- c)  ABS 2/  0F MIN  ATT @ OR ; \ DB to attenuation
 
 : HZ      ( f -- ) (HZ) SPLIT SND!  SND! ;
 : DB      ( level -- ) (DB)  SND! ; \ Usage: -6 DB
+: NOISE   ( n --) (NOISE) SND! ;
 : MUTE    ( -- )  -30 DB ;
 : SILENT  ( --)  9F SND!  BF SND!  DF SND!  FF SND! ;
+
+GEN1
+HERE SWAP - DECIMAL . .( bytes)

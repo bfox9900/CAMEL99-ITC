@@ -1,42 +1,52 @@
-\ SPEECH.FTH   Interface to the speech synthesize on the TI-99
+\ SPEECH.FTH   Interface to the speech synthesize on the TI-99 Brian Fox
 
-\  Binary byte  hex  Operation
-\  x111xxxx      7x    Reset
-\  x100aaaa      4x    Load-Address (needs 4 more bytes)
-\  x101xxxx      5x    Speak
-\  x110xxxx      6x    Speak-External (accepts an unlimited number of data bytes)
-\  x001xxxx      1x    Read-Byte
-\  x011xxxx      3x    Read-and-Branch
-\  x0x0xvrr     Load-Frame-Rate (rr=rate code, v=0:use rr, 1: variable) TMS5520C only.
+NEEDS DUMP   FROM DSK1.TOOLS
+NEEDS MARKER FROM DSK1.MARKER
 
-\
+
+: EMPTY  S" ---MARKER---  MARKER ---MARKER---" EVALUATE ;  IMMEDIATE
+
+MARKER ---MARKER---
+
+
+EMPTY
+
+\ Command byte  Operation
+70 CONSTANT Reset
+40 CONSTANT Load-Address ( needs 4 more bytes)
+50 CONSTANT Speak
+60 CONSTANT Speak-Ext ( accepts an unlimited number of data bytes)
+10 CONSTANT Read-Byte
+30 CONSTANT Read&Branch
+\ x0x0xvrr Load-Frame-Rate (rr=rate code, v=0:use rr, 1: variable) TMS5520C only
 
 HEX
-9000 CONSTANT SPCHRD
-9400 CONSTANT SPCHWR
+9000 CONSTANT $9000 \ speech read port
+9400 CONSTANT $9400 \ spreech write port
 
-  16 CONSTANT spchread  \ 'read data' command code
-  AA CONSTANT ssflag    \ 'speech synth present' check code
-  50 CONSTANT spkROM    \ 'speak from ROM' command code
+: COMMAND ( c --) $9400 C! ;
+: SPCH.RESET  Reset COMMAND ;
+: SAY        Speak COMMAND ;
 
-: 4CMD     ( nibble -- cmd ) 40 +  SPCHWR C! ;
-: SPEAK    ( nibble -- )
-: >NIB     ( c -- nib nib) DUP F AND SWAP 4 SRA SWAP ;
+: >NIB     ( c -- nib nib) DUP 0F AND SWAP 4 RSHIFT ;
 
-: >NIBBLES ( n -- n n n n) SPLIT >NIB SWAP >NIB  2SWAP ;
+\ not sure I have the address written in the correct order....
+: >NIBBLES ( n -- n n n n) SPLIT ( SWAP? ) >NIB ROT >NIB  2SWAP ;
 
-: SPCHADR!  ( addr -- )
-            >NIBBLES
-            0 4CMD
-            4CMD 4CMD 4CMD 4CMD
-            0 4CMD ;
+: NIB!     ( nib -- ) Load-Address +  COMMAND ;
 
+: SP.ADDR!  ( addr -- )
+            >NIBBLES ( -- n n n n)
+            Load-Address COMMAND
+            NIB! NIB! NIB! NIB!
+            Load-Address COMMAND  ;
 
-2 BASE !
-: SPCH.RESET  01110000  SPCHWR C! ;
+: SPC@ ( addr -- c) SP.ADDR! PAUSE Read-Byte COMMAND PAUSE $9000 C@ ;
+: SP@  ( addr -- n) DUP SPC@  SWAP 1+ SPC@ FUSE ;
 
-: SPEAK       01010000  SPCHWR C! ;
+: ?SPEECH   0 SPC@ 0AA <> ABORT" No Speech synthesizer" ;
 
+: SPCH.TYPE  ( addr len --)  BOUNDS ?DO  I SPC@ EMIT 50 TICKS LOOP ;
 
 
 ;[ TALKING? ( -- flag )
@@ -44,10 +54,10 @@ HEX
 ; Upon testing, it appears that the synth reports idle *just before* it really
 ; is finished.
 ; This causes a problem, as TurboForth is fast enough to start feeding new data
-; immediately when it detects the synth as idle, thus chopping off the end of 
-; streamed speech. 
-; To protect against this, it uses the hardware busy signal from the synth, 
-; *and* the number of bytes/words currently outstanding in any data that is 
+; immediately when it detects the synth as idle, thus chopping off the end of
+; streamed speech.
+; To protect against this, it uses the hardware busy signal from the synth,
+; *and* the number of bytes/words currently outstanding in any data that is
 ; currently being fed to the synth. If either>0 then a busy is returned.
  _spkng  dect stack                  ; make space on data stack
         mov @synyes,r0              ; synth fitted?
@@ -91,7 +101,7 @@ _strem  mov *stack+,r0              ; pop speech buffer count
         jmp sayxit
 ;]
 
-;[ speech support routines    
+;[ speech support routines
 ; routine to see if speech synth is fitted
 ; on exit sets r0: 0=not detected >ffff=detected
 isspch  clr @synyes                 ; assume no speech synth detected
@@ -115,7 +125,7 @@ readsp  mov r11,r8                  ; save return address
         movb @spchrd,r0             ; read the byte from the speech synth
         b *r8                       ; return to caller
 
-        
+
 ; routine to load an address into the speech synth's address register
 ; the address to load is passed in r0
 spaddr  li r2,4                     ; 4 nybbles to load

@@ -1,12 +1,21 @@
+\ databyte.fth  multi-memory version     Sept 2022 B Fox
 \ DATA and BYTE directive with comma delimiting
-\ More compatible with TI ASM DATA statements Jan 2018
+\ directable to RAM or VDP with directives
 
 \ Usage:
 \ HEX
-\ DATA DEAD,BEEF,AABB
-\ DATA 0001,2200,3300,4440
-\ BYTE 00,01,02,03,FF,BEEF  (aborts on 'BEEF')
+\ VDP DATA DEAD,BEEF,AABB
+\ RAM DATA 0001,2200,3300,4440
+\ VDP BYTE 00,01,02,03,FF,BEEF  (aborts on 'BEEF')
 
+INCLUDE DSK1.DEFER
+INCLUDE DSK1.VDPMEM
+
+DEFER BYTE,
+DEFER WORD,
+
+: RAM    ['] C,  IS BYTE,   ['] ,   IS WORD, ;
+: VDP    ['] VC, IS BYTE,   ['] V,  IS WORD, ;
 
 HEX
 : BYTE ( -- )
@@ -14,7 +23,7 @@ HEX
            [CHAR] , PARSE-WORD  DUP
          WHILE
             EVALUATE  DUP FF00 AND  ABORT" Not a byte"
-            C,
+            BYTE,
          REPEAT
          2DROP ;
 
@@ -22,6 +31,6 @@ HEX
          BEGIN
             [CHAR] , PARSE-WORD  DUP
          WHILE
-            EVALUATE ,
+            EVALUATE WORD,
          REPEAT
          2DROP ;

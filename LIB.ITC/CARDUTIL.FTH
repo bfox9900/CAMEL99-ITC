@@ -1,6 +1,7 @@
 \ CARDUTIL.FTH lets you search for and examine cards in your system
 NEEDS .S FROM DSK1.TOOLS
 NEEDS COMPARE FROM DSK1.COMPARE 
+NEEDS MARKER FROM DSK1.MARKER 
 
 MARKER /CARDS
 
@@ -63,7 +64,7 @@ HEX
                  @ . ." , "      \ it's a number
              ELSE
                  COUNT TYPE      \ convert to addr,len & type with comma
-             THEN .," , "
+             THEN . ." , "
           REPEAT
           0SBZ
           DROP ;

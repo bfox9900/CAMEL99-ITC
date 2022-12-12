@@ -5,6 +5,8 @@ INCLUDE DSK1.VALUES
 INCLUDE DSK1.DEFER
 INCLUDE DSK1.MARKER
 
+MARKER REMOVE
+
 DECIMAL
 \  ** EXPERIMENTAL DATA STRUCTURE ***
 \    COUNTED ARRAYS IN FREE MEMORY
@@ -24,7 +26,7 @@ VARIABLE LAST[]
        DLINK,  HERE  0 ,  ; \ create header, return the address
 
 : ]]   ( -- addr )
-       HERE OVER - 2- OVER ! ; \ end array, fill in the size
+       HERE OVER 2+ - OVER ! ; \ end array, fill in the size
 
 : SIZE ( addr -- addr size) DUP CELL+ SWAP @ ; \ size is in BYTES
 : LINK ( addr -- 'array[] | 0) 2- @ ;
@@ -33,6 +35,12 @@ VARIABLE LAST[]
 : DATA:   CREATE
           ( addr --) ,
           DOES> @ SIZE ( -- addr size)  ;
+
+: sizeof  '  >BODY @ @    POSTPONE LITERAL ; IMMEDIATE
+: #items  '  >BODY @ @ 2/ POSTPONE LITERAL ; IMMEDIATE
+\ TEST DATA
+\ [[  20 CELLS ALLOT  ]] DATA: B[] ( un-initialzed data example)
+[[  1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 , 10 , -1 , -2 , ]] DATA: A[]
 
 \ Explanation:
 \ ACTOR holds the execution token (XT) for the operation that will be done
@@ -76,17 +84,16 @@ DECIMAL
 
 \ MAP returns a new array as output
 : MAP  ( addr size xt-- addr' size)
-  0 SWAP \ add the intial value. Not used but need by FOREACH
-  [[ >R   ['] MAPPER IS ACTION  FOREACH DROP  R> ]] SIZE ;
+  0 SWAP  \ add an "intial value" arg. Not used but needed by FOREACH
+  [[  >R  \ create output array push the address
+   ['] MAPPER IS ACTION  FOREACH DROP  \ perform MAPPER on input array
+   ( output is written into free memory )
+   R> ]] SIZE ; \ complete the output array and return (addr,size)
 
 \ filter returns a new array as output that might be a different size
 : FILTER  ( addr size inital xt-- addr' size')
  [[  >R   ['] FILTRATION IS ACTION  FOREACH  DROP R> ]]  SIZE ;
 \ ======================= ITERATORS ENDS ===========================
-
-\ TEST DATA
-[[  20 CELLS ALLOT  ]] DATA: B[] ( un-initialzed data example)
-[[  1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 , 10 , -1 , -2 , ]] DATA: A[]
 
 \  TEST CODE
 A[] ..

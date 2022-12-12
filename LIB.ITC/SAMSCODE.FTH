@@ -6,7 +6,7 @@
 \ FAR: is a fat version of "colon" that remember SAMS bank# & SAMS CFA
 \ Compiles FARSEMIS on the SAMS side, not in RAM Dictionary
 \ - Saves 2 bytes in dictionary and in 2 bytes SAMS definition
-\ Compile time SAMS memory overflow test ABORTs if you past 4k bytes
+\ Compile time: SAMS memory overflow test ABORTs if you past 4k bytes
 
 \ FAR word data structure:
 \   CELL: link
@@ -18,19 +18,23 @@
 \   CELL:  DATA field #2 , SAMS code field address
 \ 10 bytes + name length
 
-INCLUDE DSK1.TRANSIENT
-INCLUDE DSK1.SAMSINI  \ common code for SAMS card
+NEEDS DUMP      FROM DSK1.TOOLS
+\ NEEDS TRANSIENT FROM DSK1.TRANSIENT
+NEEDS SAMSINI   FROM DSK1.SAMSINI  \ common code for SAMS card
 
-TRANSIENT INCLUDE DSK1.ASM9900
+\ TRANSIENT
+NEEDS MOV,  FROM  DSK1.ASM9900
 
-PERMANENT
+\ PERMANENT
+
+
 HERE
 HEX
 F0 CONSTANT _1STBANK
 FF CONSTANT _MAXBANK
 
 \ SAMS memory management for code
-HEX              E000 CONSTANT CSEG      \ CODE SEG in CPU RAM
+HEX              3000 CONSTANT CSEG      \ CODE SEG in CPU RAM
 4000 CSEG 0B RSHIFT + CONSTANT CREG      \ compute CSEG SAMS register
 CSEG 0C RSHIFT        CONSTANT PASSTHRU  \ default page for CSEG
 
@@ -73,6 +77,7 @@ CODE CMAP  ( bank# --) \ Forth word to map SAMS pages
       NEXT,
       ENDCODE
 
+\ ***R1 must not be altered while compiling***
 CREATE FARCOL   \ run time executor for SAMS colon words.
      IP RPUSH,
      W IP MOV,
@@ -90,8 +95,8 @@ CODE FAREXIT             \ exit for SAMS word
       NEXT,
 ENDCODE
 \ \\\\\\\\\\\\\\\\ finished with assembler //////////////////
-                         DETACH
-\ FAR: headers resided in CPU RAM and are 2 bytes bigger than : headers
+\                         DETACH
+
 : FAR: ( -- ) \ special colon for words in FAR memory
      !CSP
      HEADER             \ compile Forth header with name
@@ -111,7 +116,7 @@ ENDCODE
       POSTPONE FAREXIT    \ compiles at end of SAMS code
       POSTPONE [          \ turn compiler off
       REVEAL ?CSP
-      HERE DUP BANK# @ ]DP !  \ update HERE for this bank, keep the copy
+      HERE DUP BANK# @ ]DP !  \ update HERE for this bank, keep a copy
       SAVHERE @ DP !          \ restore DP to CPU RAM
     ( HERE) [ CSEG 1FFF + ] LITERAL > ABORT" SAMS overflow"
 ; IMMEDIATE
@@ -119,12 +124,14 @@ ENDCODE
 DECIMAL
 : CODEPAGE ( bank# -- )  \ 240 .. 256 are valid
       DUP 256 240 WITHIN ABORT" 240..256"
-      BANK# !
+      DUP BANK# !
 ;
+
+\ DETACH
 
 HERE SWAP -
 DECIMAL CR . .( bytes)  \ free 11,566
 
 PASSTHRU CMAP  \ init the Forth memory bank# as LASTBNK
 HEX
-F0 CODEPAGE
+_1STBANK CODEPAGE

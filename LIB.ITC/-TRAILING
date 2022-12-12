@@ -1,0 +1,22 @@
+\ -TRAILING  *Faster* remove trailing blanks   Oct 2021 FOX
+HEX
+CODE -TRAILING
+A116 , 0604 , 0201 , 2000 , 9054 ,
+1602 , 0604 , 10FC , 6116 , 0584 ,
+NEXT,
+ENDCODE ok
+
+HEX
+\ CODE -TRAILING ( addr len -- addr len')
+\     *SP TOS  ADD,     \ compute end of string 
+\         TOS  DEC,
+\      R1 2000 LI,      \ R1 = BL
+\      BEGIN,
+\        *TOS R1 CMPB,
+\      EQ WHILE,
+\            TOS DEC,
+\      REPEAT,
+\    *SP TOS SUB,
+\        TOS INC,
+\   NEXT,
+\ ENDCODE

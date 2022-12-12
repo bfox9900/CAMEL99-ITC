@@ -1,5 +1,14 @@
 \ forth-94 version of klaus schleisiek's dynamic memory allocation
 \ (forml'88) uh 2016-10-28
+
+\ This is a full implementation using 780 bytes. Rather big for TI-99.
+
+\ CAMEL Forth does not have CATCH and THROW. Use ?MEM to catch IOR
+: ?MEM ( ior -- ) ?DUP IF DUP .  S" MEM error" ?ABORT THEN ;
+
+NEEDS MALLOC FROM DSK1.MALLOC
+NEEDS MOVE   FROM DSK1.MOVE
+
 HERE
 VARIABLE ANCHOR  0 ANCHOR !
 
@@ -64,7 +73,6 @@ CR .( DYNAMIC MEMORY ALLOCATION:)
 CR .( use  "addr size EMPTY-MEMORY"  to initialize,)
 CR .( Use ALLOCATE FREE RESIZE to manage memory.)
 
-\ leave room at top for Camel99 Forth
 NEEDS MALLOC FROM DSK1.MALLOC
 HEX 1D00 DUP MALLOC SWAP ( addr len ) EMPTY-MEMORY
 CR .( HEAP size is ) H @ 2000 - . .( bytes)

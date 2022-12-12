@@ -47,7 +47,7 @@ CODE +      A136 ,         NEXT, ENDCODE
               DUP @ 'NEXT' <>  \ the instruction is not 'NEXT'
            WHILE
              DUP @  ( -- IP instruction)
-             H,   \ compile instruction
+             H,     \ compile instruction
              CELL+  \ advance IP
              2DUP < ABORT" End of code not found"
            REPEAT
@@ -58,7 +58,7 @@ HEX
 : DUP,    ['] DUP  CODE, ;
 
 \ LIT,              TOS PUSH,   TOS n LI,
-: LIT,      ( n -- ) DUP,     0204 H,  ( n) H,  ;
+: LIT,      ( n -- ) DUP,     0204 H,  ( n) H, ;
 
 \ new interpreter loop for inlining *future* make this the Forth compiler
 : INLINE[ ( -- addr)  \ Returns address where code has been copied
@@ -77,13 +77,13 @@ HEX
                       CR ." *Can't optimize type"  TRUE ?ERR
                     ENDCASE
 
-                 ELSE  \ it's a CODE primitive
-                       CODE,  \ compile kernel code
+                 ELSE \ it's a CODE primitive
+                     CODE, \ compile kernel code
                  THEN
 
              ELSE ( maybe its a number)
                  COUNT NUMBER?  ?ERR
-                 ( n ) LIT,   \ compile n as a literal
+                 ( n ) LIT, \ compile n as a literal
              THEN
            REPEAT
            045A H,    \ compile NEXT at end of HEAP code

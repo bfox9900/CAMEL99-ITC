@@ -60,7 +60,7 @@ CODE VECT+ ( dx dy x y -- x' y')  \ 6x FASTER than Forth version
             >R  SWAP   ( -- vy vx)
             OVER 0<    ( -- vy vx ?)       \ vy is negative?
             IF 1+      ( -- vy vx' )       \ inc. vx
-            THEN  R> ]VECTOR 2! ;
+            THEN SWAP R> ]VECTOR 2! ;
 
 \ *NEW* Plural version defines same motion for a range of sprites
 : MOTIONS ( dy dx first last -- )  1+ SWAP DO   2DUP I MOTION   LOOP 2DROP ;

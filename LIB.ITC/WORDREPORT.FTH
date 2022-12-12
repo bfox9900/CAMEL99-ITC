@@ -1,83 +1,34 @@
-\ system report
+\ System word Reports
 
-INCLUDE DSK1.TOOLS
-.( ..)
-: VARIABLES ( -- )
-           CR
-           0 >R        ( word counter on stack)
-           CONTEXT @ @
-           BEGIN
-             SPACEBAR
-            ?BREAK
-             DUP  ( nfa)
-             DUP NFA>CFA @ ['] DOVAR =
-             IF .ID SPACE
-                R> 1+ >R       \ inc. the counter
-             ELSE DROP
-             THEN
-             NFA>LFA @ DUP
-           0= UNTIL
-           DROP
-           CR R> BASE @ >R DECIMAL . SPACE ." variables"
-           R> BASE ! ;
-
-
-.( ..)
-: USERS ( -- )
-            CR
-            0 >R        ( word counter on stack)
-            CONTEXT @ @
-            BEGIN
-               SPACEBAR
-              ?BREAK
-               DUP  ( nfa)
-               DUP NFA>CFA @ ['] DOUSER 2+ =
-               IF .ID SPACE
-                   R> 1+ >R       \ inc. the counter
-               ELSE DROP
-               THEN NFA>LFA @ DUP
-            0= UNTIL
-            DROP
-            CR R> BASE @ >R
-            DECIMAL . SPACE ." user variables"
-            R> BASE ! ;
-
-: CONSTANTS ( -- )
-         CR
-         0 >R        ( word counter on stack)
-         CONTEXT @ @
-         BEGIN
-            SPACEBAR
-           ?BREAK
-            DUP  ( nfa)
-            DUP NFA>CFA @ ['] DOCON =
-            IF .ID SPACE
-               R> 1+ >R       \ inc. the counter
-            ELSE DROP
-            THEN NFA>LFA @ DUP
-         0= UNTIL
-         DROP
-         CR R> BASE @ >R
-         DECIMAL . SPACE ." constants"
-         R> BASE ! ;
-
+.( .)
+\ word type tester
 : CODE? ( cfa -- ?) DUP @ 2- = ;
+: VAR?  ( cfa -- ?) @ ['] DOVAR = ;
+: CON?  ( cfa -- ?) @ ['] DOCON = ;
+: USE?  ( cfa -- ?) @ ['] DOUSER = ;
+( Special: DOCOL code is in scratchpad RAM)
+: COL?  ( cfa -  ?) @  [ ' DOCOL @ ] LITERAL  = ;
 
-: CODES ( -- )
-        CR
-        0 >R        ( word counter on stack)
-        CONTEXT @ @
-        BEGIN
-           SPACEBAR
-          ?BREAK
-           DUP  ( nfa)
-           DUP NFA>CFA CODE?
-           IF .ID SPACE
-              R> 1+ >R       \ inc. the counter
-           ELSE DROP
-           THEN NFA>LFA @ DUP
-        0= UNTIL
-        DROP
-        CR R> BASE @ >R
-        DECIMAL . SPACE ." CODE words"
-        R> BASE ! ;
+: .DECIMAL  BASE @ >R  DECIMAL .  R> BASE ! ;
+
+: TYPE-WORDS ( xt -- n )
+  CR
+  >R
+  0  ( accumulator )
+  CONTEXT @ @
+  BEGIN
+    DUP  ( nfa)
+    DUP NFA>CFA  R@ EXECUTE
+    IF COUNT TYPE  SPACE
+       SWAP 1+ SWAP
+    ELSE DROP
+    THEN
+    NFA>LFA @ DUP
+  0= UNTIL
+  R> 2DROP ;
+
+: VARIABLES ( -- )  ['] VAR? TYPE-WORDS CR .DECIMAL ." Variables" ;
+: USERS     ( -- )  ['] USE? TYPE-WORDS CR .DECIMAL ." USER variables" ;
+: CONSTANTS ( -- )  ['] CON? TYPE-WORDS CR .DECIMAL ." Constants" ;
+: CODES     ( -- )  ['] CODE? TYPE-WORDS CR .DECIMAL ." CODE words" ;
+: COLONS    ( -- )  ['] COL? TYPE-WORDS  CR .DECIMAL ." Colon definitions" ;

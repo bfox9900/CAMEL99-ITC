@@ -17,7 +17,7 @@ HEX
 : ARRAY ( n -- )
       CREATE  2+ CELLS ALLOT   \ compile time
 ;CODE ( n -- addr)             \ RUN time
-       A104 ,   \  R4 R4 ADD,  \ 2*  ie: CELLS
+       0A14 ,   \  TOS 1 SLA,  \ 2*  ie: CELLS
        A108 ,   \  W  R4 ADD,  \ base-address+tos=address'
        NEXT,
        ENDCODE

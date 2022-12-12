@@ -1,58 +1,47 @@
-\ Simple line editor for Blocks
+\ Simple line editor for Blocks  Update for Camel99 V2.69
 
-NEEDS .S     FROM DSK1.TOOLS
-NEEDS BUFFER FROM DSK1.BLOCKS
+NEEDS BUFFER    FROM DSK1.BLOCKS
 NEEDS -TRAILING FROM DSK1.TRAILING
-NEEDS VTYPE  FROM DSK1.VTYPE
 
+HERE
 VARIABLE SCR
 VARIABLE SOL
-
-
+VARIABLE SWID   C/L@ 4 - SWID !
 DECIMAL
 64 CONSTANT LWIDTH
+LWIDTH 2/  1- CONSTANT LMASK
 
-: BLANKS  ( addr len ) BL FILL ;
-: BLKLINE ( lin# -- addr) LWIDTH * SCR @ BLOCK +  ;
-: SCRLN   ( n -- vaddr ) C/L@ * TOPLN  + ;
-: (LINE)  ( n -- addr len ) BLKLINE SOL @ + OVER C/L@ -TRAILING  ;
-\ : .LINE   ( lin# --)
-\     (LINE) SOL @ +  (SCRLN)  C/L@ -TRAILING VTYPE ;
-\ displays partial line on screen. Set SOL to see more of the line.
-: LIST ( -- )
-        2 SCRLN     \ screen line, VDP address where text begins
-        16 0
-        DO
-           I (LINE) VWRITE
-           C/L@ +
-        LOOP
-        DROP
-        0 18 AT-XY ;
+: BLANK  ( addr len -- ) BL FILL ;
+: (LINE) ( lin# -- addr) SCR @ BLOCK SWAP  LWIDTH * + ;
+\ : .LINE  ( lin# --) (LINE) SOL @ + SWID @ -TRAILING 1 MAX TYPE ;
+: .LINE  ( lin# - ) (LINE) SOL @ + VPOS  SWID @ VWRITE ;
+: (CP) ( L1 L2 -- ) (LINE) SWAP (LINE) SWAP LWIDTH MOVE ;
 
 \ Line editor commands
-: L  ( blk# --)  DUP SCR !  PAGE  ." SCR# "   3 U.R  LIST ;
+: LIST   ( s# - )
+  PAGE DUP SCR ! ." SCR# "  3 U.R
+  CR ." Col" SOL @ 2 .R
+  16 0 DO   CR I 2 .R ." |"  I .LINE   LOOP  CR QUIT ;
 
-: RS  ( -- ) LWIDTH C/L@ - SOL ! SCR @ L ;   \ list right side of block
-: LS  ( -- ) SOL OFF  SCR @ L ;   \ list left side of block
+: ED ( -- ) SCR @ LIST ;
 
-: EDIT ( -- ) SCR @ L ;  \ list current block
+: ++ ( -- ) 1 SCR +! ED ;
+: -- ( -- ) SCR @ 1- 0 MAX  SCR ! ED ;
 
-: >> ( -- ) 1 SCR +! EDIT ; \ list next block
-: << ( -- ) SCR @ 1- 0 MAX  SCR ! EDIT ;  \ list previous block
-: EL ( line# -- ) (LINE) LWIDTH BLANK ;   \ erase line
-: P  ( line# -- ) DUP EL  0 PARSE ROT (LINE) SWAP CMOVE UPDATE  EDIT ;
-: DL ( line# -- )  EL  UPDATE EDIT ;      \ delete line & refresh
-: CP ( L1 L2 -- ) (CP) UPDATE EDIT ;      \ copy line & refresh
-: ML  ( L1 L2 -- ) OVER >R (CP) R> DL ;   \ move line & refresh
+: P  ( line# -- ) 0 PARSE ROT (LINE) SWAP MOVE UPDATE  ED ;
+: D  ( line# -- ) (LINE) LWIDTH BLANK UPDATE ED ;
+: CP ( L1 L2 -- ) (CP) UPDATE ED ;
+: M  ( L1 L2 -- ) OVER >R (CP) R> D ;
+: >> ( -- ) SOL DUP @ 8 + LMASK AND SWAP !  ED ; \ SHIFT list right
+: << ( -- ) SOL DUP @ 8 - LMASK AND SWAP !  ED ; \ shifr list left
 
 : LOAD  ( n -- )
         SCR !
         16 0
         DO
            I LINES !
-           I (LINE) EVALUATE
+           I (LINE) LWIDTH EVALUATE
         LOOP ;
 
-: -->   ( n -- ) SCR @ 1+ LOAD ;
-: CLEAR ( blk# -- ) BUFFER B/BUF BLANK  UPDATE ;
-: COPY  ( from to -- ) FLUSH  SWAP  BLOCK  2- !  UPDATE ;
+: -->   ( n -- ) SCR @ 1+ LOAD ; IMMEDIATE
+HERE SWAP - DECIMAL . .( bytes)

@@ -48,7 +48,18 @@ INCLUDE DSK1.TOOLS
          2DROP
          R> ;
 
-:
+: N>R \ xn .. x1 N -- ; R: -- x1 .. xn n
+\ Transfer N items and count to the return stack.
+   DUP                        \ xn .. x1 N N --
+   BEGIN
+      DUP
+   WHILE
+      ROT R> SWAP >R >R      \ xn .. N N -- ; R: .. x1 --
+      1-                      \ xn .. N 'N -- ; R: .. x1 --
+   REPEAT
+   DROP                       \ N -- ; R: x1 .. xn --
+   R> SWAP >R >R
+ ;
 
 : .{LIST}  ( addr n   n -- )
           2* N>R
