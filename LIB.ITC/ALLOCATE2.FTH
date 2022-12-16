@@ -1,5 +1,5 @@
 \ forth-94 version of klaus schleisiek's dynamic memory allocation
-\ (forml'88) uh 2016-10-28
+\ (forml'88) uh 2016-10-28 
 
 \ This is a full implementation using 780 bytes. Rather big for TI-99.
 
@@ -74,6 +74,6 @@ CR .( use  "addr size EMPTY-MEMORY"  to initialize,)
 CR .( Use ALLOCATE FREE RESIZE to manage memory.)
 
 NEEDS MALLOC FROM DSK1.MALLOC
-HEX 1D00 DUP MALLOC SWAP ( addr len ) EMPTY-MEMORY
+HEX 2000 DUP MALLOC SWAP ( addr len ) EMPTY-MEMORY
 CR .( HEAP size is ) H @ 2000 - . .( bytes)
 HERE SWAP - DECIMAL . .( bytes)

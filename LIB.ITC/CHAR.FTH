@@ -1,5 +1,5 @@
 
-\ CHAR   converts ASCII char to a number
+\ CHAR   converts ASCII char to a number (in DSK1.SYSTEM)
 
 \ use for interpret mode
 : CHAR    ( -- <c>) BL WORD CHAR+ C@ ;
