@@ -21,3 +21,12 @@ CODE U/ ( n n -- n ) \ unsigned divide. FASTER but be careful
               R0  TOS DIV,     \ perform unsigned division  124
               NEXT,
               ENDCODE
+
+CODE U/MOD ( u2 u1 -- u2 u3 ) \ numerator, divisor -- rem,quot
+              TOS  R0 MOV,     \ divisor->R0                 14
+              TOS  CLR,        \ high word =0 to TOS         10
+             *SP   R5 MOV,     \ MOVE low word to r5         18
+              R0  TOS DIV,     \ perform unsigned division  124
+              R5  *SP MOV,     \ push remainder              22
+              NEXT,            \                            178
+              ENDCODE
