@@ -660,10 +660,12 @@ INCLUDE DSK4.VILS-L
 : ls     dir ;
 
 : vi
-  GET-FILENAME 2DUP FILENAME PLACE
   DUP 0=
-  IF   2DROP NEW
-  ELSE READ-FILE
+  IF
+    2DROP NEW
+  ELSE 
+    GET-FILENAME 2DUP FILENAME PLACE
+    READ-FILE
   THEN EDIT ;
 
 : MANPAGE ( -- addr len)
@@ -704,7 +706,7 @@ DECIMAL
   uLINE CURSOR
   ['] NEWQUIT ['] QUIT CELL+ !  \ patch quit 
   
-  PAGE ." VI99 Command Shell 1.41 2022 Brian Fox"
+  PAGE ." VI99 Command Shell 1.43 2022 Brian Fox"
   CR
   CR ." HOME$=" GETDEV HOME$ .$
   CR
