@@ -8,3 +8,6 @@ functionality.
 
 ### Hardward Requirements
 vi99 is an 80 column editor and therefore requires the F18 video card or equivalent functionality on an emulator like Classic99. 
+
+
+![Alt text](https://github.com/bfox9900/CAMEL99-ITC/blob/master/vi99/images/vi99-command-shell.png "vi99 Command Shell")
