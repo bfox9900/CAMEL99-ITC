@@ -1,3 +1,6 @@
+\ VT100COLR.FTH  For Camel99 Forth by Brian Fox 2019
+\ License: Public Domain with no Warranty, neither explicit nor implied
+
 \ Set Attribute Mode <ESC>[{attr1};...;{attrn}m
 \ Sets multiple display attribute settings.
 \ The following lists standard attributes:

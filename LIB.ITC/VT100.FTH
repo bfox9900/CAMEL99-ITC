@@ -1,3 +1,6 @@
+\ VT100.FTH  For Camel99 Forth by Brian Fox 2019
+\ License: Public Domain with no Warranty, neither explicit nor implied
+
 CR .( VT100 terminal control)
 DECIMAL
 \ type un-signed number, base 10, with no space and restore previous radix
