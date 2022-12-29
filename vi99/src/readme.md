@@ -1,7 +1,5 @@
-## vi99 Editor for TI-99
+## vi99 Editor source
 
-This is an attempt to make a vi work-alike editor for TI-99.
-The Forth interpreter replaces the O/S shell providing ls and ls-l commands. 'vi' starts the editor. 
-
-The editor is not a complete version of vi but provides some basic
-functionality. 
+Source was built on Camel99 Forth V2.69. 
+The HEAPSTRINGS.FTH file was residing on DSK4 in Classic99.
+All other library files are assummed to be on DSK1.
