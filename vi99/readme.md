@@ -5,3 +5,6 @@ The Forth interpreter replaces the O/S shell providing ls and ls-l commands. 'vi
 
 The editor is not a complete version of vi but provides some basic
 functionality. 
+
+### Hardward Requirements
+vi99 is an 80 column editor and therefore requires the F18 video card or equivalent functionality on an emulator like Classic99. 
