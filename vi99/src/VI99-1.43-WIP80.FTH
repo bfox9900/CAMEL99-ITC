@@ -31,11 +31,13 @@
 \ R – Overwrite characters from cursor onward
 \ s – Substitute one character under cursor continue to insert
 \ S – Substitute entire line and begin to insert at the beginning of the line
+\ yy - CUT line to clipboard 
+\ G  - goto line
 \ ~ – Change case of individual character
 
 NEEDS WORDLIST   FROM DSK1.WORDLISTS
 ONLY FORTH DEFINITIONS
-\ NEEDS DUMP       FROM DSK1.TOOLS
+ NEEDS DUMP       FROM DSK1.TOOLS
 NEEDS READ-LINE  FROM DSK1.ANSFILES
 NEEDS #1         FROM DSK4.HEAPSTRINGS
 NEEDS CASE       FROM DSK1.CASE
@@ -74,6 +76,22 @@ C/L@ 1- CONSTANT SCRWIDTH
 : VBLANKLN ( -- ) VPOS C/L@ VBLANK ;
 : HLINE    ( col row -- ) >VPOS C/L@  [CHAR] __ VFILL ;
 : .$       ( $ --) COUNT TYPE ;
+: BETWEEN  1+ WITHIN ;
+: 0..9?    ( char -- ?) [CHAR] 0 [CHAR] 9  BETWEEN ;
+HEX
+: GETKEY ( -- c) RKEY 7F AND ; \ c is 7 bit ascii 
+
+: VALIDATE ( char $ len -- ?) ROT SCAN NIP ; \ char a S" abcded" VALIDATE 
+
+\ some handy macros 
+: END
+  POSTPONE EXIT
+  POSTPONE THEN ; IMMEDIATE
+
+: EXPECTED
+  POSTPONE <> POSTPONE IF
+  POSTPONE END ; IMMEDIATE
+
 
 \ RESERVE/RESTORE: cheap way to allocate dictionary space and return it
 \ : RESERVE  ( n -- addr) HERE ALLOT ;
@@ -90,18 +108,11 @@ HEX
   LOOP ;
 
 DECIMAL
-: --  ( addr -- ) \ Safe DEC a variable to zero
-    DUP @ 1- 0 MAX  SWAP ! ;
-
+: DECR ( addr -- )   DUP @ 1- 0 MAX  SWAP ! ;
 : GETXY   ( -- x y ) VROW 2@ ;
-: SAVECURS
-  S" GETXY 2>R" EVALUATE ; IMMEDIATE
-
-: RESTCURS
-  S" 2R> AT-XY" EVALUATE ; IMMEDIATE
-
+: SAVE-XY  S" GETXY 2>R" EVALUATE ; IMMEDIATE
+: REST-XY  S" 2R> AT-XY" EVALUATE ; IMMEDIATE
 : PROMPT  ( -- ) 0 23 AT-XY VBLANKLN ;
-
 : SCRLINE  ( -- Vaddr) VROW @ C/L@ * ;
 
 : +PLACE  ( addr n $ -- ) \ append addr,n to counted string $
@@ -126,14 +137,13 @@ HEX
 1D CONSTANT SOLID
 
 DECIMAL
-\ fast screen write
-: VTYPE ( $ len )
-  DUP>R VPOS SWAP VWRITE R> VCOL +! ;
-
 \ top 22 lines is the editor screen 
   C/SCR @ C/L@ 2* - CONSTANT SCRSIZE
-  
   SCRSIZE C/L@ -    CONSTANT BOTTOMLINE 
+
+\ fast screen write with column update 
+: VTYPE ( $ len )
+  DUP>R VPOS SWAP VWRITE R> VCOL +! ;
 
 \ clears top 22 lines ie: editing screen
 : CLS  ( --) VTOP @ SCRSIZE VBLANK ;
@@ -154,7 +164,7 @@ DECIMAL
 
 : LIST  ( -- )
   TXTBUFFER TOPLINE @ NTH
-  SAVECURS
+  SAVE-XY
   CLS  0 0 AT-XY
   22 0
   DO
@@ -166,7 +176,7 @@ DECIMAL
     NEXT$       ( follow the link)
   LOOP 
   DROP
-  RESTCURS ;
+  REST-XY ;
 
 \ cursor movement controls
 : TOPLINE+! ( n --) TOPLINE @ SWAP +  0 2000 CLIP  TOPLINE ! ;
@@ -181,19 +191,22 @@ DECIMAL
   THEN ;
 
 \ text on screen, "right of cursor" as a VDP stack string
-: RIGHTSIDE ( -- VDPaddr len)
-  SCRLINE C/L@  VCOL @ /STRING ;
+: RIGHTSIDE ( -- VDPaddr len) SCRLINE C/L@  VCOL @ /STRING ;
 
 \ =======================
 \ text manipulation
 : DELCHAR    ( -- )
-  PAD C/L@ 2+ BLANK       \ init pad to all spaces  
-  RIGHTSIDE TUCK 1 /STRING      \ cut off first character  
-  PAD SWAP  VREAD         \ read shortened string to PAD buffer  
-  PAD VPOS ROT VWRITE ;   \ write it back to screen 
+  PAD C/L@ 2+ BLANK         \ init pad to all spaces  
+  RIGHTSIDE TUCK 1 /STRING  \ cut off first character  
+  PAD SWAP  VREAD           \ read shortened string to PAD buffer  
+  PAD VPOS ROT VWRITE ;     \ write it back to screen 
+
+\ get VDP string into CPU RAM as a counted string 
+: V$@ ( Vaddr len addr -- )  2DUP C! 1+ SWAP VREAD ;
+
 
 : PUSHRIGHT ( -- )
-  RIGHTSIDE TUCK         ( -- len Vaddr len )
+  RIGHTSIDE TUCK  ( -- len Vaddr len )
   PAD SWAP VREAD              \ read VDP string into PAD buffer 
   BL VPUT                     \ write blank at cursor
   PAD VPOS 1+ ROT 1- VWRITE ; \ write buffer back to screen in new position 
@@ -218,12 +231,11 @@ FILENAME OFF
   THEN PROMPT "TYPE" ;
 
 : .FSTATS
-  SAVECURS
+  SAVE-XY
   .FILE SPACE .LINES .FSIZE
-  RESTCURS ;
+  REST-XY ;
 
 \ ===[ "INSERT" MODE primitives ]===
-: V$! ( Vaddr len addr -- )  2DUP C! 1+ SWAP VREAD ;
 
 \ -trailing for a VDP string
 : V-TRAILING ( V$ len -- V$ len')
@@ -264,7 +276,7 @@ CREATE LSTK  STKBASE ,
 
 : VTOS$    ( Va) LSTK @ ;
 : LDEPTH   ( -- n) VTOS$ STKBASE - STKWIDTH / ;
-: CLR-COPY ( --)   STKBASE LSTK ! ; \ clear line-stack
+: CLR-STAK ( --)   STKBASE LSTK ! ; \ clear line-stack
 
 : STKROOM?  (  -- ?) \ ?=true if bad
   VTOS$ STKWIDTH +  STKBASE STKEND 1+ WITHIN ;
@@ -279,14 +291,11 @@ CREATE LSTK  STKBASE ,
   HEAP R@ - 0 MAX  ( len $ $' size )
   MOVE R> ;
 
-: LINES++   ELINE# LINES @ MAX LINES ! ;
-
 \ store VDP string at addr in CPU RAM
-: INSERTLN  ( Vaddr len ELINE# --)
-  MAKEROOM  V$!    LINES 1+! ;
+: INSERTLN  ( Vaddr len ELINE# --) MAKEROOM  V$@    LINES 1+! ;
 
-\ over a line from screen (VDP RAM) in txtbuffer 
-: OVERWRITE ( len line# -- addr)
+\ write a line from screen (VDP RAM) back into txtbuffer 
+: WRITEBACK ( len line# -- Vaddr)
   GOTOLN
   ELINE$ DUP>R
   DUP NEXT$ SWAP
@@ -300,18 +309,14 @@ CREATE LSTK  STKBASE ,
   R> ;
 
 : DEALLOT ( n -- )
-  HEAP OVER - C/L@ 2* ERASE
-\ deallocate
-  HEAP SWAP - TXTBUFFER MAX H ! ;
+  HEAP OVER - C/L@ 2* ERASE        \ set end of heap to zeros  
+  HEAP SWAP - TXTBUFFER MAX H ! ;  \ deallocate
 
-: DELETELN ( lnaddr -- n) DELLN  DEALLOT  LINES -- ;
+: DELETELN ( lnaddr -- n) DELLN  DEALLOT  LINES DECR ;
 
 : DEL-LINE# ( ln# --) GOTOLN ELINE$ DELETELN ;
 
-: UPDATELN
-  SCR$ DUP>R ELINE# OVERWRITE V$!
-  R> HALLOT
-;
+: UPDATELN  SCR$ DUP>R ELINE# WRITEBACK V$@     R> HALLOT ;
 
 \ text/screen color combos
 HEX
@@ -337,13 +342,33 @@ DECIMAL
 : SAVE          ( -- )  FILENAME COUNT WRITE-FILE ;
 
 \ ====================================
+\ number argument collector uses a counted string to hold digits
+DECIMAL 
+CREATE ArgBUFF 6 ALLOT    ArgBUFF 6 0 FILL 
+
+: ARG$+   ( char -- ) HERE C!  HERE 1 ArgBUFF +PLACE ; \ append char to buffer 
+: CLRARG  ( -- ) 0 ArgBUFF C! ;
+
+: ARG#    ( -- n) \ n always 1 or more 
+  ArgBUFF COUNT NUMBER? ( n ?) \ ?=0 means valid conversion
+  IF   DROP HONK CLRARG 1  
+  ELSE 1 MAX 
+  THEN ;
+
+: CMDKEY ( -- char ) \ accumulate numbers or return key stroke 
+  GETKEY DUP 0..9? 0= IF END  \ NOT a number key, so just return key value 
+  CLRARG ARG$+                \ it was a number so start a new arg string 
+  BEGIN 
+    KEY DUP 0..9?             \ get next key, test for digit 
+  WHILE                       \ while it is a digit 
+    ARG$+                     \ append to ARG$ 
+  REPEAT ;                    \ end loop and return last key value  
+ 
 
 DECIMAL
 13 CONSTANT ^M
 15 CONSTANT <ESC>
 
-HEX
-: GETKEY ( -- c) RKEY 7F AND ;
 
 \ Command mode KEY commands
 \ Ideas from VIBE by Sam Falvo
@@ -356,54 +381,69 @@ HEX
 \
 
 DECIMAL
-\ some handy macros 
-: END
-  POSTPONE EXIT
-  POSTPONE THEN ; IMMEDIATE
-
-: EXPECTED
-  POSTPONE <> POSTPONE IF
-  POSTPONE END ; IMMEDIATE
-
 : PUSH$ ( -- ) \ push$ current line onto line stack 
   ELINE# GOTOLN
   LNPUSH 
   ELINE$ ( DUP) COUNT VTOS$ VPLACE 
  ;
 
+\ ===================================
+\ undo function 
+DECIMAL
+CREATE UBUFFER  82 ALLOT 
+
+: SAVELN    SCRLINE UBUFFER  C/L@ VREAD ;
+: UNDO      UBUFFER SCRLINE  C/L@ VWRITE UPDATELN ;
+
+: $$c-u  UNDO  ; \ defined command 
+
+
 \ Define formatted command words
-: $$c-y   \ YANK line (copy to buffer )
-  KEY [CHAR] y EXPECTED
+: $$c-y   \ "YANK" (copy to buffer )
   STKROOM? 0= IF  BEEP  END
-  SAVECURS
-  PUSH$
-  LIST
-  RESTCURS ;
+  KEY [CHAR] y EXPECTED
+  SAVE-XY
+  PUSH$ LIST
+  REST-XY ;
 
-: YANKS ( n --) 0 ?DO  PUSH$  LOOP ;
+: YANKS ( --) ARG# 0 DO $$c-y  LOOP  CLRARG ;
 
-: DO-DELLN
-  SAVECURS
-  ELINE# DEL-LINE#
-  LIST  
-  RESTCURS ;
 
-: $$c-d   \ delete line to buffer
-  KEY [CHAR] d EXPECTED
-  STKROOM? 0= IF BEEP END
-  PUSH$  
-  DO-DELLN ;
+: CUTLINE ( -- ) \ Cut and put into clipboard 
+  STKROOM? 0= IF BEEP END 
+  SAVE-XY
+  PUSH$ ELINE# DEL-LINE#  LIST  
+  REST-XY ;
+
+: CUTLINES  ( -- ) ARG# 0 DO  CUTLINE LOOP  CLRARG ;
+
+: $$c-x ( -- ) SAVELN DELCHAR UPDATELN ;
+
+\ vdp screen is the actual editing buffer so we use the cursor VDP address
+: READCHAR  ( -- c ) VPOS VC@ ; 
+
+: DELWORD   BEGIN  DELCHAR  READCHAR BL = UNTIL UPDATELN ; 
+
+: DELWORDS  ARG# 0 DO  DELWORD  LOOP  CLRARG ;  ;
+
+: $$c-d   \ delete command is a SUB-interpreter
+  SAVELN 
+  CMDKEY ( -- char)
+  CASE 
+      [CHAR] d OF  CUTLINES   ENDOF 
+      [CHAR] w OF  DELWORDS   ENDOF 
+  ENDCASE ;
 
 : $$c-D
-  RIGHTSIDE VBLANK
-  UPDATELN ;
+  SAVELN 
+  RIGHTSIDE VBLANK  UPDATELN ;
 
 \ command mode cursor control
 : $$c-h \ Cleft
-  VCOL -- ;
+  VCOL DECR ;
 
 : $$c-k  \ CUP
-  VROW DUP --
+  VROW DUP DECR
   @ 0= IF -1 MOVESCR THEN ;
 
 : CDOWN
@@ -424,24 +464,30 @@ DECIMAL
 : $$c-0  VCOL OFF ;
 
 : $$c-:
-  SAVECURS
+  SAVE-XY
   PROMPT [CHAR] : EMIT
   PAD DUP C/L@ 2-  ACCEPT EVALUATE
-  RESTCURS LIST ;
+  REST-XY LIST ;
 
 \ Replace single char
 : $$c-r
+  SAVELN 
   INSERTING OFF
   uLINE CURSOR  GETKEY VPUT
   UPDATELN  ;
 
-: $$c-x  DELCHAR UPDATELN ;
+: $$c-G ( n -- )
+  ARG# DUP 
+  IF   1-   0 LINES @ CLIP  TOPLINE ! 
+  ELSE DROP   LINES @ TOPLINE ! 
+  THEN LIST  
+       0 0 AT-XY
+       CLRARG 
+;
 
-: /~ \ erase ~ if found
+: ERASE~ \ erase ~ if found
   SCRLINE VC@ [CHAR] ~ =
-  IF BL SCRLINE VC!
-     UPDATELN
-  THEN ;
+  IF  BL SCRLINE VC!  UPDATELN  THEN ;
 
 \ =====================
 \ on screen line editor
@@ -452,13 +498,12 @@ DECIMAL
   VCOL !
   GRAY/BLK SCREEN
   BEGIN
-    /~
+    ERASE~
     GETKEY
     DUP BL [CHAR] ~ BETWEEN
     IF
-      INSERTING @
-      IF PUSHRIGHT THEN CPUT DROP
-         VCOL @ C/L@ 2- MIN VCOL !
+      INSERTING @ IF PUSHRIGHT THEN CPUT DROP
+      VCOL @ C/L@ 2- MIN VCOL !
     ELSE
       CASE
        ^ C OF  DELCHAR          ENDOF
@@ -475,13 +520,14 @@ DECIMAL
 
 \ start editing commands
 : $$c-i
-  CLR-COPY
-  INSERTING ON  BAR CURSOR /~
-  VCOL @ PUSHRIGHT EDITLN ;
+  SAVELN 
+  CLR-STAK
+  INSERTING ON  BAR CURSOR  ERASE~
+  VCOL @ EDITLN ;
 
 : $$c-I
-  CLR-COPY
-  INSERTING ON  BAR CURSOR /~
+  CLR-STAK
+  INSERTING ON  BAR CURSOR  ERASE~
   0 EDITLN ;
 
 : OPEN-LINE 
@@ -505,47 +551,49 @@ DECIMAL
   VCOL OFF ;
 
 : PASTELN
-  SAVECURS
+  SAVE-XY
   OPEN-LINE 
   VROW @ INSERT-AT
-  RESTCURS ;
+  REST-XY ;
 
 : $$c-p \ paste all lines
-  LDEPTH 0= IF  BEEP END
+  LDEPTH 0= IF  BEEP  END
   LDEPTH 0 ?DO  PASTELN  LOOP ;
 
 : $$c-R \ replace many chars
+  SAVELN 
   INSERTING OFF
   uLINE CURSOR
   VCOL @ EDITLN ;
 
 : $$c-r \ replace 1 char
+  SAVELN 
   CURS @ >R
   uLINE CURSOR
   GETKEY EMIT UPDATELN
   R> CURSOR ;
 
 \ append @ curs
-: $$c-a   CLR-COPY  VCOL @ 1+!  $$c-R ;
+: $$c-a   SAVELN  CLR-STAK  VCOL @ 1+!  $$c-R ;
 
 \ append line
 : $$c-A
-  CLR-COPY
+  SAVELN 
+  CLR-STAK
   INSERTING OFF
   uLINE CURSOR
   SCRLINE EOL EDITLN ;
 
 \ ===========================
 \ Editor Key Handler
+\ CMD$ is built as a string with ascii key value appended 
+\ then found and executed by Forth interpreter
 HEX
      FF CONSTANT $FF
 CHAR i  CONSTANT 'i   \ Insert mode
 CHAR c  CONSTANT 'c   \ Command mode
 
 'c MODE !
-\ CMD$ is built dynamically
-\ with ascii value
-\ then found and executed
 CREATE CMD$
 5 C,
 CHAR $ C, CHAR $ C, 'c C,
@@ -563,7 +611,7 @@ DECIMAL
 : CMD!   ( -- )  MODE! ASCII! ;
 
 \ ===================
-\ command interpreter
+\ HANDLER: the command interpreter
 \ ===================
 : HANDLER ( k -- )
   CMD!
@@ -571,36 +619,40 @@ DECIMAL
   IF  DROP BEEP EXIT
   THEN EXECUTE ;
 
-DECIMAL
-21 CONSTANT 1SCR
-11 CONSTANT 1/2SCR
-
-\ ===[ VI Command Mode keys ]===
-\ command to edit existing buffer
-: EDIT ( -- )
+: SCR-SETUP 
   INSERTING ON
-  CLR-COPY
+  CLR-STAK
   TOPLINE OFF
   0 22 HLINE
   LIST  0 0 AT-XY 
-  'c MODE !
+  'c MODE ! ;
 
+DECIMAL
+21 CONSTANT 1SCR
+11 CONSTANT 1/2SCR
+;
+\ ===[ VI Command Mode keys ]===
+\ command to edit existing buffer
+: edit ( -- )
+  SCR-SETUP
+  CLRARG 
   BEGIN
     DKGRN/BLK SCREEN
     .FSTATS
-    BOX CURSOR GETKEY
+    BOX CURSOR 
+    CMDKEY  \ CMDKEY accumulates number keys, returns anything else 
     CASE
        \ control keys
-    ^ F OF  1SCR MOVESCR          ENDOF
-    ^ B OF  1SCR NEGATE MOVESCR   ENDOF
-    ^ D OF  1/2SCR MOVESCR        ENDOF
-    ^ U OF  1/2SCR NEGATE MOVESCR ENDOF
-    ^ L OF  LIST  0 22 HLINE      ENDOF
-     ^M OF  NEWLINE               ENDOF
-     BL OF  $$c-l                 ENDOF  ( Cursor right)
-    ^ Q OF  CR CR ." Shell" ABORT ENDOF
-        \ Commands:
-          DUP HANDLER
+      ^ F OF  1SCR MOVESCR          ENDOF
+      ^ B OF  1SCR NEGATE MOVESCR   ENDOF
+      ^ D OF  1/2SCR MOVESCR        ENDOF
+      ^ U OF  1/2SCR NEGATE MOVESCR ENDOF
+      ^ L OF  LIST  0 22 HLINE      ENDOF
+       ^M OF  NEWLINE               ENDOF
+       BL OF  $$c-l                 ENDOF  ( Cursor right)
+      ^ Q OF  clear ." VI99 Shell" ABORT ENDOF
+            \ Commands:
+              DUP HANDLER
     ENDCASE
   AGAIN ;
 
@@ -643,9 +695,7 @@ CREATE HOME$ 8 ALLOT
 : wq  x q ;
 
 \ 123 G *MUST have space after no.
-: G    ( n -- )
-  1-  0 2000 CLIP TOPLINE !
-  LIST  0 0 AT-XY   ;
+: G    ( n -- ) 1- TOPLINE ! LIST ;
 
 : 1G     1 G ;
 : $      LINES @  G ;
@@ -666,16 +716,18 @@ INCLUDE DSK4.VILS-L
   ELSE 
     TOUPPER ?DOT 
     2DUP FILENAME PLACE  READ-FILE
-  THEN EDIT ;
+  THEN edit ;
+
+: e  vi  ;   
 
 : MANPAGE ( -- addr len)
    HOME$ COUNT PAD PLACE
    S" VIMANPAGE" PAD +PLACE
    PAD COUNT ;
 
-: help  MANPAGE READ-FILE EDIT ;
+: help  MANPAGE READ-FILE edit ;
 
-: //  EDIT ;
+: //   edit  ;
 
 : bye    BYE ;
 : cold   COLD ;
@@ -683,7 +735,7 @@ INCLUDE DSK4.VILS-L
 : home=  GET-FILENAME HOME$ PLACE ;
 
 ONLY FORTH DEFINITIONS
-\ console with prompt for vi99
+\ console REPL with prompt for vi99
 DECIMAL 
 : prompt$  CR  HOME$ .$  ." $ " ;
 : NEWQUIT 
@@ -693,7 +745,6 @@ DECIMAL
            BEGIN
             prompt$  TIB DUP 82 ACCEPT SPACE
             ( addr len) INTERPRET
-            STATE @ 0= IF  ."  ok"  THEN 
            AGAIN ;
 
 \ -----------------------
