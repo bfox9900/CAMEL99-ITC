@@ -1,7 +1,8 @@
 \ SAMS CARD support for CAMEL99 Forth         May 2020  B Fox
 \ FEB 1 2023, improved speed with OVER= in V2.69
 \ Written in Forth so you can see how it works.
-INCLUDE DSK1.TOOLS
+
+\ INCLUDE DSK1.TOOLS
 NEEDS SAMSINI FROM DSK1.SAMSINI
 HERE
 
