@@ -45,8 +45,14 @@ DECIMAL
           19 CONSTANT EL/SCR   \ editor lines per screen
 EL/SCR 3 +   CONSTANT PY       \ prompt line y coordinate
          128 CONSTANT RECSIZE
+\ ************************************************************************         
+\ changes needed for better use of SAMS page. 51 lines of 80 bytes each 
+\              #80 CONSTANT RECSIZE  \ Change recsize to 80 
+\               51 CONSTANT L/PAGE   \ text lines in one 4K SAMS memory page 
+\ RECSIZE L/PAGE * CONSTANT B/PAGE   \ bytes per page used with 80 byte lines (4080) replaces 4K in old version
+\ ************************************************************************
 
-4K 32 UM* RECSIZE UM/MOD NIP CONSTANT MAXLINES
+\ 4K 32 UM* RECSIZE UM/MOD NIP CONSTANT MAXLINES
 
 VARIABLE INSERTING
 VARIABLE LASTSRCH
@@ -169,6 +175,9 @@ CODE 32*  ( n -- n')  0A54 ,  NEXT, ENDCODE  \ TOS 5 SLA
 
 DECIMAL
 : 1STBLK  ( -- n)  SEG @ 32* ;
+\ **************************************************************************
+\ replace ]RECORD with this version 
+\ : ]RECORD ( n -- addr)  RECSIZE UM* B/PAGE UM/MOD 1STBLK + DUP BLK ! BLOCK + ;
 
 : ]RECORD ( n -- addr)  RECSIZE UM* 4K UM/MOD 1STBLK + DUP BLK ! BLOCK + ;
 
