@@ -1,4 +1,5 @@
 \ SAMS CARD support for CAMEL99 Forth         May 2020  B Fox
+\ FEB 1 2023, improved speed with OVER= in V2.69
 \ Written in Forth so you can see how it works.
 INCLUDE DSK1.TOOLS
 NEEDS SAMSINI FROM DSK1.SAMSINI
@@ -14,16 +15,14 @@ VARIABLE BANK#      \ current mapped bank
 HEX
 : DPAGED  ( 32bitaddr -- addr')
          1000 UM/MOD    ( -- offset bank#)
-         DUP BANK# @ =      \ are we using the same PAGE
-         IF
-             DROP           \ Yes! Drop bank# and get out
-         ELSE
-             DUP BANK# !    \ update bank# variable
-             ><             \ swap bytes, bank# must be in left byte
-            SAMSCARD 0SBO   \ turn on the card
-          ( bank#) SREG !   \ store bank in SAMS register
-            0SBZ            \ turn off card
-         THEN  PMEM +       \ then add offset to paged mem block
+         BANK# @ OVER= IF DROP  PMEM +  EXIT THEN 
+         
+         DUP BANK# !     \ update bank# variable
+         ><              \ swap bytes, bank# must be in left byte
+         SAMSCARD 0SBO   \ turn on the card
+         SREG !          \ store bank in SAMS register
+         0SBZ            \ turn off card
+         PMEM +          \ then add offset to paged mem block
 ;
 
 \ "long" memory fetch and store uses 32bit address.
