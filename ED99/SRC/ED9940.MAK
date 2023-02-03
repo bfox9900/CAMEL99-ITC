@@ -31,6 +31,6 @@ DECIMAL
 
 LOCK
 
-\ These lines will overwrite the existing binary program
+\ *These lines will overwrite the existing binary program on DSK4.
  INCLUDE DSK1.SAVESYS
 ' EDSTART SAVESYS DSK4.ED9940

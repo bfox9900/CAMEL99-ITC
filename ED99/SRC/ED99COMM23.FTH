@@ -1,6 +1,6 @@
 \ ED99 editor common code for 80 col and 40 col version  Feb 2023 Brian Fox
-\ CHANGES FOR v2.69 Oct 22.  Removed CMOVE, CMOVE>. Replaced with MOVE 
-\ FEB 2023: Changed ]RECORD divisor to use 51x80 lines per SAMS PAGE 
+\ CHANGES FOR v2.69 Oct 22.  Removed CMOVE, CMOVE>. Replaced with MOVE
+\ FEB 2023: Changed ]RECORD divisor to use 51x80 lines per SAMS PAGE
 
 \ NEEDS .S        FROM DSK1.TOOLS
 NEEDS LOCK      FROM DSK1.MARKER
@@ -47,7 +47,7 @@ DECIMAL
           19 CONSTANT EL/SCR   \ editor lines per screen
 EL/SCR 3 +   CONSTANT PY       \ prompt line y coordinate
 
-         #80 CONSTANT RECSIZE  \ Change recsize to 80 
+         #80 CONSTANT RECSIZE  \ Change recsize to 80
 4K 32 UM* RECSIZE UM/MOD NIP CONSTANT MAXLINES
 
 VARIABLE INSERTING
@@ -164,11 +164,18 @@ CODE 32*  ( n -- n')  0A54 ,  NEXT, ENDCODE  \ TOS 5 SLA
 
 DECIMAL
 : 1STBLK  ( -- n)  SEG @ 32* ;
-\ ************************************************************************         
-\ changes needed for better use of SAMS page. 51 lines of 80 bytes each 
-               51 CONSTANT L/PAGE   \ text lines in one 4K SAMS memory page 
- RECSIZE L/PAGE * CONSTANT B/PAGE   \ bytes per page used with 80 byte lines 
+<<<<<<< HEAD:ED99/SRC/ED99COMM23.FTH
 \ ************************************************************************
+\ changes needed for better use of SAMS page. 51 lines of 80 bytes each
+               51 CONSTANT L/PAGE   \ text lines in one 4K SAMS memory page
+ RECSIZE L/PAGE * CONSTANT B/PAGE   \ bytes per page used with 80 byte lines
+\ ************************************************************************
+=======
+\ **************************************************************************
+\ replace ]RECORD with this version
+\ : ]RECORD ( n -- addr)  RECSIZE UM* B/PAGE UM/MOD 1STBLK + DUP BLK ! BLOCK + ;
+
+>>>>>>> d9841d015bffac082faf452ad9d09e5d08c1faac:ED99/SRC/ED99COMM.FTH
 : ]RECORD ( n -- addr)  RECSIZE UM* 4K UM/MOD 1STBLK + DUP BLK ! BLOCK + ;
 
 : [REC#]RECORD  ( -- ) REC# ]RECORD ;
@@ -371,9 +378,9 @@ DECIMAL
 .( .)
 : ASCII?  ( c -- ?) BL [CHAR] ~ BETWEEN ;
 
-: WRITECHAR  ( c -- ) 
-  DUP ASCII? 0= IF DROP  EXIT THEN 
-  DUP !CHAR VPUT  RIGHT UPDATED ; 
+: WRITECHAR  ( c -- )
+  DUP ASCII? 0= IF DROP  EXIT THEN
+  DUP !CHAR VPUT  RIGHT UPDATED ;
 
 : DELCHAR    ( -- )
      RIGHTSIDE  1 /STRING  \ get string right of cursor, cut leading char
@@ -696,7 +703,7 @@ DECIMAL
         .HEADER .STATUS
 \       PROMPT: DEPTH .  ( debug line )
         PUTCURS
-        RKEY DUP ASCII? 
+        RKEY DUP ASCII?
         IF
             INSERTING @ IF PUSHRIGHT THEN WRITECHAR
         ELSE
