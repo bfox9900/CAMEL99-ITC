@@ -169,7 +169,7 @@ DECIMAL
                51 CONSTANT L/PAGE   \ text lines in one 4K SAMS memory page
  RECSIZE L/PAGE * CONSTANT B/PAGE   \ bytes per page used with 80 byte lines
 \ ************************************************************************
-=======
+
 \ **************************************************************************
 \ replace ]RECORD with this version
 \ : ]RECORD ( n -- addr)  RECSIZE UM* B/PAGE UM/MOD 1STBLK + DUP BLK ! BLOCK + ;
