@@ -164,7 +164,6 @@ CODE 32*  ( n -- n')  0A54 ,  NEXT, ENDCODE  \ TOS 5 SLA
 
 DECIMAL
 : 1STBLK  ( -- n)  SEG @ 32* ;
-<<<<<<< HEAD:ED99/SRC/ED99COMM23.FTH
 \ ************************************************************************
 \ changes needed for better use of SAMS page. 51 lines of 80 bytes each
                51 CONSTANT L/PAGE   \ text lines in one 4K SAMS memory page
@@ -175,8 +174,7 @@ DECIMAL
 \ replace ]RECORD with this version
 \ : ]RECORD ( n -- addr)  RECSIZE UM* B/PAGE UM/MOD 1STBLK + DUP BLK ! BLOCK + ;
 
->>>>>>> d9841d015bffac082faf452ad9d09e5d08c1faac:ED99/SRC/ED99COMM.FTH
-: ]RECORD ( n -- addr)  RECSIZE UM* 4K UM/MOD 1STBLK + DUP BLK ! BLOCK + ;
+: ]RECORD ( n -- addr)  RECSIZE UM* B/PAGE UM/MOD 1STBLK + DUP BLK ! BLOCK + ;
 
 : [REC#]RECORD  ( -- ) REC# ]RECORD ;
 : ERASE-REC ( addr -- )  #80 BLANK ;
