@@ -1,5 +1,8 @@
-\ ED99 common code   Jul 30 2022  Brian Fox
+\ ED99 editor common code for 80 col and 40 col version  Feb 2023 Brian Fox
+\ CHANGES FOR v2.69 Oct 22.  Removed CMOVE, CMOVE>. Replaced with MOVE 
+\ FEB 2023: Changed ]RECORD divisor to use 51x80 lines per SAMS PAGE 
 
+\ NEEDS .S        FROM DSK1.TOOLS
 NEEDS LOCK      FROM DSK1.MARKER
 NEEDS CASE      FROM DSK1.CASE
 NEEDS READ-LINE FROM DSK1.ANSFILES
@@ -7,19 +10,18 @@ NEEDS PAGED     FROM DSK1.SBLOCKS
 NEEDS -TRAILING FROM DSK1.TRAILING
 NEEDS VTYPE     FROM DSK1.VTYPE
 NEEDS MARKER    FROM DSK1.MARKER
-NEEDS LOAD-FONT FROM DSK1.LOADSAVE
 NEEDS COMPARE   FROM DSK1.COMPARE
 NEEDS SEARCH    FROM DSK1.SEARCH
 NEEDS VALUE     FROM DSK1.VALUES
 NEEDS DEFER     FROM DSK1.DEFER
+NEEDS LOAD-FONT FROM DSK1.LOADSAVE
 
 \ utility commands
  NEEDS DIR      FROM DSK1.DIR
  NEEDS CAT      FROM DSK1.CATALOG
-
 .( .)
 HERE
-CR .( ED99 Multi-file Editor V1.73 BFox 2022) CR
+CR .( ED99 Multi-file Editor V1.7 BFox 2022) CR
 \ named colors for Graphics programs
 : ENUM  ( 0 <text> -- n) DUP CONSTANT  1+ ;
 0 ENUM TRANS   ENUM BLACK    ENUM GREEN    ENUM LTGRN
@@ -44,8 +46,8 @@ DECIMAL
           80 CONSTANT #80      \ length of text lines
           19 CONSTANT EL/SCR   \ editor lines per screen
 EL/SCR 3 +   CONSTANT PY       \ prompt line y coordinate
-         128 CONSTANT RECSIZE
 
+         #80 CONSTANT RECSIZE  \ Change recsize to 80 
 4K 32 UM* RECSIZE UM/MOD NIP CONSTANT MAXLINES
 
 VARIABLE INSERTING
@@ -87,14 +89,12 @@ HEX
 : FORTHCOLOR     1 7 COLORS ;
 
 HEX
-\ CREATE DBLN  0000 , FF00 , FF00 , 0000 ,
 CREATE SGLN  0000 , 0000 , FF00 , 0000 ,
 CREATE ABOX  FC84 , 8484 , 8484 , 84FC ,
 CREATE AROW  1038 , 7C00 , 007C , 3810 ,  \ double arrow cursor
 .( .)
 HEX
 : DEF-CHARS
-\     DBLN  TOPBAR CHARDEF
      SGLN  BOTBAR CHARDEF
      ABOX    BOX  CHARDEF
      AROW  ARROW  CHARDEF ;
@@ -116,8 +116,6 @@ CREATE FNAMES  #FILES 16 * ALLOT
 : FILENAME ( -- caddr) SEG @  4 LSHIFT FNAMES + ;
 \ EVARS can hold 10 different values. One for each SAMS segment
 HEX
-\ CODE  CELLS+ ( addr n -- addr')  A104 ,  A136 ,  NEXT,  ENDCODE
-                           \   TOS TOS ADD,  *SP+ TOS ADD,
 : EVAR: ( -- n+1 )
     CREATE   #FILES CELLS  ALLOT   \ allocated in high RAM
     DOES> SEG @ CELLS + ;
@@ -156,8 +154,6 @@ VARIABLE BLK        \ LAST sams memory block selected
 
 \ ===============================================
 \ Record management system
-
-\ 2 coordinates need for active REC#
 \ EROW is screen row we are editing, TOPLINE is line in file
 : REC#    ( -- n ) EROW @ TOPLINE @ + ;
 
@@ -165,11 +161,14 @@ VARIABLE BLK        \ LAST sams memory block selected
 HEX
 CODE 16*  ( n -- n')  0A44 ,  NEXT, ENDCODE  \ TOS 3 SLA
 CODE 32*  ( n -- n')  0A54 ,  NEXT, ENDCODE  \ TOS 5 SLA
-\ CODE 128* ( n -- n')  0A74 ,  NEXT, ENDCODE
 
 DECIMAL
 : 1STBLK  ( -- n)  SEG @ 32* ;
-
+\ ************************************************************************         
+\ changes needed for better use of SAMS page. 51 lines of 80 bytes each 
+               51 CONSTANT L/PAGE   \ text lines in one 4K SAMS memory page 
+ RECSIZE L/PAGE * CONSTANT B/PAGE   \ bytes per page used with 80 byte lines 
+\ ************************************************************************
 : ]RECORD ( n -- addr)  RECSIZE UM* 4K UM/MOD 1STBLK + DUP BLK ! BLOCK + ;
 
 : [REC#]RECORD  ( -- ) REC# ]RECORD ;
@@ -193,7 +192,7 @@ DECIMAL
 DECIMAL
 CREATE R$   82 ALLOT
 S" 0----+----1----+----2----+----3----+----"  R$ PLACE
-S" 4----+----5----+----6----+----7----+----"  R$ COUNT + SWAP CMOVE
+S" 4----+----5----+----6----+----7----+----"  R$ COUNT + SWAP MOVE
 80 R$ C!  \ set the length to 80 bytes
 
 : RULER$ ( -- caddr len)  R$ COUNT ;
@@ -227,15 +226,13 @@ DECIMAL
      LASTLINE @ 1+ =
      IF DUP >R   S"  <<EOF>>" R> SWAP VWRITE  THEN ;
 
-
 : WRITELN ( VDPaddr CPUaddr -- VDPaddr) SOL @ + OVER WIDTH  VWRITE ;
 : LIST ( -- )
      ?PURGE
      0 2 >VPOS ( -- VDPaddr )
      TOPLINE @ DUP EL/SCR +  SWAP
      DO
-       ( VDPaddr )
-         I ]RECORD WRITELN
+       ( VDPaddr ) I ]RECORD WRITELN
          I ?EOF.
         WIDTH +  ( -- VDPaddr' )
      LOOP
@@ -255,7 +252,7 @@ DECIMAL
      WHILE
        PAD DUP 80 R@ READ-LINE ?FILERR ( -- pad len flag)
        DROP
-       LASTLINE @ ]RECORD ( pad len record) SWAP CMOVE
+       LASTLINE @ ]RECORD ( pad len record) SWAP MOVE
        SPINNER
        LASTLINE 1+!
        ?BREAK
@@ -267,10 +264,11 @@ DECIMAL
 \ save SAMS memory, remove trailing zeros
 VARIABLE SH   \ save handle var is simpler inside DO/LOOP
 : SAVEDV80  ( addr len -- )
+     DUP 0= ABORT" SAVEDV80: len=0"
      DV80 W/O OPEN-FILE ?FILERR SH !
      LASTLINE @ 1+  0
-     ?DO
-        I ]RECORD #80 -TRAILING 1 MAX  SH @ WRITE-LINE ?FILERR
+     DO
+        I ]RECORD #80 -TRAILING  1 MAX  SH @ WRITE-LINE ?FILERR
         SPINNER
         ?BREAK
      LOOP
@@ -371,18 +369,19 @@ DECIMAL
 \ editor functions
 DECIMAL
 .( .)
-: WRITECHAR  ( c -- )
-     DUP BL 127 CLIP
-\    DUP 127 BL ABORT" NON-text char"
-     DUP !CHAR VPUT  RIGHT UPDATED ;
+: ASCII?  ( c -- ?) BL [CHAR] ~ BETWEEN ;
+
+: WRITECHAR  ( c -- ) 
+  DUP ASCII? 0= IF DROP  EXIT THEN 
+  DUP !CHAR VPUT  RIGHT UPDATED ; 
 
 : DELCHAR    ( -- )
      RIGHTSIDE  1 /STRING  \ get string right of cursor, cut leading char
-     'CHAR SWAP 1+ CMOVE    \ write buffer back to CURSOR position +1 space
+     'CHAR SWAP 1+ MOVE    \ write buffer back to CURSOR position +1 space
      RELINE  UPDATED  ;
 
 : PUSHRIGHT ( -- )
-     RIGHTSIDE 'CHAR 1+ SWAP 1- CMOVE> \ write back at 'CHAR+1
+     RIGHTSIDE 'CHAR 1+ SWAP 1- MOVE \ write back at 'CHAR+1
      BL !CHAR                         \ blank at cursor position
      RELINE UPDATED ;
 
@@ -390,7 +389,7 @@ DECIMAL
 
 : CLIPBRD ( -- n)  #CLIPS @ ;
 
-: .CLIPS ( -- ) C/L@ 14 -  PY AT-XY ." Clip board" CLIPBRD  4 .R ;
+: .CLIPS ( -- ) C/L@ 14 - PY AT-XY S" Clip board" VTYPE CLIPBRD  4 .R ;
 
 
 : .MODE  ( -- )
@@ -418,8 +417,7 @@ DECIMAL
      [CHAR] _ CURSOR
      CR KEY? DROP QUIT ;
 \ ======================================================
-\ CLIPBOARD MANAGEMENT
-\ clipboard is in a SEGMENT at top of SAMS memory
+\ CLIPBOARD MANAGEMENT in a SEGMENT at top of SAMS memory
 DECIMAL
 \ clip board uses blocks 161..193
 : ]CLIP    ( rec# -- addr) RECSIZE UM* 4K UM/MOD 161 + BLOCK + ;
@@ -439,9 +437,9 @@ HEX
       PROMPT: ." Delete"
       LASTLINE @ 1+ ROT
       ?DO
-             I OVER ( -- rec# n) + DUP ]RECORD  I ]RECORD COPY-REC
-              ]RECORD ERASE-REC
-             SPINNER
+         I OVER ( -- rec# n) + DUP ]RECORD  I ]RECORD COPY-REC
+          ]RECORD ERASE-REC
+         SPINNER
       LOOP
       REC# LASTLINE @ = IF CURSUP THEN
       LASTLINE @ 1+ ]RECORD ERASE-REC
@@ -464,7 +462,7 @@ HEX
 
 : COPY-LINE ( -- )
       CLIPFULL? IF PROMPT: ." Clipboard full" HONK  BREAK;
-      REC# ]RECORD >CLIP ;
+       REC# ]RECORD >CLIP ;
 
 \ copy entire file to clipstack
 : COPYLINES (  last 1st  -- )
@@ -473,7 +471,6 @@ HEX
 
 HEX
 : COPYALL   ( -- )
-\ if there is anything on the clipboard don't allow
      CLIPFULL? IF HONK BREAK;
      LASTLINE @  0  COPYLINES  RELINE .CLIPS ;
 
@@ -505,8 +502,7 @@ DECIMAL
        ( n) 1+  1
         ?DO
            I ]CLIP  [REC#]RECORD COPY-REC
-           TOPLINE 1+!
-           LASTLINE 1+!
+           TOPLINE 1+!  LASTLINE 1+!
            1 #CLIPS DECR!
            SPINNER
         LOOP
@@ -549,7 +545,7 @@ HEX
     WHILE ( key is same)
         2 DLY !  \ set fast repeats
     REPEAT
-       0C DLY !  \ set initial delay
+    0C DLY !     \ set initial delay
     THEN         \ end time expired loop
     R> DROP
     OUTKEY @
@@ -579,7 +575,6 @@ HEX
          LOOP
          HEAP  80 ]PDT  400 VWRITE ;  \ write back to upper charset
 
-
 : NORMAL  ( addr len --) BOUNDS DO   I C@ 7F AND I C!   LOOP ;
 : REVERSE ( addr len --) BOUNDS DO   I C@ 80 XOR I C!   LOOP ;
 : HILITE  ( addr len --) BOUNDS DO   I C@ 80 OR  I C!   LOOP ;
@@ -588,54 +583,55 @@ HEX
 0F CONSTANT <ESC>
 VARIABLE LOWLINE
 VARIABLE HILINE
-: SELECTION ( -- n n )
-       LOWLINE @ HILINE @ 1+
-       2DUP > IF   SWAP  THEN ;
+: MARKERS  ( -- n n ) HILINE @ LOWLINE @ ;
+: UN-MARK     ( -- ) MARKERS ?DO   I ]RECORD #80 NORMAL  LOOP ;
 
-: UN-MARK  ( -- ) ?DO   I ]RECORD #80 NORMAL  LOOP ;
-
-VARIABLE OUTFLAG
 : MARK ( -- )
-       REC# DUP LOWLINE !  HILINE !
-       OUTFLAG OFF
-       EDLINE REVERSE
+       REC# DUP LOWLINE !  1+ HILINE !
+       EDLINE HILITE
        ARROW CURSOR
        BEGIN
-         LIST .LINE# .STATUS
+        .LINE# LIST .STATUS
          PROMPT: ." Mark: Up/Down, ^C(copy),^X, Del, ESC"
          PUTCURS
-         RKEY
-         CASE
+         RKEY DUP <ESC> <>
+       WHILE
+          CASE
 ( Fnct X)   0A OF
                   CURSDWN
                   EDLINE REVERSE
-                  REC# HILINE !           ENDOF
-
+                  REC# 1+ HILINE !
+                                          ENDOF
 ( Fnct E)   0B OF
-                  EDLINE REVERSE
-                  CURSUP
-                  REC# HILINE !           ENDOF
+                  REC# LOWLINE @ >
+                  IF
+                    EDLINE REVERSE
+                    CURSUP
+                    REC# 1+ HILINE !
+                  ELSE BEEP
+                  THEN
+                                         ENDOF
 
-    ( ^C)   83 OF SELECTION COPYLINES     ENDOF
+    ( ^C)   83 OF UN-MARK
+                  MARKERS COPYLINES
+                  LIST .STATUS            BREAK;
 
-    ( ^X)   98 OF SELECTION COPYLINES
+    ( ^X)   98 OF UN-MARK
+                  MARKERS COPYLINES
+                  LOWLINE @ DUP MARKERS -  DEL-LINES
+                  TOPLINE !  EROW OFF
+                  LIST .STATUS            BREAK;
+
+  ( delete) 03 OF UN-MARK
                   LOWLINE @ DUP
-                  SELECTION -  DEL-LINES
+                  MARKERS -  DEL-LINES
                   TOPLINE !  EROW OFF
-                                          ENDOF
-
-  ( delete) 03 OF LOWLINE @ DUP
-                  SELECTION -  DEL-LINES
-                  TOPLINE !  EROW OFF
-                                          ENDOF
-
-         <ESC> OF  OUTFLAG ON             ENDOF
-         ENDCASE
-
-      OUTFLAG @ UNTIL
-      SELECTION UN-MARK
-      EDLINE NORMAL
-      LIST .STATUS
+                  LIST .STATUS            BREAK;
+          ENDCASE
+       REPEAT
+       EDLINE NORMAL
+       HILINE @ LOWLINE @ <> IF UN-MARK THEN
+       LIST .STATUS
 ;
 
 DEFER LOCATE \ stub word. Will be assigned a function later
@@ -686,28 +682,27 @@ DECIMAL
 
 DECIMAL
 : SETUP  ( -- )
-      DEF-CHARS
-      FG BG COLORS  DRAW.SCR
-      BOX CURSOR ;
+    DEF-CHARS
+    FG BG COLORS  DRAW.SCR
+    BOX CURSOR ;
 
 : (EDIT) ( -- )
-      DECIMAL
-      SETUP
-      INSERTING ON  TOGGLE
-      LIST
-      RKEY? DROP    \ prevent accidental CR into file
-      .HEADER .STATUS
-      BEGIN
-\         PROMPT: DEPTH .  ( debug line )
-         PUTCURS
-         RKEY DUP BL [CHAR] ~ BETWEEN
-         IF
-              INSERTING @
-              IF PUSHRIGHT  THEN WRITECHAR
-         ELSE
-              KEYHANDLER
-         THEN
-      AGAIN ;
+    DECIMAL
+    SETUP
+    INSERTING ON  TOGGLE
+    LIST
+    RKEY? DROP    \ prevent accidental CR into file
+    BEGIN
+        .HEADER .STATUS
+\       PROMPT: DEPTH .  ( debug line )
+        PUTCURS
+        RKEY DUP ASCII? 
+        IF
+            INSERTING @ IF PUSHRIGHT THEN WRITECHAR
+        ELSE
+            KEYHANDLER
+        THEN
+    AGAIN ;
 
 DECIMAL
 \ User commands
@@ -783,8 +778,5 @@ CREATE SRCH$  40 ALLOT  \ buffer holds the search string
 
 \ USER command
 : LOC ( <text> -- rec# ecol)
-        ECOL OFF    \ reset editor variablbl
-        1 PARSE SRCH$ PLACE
-        REC# LOCATE ;
-
-CR .( End of Common code)
+        ECOL OFF    \ reset editor variable
+        1 PARSE SRCH$ PLACE     REC# LOCATE ;

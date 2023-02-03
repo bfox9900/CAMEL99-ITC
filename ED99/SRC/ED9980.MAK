@@ -14,19 +14,19 @@ INCLUDE DSK4.ED99COMMON
 
 \ Create the BOOT word for the editor program
 DECIMAL
-: EDSTART      ( -- )
-        WARM
-				80COLS
-        CR ." ED99 Multi-file Editor V1.73"
+: EDITINIT      ( -- )
+        80COLS
+        CR ." ED99 Multi-file Editor V1.75 Feb2023"
         CR ." Built on Kernel " .VER
-        #CLIPS OFF
-        INIT-EVARS
-        DECIMAL
+        1000 MS
+        #CLIPS OFF  INIT-EVARS  DECIMAL
         CR S" DSK1.ED99CONFIG" INCLUDED
-        INVERTFONT
-        SAMS-ON
+        INVERTFONT    SAMS-ON
         SETUP PROMPT: ." Ready "
         ABORT ;
+
+: EDSTART    WARM   EDITINIT ;
+
 
   CR ." ED99 loaded. "
   HERE SWAP - DECIMAL . .( bytes used)
