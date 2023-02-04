@@ -219,6 +219,7 @@ DECIMAL
       PURGED ON
       S" DSK1.UNTITLED" FILENAME PLACE
 ;
+
 \ cursor management
 DECIMAL
 : SCRXY   ( -- ecol erow) ECOL @ EROW @ 2+ ;
