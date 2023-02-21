@@ -62,7 +62,7 @@ CR .( variables)
  VARIABLE DIFF         ( difficulty of game 1-4)
  VARIABLE FLEET#       ( Human player's fleet in use)
  VARIABLE LEG          ( the no. of legions available to buy)
- VARIABLE LEN          ( no. of moves remaining in game)
+ VARIABLE #MOVES          ( no. of moves remaining in game)
  VARIABLE NEW          ( how often new fleet created)
  VARIABLE MY-PLANETS   ( no. of players planets)
  VARIABLE RAND1        ( first random number seed)
@@ -82,6 +82,9 @@ CR .( utility words)
 : CENTERED ( addr len -- ) C/L@ OVER - 2/ 1- SPACES  TYPE ; \ print centered
 : TAB      ( n -- )        VCOL ! ;
 : XY@      ( -- col row)   X @ Y @ ;
+
+\ safe variable decrementer, can't go below zero
+: DECREMENT ( addr -- )  DUP @ 1-  0 MAX SWAP ! ;
 
 HEX
 : RKEY?   ( -- c ) 83C8 OFF  KEY? ;   \ enables repeating key for TI-99
@@ -233,6 +236,7 @@ CR .( graphics shapes )
  CREATE EFLEET  20C0 , 2438 , 0410 , E010 ,
  CREATE BLKHOLE 7884 , 3078 , 7830 , 8478 ,
  CREATE NOFLEET 0084 , 4800 , 0048 , 8400 , \ fleet empty icon
+ CREATE NOENEMY 8244 , 2810 , 2844 , 8200 , \ enemy out of ships 
 
  \ double line box chars
  CREATE VBARS  2828 , 2828 , 2828 , 2828 ,
@@ -315,11 +319,13 @@ CR .( initialisers)
    CR ." GAME"
    INKEY   ( pick up reply)
    CASE
-      49 ( 1) OF 350 LEN ! ( 350 moves) ENDOF
-      50 ( 2) OF 700 LEN ! ( 700 moves) ENDOF
-                1500 LEN ! ( 1500 moves otherwise)
+      [CHAR] 1 OF 250 #MOVES ! ( 350 moves) ENDOF
+      [CHAR] 2 OF 400 #MOVES ! ( 700 moves) ENDOF
+                  800 #MOVES ! ( 1500 moves otherwise)
    ENDCASE
 ;
+
+: RESET-NEW-TIMER  29 3 DIFF @ * - NEW ! ; ( how often computer creates fleets)
 
 DECIMAL
 : INITIALISE
@@ -356,7 +362,7 @@ DECIMAL
    18 [HIS Y] C!            ( enemy y )
    22 [HIS X] C!            ( enemy x)
 
-   29 3 DIFF @ * - NEW !    ( how often computer creates fleets)
+   RESET-NEW-TIMER   ( how often computer creates fleets)
    15 DIFF @ 4* * TROOPS !  ( initial no. of computer troops)
    20 DIFF @ * C-LEGIONS !  ( no. of spare computer legions)
    SPEED TIMER !            ( how often computer moves)
@@ -453,19 +459,20 @@ DECIMAL
 : REDRAW   PAGE  DRAW-DISPLAY ;
 
 : SET-FLEET-ICON (  )
-    [MY SHIPS]@ 0=
-    IF    NOFLEET
-    ELSE  PFLEET
-    THEN 'FLEET' CHARDEF ;
+   [MY SHIPS]@  IF PFLEET  ELSE NOFLEET THEN 'FLEET' CHARDEF ;
+
+: SET-ENEMY-ICON (  )
+   [HIS SHIPS]@ IF EFLEET  ELSE NOENEMY THEN 'ENEMY' CHARDEF ;
+
 
 : NEW-FLEET  ( fleet destroyed for some reason)
-   LOPROMPT: ." FLEET WAS DESTROYED! Goto a Colony (C)" HONK
+   LOPROMPT: ." FLEET WAS DESTROYED! Goto a Colony!!" HONK
    \ you can still move the fleet cursor around though
    \ and buy more ships and take on more legions
-   0 [MY X]@  [MY Y]@ GALAXY C! ( erase colony symbol)
+   'VACUUM' [MY X]@  [MY Y]@ GALAXY C! ( erase colony symbol)
    0 [MY SHIPS] !                   ( no ships left)
    0 [MY LEGIONS] !                 ( no legions left)
-   SET-FLEET-ICON
+    SET-FLEET-ICON
 ;
 
 : MOVE-FLEET ( x y ---  )
@@ -487,7 +494,9 @@ DECIMAL
                   HONK DELAY
                   MOVE-FLEET
                   NEW-FLEET
-                  LOPROMPT:           ENDOF
+                  LOPROMPT:           
+                  
+                                       ENDOF
 
     ( default)    2DROP
    ENDCASE
@@ -539,7 +548,7 @@ DECIMAL
 
 : RND-DOLLARS ( -- n) RANDOM1 5 / THEPLANET C@ 10% + 1 MIN ;
 
-: BUY    ( purchasing of ships at planet)
+: BUY-SHIPS ( purchase ships at planet)
    BUY-V @ 0=
    IF    ( it's ok to buy)
       5 BUY-V !               ( stop continous buying)
@@ -560,7 +569,7 @@ DECIMAL
       PROMPT: ." NO SHIPS AVAILABLE"
       HONK DELAY
       REDRAW
-   ENDIF
+   ENDIF SET-FLEET-ICON 
 ;
 
 : GATHER   ( pick up legions from garrison onto fleet)
@@ -600,11 +609,11 @@ DECIMAL
       INKEY              ( get reply)
       CLEAR-MSG
       CASE
-         49 ( 1) OF DEPLOY FALSE ( leave legions)  ENDOF
-         50 ( 2) OF GATHER FALSE ( gather legions) ENDOF
-         51 ( 3) OF BUY    FALSE ( buy ships)      ENDOF
-         52 ( 4) OF ENLIST FALSE ( en1ist troops)  ENDOF
-                           TRUE  ( the default: leave planet)
+        [CHAR] 1 OF DEPLOY    FALSE ( leave legions)  ENDOF
+        [CHAR] 2 OF GATHER    FALSE ( gather legions) ENDOF
+        [CHAR] 3 OF BUY-SHIPS FALSE ( buy ships)      ENDOF
+        [CHAR] 4 OF ENLIST    FALSE ( en1ist troops)  ENDOF
+                              TRUE  ( the default: leave planet)
       ENDCASE DELAY
    UNTIL
 ;
@@ -668,7 +677,7 @@ DECIMAL
    ELSE
       0 #LEGIONS C!           ( reduce legions on planet to 0)
       CAPTURE
-      C-PLANETS 1-!           ( decrement computer planets)
+      C-PLANETS DECREMENT     ( decrement computer planets)
       PCLASS NEGATE CLASS-TOTALS +!
       DELAY
       LANDING-MENU
@@ -708,7 +717,7 @@ DECIMAL
       DROP 'PLANET' THEGALAXY C!            ( place planet symbol)
       8* 7 + THEPLANET C!            ( set revolt factor 7)
       0 #LEGIONS C!                  ( set legions to 0)
-      MY-PLANETS 1-!                    ( reduce no.of planets we have )
+      MY-PLANETS DECREMENT           ( reduce no.of planets we have )
 
       0 14 AT-XY ." SUCCEEDS"
       2 BEEPS                         ( ring bell)
@@ -748,18 +757,21 @@ DECIMAL
     CLEAR-MSG
     DRAW-DISPLAY ;
 
+
+\ ========[ ENEMY STUFF ]============
 : CREATE-ENEMY-FLEET ( -- ?)
-      3 BEEPS                           ( ring bell)
-      C-FLEETS 1+!                     ( update comp. fleets)
-      29 4 DIFF @ * - NEW !             ( reset NEW)
-      CLASS-TOTALS @ 8 /
-      DUP C-LEGIONS +! ( increase enemy legions )
-      DUP TROOPS +!
+      3 BEEPS                         \ ring bell to warn player
+      C-FLEETS 1+!                    \ update comp. fleets
+      SET-ENEMY-ICON
+      RESET-NEW-TIMER     
+      CLASS-TOTALS @ 8 / ( -- n)
+      DUP C-LEGIONS +!   ( -- n)      \ increase enemy legions 
+      DUP TROOPS +!      ( -- n)  
       BEGIN
-         NEWXY GALAXY C@ 0=        ( check random galaxies)
+         NEWXY GALAXY C@ 0=           \ check random galaxy location
          IF ( empty )
-            'ENEMY'  THIS GALAXY C!    ( place enemy fleet symbol)
-                 THIS GARRISON C!  ( plus legions)
+            'ENEMY' THIS GALAXY C!    \  place enemy fleet symbol)
+             ( n)   THIS GARRISON C!  \  plus legions
                  TRUE
          ELSE
             2DROP DROP
@@ -788,7 +800,7 @@ DECIMAL
                  'ALIENS' THIS GALAXY C! ( place colony)
                  THEPLANET C@ 8 / CLASS-TOTALS +!
                  C-PLANETS 1+!
-                 MY-PLANETS 1-!
+                 MY-PLANETS DECREMENT
                  5 BEEPS
                ENDIF
                                           ENDOF
@@ -797,7 +809,7 @@ DECIMAL
 ;
 
 : COMPUTER-TURN   ( computers turn to do something)
-   NEW 1-!                            ( decrement NEW)
+   NEW 1-!                         ( decrement NEW)
    NEW @ 0= IF  CREATE-ENEMY-FLEET  ENDIF
    ENEMY-COLONIZER
    DRAW-DISPLAY ;
@@ -836,8 +848,8 @@ DECIMAL
          DROP TROOPS @ #LEGIONS C@ - TROOPS !
          PROMPT: ." ENEMY FLEET DESTROYED!" DELAY
         ( reduce computers troops)
-          0 THEGALAXY C!       ( destroy fleet symbol)
-         -1 C-FLEETS +!        ( reduce comps fleets)
+         'VACUUM' THEGALAXY C!      ( destroy fleet symbol)
+          C-FLEETS DECREMENT        ( reduce computer's fleets)
       ELSE
        ( reduce spare troops)
          #LEGIONS C@ OVER - TROOPS @ SWAP - TROOPS !
@@ -861,19 +873,20 @@ DECIMAL
   PAGE ."  Scanner Display Information"
   CR   ." -----------------------------"
   CR
-  CR   ." A STAR"        25 TAB  'STAR'   EMIT
+  \ use (EMIT) to print control char values. 
+  CR   ." A STAR"        25 TAB  'STAR'   (EMIT) 
   CR
-  CR   ." A COLONY"      25 TAB  'COLONY' EMIT
+  CR   ." A COLONY"      25 TAB  'COLONY' (EMIT)
   CR
-  CR   ." Empty PLANET"  25 TAB  'PLANET' EMIT
+  CR   ." Empty PLANET"  25 TAB  'PLANET' (EMIT)
   CR
-  CR   ." Enemy PLANET"  25 TAB  'ALIENS' EMIT
+  CR   ." Enemy PLANET"  25 TAB  'ALIENS' (EMIT)
   CR
-  CR   ." Black hole"    25 TAB  'BLKHOLE' EMIT
+  CR   ." Black hole"    25 TAB  'BLKHOLE' (EMIT) 
   CR
-  CR   ." Player FLEET"  25 TAB  'FLEET'  EMIT
+  CR   ." Player FLEET"  25 TAB  'FLEET'  (EMIT)
   CR
-  CR   ." Enemy FLEET"   25 TAB  'ENEMY'  EMIT
+  CR   ." Enemy FLEET"   25 TAB  'ENEMY'  (EMIT)
   CR ANYKEY
 ;
 
@@ -916,7 +929,7 @@ DECIMAL
 
 DECIMAL
 : COMPUTER? ( -- ?)   ( is it the computers turn or not)
-   TIMER DUP 1-! @
+   TIMER DUP DECREMENT @
    IF ( <>0)
        FALSE
    ELSE
@@ -924,7 +937,7 @@ DECIMAL
       TRUE
    ENDIF ;
 
-: GAME-END? ( -- ? ) LEN @ 0= ;    ( game end if LEN is zero)
+: GAME-END? ( -- ? ) #MOVES @ 0= ;    ( game end if #MOVES is zero)
 
 : END-MSG   CLEAR-MSG  0 12 AT-XY ." END OF GAME COMMANDER"  ABORT ;
 
@@ -934,16 +947,16 @@ DECIMAL
       RKEY? ?DUP
       IF ( player has pressed a key)
          OBEY-COMMAND
-         LEN 1-!
+         #MOVES DECREMENT
          100 MS
       ENDIF
       COMPUTER?
       IF
          COMPUTER-TURN
       ENDIF
+      \ debug line
+      20 0 AT-XY ." Stk=" DEPTH 2 .R  5 SPACES  TIMER @ 3 .R
       GAME-END?
-  \ debug line
-   20 0 AT-XY ." Stk=" DEPTH 2 .R  5 SPACES  TIMER @ 3 .R
    UNTIL
    END-MSG ;
 
@@ -1015,5 +1028,3 @@ DECIMAL
 LOCK 
 INCLUDE DSK1.SAVESYS
 ' STARTER SAVESYS DSK3.CONQUEST
-
-\ ************************************************************
