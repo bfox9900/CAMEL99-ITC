@@ -1,5 +1,7 @@
 \ COSMIC CONQUEST TI-99 Native version                 Nov 2021 Brian Fox
-\ based on Gforth verison by Rick Carlino
+
+\ based on Gforth verison by Rick Carlino 
+\ based on Fig-Forth version by  ALAN SARTORI-ANGUS for Apple][
 \ This version will try to use the features of Camel99 and TI-99 hardware
 
 \ Change log:
@@ -26,12 +28,14 @@
 
 \ HARNESS99.FTH is my new FIG/ANS translation file
 
-\ Camel99 Forth Library requirements
 \ INCLUDE DSK1.TOOLS  \ for debugging only
 
+\ Camel99 Forth Library requirements
 INCLUDE DSK1.CASE
 INCLUDE DSK1.UDOTR
-\ INCLUDE DSK1.INLINE
+INCLUDE DSK1.MARKER 
+
+MARKER /REMOVE 
 
 HERE
 DECIMAL
@@ -88,8 +92,9 @@ DECIMAL
 : DELAY      delayms MS ;
 : BLANKLN    VPOS C/L@ VBLANK ; \ FAST video memory write
 
-: 1+!   ( int-addr -- )  1 SWAP +! ;  \ like C  ++
-: 1-!   ( int-addr -- ) -1 SWAP +! ;  \ like C  --
+\ These are now in the CAMEL99 kernel as CODE 
+\ : 1+!   ( int-addr -- )  1 SWAP +! ;  \ like C  ++
+\ : 1-!   ( int-addr -- ) -1 SWAP +! ;  \ like C  --
 
 : ENDIF      POSTPONE THEN ; IMMEDIATE   \ FIG FORTH
 
@@ -104,15 +109,16 @@ HEX
 : ?LOWER  ( c -- ?)  [CHAR] a  [CHAR] z 1+  WITHIN ;
 : TOUPPER ( c -- c') DUP ?LOWER IF 5F AND  THEN ;
 : INKEY   ( -- c)    KEY 7F AND  TOUPPER ;  \ uppercase Alpha, 7 bit output
-DECIMAL
+
 \ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+DECIMAL
 CR .( Heap management and matrix creators)
 \ \\\\\\\\\\\\\\\  TI99 CODE  \\\\\\\\\\\\\\\\\\
-\ TI99 has 32K RAM.
-\ 8K low RAM,
-\ 24 Hi RAM, Forth uses 8K of this
+\ TI99 has 32K RAM total 
+\ 24K Hi RAM, Forth uses 8K of this
+\ 8K low RAM
 \ Matrices need 7.3K
-\ Using LOW RAM
+\ Using LOW RAM for matrices
 
 \ heap memory analogs to HERE ALLOT C,  and ,
 : HEAP    H @ ;
@@ -845,6 +851,27 @@ DECIMAL
 
 : ANYKEY   LOPROMPT: ." Press a key to return" KEY DROP ;
 
+
+: INFO
+  PAGE ."  Scanner Display Information"
+  CR   ." -----------------------------"
+  CR
+  CR   ." A STAR"        25 TAB  'STAR'   EMIT
+  CR
+  CR   ." A COLONY"      25 TAB  'COLONY' EMIT
+  CR
+  CR   ." Empty PLANET"  25 TAB  'PLANET' EMIT
+  CR
+  CR   ." Enemy PLANET"  25 TAB  'ALIENS' EMIT
+  CR
+  CR   ." Black hole"    25 TAB  'BLKHOLE' EMIT
+  CR
+  CR   ." Player FLEET"  25 TAB  'FLEET'  EMIT
+  CR
+  CR   ." Enemy FLEET"   25 TAB  'ENEMY'  EMIT
+  CR ANYKEY
+;
+
 : HELP
   PAGE ." Key controls:
   CR
@@ -856,32 +883,13 @@ DECIMAL
   CR ." I - Scanner symbol information"
   CR ." F - Fire / attack enemy"
   CR ." O - Switch to Other fleet"
-  CR
+  CR ." ESC/FCTN 9  escape to Forth"
+  CR ." Q - SENSOR screen legend"
   CR ." H - show this HELP screen"
   CR ANYKEY
 ;
 
-: INFO
-  PAGE ."  Scanner Display Information"
-  CR   ." -----------------------------"
-  CR
-  CR   ." A STAR"        25 TAB  'STAR' (EMIT)
-  CR
-  CR   ." A COLONY"      25 TAB  'COLONY' (EMIT)
-  CR
-  CR   ." Empty PLANET"  25 TAB  'PLANET' (EMIT)
-  CR
-  CR   ." Enemy PLANET"  25 TAB  'ALIENS' (EMIT)
-  CR
-  CR   ." Black hole"    25 TAB  'BLKHOLE' (EMIT)
-  CR
-  CR   ." Player FLEET"  25 TAB  'FLEET' (EMIT)
-  CR
-  CR   ." Enemy FLEET"   25 TAB  'ENEMY' (EMIT)
-  CR ANYKEY
-;
-
-: >FORTH  HONK  0 0 AT-XY ." *Forth*"   ABORT  ;
+: >FORTH  PAGE  0 0 AT-XY ." *Camel99 Forth*" CR  ABORT  ;
 
 : OBEY-COMMAND ( c -- )
    BUY-V @  IF ( nonzero)  -1 BUY-V +!  ENDIF
@@ -896,6 +904,7 @@ DECIMAL
       [CHAR] T OF TAX         ENDOF
       [CHAR] F OF FIRE        ENDOF
       [CHAR] H OF HELP REDRAW ENDOF
+      [CHAR] I OF INFO        ENDOF 
        15      OF >FORTH      ENDOF  \ escape key for debugging
    ENDCASE
 ;
@@ -992,3 +1001,14 @@ DECIMAL
    INITIALISE
    HELP
    GAME ;
+
+: STARTER   WARM  RUN  ;
+
+\ ************************************************************
+\ Un-comment the 3 lines below to save as a binary image program 
+
+LOCK 
+INCLUDE DSK1.SAVESYS
+' STARTER SAVESYS DSK3.CONQUEST
+
+\ ************************************************************
