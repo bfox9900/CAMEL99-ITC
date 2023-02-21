@@ -1,10 +1,12 @@
 \ COSMIC CONQUEST TI-99 Native version                 Nov 2021 Brian Fox
+\ Updated to create a binary program Feb 2023 
 
-\ based on Gforth verison by Rick Carlino 
-\ based on Fig-Forth version by  ALAN SARTORI-ANGUS for Apple][
-\ This version will try to use the features of Camel99 and TI-99 hardware
+\ Original Fig-Forth version by  ALAN SARTORI-ANGUS for Apple][
+\ The version based on Gforth version by Rick Carlino 
+\ This version uses the Graphics features of TI-99 hardware
 
-\ Change log:
+\ Change log from GForth verison: (This is a big re-write)
+
 \ Replaced all ROT ROT  with -ROT for speed and 20 bytes space saving
 \ Replaced 0 FILL  with ERASE
 \ Replace all 1 -   with 1-  save  14 bytes
@@ -24,9 +26,6 @@
 \ Wrote new INKEY.  7 bit output, uppercase ALPHA
 \ re-factored extremely long words into smaller words
 \ replaced a lot of code with +! operator where possible
-
-
-\ HARNESS99.FTH is my new FIG/ANS translation file
 
 \ INCLUDE DSK1.TOOLS  \ for debugging only
 
@@ -426,10 +425,16 @@ DECIMAL
 
 \ : PRINT-IT  ( c  --- ) X @ CELLS 12 +  Y @ 8 +  AT-XY VPUT  ;
 
-\ >VPOS computes video screen address. Does not affect cursor variables
-\ VC! writes a byte to Video RAM
+\ Camel99 specific: 
+\ >VPOS ( col row -- Vaddr)  computes video address. 
+\ Screen Vaddr is 0..3C0
+\ Does not affect cursor variables
+
+\ VC! ( char Vaddr --) writes a byte to Video RAM
+
 : PLOT  ( char row col -- ) CELLS 12 + SWAP 8 + >VPOS ( c Vaddr) VC! ;
 
+\ This is slow, from original code 
  : DRAW-VIEWER  ( draw the screen display)
    [MY X]@ 5 -  [MY Y]@ 5 -
    11 0 DO ( rows)
@@ -454,7 +459,7 @@ DECIMAL
     THEN 'FLEET' CHARDEF ;
 
 : NEW-FLEET  ( fleet destroyed for some reason)
-   LOPROMPT: ." OUR FLEET WAS DESTROYED" HONK
+   LOPROMPT: ." FLEET WAS DESTROYED! Goto a Colony (C)" HONK
    \ you can still move the fleet cursor around though
    \ and buy more ships and take on more legions
    0 [MY X]@  [MY Y]@ GALAXY C! ( erase colony symbol)
@@ -880,11 +885,11 @@ DECIMAL
   CR
   CR ." L - Land on a planet"
   CR ." T - Tax your planets"
-  CR ." I - Scanner symbol information"
+  CR ." I - SCANNER screen legend"
   CR ." F - Fire / attack enemy"
   CR ." O - Switch to Other fleet"
   CR ." ESC/FCTN 9  escape to Forth"
-  CR ." Q - SENSOR screen legend"
+
   CR ." H - show this HELP screen"
   CR ANYKEY
 ;
@@ -981,11 +986,11 @@ DECIMAL
    CR S" ALAN SARTORI-ANGUS" CENTERED
    CR
    CR
-   CR S" APPLE ][, 1982"  CENTERED
+   CR S" APPLE ][, 1982" CENTERED
    CR
    CR
    CR
-   CR S" for TI-99 "  CENTERED
+   CR S" Re-write for TI-99 " CENTERED
    CR S" Brian Fox 2021" CENTERED
    DELAY
 ;
