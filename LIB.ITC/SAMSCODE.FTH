@@ -1,6 +1,8 @@
 \ Code in SAMS memory based on concept in TurboForth by Mark Wills
 \ Ported to Camel99 Forth  Oct 13, 2021, Last update Mar 2022
 
+\ *warning: does not work with DEFER and CREATE DOES> 
+
 \ Features
 \ CMAP Remembers the last bank that was paged in variable LASTBNK
 \ FAR: is a fat version of "colon" that remember SAMS bank# & SAMS CFA
@@ -43,7 +45,7 @@ VARIABLE  BANK#     \ active SAMS bank# for compiling
 VARIABLE  LASTBNK   \ last bank# passed to _CMAP
 
 DECIMAL
-CREATE []DP  \ DP for 0 .. 15 pages of SAMS
+CREATE []DP  \ DP for 0 .. 15 pages of SAMS 64K 
       CSEG , CSEG , CSEG , CSEG  ,
       CSEG , CSEG , CSEG , CSEG  ,
       CSEG , CSEG , CSEG , CSEG  ,

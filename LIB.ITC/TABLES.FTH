@@ -14,16 +14,16 @@ HEX
      ENDCODE
 
 : TABLE2: ( Vaddr -- )  \ create a table of 4 byte records
-         CREATE    ,             \ compile base address into this word
-        ;CODE ( n -- Vaddr')     \ RUN time
+     CREATE    ,             \ compile base address into this word
+     ;CODE ( n -- Vaddr')     \ RUN time
           0A14 ,  \ TOS 1 SLA,  ( tos = n x 2 )
           A118 ,  \ *W TOS ADD,
           NEXT,
      ENDCODE
 
 : TABLE4: ( Vaddr -- )  \ create a table of 4 byte records
-         CREATE    ,             \ compile base address into this word
-        ;CODE ( n -- Vaddr')     \ RUN time
+     CREATE    ,             \ compile base address into this word
+     ;CODE ( n -- Vaddr')     \ RUN time
           0A24 ,  \ TOS 2 SLA,  ( tos = n x 4 )
           A118 ,  \ *W TOS ADD,
           NEXT,
@@ -31,8 +31,8 @@ HEX
 
 : TABLE8: ( addr -- )    \ create a table of 8 byte records
      CREATE    ,
-        ;CODE ( n -- Vaddr')     \ RUN time
+     ;CODE ( n -- Vaddr')     \ RUN time
           0A34 ,     \ TOS 3 SLA,  ( TOS 8* )
           A118 ,     \ *W TOS ADD,
           NEXT,
-     NDCODE
+    ENDCODE

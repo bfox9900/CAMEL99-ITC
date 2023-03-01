@@ -13,7 +13,7 @@ HEX
 0D CONSTANT R/O100  \ READ ONLY,  binary, relative, fixed 100
 
 : NEWPAB   (  file$ len VDPaddr #bytes mode -- )
-  -30 ^PAB +!         \ create small pab in VDP RAM
+  -30 ^PAB +!         \ create small pab in VDP RAM with NO buffer
   [PAB 30 0 VFILL     \ erase PAB and file name
   0 [PAB RECLEN] VC!  \ set reclen (0 means >100 (256) bytes)
 \ pulls params from the stack to init the PAB

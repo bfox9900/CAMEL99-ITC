@@ -23,13 +23,9 @@ NEEDS SEE FROM DSK1.SEE
 \ The following machine Forth macros allow us to do the same thing
 \ without loading the assembler, and they are easy to understand
 
-\ machine Forth macros make it easy to create fast arrays
-: 2*,     ( n -- 2(n)
-          0A14 , ;  \ TOS  1 SLA, shift R1 1 bit left (mult. By 2)
-
-: ()@,   ( addr -- )
-          C124 , ( addr) ,   \ addr(TOS) TOS MOV,
-;
+\ machine Forth macros make it easy to create very fast arrays
+: 2*,     ( n -- 2(n)   0A14 , ;  \ TOS  1 SLA, shift R1 1 bit left (mult. By 2)
+: ()@,   ( addr -- )    C124 , ( addr) , ;  \ addr(TOS) TOS MOV,
 
 : ()!,   ( addr -- )
           C936 , ( addr) ,  \ *SP+ ARRAY (TOS) MOV,
@@ -41,8 +37,8 @@ CODE ()C!, ( addr -- )
          D136 , \  *SP+ TOS MOVB,
          C136 , \  TOS POP,
          NEXT,
+ENDCODE
 
-         ENDCODE
 1000 CONSTANT SIZE  \ 4K bytes
 
 \ demonstration code

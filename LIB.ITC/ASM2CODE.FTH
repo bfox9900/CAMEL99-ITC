@@ -14,7 +14,7 @@ HEX
 : .#### ( n -- addr len )
   BASE @ >R HEX 0 <# # # # # #>  TYPE  R> BASE ! ;
 
-: ?CR  ( -- ) VCOL @ 24 > IF CR 2 SPACES THEN  ;
+: ?CR  ( -- ) VCOL @ 24 > IF CR 2 SPACES THEN ;
 
 : WRITE-CODE ( cfa  -- )
      2 SPACES

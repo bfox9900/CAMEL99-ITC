@@ -139,10 +139,10 @@ CR .( Simplified branching and looping)
 : REPEAT, ( *while *begin -- ) AGAIN, ENDIF, ;
 
 : ;CODE
-            POSTPONE (;CODE)   \ compiles (;CODE) into definition
-            ?CSP POSTPONE [    \ turns off the Forth compiler
-            REVEAL             \ (just like ";" does)
-           ; IMMEDIATE         \ this is an IMMEDIATE word
+       POSTPONE (;CODE)   \ compiles (;CODE) into definition
+       ?CSP POSTPONE [    \ turns off the Forth compiler
+       REVEAL             \ (just like ";" does)
+; IMMEDIATE
 
 \ ============================================================
 CR .( CAMEL99 Forth customization)

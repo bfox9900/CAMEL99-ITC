@@ -110,6 +110,7 @@ HERE  02A1 ,         \ R1 STWP,             \ HERE on stack for later
        JOB->IP  JOB LOCAL ! ; \ store the XT in the PID's JOB user var.
 
 : RESTART ( pid -- ) JOB->IP  DUP RESET-STACKS  WAKE ;
+
 : COLD    ( -- ) SINGLE  COLD ;
 \ : BYE     ( -- ) SINGLE  BYE ;
 

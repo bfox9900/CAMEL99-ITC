@@ -1,6 +1,8 @@
 \ TMS9919 SOUND CHIP DRIVER and CONTROL LEXICON     Jan 2017 BJF
 \ TMS9919 is a memory mapped device on the TI-99 @ >8400
-\ SND! is in the CAMEL99 Kernel as  : SND!    PAUSE 8400 C! ;
+\ SND! is in the CAMEL99 Kernel as  : SND!  PAUSE 8400 C! ;
+\ 2023  Made OSC and ATT variables USER variables for better multi-tasking 
+
 HERE
 \ frequency code must be ORed with these numbers to create a sound
 HEX
@@ -27,9 +29,11 @@ HEX
             NEXT,    \  28 uS
             ENDCODE
 
-\ we set the "ACTIVE CHANNEL" with these variables
- VARIABLE OSC               \ holds the active OSC value
- VARIABLE ATT               \ holds the active ATTENUATOR value
+\ "ACTIVE CHANNEL" control with these USER variables, LOCAL to each task 
+\ These are in consecutive addresses in memory 
+ HEX 
+ 42 USER ATT      \ holds the active ATTENUATOR value
+ 44 USER OSC      \ holds the active OSC value
 
 \ convert freq. to 9919 chip code
 DECIMAL
@@ -39,8 +43,8 @@ HEX
 \ **for testing**  print sound data to screen AND make sound
 \ : SND!  ( c -- )  ." >"  BASE @ >R  HEX DUP U. 8400 C! R> BASE ! ;
 
-\ Set the sound "GENerator that is active.
-: GEN! ( osc att -- )  ATT !  OSC ! ;
+\ Set Generator OSCILLATOR and Attenuator with 2!
+: GEN! ( osc att -- )  ATT 2! ;
 
 \ ================================================================
 \ S C I E N T I F I C   S O U N D   C O N T R O L   L E X I C O N

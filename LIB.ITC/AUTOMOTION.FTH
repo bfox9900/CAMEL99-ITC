@@ -3,10 +3,13 @@
 \           - Changed ]SMT motion array to machine code. Same size as Forth
 \ Jan1 2022 - use TABLE4: from DIRSPRIT.FTH for sprite motion table
 \           - faster access to x and y vectors
+\ Feb 2023  - Oops! Motion x,y was reversed. Fixed.  Fixed negative motion offset. 
+
  NEEDS HCHAR    FROM DSK1.GRAFIX
  NEEDS SPRITE   FROM DSK1.DIRSPRIT
 
 HEX
+\ * loaded with GRAFIX *
 \ : TABLE4: ( Vaddr -- )  \ create a table of 4 byte records
 \         CREATE    ,             \ compile base address into this word
 \        ;CODE ( n -- Vaddr')     \ RUN time
@@ -15,11 +18,11 @@ HEX
 \             NEXT,
 \ ENDCODE
 
-0780 CONSTANT SMT       \ base address of motion table in VDP RAM
-SMT    TABLE4: ]SMT.Y   \ SPRITE motion table Y vectors (BYTE)
+0780 CONSTANT SMT       \ base of Sprite Motion Table (VDP RAM)
+SMT    TABLE4: ]SMT.Y   \ SPRITE Motion Table Y vectors (BYTE)
 SMT 1+ TABLE4: ]SMT.X   \ x vectors (BYTE)
 
-\ Note: You can access fetch both values at once like this:
+\ Note: You can access both values at once with V@ and V! 
 \  spr# ]SMT.Y V@  SPLIT  ( -- x y )
 
 83C2 CONSTANT AMSQ      \ interrupts, software DISABLE bits
@@ -34,11 +37,7 @@ SMT 1+ TABLE4: ]SMT.X   \ x vectors (BYTE)
 : INITMOTION ( -- ) 0 MOVING  0 ]SMT.Y 20 4* 0 VFILL ; \ no moving sprites
 : STOPMOTION ( -- ) AMSQ C@ 40 OR  AMSQ C! ;           \ stop all sprite motion
 : AUTOMOTION ( -- ) SPR# @ 1+ MOVING   AMSQ C@  30 AND  AMSQ C! ;
-\ : >SCHAR  ( n -- c') FF AND  ;  \ convert n to signed CHAR
-: MOTION  ( vx vy spr# -- )
-            >R  SWAP   ( -- vy vx)
-            OVER 0<    ( -- vy vx ?)       \ vy is negative?
-            IF 1+      ( -- vy vx' )       \ inc. vx
-            THEN  FUSE  R> ]SMT.Y V! ;     \ fuse bytes, put in motion table
+: ?NEGX      ( dx dy -- dx dy' ) OVER 0< IF 1+ THEN ; \ compensate for 9918 chip
+: MOTION     ( dx dy spr# --)  >R ?NEGX  FUSE  R>  ]SMT.Y V! ; 
 
  INITMOTION

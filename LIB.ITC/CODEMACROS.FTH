@@ -30,8 +30,8 @@
 : C@,   ( addr --)   DUP, D114 , 0984 , ;
 : C!,   ( n addr --) 06D6 , D516 , 05C6 , DROP, ;
 
-\ need NORMAL copies of words that are not normal in the Camel99 kernel
-CODE @      C114 ,                  NEXT,  ENDCODE
-CODE C@     D114 , 0984 ,           NEXT, ENDCODE
-CODE DROP   C136 ,                  NEXT, ENDCODE
-CODE LIT    0646 , C584 ,  C139 ,   NEXT, ENDCODE
+\ NORMAL copies of words that are not normal in the Camel99 kernel
+\ CODE @      C114 ,                  NEXT,  ENDCODE
+\ CODE C@     D114 , 0984 ,           NEXT, ENDCODE
+\ CODE DROP   C136 ,                  NEXT, ENDCODE
+\ CODE LIT    0646 , C584 ,  C139 ,   NEXT, ENDCODE

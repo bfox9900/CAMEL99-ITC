@@ -121,8 +121,6 @@ DECIMAL
       DUP BANK# !
 ;
 
-
-
 HERE SWAP -
 DECIMAL CR . .( bytes)  \ free 11,566
 
