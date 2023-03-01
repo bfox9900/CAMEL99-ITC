@@ -363,6 +363,7 @@ DECIMAL
    22 [HIS X] C!            ( enemy x)
 
    RESET-NEW-TIMER   ( how often computer creates fleets)
+   
    15 DIFF @ 4* * TROOPS !  ( initial no. of computer troops)
    20 DIFF @ * C-LEGIONS !  ( no. of spare computer legions)
    SPEED TIMER !            ( how often computer moves)
