@@ -1,7 +1,7 @@
 \ inline.hsf  a simple speedup for ITC FORTH July 2017  B Fox
 
 \ Premis:
-\ An indirect threaded code (ITC) system can spend up to 50% of its time 
+\ An indirect threaded code (ITC) system can spend up to 50% of its time
 \ running the Forth thread interperpreter, typically called NEXT.
 \ The ITC NEXT routine is three instructions on the TMS9900.
 \ The Forth Kernel contains many words called primitives, that are coded in Assembler.
@@ -32,7 +32,7 @@
 \ : DUP@2  INLINE[ DUP @ ] ;
 
 \ Change History:
-\ Feb 26 2018  made INLINE,(t) SMARTER. It now recogonizes code words, constants and variables
+\ Feb 26 2018  made INLINE,(t) SMARTER. It now recognizes code words, constants and variables
 \              It converts variable and constants into TOS PUSH, TOS <xxx> LI, macros.
 
 \ MODIFIED for XFC99 cross-compiler usage.
@@ -113,7 +113,3 @@ CREATE WORDBUF2   33 ALLOT
 \ inline a string of code words all at once
 \ usage: : TEST   INLINE[ OVER + SWAP DUP = or ]  ;
 : INLINE[  ( <codeword> -- ) >CODE  CODE[   >FORTH ;  IMMEDIATE
-
-
-
-

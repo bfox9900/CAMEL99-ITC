@@ -25,6 +25,9 @@
 \           Mar 20,2018 - Added VALUE:  to the cross compiler
 \           Mar 22,2018 - Changed HEADLESS, HEADS to [PRIVATE], [PUBLIC]
 
+\           Feb  1,2021 - began experiments to do HASHED DICTIONARY
+\                          Kernel will not have space for branching.
+\                          Will have to load with system file.
 
 \ ============================================================================
 \ ==                 F O R T H   H E A D E R   D E S I G N                  ==
@@ -146,27 +149,52 @@ cr .( Define search orders)
 
 \ build words for the NATIVE Forth that is running.  ie: vanilla Forth environment
 : HOST-COMPILING
-                ONLY FORTH ALSO ASSEMBLER ALSO FORTH DEFINITIONS  ;
+        ONLY FORTH
+        ALSO FORTH DEFINITIONS  ;
 
 
 \ Access to host & cross-compiler & cross-assembler and Create cross-compiler words
 \ CODE words DO NOT go to the TARGET memory
-: CROSS-COMPILING
-                 ONLY MIRROR  ALSO FORTH ALSO XASSEMBLER
-                 ALSO CROSS-COMPILER DEFINITIONS ;
+\ : CROSS-COMPILING
+\        ONLY MIRROR
+\        ALSO XASSEMBLER
+\        ALSO FORTH
+\        ALSO CROSS-COMPILER DEFINITIONS ;
 
-\ Use Cross-compiler vocabulary & Assembler & Host Forth is last search.
-\ Used to create new cross assembler words
+: CROSS-COMPILING
+        ONLY MIRROR
+        ALSO XASSEMBLER
+        ALSO CROSS-COMPILER
+        ALSO FORTH
+        ALSO CROSS-COMPILER DEFINITIONS ;
+
+
+\ Use Cross-compiler vocabulary & Assembler & Host Forth is last search.  create cross assembler words
 \ CODE words assemble IN THE TARGET SPACE
+
 : CROSS-ASSEMBLING
-                ONLY FORTH ALSO XASSEMBLER ALSO CROSS-COMPILER
-                ALSO MIRROR DEFINITIONS ;
+        ONLY FORTH
+        ALSO XASSEMBLER
+        ALSO CROSS-COMPILER
+        ALSO MIRROR DEFINITIONS ;
 
 \ cross compiler command to create target words using the cross compiler
-\ *warning*  there is no access to HOST Forth words from here
+\ *NEW*  ADDED META VOCABULARY FOR CROSS-COMPILER IMMEDIATE WORDS
+
+HEX 400 TO SEG-SIZE  \ 1K vocabulary space
+VOCABULARY META
+
+
 : TARGET-COMPILING
-                ONLY XASSEMBLER ALSO CROSS-COMPILER ALSO MIRROR
-                ALSO MIRROR DEFINITIONS  ;
+        ONLY XASSEMBLER
+        ALSO CROSS-COMPILER
+        ALSO MIRROR DEFINITIONS
+        ALSO META ;
+
+\ immediate forms 
+: [CC]    CROSS-COMPILING ;   IMMEDIATE
+: [TC]    TARGET-COMPILING ;  IMMEDIATE
+
 
 \ ========================================================================
 host-compiling
@@ -344,7 +372,7 @@ VARIABLE TFORTHWORDS          \ COUNT of High level Forth words
 
 
 VARIABLE HIDDEN
-\ cross-compiler directives to control headers in Target
+\ cross-compiler directives to control headers in Target          7
 :  [PRIVATE]      HIDDEN ON ;
 :  [PUBLIC]       HIDDEN OFF ;
 
@@ -360,27 +388,26 @@ VARIABLE HIDDEN
 \ Cross-compiler "CREATE" primitive creates a word in CURRENT HOST vocabulary AND...
 \ then duplicates the same label in the TARGET system memory image
 : TCREATE:  ( -- )
-               HIDDEN @ 0=
-               IF   ( [PUBLIC] word creation)
-                  CREATE                     \ create a new word in the Host MIRROR vocabulary
-                  LASTWORD$ $HEADER          \ make the header in the TARGET Forth space
-                  xlatest @  ,               \ compile the TARGET Forth words NFA in the MIRROR version (in the HOST Forth)
-                  tforthwords 1+!            \ count this new word for COMPILER reporting
+            HIDDEN @ 0=
+            IF  ( used for [PUBLIC] word creation)
+                CREATE                     \ create a new word in the Host MIRROR vocabulary
+                LASTWORD$ $HEADER          \ make the header in the TARGET Forth space
+                xlatest @  ,               \ compile the TARGET Forth words NFA in the MIRROR version (in the HOST Forth)
+                tforthwords 1+!            \ count this new word for COMPILER reporting
 
-               ELSE  ( [PRIVATE] word creation)
-                  CREATE                     \ create a new word in the Host MIRROR vocabulary
-                  TAlign
-                  xlatest @ link,            \ populate this link field with the NFA of the last defined word.
-                  0 immed,                   \ create the immediate byte field. Initialize to zero
-                  THERE                      \ THERE now points to the NFA.
-                  0 tc,                      \ compile and empty name field
-                  DUP ,         \ compile xlatest NFA into MIRROR word definition
-                  XLATEST !     \ Update XLATEST variable
-               THEN
+            ELSE  ( used for [PRIVATE] word creation)
+                CREATE                     \ create a new word in the Host MIRROR vocabulary
+                TAlign
+                xlatest @ link,            \ populate this link field with the NFA of the last defined word.
+                0 immed,                   \ create the immediate byte field. Initialize to zero
+                THERE                      \ THERE now points to the NFA.
+                0 tc,                      \ compile and empty name field
+                DUP ,         \ compile xlatest NFA into MIRROR word definition
+                XLATEST !     \ Update XLATEST variable
+            THEN 
 ;
 
 ?STK
-
 \ ========================================================================
 \ T A R G E T   ' W O R D S '   U T I L I T Y
 
@@ -388,14 +415,14 @@ HEX
 
 07F constant nmask      \ mask off the smudge bit in the count byte
 
-: Tcount        ( nfa -- seg adr len)            \ returns a FAR stack string to Host Forth
-                [target] swap countl nmask and  ;
+: Tcount       ( nfa -- seg adr len)            \ returns a FAR stack string to Host Forth
+               [target] swap countl nmask and  ;
 
-: TWORD!        ( nfa $addr -- )
-                >R Tcount R>  ( -- Tseg adr cnt $addr ) PLACEL   ;
+: TWORD!       ( nfa $addr -- )
+               >R Tcount R>  ( -- Tseg adr cnt $addr ) PLACEL   ;
 
-: T.NAME        ( nfa -- )              \ print a TARGET Forth word (from the target segment)
-                Tcount typel ;
+: T.NAME       ( nfa -- )              \ print a TARGET Forth word (from the target segment)
+               Tcount typel ;
 
 variable tword-cnt
 
@@ -423,7 +450,7 @@ variable tword-cnt
 HEX
 CROSS-COMPILING
 
-: ?JMPTAB   CR ." *DEFER ERROR*: NEW-JMPTABLE is not assigned"  ;
+: ?JMPTAB   CR ." *ERROR*: CROSS ASSEMBLER is not loaded"  ;
 
 DEFER NEW-JMPTABLE     ' ?JMPTAB IS NEW-JMPTABLE  \ this will be resolved when assembler is loaded
 
@@ -451,57 +478,41 @@ HOST-COMPILING
                 [TARGET] -ROT DUMPL ;           \ DUMPL ( seg adr len -- )  is from tools.hsf
 
 \ ========================================================================
-\ T A R G E T   C O D E - W O R D   C R E A T I O N
+\ T A R G E T  WORD CREATORS 
 
-\ create SMART "code" words in the Target segment
-\ They CANNOT run on the HOST system but abort with an error
+\ ** ALL PROJECTS REQUIRE A 'types.hsf FILE to define:
+\    see: ITCTYPES.HSF, DTCTYPES.HSF 
+
+\    CODE 
+\    CREATE
+\    VARIABLE 
+\    2VARIABLE
+\    CONSTANT 
+\    USER 
+\    <COLON:>    
+\ =====================
 
 CROSS-COMPILING
-\ variable tcodewords
-
 : TCODE-ERR     TRUE ABORT" Cannot run Target CODE words" ;
 
-: ?code-ERR   sp@ csp @ - ABORT" XASM99: code word has left something on the stack" ;
+: ?code-ERR   sp@ csp @ - ABORT" ERROR: code word has left something on the stack" ;
 
-: (CODE:)       TCREATE:             \ make the word header(TCREATE: Taligns when done)
-             \ **UNDERSTAND** Indirect threaded Forth,
-                THERE tCELL + CFA,   \ the CFA of a code word, points to the next CELL address,
-                                     \ (which is where the machine code starts)
-
-                tcodewords 1+!       \ count the new code word for COMPILER report
-                TALIGN ;
-
- \ you MUST use CROSS-ASSEMBLING directive before using CODE:
-: CODE:         !CSP                  \ record the stack pointer for error checking
-                (CODE:)               \ create the code word header
-                NEW-JMPTABLE          \ init the jump table
-                DOES> TCODE-ERR ;     \ if you try to run these words they error out
-
-: +CODE:        (CODE:)               \ keep same jump-table but add this label inside a definition
-                                      \ so we can jump from word to word
-                                      \ *** DOES NOT NEED END-CODE ***
-                 DOES> TCODE-ERR ;
-
-\ : ,end          END-CODE ;          \ used with ,CODE (headless CODE word)
-
-: END-CODE      ?CODE-ERR ;
 
 \ ============================================================================
 \ I M M E D I A T E   &   S M U D G E   B I T   C O N T R O L
 HEX
 
-CROSS-COMPILING
-: XIMMEDIATE    ( -- )  \ set the immediate bit in a target word ... in the TARGET MEMORY SEGMENT!!
-              immbit XLATEST @ nfa>imm tc! ;
+\ set the immediate bit in a target word ... in the TARGET MEMORY SEGMENT!!
+: XIMMEDIATE    ( -- ) immbit XLATEST @ nfa>imm tc! ;         
 
-: XIMMEDIATE?   ( nfa -- ?) \ test if a TARGET word is immediate
-              nfa>imm tc@ immbit and 0> ;
+: XIMMEDIATE?   ( nfa -- ?) nfa>imm tc@ immbit and 0> ;  \ test if a TARGET word is immediate
 
-\ manipulate the smudge bit in the target Camel Forth header
+
+\ manipulate the smudge bit in the TARGET DICTIONARY header
 : tHIDE          ( -- )  xlatest @ DUP TC@ 80 or  swap TC! ;
 : tREVEAL        ( -- )  xlatest @ DUP TC@ 7F and swap TC! ;
 
-\ a word to find a word in the target forth dictionary  (used by the xcompiler only)
+\ find a word in the target forth dictionary  (used by the xcompiler only)
 : lenmatch?      ( caddr lfa -- ?)  nfa c@E nmask and ( cadr cnt) swap c@ = ;
 
 
@@ -549,15 +560,11 @@ CROSS-COMPILING
 CROSS-COMPILING
 \ we create a pointer (using VALUE) in the HOST Forth System that points to the STATE variable in the target system
 
-\ NOTE:  We will set the value of XSTATE after we declare the VARIABLE: STATE in the TARGET system
+ VARIABLE XSTATE
 
- 0 VALUE XSTATE      \ xstat returns the address of the TARGET variable: STATE
-                    \ you must use T@ and T! operators on it
-
-\ these words change the TARGET's actual STATE variable. Note the use of T!
-
-: ]T            ( -- )  TRUE  XSTATE T! ;
-: T[            ( -- )  FALSE XSTATE T! ;
+\ these words change the XSTATE variable
+: ]T            ( -- )  TRUE  XSTATE ! ;
+: T[            ( -- )  FALSE XSTATE ! ;
 
 \ ============================================================================
 \ F O R W A R D :    A N D    R E S O L V E S
@@ -581,15 +588,12 @@ CROSS-COMPILING
               0= abort" Un-resolved forward reference!"
         ; IMMEDIATE
 
-
-
-
 : RESOLVES ( XT -- )
            state @ 0 <> ABORT" Interpreting only"
            '  ( xt) >BODY ! ;
 
-\ create place holders for the address of the following EXECUTOR words
 
+\ create place holders for the address of the following EXECUTOR words
 FORWARD: 'EXIT
 FORWARD: 'DOCOL
 FORWARD: 'DOVAR
@@ -605,52 +609,17 @@ FORWARD: 'TYPE
 \ ===================================================================
 \ T M S 9 9 0 0   N E X T   R O U T I N E
 
-\ By defining NEXT as a deferred word you can change it easily
+\ By defining NEXT as a deferred word you can change it for any threading mechanism 
 
-DEFER NEXT,   \ next, MUST be defined as a FORTH word (macro) in your CODE
+DEFER NEXT,   \ next, is defined later as an Assembler macro
 
 \ EXAMPLE:
-\ : 9900next,
-\        *R10 B, ;  ( assumes address of NEXT is in R10)
+\ Macro
+\ : 9900next,    *R10 B, ;  ( assumes address of NEXT is in R10)
 
+\ Assign macro to NEXT, 
 \  ' 9900next, is NEXT,
 
-
-\ ============================================================================
-\ C R O S S   C O M P I L E R   W O R D   " C R E A T O R S "
-
-\ I add  the ':' to the cross-compiler creating words just so I can remember what's what.
-
-CROSS-COMPILING
-
-: CREATE:
-                TCREATE:                       \ compile time: create a dual header and record the Target LFA in Host Forth
-                'DOVAR  cfa,                   \ compile the XT of 'dovar' into the TARGET CFA
-                                               \ (PFA is empty)
-                DOES> @ nfa>PFA ;              \ Run-time: fetch the nfa we stored and convert to PFA (pointer to the data)
-
-: VARIABLE:
-                TCREATE:                       \ compile time: create a dual header and record the Target LFA in Host Forth
-                'DOVAR  cfa,                   \ compile the XT of 'dovar' into the TARGET CFA
-                0 T,                           \ compile a zero into the PFA
-
-                DOES> @ nfa>PFA ;              \ Run-time: fetch the nfa we stored and convert to PFA (pointer to the data)
-
-: 2VARIABLE:
-                TCREATE:                       \ compile time: create a dual header and record the Target LFA in Host Forth
-                'DOVAR  cfa,                   \ compile the XT of 'dovar' into the TARGET CFA
-                0 T, 0 T,                      \ make space for 2 cells and init them to 0
-
-                DOES> @ nfa>PFA ;              \ Run-time: fetch the LFA we stored and convert to PFA (pointer to the data)
-
-: CONSTANT:                                    \ CONSTANT: words are used like a normal constant for debugging and compiling on the HOST
-                TCREATE:                       \ compile time: create a dual header and record the Target LFA in Host Forth
-                'DOCON  cfa,                   \ compile the 'docon' XT into this CFA
-                ( n) T,                        \ compile the actual number into the next CELL which is the TARGET word's PFA
-
-                DOES> @ nfa>PFA T@ ;           \ Run-time: fetch the nfa we stored and convert to PFA & fetch the data
-
-SYNONYM VALUE:  CONSTANT:                      \ same thing in ITC Forths.
 
 \ =======================================================================
 \ TMS9900 and user variables under CAMEL99
@@ -662,28 +631,13 @@ SYNONYM VALUE:  CONSTANT:                      \ same thing in ITC Forths.
 \ Cool trick, but it means we can't read a value from the TARGET system
 \ for the cross-compiler to use.
 
-\ So we have to create a variable UP(t) and assign the value of the for
-\ of the WP register for the Cross compiler to calculate a USER variable's
-\ Address.
+\ So we create a variable WP(t) and assign the value of the WP register
+\ for the Cross compiler to calculate a USER variable's address
 
 \ For TI-994a our primary workspace is at at HEX 8300
-VARIABLE UP(t)   HEX 8300 UP(t) !
 
-: USER:
-                TCREATE:                       \ compile time: create a dual header and record the Target LFA in Host Forth
-                'DOUSER cfa,                   \ CROSS-compile the 'DOUSER' XT into this CFA
-                ( n) T,                        \ compile the user variable no. in the PFA of the word.
+ VARIABLE WP(t)   HEX 8300 WP(t) !
 
-                DOES> @ nfa>PFA t@  UP(t) @ + ;  \ reads parameter field (PFA) add it to the address of target UP
-
-
-\ create smart TARGET colon words that abort if you try to run them
-: <colon:>
-                TCREATE:                       \ create a dual header and record the Target CFA in Host Forth
-                'DOCOL  cfa,                   \ compile the DOCOL XT into this CFA
-                                               \ PFA will contain the XTs of other words that are compiled into a new word.
-
-                DOES> true abort" Cannot run a TARGET colon definition" ;
 
 \ ===================================================================
 \ CREATE SOME HOST COMMANDS IN THE CROSS-COMPILER NAMESPACE
@@ -694,26 +648,16 @@ VARIABLE UP(t)   HEX 8300 UP(t) !
 \ Cross-compiling vocabulary for convenience so we just steal them
 \ by duplicating the names.
 \
-\ immediate short forms for use in definitions
-: [CC]    CROSS-COMPILING ; IMMEDIATE
-: [TC]    TARGET-COMPILING ;  IMMEDIATE
-: [HC]    HOST-COMPILING ; IMMEDIATE
 
 : [TARGET]      [TARGET] ;
 
 synonym  TO     TO
 
 : ASMSEG        ASMSEG ;
-\ : WORDS         WORDS ;
-
 : \             POSTPONE \  ; immediate
 : (     ( )     POSTPONE ( ;  immediate       ( this is for my editor's colourizing :-) )
 
 : ?STK          ?STK ;
-
-\ : HEX           HEX ;
-
-\ : DECIMAL       DECIMAL ;
 
 : [IF]          [COMPILE] [IF]        ; IMMEDIATE
 : [THEN]        [COMPILE] [THEN]      ; IMMEDIATE
@@ -721,17 +665,15 @@ synonym  TO     TO
 : [UNDEFINED]   [COMPILE] [UNDEFINED] ; IMMEDIATE
 
 : CR            CR ;
-
 : ."            [COMPILE] ."  ;  IMMEDIATE
 
-CROSS-COMPILING
 : compile        COMPILE ;
 
 : "word          "word   ;
 
 : C"            ( string-literal)  POSTPONE  C" ; immediate
 
-: T?            ( addr -- n) T@ . ;  \ print the contents of a TARGET variable or address
+: T?            ( addr -- n) T@ . ;             \ print the contents of a TARGET variable or address
 
 \
 \ We need these in our word space so we can get back home after
@@ -742,6 +684,9 @@ CROSS-COMPILING
 : TARGET-COMPILING   TARGET-COMPILING ;
 : CROSS-ASSEMBLING   CROSS-ASSEMBLING ;
 
+\ immediate short forms for use in definitions
+: [CC]    CROSS-COMPILING ;   IMMEDIATE
+: [TC]    TARGET-COMPILING ;  IMMEDIATE
 
 : ?PAIRS      ( n n -- )      ?PAIRS ;
 
@@ -763,25 +708,28 @@ CROSS-COMPILING
 
 \ This was simpler for me. I use the 'T' prefix for [ S, ,"  S" and ." ] in the cross-compiler
 \ Other than the name they work as expected inside cross-compiled programs
+
 : TS,    ( adr len -- ) THERE OVER 1+  TALLOT TPLACE TALIGN ;  \ compile a stack string into target memory
 : T,"         ( <text>" -- ) [char] " PARSE TS, ;              \ parse input string into TARGET memory
 : TS"         '(S") cfa, T," ; IMMEDIATE                       \ compile a string literal into TARGET
 
  : T."         '(S") cfa, T,"  'TYPE cfa,  ;  IMMEDIATE        \ changed to ANS style with TYPE
+
 \ ========================================================================
 \ C R O S S   C O M P I L E R   F I N D
 
 HEX 40 CONSTANT host-immbit                                \ mask for HsForth immediate word detection
 
-: immediate?    ( n -- ? )
 \ test the HsForth immediate bits returned by hsFind83 below
-                host-immbit and  0> ;
+: immediate?    ( n -- ? ) host-immbit and  0> ;
 
-
-: HsFIND83      ( $ --  HOST-pfa immbits ? or 0 )
+: HsFIND83      ( $ --  HOST-pfa immbits ?)
 \ Cross-compiler FIND uses HsForth Forth83 search order (only also etc...)
 \ Returns: hsForth pfa, immbits, flag.
-\ *** PAY ATTENTION ***  this is HOST FORTH searching the MIRROR vocabulary for TARGET words
+
+\                     *** PAY ATTENTION ***  
+\ This is HOST FORTH searching the MIRROR vocabulary for TARGET words
+                
                 find-buffer $!
                 find-buffer DUP UPPER $find-83 ;
 
@@ -804,16 +752,17 @@ HEX 40 CONSTANT host-immbit                                \ mask for HsForth im
 \
 CROSS-COMPILING
 
-SYNONYM host: :            \ 'host:' is now part of the cross-compiler to build Host Forth words
+SYNONYM HOST: :            \ 'host:' is now part of the cross-compiler to build Host Forth words
 
 HOST: ;HOST   [COMPILE] ;  ; IMMEDIATE
+
 
 \ ========================================================================
 \ T A R G E T   C O M P I L I N G  W O R D S
 
 CROSS-COMPILING
 
-: ?XCOMP        ( -- )    XSTATE T@ 0= Abort" XSTATE error: For Cross-Compiling only" ;
+: ?XCOMP        ( -- )    XSTATE @ 0= Abort" XSTATE error: For Cross-Compiling only" ;
 
 \ Again using the 'T' prefix makes the cross-compiler simpler, but the programmer must rememeber
 
@@ -827,7 +776,7 @@ CROSS-COMPILING
 
 : TNUMBER,      ( D -- )
                 D>S                        \ convert to a single number. (we will deal with doubles later)
-                Xstate T@                  \ are we target compiling??
+                XSTATE @                   \ are we target compiling??
                 if    'LIT  t, ( n ) t,    \ yes so compile LIT address and the number into target memory
                 then ;
 
@@ -836,15 +785,8 @@ CROSS-COMPILING
                 CREATE          \ creates a HOST forth name
                       ,         \ compile n into HOST forth word
                 DOES> @         \ fetch the value
-                XSTATE T@       \ cross-compiler is on, compile as literal
+                XSTATE @       \ cross-compiler is on, compile as literal
                 IF  'LIT T,  T,  THEN  ; IMMEDIATE
-
-: XIMMEDIATE    ( -- )  \ set the immediate bit in a target word ... in the TARGET MEMORY SEGMENT!!
-                              immbit XLATEST @ nfa>imm tc! ;
-
-: XIMMEDIATE?   ( nfa -- ?) \ test if a TARGET word is immediate
-                              nfa>imm tc@ immbit and 0> ;
-
 
 \ ============================================================================
 \ M A G I C   S T U F F:  C R O S S - C O M P I L E R  [']
@@ -879,15 +821,6 @@ SYNONYM TCOMPILE  CC[']  IMMEDIATE        \ took me awhile to realize this was r
               'LIT T,  T,    \ store the address as a literal in the TARGET space
               ; IMMEDIATE
 
-
-\ these words change the TARGET's actual STATE variable. Note the use of T!
-\ Addition July 29,2020: Change to [cc] vocab and back to [tc]
-
-: T[            ( -- )  FALSE XSTATE T!  CROSS-COMPILING ;
-: ]T            ( -- )  TRUE  XSTATE T!  TARGET-COMPILING ;
-
-
-
 \ =========================================================================
 \ C R O S S - C O M P I L E R  /  I N T E R P R E T E R
 
@@ -898,7 +831,7 @@ SYNONYM TCOMPILE  CC[']  IMMEDIATE        \ took me awhile to realize this was r
                 HsFIND83 ( HOST-PFA HOST-immbit ? | 0 )   \ lookup MIRROR word, return pfa and the immediate flag
                 IF ( -- host-pfa immbits )                \ we found the word in the dictionary.
                      immediate?                           \ is the HOST word immediate
-                     xstate T@  0=                        \ is the TARGET compiler compiling
+                     XSTATE @  0=                         \ is the TARGET compiler compiling
                      OR                                   \ or state & immediate-bits together to get the flag
                      IF
                           CFA execute                     \ convert HsForth PFA to CFA and execute the word in the HOST system
@@ -939,33 +872,35 @@ DECIMAL
             CR [TARGET-IMG SEG-PTR]@  .hex/dec  ."  bytes used"
             CR [TARGET-IMG SEG-END]@ [TARGET-IMG SEG-PTR]@ -  .hex/dec ."  bytes free"
 
+
+\ ============================================================================
 CR .( == CROSS COMPILER LOADED SUCCESSFULLY ==)
 CR
 
 \                         CROSS COMPILER ENDS
 \ ============================================================================
-\ load the cross-assembler
+\ load the cross-assembler and support
 
- include CC9900\COMPILER\ASM99007.HSF
-
-\ ============================================================================
+include CC9900\COMPILER\2023\ASM9900Y.HSF
+include cc9900\compiler\2023\DIRECTIV.HSF
+include CC9900\COMPILER\INLIN99.HSF
 
 \ ============================================================================
 \ SAVE the final cross-compiler
 HOST-COMPILING
 : READ.CMDLINE
-         ARGS[] LEN 0>
-         IF  ARGS[] $EVALUATE
-         ELSE CR ." WARNING: Command line empty" CR ABORT THEN ;
+         ARGS[] LEN 0= IF CR ." WARNING: Command line empty" CR ABORT THEN
+         ARGS[] $EVALUATE ;
 
 : STARTUP
-     CR ." XFC99 TI99 Forth Cross Compiler, V2.3 July 2020"  CR
-     READ.CMDLINE
+     CR ." FCC99 Forth Cross Compiler, with META, V1.0 Oct 2022"
+     CR READ.CMDLINE
+     CR
      CR ;
 
 cr .( Saving cross-compiler EXE file...)
 
-SAVE-EXE XFC99D.EXE  STARTUP
+SAVE-EXE FCC99D.EXE  STARTUP
 CR
 CR
 BYE
