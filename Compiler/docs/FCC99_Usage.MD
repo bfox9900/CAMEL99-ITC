@@ -77,10 +77,7 @@ C:\> FCC99D fload cc9900\src.itc\forthitc.mak
 
 ### CAMEL99 V2.69 
 Removed TICKS. Replaced with MS which is now set to 1MS resolution. 
-This may be long while multi-tasking. 
-
-
-
+This may be longer while multi-tasking. 
 
 ### CAMEL99 V2.68G
 Broke out CAMEL268.HSF into more separate files and created a "make" file.
