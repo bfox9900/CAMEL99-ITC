@@ -18,16 +18,18 @@ All paths in the source files are explicitly spelled out in the form:
 
           CC9900\SRC.ITC\HILEVEL.HSF
 
-Therefore unzip XFC99X.ZIP in a folder below CC9900.
+Therefore unzip FCC99D.ZIP in a folder below CC9900.
 Example:
-c:\forth             has XFC99X.exe
-c:\forth\cc9900      contains the source files
+c:\forth             has FCC99D.EXE
+c:\forth\cc9900\SRC.ITC      contains the source files
 
 ## Standard Kernel Build V2.69
 Loads and runs with normal Editor assembler cartridge. Entry=HEX A000
 
 ### To re-build Standard Kernel
 set the compiler switches as shown below in FORTHITC.MAK
+
+```
 TRUE  VALUE ITC          \ used to prevent directly compiling HILEVEL.HSF
 FALSE VALUE SLOWER       \ TRUE saves 28 bytes
 FALSE VALUE HASHING      \ Not working yet
@@ -37,11 +39,11 @@ TRUE \ true= standard kernel ;  false=non-standard kernel
     A000 VALUE KERNORG
     2000 VALUE HEAPORG
 [ELSE]
-		6000 VALUE KERNORG  \ the specific alternate load address to use
-		2000 VALUE HEAPORG  \ initial HEAP address when kernel boots
+	6000 VALUE KERNORG  \ the specific alternate load address to use
+	2000 VALUE HEAPORG  \ initial HEAP address when kernel boots
 [THEN]
-
-At the DOS prompt type:   FCC99D  fload cc9900\src.itc\forthitc.mak
+```
+At the DOS prompt type: C:\> FCC99D  fload cc9900\src.itc\forthitc.mak
 
 ### SuperCart Kernel Build
 This script makes a version of Camel99 Forth that loads and runs with Editor Assembler Super Cartridge that has an 8K RAM chip installed.
