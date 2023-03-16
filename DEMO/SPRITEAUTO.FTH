@@ -87,7 +87,7 @@ DECIMAL
          -5 0    28 MOTION
          -5 0    29 MOTION
          -5 0    30 MOTION
-        -15 0   31 MOTION
+        -15 0    31 MOTION
 ;
 
 : RUN
