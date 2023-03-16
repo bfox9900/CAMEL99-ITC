@@ -2,12 +2,13 @@
 
 This file contains information on how to use the cross-compiler to rebuild
 the Camel99 Forth kernel. This is not needed by the normal user but is here
-for the curious. The source code for the cross-compiler is in the Compiler
+for the curious. The source code for the cross-compiler is in the src
 folder is rather messy but it works.
 
 ### Disk System Organization
-The newest version of the cross-compiler is XFC99X.exe.
-It is in the xfc99x.zip file.
+The newest version of the cross-compiler is FCC99D.exe.
+It is in the FCC99D.ZIP file.
+
 The cross-compiler runs on MS DOS. Hey it's retro computing. I used DOSBOX.
 In DOS Box create the CC9900 folder tree as it exists in GitHub.
 (OLD and WIP folders are not needed)
@@ -40,33 +41,47 @@ TRUE \ true= standard kernel ;  false=non-standard kernel
 		2000 VALUE HEAPORG  \ initial HEAP address when kernel boots
 [THEN]
 
-At the DOS prompt type:    XFC99X  fload cc9900\src.itc\forthitc.mak
+At the DOS prompt type:   FCC99D  fload cc9900\src.itc\forthitc.mak
 
 ### SuperCart Kernel Build
-Loads an runs with Editor Assembler Super cartridge with 8K RAM installed.
+This script makes a version of Camel99 Forth that loads and runs with Editor Assembler Super Cartridge that has an 8K RAM chip installed.
+
 Entry=HEX 6000
 *This kernel does not work with DSK1.SAVESYS library file.
+ Rather use the DSK1.SUPERSAVE library to make program images with the Supercart Forth. 
 
-ONLY one flag needs to change in FORTHITC.MAK as shown below:
+*ONLY one flag needs to change in FORTHITC.MAK as shown below:
 
-TRUE  VALUE ITC          \ used to prevent directly compiling HILEVEL.HSF
-FALSE VALUE SLOWER       \ TRUE saves 28 bytes
-FALSE VALUE HASHING      \ Not working yet
+```
+    TRUE  VALUE ITC          \ used to prevent directly compiling HILEVEL.HSF
+    FALSE VALUE SLOWER       \ TRUE saves 28 bytes
+    FALSE VALUE HASHING      \ Not working yet
 
-FALSE  \ **false=non-standard kernel**
-[IF]
-    A000 VALUE KERNORG
-    2000 VALUE HEAPORG
-[ELSE]
+    FALSE  \ **Change this one to change the kernel**
+    [IF]
+        A000 VALUE KERNORG
+        2000 VALUE HEAPORG
+    [ELSE]
 		6000 VALUE KERNORG  \ the specific alternate load address to use
 		2000 VALUE HEAPORG  \ initial HEAP address when kernel boots
-[THEN]
+    [THEN]
+```
 
-
-At the DOS prompt type:    XFC99X fload cc9900\src.itc\forthitc.mak
+At the DOS prompt type:    
+```
+C:\> FCC99D fload cc9900\src.itc\forthitc.mak
+```
 
 *****************************************************
-## Source LOG
+## Kernel Version LOG
+
+### CAMEL99 V2.69 
+Removed TICKS. Replaced with MS which is now set to 1MS resolution. 
+This may be long while multi-tasking. 
+
+
+
+
 ### CAMEL99 V2.68G
 Broke out CAMEL268.HSF into more separate files and created a "make" file.
 FORTHITC.MAK
