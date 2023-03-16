@@ -1,4 +1,4 @@
-\ TABLES.FTH access memory as fast arrays. For CPU or VDP RAM.  Brian Fox
+\ TABLES.FTH access ANY memory as fast arrays. For CPU or VDP RAM.  Brian Fox
 
 \  CREATE Q  100 ALLOT
 \  Q TABLE: ]Q

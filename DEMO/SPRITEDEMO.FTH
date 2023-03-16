@@ -6,7 +6,7 @@ CR
 
 NEEDS LOCATE FROM DSK1.DIRSPRIT
 NEEDS RND    FROM DSK1.RANDOM
-NEEDS MOTION FROM DSK1.MOTION
+NEEDS MOTION FROM DSK1.MOTION  \ manual motion not Automotion 
 
 \ ========================================
 \ demo code
@@ -53,42 +53,16 @@ DECIMAL
 : RNDYX ( -- y x ) RNDI  RNDI ;  \ RNDI RNDI ;
 
 \ you can make any sprite move any way with this table
+DECIMAL 
 : MY-MOTIONS ( -- )
-        \ dy dx   spr#
+        \ dx dy   spr#
         \ ----------------------
-       0  10       0 MOTION   \ only sprite 0 moves this way.
-       0   5       1 MOTION
-       0   5       2 MOTION
-       0   5       3 MOTION
-       0   5       4 MOTION
-       0   5       5 MOTION
-       0   5       6 MOTION
-       0   5       7 MOTION
-       0   5       8 MOTION
-       0   5       9 MOTION
-       0   5      10 MOTION
-       0   5      11 MOTION
-       0   5      12 MOTION
-       0   5      13 MOTION
-       0   5      14 MOTION
-       0   5      15 MOTION
-       0  -5      16 MOTION
-       0  -5      17 MOTION
-       0  -5      18 MOTION
-       0  -5      19 MOTION
-       0  -5      20 MOTION
-       0  -5      21 MOTION
-       0  -5      22 MOTION
-       0  -5      23 MOTION
-       0  -5      24 MOTION
-       0  -5      25 MOTION
-       0  -5      26 MOTION
-       0  -5      27 MOTION
-       0  -5      28 MOTION
-       0  -5      29 MOTION
-       0  -5      30 MOTION
-       0  -15     31 MOTION
+          10   0   0 MOTION   
+30  1 DO   5   0   I MOTION  LOOP 
+         -15   0  31 MOTION
 ;
+
+
 : SET-MOTIONS   1 0 0 31 MOTIONS ;
 
 : EXPLANATION
@@ -100,7 +74,7 @@ DECIMAL
          CR    ." and the word TRANSLATE."
          CR
          CR    ." Sprite  0 is 2X faster"
-         CR    ." Sprite 31 is 3X faster"
+         CR    ." Sprite 31 is 2X faster"
          CR
          CR    ." Press FNCT 4 to halt demo"
          CR    ." Type: MY-MOTIONS RUN"
@@ -109,12 +83,12 @@ DECIMAL
 
 : RUN    EXPLANATION
          DELALL  MAKE-SPRITES
-         250 MS
          0 MAGNIFY
          BEGIN
-           ALL-SPRITES TRANSLATE    \ move everybody
-            0 SP.MOVE               \ move Spr#0 once more
-           31 SP.MOVE 31 SP.MOVE    \ Move Spr#31 2x more
+           0 SPR# @ TRANSLATE    \ move everybody
+            0 SP.MOVE            \ move Spr#0 once more
+           31 SP.MOVE            \ Move Spr#31 once more
+           10 MS 
            ?TERMINAL ABORT" BREAK"
          AGAIN ;
 
