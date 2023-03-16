@@ -56,38 +56,38 @@ DECIMAL
 : MY-MOTIONS ( -- )
        \ dX dY   spr#
        \ ----------------------
-         0 10      0 MOTION   \ only sprite 0 moves this way.
-         0  5      1 MOTION
-         0  5      2 MOTION
-         0  5      3 MOTION
-         0  5      4 MOTION
-         0  5      5 MOTION
-         0  5      6 MOTION
-         0  5      7 MOTION
-         0  5      8 MOTION
-         0  5      9 MOTION
-         0  5     10 MOTION
-         0  5     11 MOTION
-         0  5     12 MOTION
-         0  5     13 MOTION
-         0  5     14 MOTION
-         0  5     15 MOTION
-         0 -5     16 MOTION
-         0 -5     17 MOTION
-         0 -5     18 MOTION
-         0 -5     19 MOTION
-         0 -5     20 MOTION
-         0 -5     21 MOTION
-         0 -5     22 MOTION
-         0 -5     23 MOTION
-         0 -5     24 MOTION
-         0 -5     25 MOTION
-         0 -5     26 MOTION
-         0 -5     27 MOTION
-         0 -5     28 MOTION
-         0 -5     29 MOTION
-         0 -5     30 MOTION
-         0 -15    31 MOTION
+         10 0     0 MOTION   \ only sprite 0 moves this way.
+          5 0     1 MOTION
+          5 0     2 MOTION
+          5 0     3 MOTION
+          5 0     4 MOTION
+          5 0     5 MOTION
+          5 0     6 MOTION
+          5 0     7 MOTION
+          5 0     8 MOTION
+          5 0     9 MOTION
+          5 0    10 MOTION
+          5 0    11 MOTION
+          5 0    12 MOTION
+          5 0    13 MOTION
+          5 0    14 MOTION
+          5 0    15 MOTION
+         -5 0    16 MOTION
+         -5 0    17 MOTION
+         -5 0    18 MOTION
+         -5 0    19 MOTION
+         -5 0    20 MOTION
+         -5 0    21 MOTION
+         -5 0    22 MOTION
+         -5 0    23 MOTION
+         -5 0    24 MOTION
+         -5 0    25 MOTION
+         -5 0    26 MOTION
+         -5 0    27 MOTION
+         -5 0    28 MOTION
+         -5 0    29 MOTION
+         -5 0    30 MOTION
+        -15 0   31 MOTION
 ;
 
 : RUN
