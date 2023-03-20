@@ -2,6 +2,8 @@
 \ From HsForth circa 1991 James Kalihan, deceased
 \ modified for Camel99 forth 
 
+*incomplete*
+
 NEEDS BLOCKS    FROM DSK1.BLOCKS
 NEEDS -TRAILING FROM DSK1.TRAILING 
 NEEDS .R        FROM DSK1.UDOTR 
