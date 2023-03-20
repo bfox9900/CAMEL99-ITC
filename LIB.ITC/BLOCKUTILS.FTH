@@ -1,53 +1,40 @@
 \ simple block editor at utilities for BLOCKS
+\ From HsForth circa 1991 James Kalihan, deceased
+\ modified for Camel99 forth 
 
-NEEDS BLOCKS FROM DSK1.BLOCKS
+NEEDS BLOCKS    FROM DSK1.BLOCKS
+NEEDS -TRAILING FROM DSK1.TRAILING 
+NEEDS .R        FROM DSK1.UDOTR 
 
-: <LINE>  ( line# blk# - addr n )
-        BLOCK  SWAP  C/L@ *  +  40  C/L@ ;
+DECIMAL 
+: LINE  ( line# -- addr )  8* 8*  SCR @ BLOCK + ;
+: <LINE>  ( line# - addr n ) LINE 64  ;
 
-: .LINE   ( l# s# - )  <LINE> -TRAILING  TYPE  #LINE 1+! ;
+: .LINE   ( l# -- ) <LINE> -TRAILING  TYPE  LINES 1+! ;
 
 : LIST  ( s# - )
-        CR
-        DUP SCR ! ." SCR#"  U.
-        10 0
-         DO
-             CR  I 3 .R SPACE   I SCR @ .LINE
-         LOOP
-         CR ;
+  CR
+  DUP SCR ! ." SCR#" 4 U.R
+  10 0
+  DO
+    CR  I 3 .R SPACE   I .LINE
+  LOOP
+  CR ;
 
-: TEXT      PARSE PAD PLACE ;
+: ?LINE#  ( n -- n) DUP 0 16 WITHIN 0= ABORT" 0..15 expected" ;
 
-: PP        0 TEXT PAD 1+ SWAP   SCR @ <LINE> CMOVE UPDATE ;
+: PP  ( n -- ) ?LINE# >R  0 PARSE  R> LINE SWAP MOVE UPDATE ;
 
-: PL
-        0D EMIT OUT OFF
-        C/L @ SPACES
-        0D EMIT
-        [CHAR] ? EMIT
-        0D EMIT
-        DUP SCR @ <LINE> PAD 2DUP C! 1+ SWAP CMOVE
-        <IN$>
-        1+ SWAP SCR @ <LINE> CMOVE UPDATE ;
-
-: .INDEX   0 SWAP .LINE ;                              \      scr -
-
-: CLEAR ( n -- )
-        BUFFER B/BUF BLANK  UPDATE ;                \      scr -
-
-: COPY  ( n -- )
-        SAVE-BUFFERS  SWAP  BLOCK  2- ! UPDATE ;   \  from to -
-
+: .INDEX   0 SWAP .LINE ; 
+: CLEAR ( n -- ) BUFFER B/BUF BLANK  UPDATE ;      
+: COPY  ( n -- ) FLUSH  SWAP  BLOCK  2- ! UPDATE ; 
 : THRU  ( 1st last -- )
         2DUP > ABORT" Can't go backwards" s
         1+ SWAP DO  I U.  I LOAD   LOOP ;
 
-: CR'S  ( n -- )  0 DO   CR #LINE 1+!  LOOP ;
-
-: FORM-FEED ( -- )    0C EMIT  #PAGE 1+!   #LINE OFF  ;
-
-: .PAGE#
-        #PAGE @ IF ." Page:" #PAGE @ 3 .R THEN ;
+: CR'S  ( n -- )  0 DO   CR LINES 1+!  LOOP ;
+: FORM-FEED ( -- )    0C EMIT  #PAGE 1+!   LINES OFF  ;
+: .PAGE#     #PAGE @ IF ." Page:" #PAGE @ 3 .R THEN ;
 
 : .HEADER
         CR  ACTIVE $.
@@ -55,18 +42,18 @@ NEEDS BLOCKS FROM DSK1.BLOCKS
 
 : .FOOTER
         CR  CR
-        L/PAGE #LINE @ -  CR'S
+        L/PAGE LINES @ -  CR'S
         0F CTAB ." Camel99 Forth" 10 SPACES ." by Brian Fox"
         CR 40 CTAB .PAGE#
         FORM-FEED ;
 
-: ?FORMFEED  #LINE @  L/PAGE > IF .FOOTER .HEADER  THEN ;
+: ?FORMFEED  LINES @  L/PAGE > IF .FOOTER .HEADER  THEN ;
 
 : INDEX    ( from,to -- )
            DECIMAL
            HIGHBLK @ 1- MIN
            OVER L/PAGE / 1+ #PAGE !      \ calculate page# for 1st blk
-           #LINE OFF
+           LINES OFF
            .HEADER CR CR
            1+ SWAP
            DO  CR  I 4 .R  4 SPACES  I .INDEX  ?FORMFEED  1 /LOOP
