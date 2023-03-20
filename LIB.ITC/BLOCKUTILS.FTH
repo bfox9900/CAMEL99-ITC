@@ -107,7 +107,6 @@ VARIABLE CTRL-Z  1A CTRL-Z !
         2drop LISTS @ CTRL-Z 1 4 PICK WRITEH DROP
         0 0 3 PICK LSEEK++ -1 -1 D+ ROT LSEEK 2drop ;
 
-SF-IO  F-IO
 \ ---- prompted screen to file conversion
 : BLOCKS-TO-FILE ( -- )
         CR ." Source file for screens" IN$  OPEN-BLOCKS
