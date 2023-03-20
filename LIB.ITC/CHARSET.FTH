@@ -14,8 +14,9 @@ HEX
 
 HEX
 : GROM   ( addr -- ) DUP 9C02 ! 9C02 C! ;  \ set GROM address
-: GC@+   ( -- c)  S" 9800 C@" EVALUATE ; IMMEDIATE \ read & auto-increment address
-: ]PDT   ( char# -- 'pdt[n] )  8* 800 + ;       \ VDP pattern Descriptor table
+\ read & auto-increment address
+: GC@+   ( -- c)  S" 9800 C@" EVALUATE ; IMMEDIATE 
+: ]PDT   ( char# -- 'pdt[n] )  8* 800 + ; \ VDP pattern Descriptor table
 : ]GFONT ( ascii -- grom_adr) BL -  7 * 6B4 + ; \ GROM array of TIFont data
 
 \ transfer from GROM to VDP
