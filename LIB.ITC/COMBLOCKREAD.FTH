@@ -14,7 +14,7 @@ CODE COM-ACCEPT ( addr len delimit -- len)
           UNTIL,
           *R2 8 STCR,     \ store char @ addr
            18   SBZ,
-           R5   INC,      \ count the char
+           R5   INC,      \ count the char 
           *R2+ TOS CMPB,  \ is char the delimiter?
            EQ IF,         \ if true
               R5 R3 MOV,  \ force loop exit

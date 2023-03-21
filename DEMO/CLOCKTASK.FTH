@@ -7,7 +7,7 @@ NEEDS MALLOC  FROM DSK1.MALLOC
 NEEDS INSTALL FROM DSK1.ISRSUPPORT
 
 \ LOWTOOLS uses TRANSIENT/PERMANENT
-INCLUDE DSK1.LOWTOOLS
+INCLUDE DSK1.ASM9900
 
 \ isr routine increments the double integer FRAMES
 CREATE FRAMES  0 , 0 ,
@@ -52,8 +52,6 @@ DECIMAL
 : SETCLOCK  ( hr min sec -- ) TIME>D  FRAMES 2! ;
 
 : COLD    0 INSTALL  COLD ;     \ disable counter before restarting
-
-DETACH  \ removes tools & Assembler from low-memory
 
 USIZE MALLOC CONSTANT BGCLOCK  \ allocate memory and name our task
 BGCLOCK FORK                   \ duplicate Forth's user area into BGCLOCK
