@@ -11,9 +11,9 @@ HERE
 HEX
 \ create array of direction vectors in dictionary
 \ to hold x y vectors for each sprite (128 BYTES)
-CREATE SMT    MAX.SP 1+  4* ALLOT
+CREATE SMT    MAX.SP 1+  4* ALLOT  \ allocate sprite motion table 
 
-SMT TABLE4: ]VECTOR
+SMT TABLE4: ]VECTOR    \ creates a fast table of 2 cell records 
 
 \ init all vectors to zero
 : CLR-MOTION ( -- ) 0 ]VECTOR  MAX.SP 1+ 4*  0 FILL ;
@@ -54,7 +54,7 @@ CODE VECT+ ( dx dy x y -- x' y')  \ 6x FASTER than Forth version
 
 \ compensate for 9918 chip
 : ?NEGX      ( dx dy -- dx dy' ) OVER 0< IF 1+ THEN ;
-: MOTION     ( dx dy spr# --)  >R  ?NEGX  FUSE  R> ]VECTOR 2! ;
+: MOTION     ( dx dy spr# --)  >R  ?NEGX  R> ]VECTOR 2! ;
 
 \ *NEW* Plural version defines same motion for a range of sprites
 : MOTIONS ( dy dx first last -- )
