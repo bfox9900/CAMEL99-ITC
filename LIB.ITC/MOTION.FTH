@@ -1,67 +1,66 @@
 \ Direct Sprite motion control  BJF Jun 15 2018
 \ This method creates a "motion" table in CPU RAM call ]VECTOR
 \ See: SPRITEDEMO for usage example
-\ Mar 2023  re-write added SMT data space
+\ Mar 2023  re-write to fix VECT+ and SP.MOVE 
 
 .( .)
 \ INCLUDE DSK1.TOOLS  \ debugging
+
 NEEDS SPRITE FROM DSK1.DIRSPRIT
 NEEDS TABLE4: FROM DSK1.TABLES
-HERE
-HEX
-\ create array of direction vectors in dictionary
-\ to hold x y vectors for each sprite (128 BYTES)
-CREATE SMT    MAX.SP 1+  4* ALLOT  \ allocate sprite motion table 
 
-SMT TABLE4: ]VECTOR    \ creates a fast table of 2 cell records 
+HERE
+DECIMAL 
+\  32 sprites * 4 bytes for each x,y vector 
+32 4* CONSTANT SMT.SIZE 
+
+\ create space for a sprite motion table in RAM 
+CREATE SMT    SMT.SIZE ALLOT 
+
+\ 
+\ TABLE4: creates a fast table of "4 BYTE" records. 
+\ Use 2@ and 2! to fetch and store the motion vectors
+SMT TABLE4: ]VECTOR    
 
 \ init all vectors to zero
-: CLR-MOTION ( -- ) 0 ]VECTOR  MAX.SP 1+ 4*  0 FILL ;
+: CLR-MOTION ( -- ) 0 ]VECTOR  SMT.SIZE  0 FILL ;
 
-\ Vector addition of current postion with offset
-\ : VECT+ ( dx dy x y -- x' y') ROT +  -ROT +  SWAP ;
-HEX
-CODE VECT+ ( dx dy x y -- x' y')  \ 6x FASTER than Forth version
-           C236 , \ *SP+ W MOV,
-           A136 , \ *SP+ TOS A,
-           A588 , \  W  *SP  A,
-           NEXT,
-           ENDCODE
+\ Vector addition of x,y with a vector dx,dy
+\ Masked to 8 bits 
+HEX 
+: VECT+ (  x y dx dy -- x' y') 
+    ROT + 0FF AND >R 
+    +     0FF AND R> ;
 
-\ SP.MOVE is critical for fast speed.
-\ Uses V@ V! SPLIT VECT+ and FUSE CODE words
-\ - V@ (256 uS) reads both X and Y bytes from VDP as an cell
-\   This is faster than using VC@ VC@  (405uS)
-\ - SPLIT breaks them into 2 ints on the stack
-\ - VECT+ adds the offsets to X & Y
-\ - FUSE puts them back together as 1 cell
-\ - V! puts the single cell back into VDP ram
+\ uses V@ and V! to read/write 16 bits to sprite location table
+DECIMAL 
 : SP.MOVE ( spr# -- )
-          DUP SP.Y
-          DUP>R V@ SPLIT ( -- spr# x y ) ( r-- vaddr)
-          ROT ]VECTOR 2@ VECT+  ( --  x' y') ( r-- vaddr)
-          FUSE R> V!
+    DUP SP.Y DUP>R V@       ( -- spr# xy  ) ( r-- vaddr)
+    SPLIT                   ( -- spr# x y ) ( r-- vaddr)
+    ROT ]VECTOR 2@ VECT+    ( --  x' y')    ( r-- vaddr)
+\ "fuse" x y into one integer 
+    FUSE                    ( --  xy)       ( r-- vaddr)
+    R> V!                   \ store the integer in sprite location
 ;
+
 .( .)
 : ALL-SPRITES ( -- 1st last) 0 SPR# @ ;  \ syntax sugar :-)
 
-\ translate in the mathematical sense, update all the sprites
+\ translate in the mathematical sense, moves sprites
+\ 0 4 TRANSLATE moves sprites 0..3  
+\ ALL-SPRITES TRANSLATE moves all of them 
 : TRANSLATE ( 1st last  -- ) 1+ SWAP DO  I SP.MOVE  LOOP ;
 
-\ This works like motion in BASIC. It stores motion bytes in ]VECTOR
+\ This works like motion in BASIC. It stores motion bytes in ]VECTOR array
 \ The difference is that that dx dy values will be added to
-\ the sprite's position each time you call SP.MOVE or TRANSLATE
-
-\ compensate for 9918 chip
-: ?NEGX      ( dx dy -- dx dy' ) OVER 0< IF 1+ THEN ;
-: MOTION     ( dx dy spr# --)  >R  ?NEGX  R> ]VECTOR 2! ;
+\ the sprite's position only when call SP.MOVE or TRANSLATE
+HEX 
+: MOTION     ( dx dy spr# --) ]VECTOR 2! ;
 
 \ *NEW* Plural version defines same motion for a range of sprites
-: MOTIONS ( dy dx first last -- )
-   1+ SWAP DO   2DUP I MOTION   LOOP 2DROP ;
+: MOTIONS ( dy dx first last -- )  1+ SWAP DO   2DUP I MOTION   LOOP 2DROP ;
 .( .)
 CLR-MOTION  \ init-motion
 DECIMAL
 HERE SWAP - . .( bytes)
-
 
