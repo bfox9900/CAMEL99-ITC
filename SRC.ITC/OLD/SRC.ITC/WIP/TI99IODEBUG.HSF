@@ -1,0 +1,96 @@
+
+INCLUDE DSK1.MARKER
+INCLUDE DSK1.ASM9900
+INCLUDE DSK1.TOOLS
+
+
+MARKER /REMOVE
+
+: L:    CREATE ;
+\
+\ ================ LEAF SUB-ROUTINES  ** NOT NESTABLE ** ===================
+\
+\ VDP set-address sub-routines
+HEX
+L: WMODE  ( Vaddr -- Vaddr)
+           TOS 4000 ORI,
+L: RMODE   R1 STWP,               \ avoids 2 SWPB instructions
+           0 LIMI,
+           R3 8C02 LI,
+           9 R1 () R3 ** MOVB,   \ write odd byte from TOS (ie: R4)
+           TOS R3 ** MOVB,
+           RT,
+           ENDCODE
+
+CODE VDPWA  ( Vaddr -- ) \ set vdp write address
+           WMODE @@ BL,
+           TOS POP,
+           NEXT,
+           ENDCODE
+
+CODE VC! ( char vaddr --)
+          WMODE @@ BL,
+          TOS POP,
+          9 (R1) VDPWD @@ MOVB,  \ Odd byte R4, write to screen
+          TOS POP,               \ refill TOS
+          2 LIMI,
+          NEXT,
+          ENDCODE
+
+
+\ For reference, these are the offset values of the user vars.
+\      2E USER: C/L
+\      30 USER: OUT
+\      32 USER: VROW
+\      34 USER: VCOL
+
+7E USER: VPG  \ Free space in scratchpad RAM used for VDP page# USER VARIABLE
+
+CODE >VPOS ( col row -- vaddr) \ compute a VDP screen address
+         R1         STWP,
+         TOS     R3  MOV,   \ this move to make best use of MPY
+         2E (R1) R3  MPY,   \ multiply by chars/line. result goes to R4 ie: TOS
+        *SP+     TOS ADD,   \ add col value to TOS
+         VPG @@  TOS ADD,   \ add Video page offset
+         NEXT,
+         ENDCODE
+
+\ CODE VPOS ( -- 'cursor)
+\         TOS     PUSH,
+\         R1         STWP,    \ workspace is USER area base address
+\         32 (R1) R3 MOV,     \ vrow->r3
+\         2E (R1) R3 MPY,     \ vrow*c/l->R4
+\         34 (R1) R4 ADD,     \ add vcol
+\         7E (R1) R4 ADD,     \ add video page# VPG
+\         NEXT,
+\         ENDCODE
+
+\ *************************************************************
+\ *  VEMIT  must have the vdp write address set before use    *
+\
+\   : (EMIT) ( c -- ) VPOS VDPWA  VEMIT IF CR THEN  ;
+\
+\ *************************************************************
+
+CODE VEMIT ( char --  ?) \ write to screen, test for end of screen
+         R1 STWP,
+         9 (R1) VDPWD @@ MOVB,  \ !! Odd byte of R4, write to screen
+         2 LIMI,
+         TOS CLR,
+         34 (R1)  INC,          \ bump VCOL
+         34 (R1)  2E (R1) CMP,  \ compare VCOL = C/L
+         EQ IF,
+            TOS SETO,          \ set true flag
+         ENDIF,
+         NEXT,
+         ENDCODE
+
+
+CODE (CR) ( -- n)   \ inc VROW, return value
+           TOS PUSH,
+           R1 STWP,
+           34 (R1) CLR,     \ VCOL OFF
+           32 (R1) INC,     \ VROW 1+!
+           32 (R1) TOS MOV,
+           NEXT,
+           ENDCODE

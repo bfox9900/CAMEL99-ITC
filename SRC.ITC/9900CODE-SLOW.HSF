@@ -1,12 +1,14 @@
-\ ==========================================================
 \ T I - 9 9   C A M E L   F O R T H   P R I M I T I V E S   Mar 2022
+
+\ Oct 2022 Removed CMOVE and CMOVE>  replaced with MOVE code word
 
 \ This code, compiled with a cross compiler built on HSF2012
 \ a re-build of HS/Forth for DOS by Brian Fox is
 \ for the TI-99 4/A Home Computer
 
 \ Copyright (c) 2017 Brian Fox Ontario Canada
-\ brian.fox@foxaudioresearch.ca
+\ brian.fox@brianfox.ca
+
 \ This program is free software; you can redistribute it and/or modify
 \ it under the terms of the GNU General Public License as published by
 \ the Free Software Foundation; either version 3 of the License, or
@@ -32,19 +34,6 @@
 \ **cWe have also tried to use less space where possible. Some primitives
 \ ** are smaller in Assembly language but some are smaller in Forth.
 \ ** We chose smaller is better except where performance would really suffer.
-
-\ PERFORMANCE:
-\ Cycle counting against Turbo Forth for TI-99, which does not keep TOS in
-\ a register, shows as much as a 40% performance increase on simple primitives.
-\ This is counter balanced by the slowdown of PUSHing and POPing the TOS
-\ register which can slowdown other code words by as much as 100%.
-
-\ The benchmark system, Turbo Forth, puts many small routines in the high
-\ speed 16 bit RAM chip. To even come close to Turbo Forth we had to put
-\ EXIT NEXT, ENTER, BRANCH and ?BRANCH and LIT in High Speed RAM.
-
-\ CAMEL99 is roughly the same speed as TurboForth in "primitive" benchmarks
-\ but is slower in number conversion/printing, conditionals and screen display.
 
 \ ASM Macros are to code the Forth Virtual Machine in a slightly CPU
 \ independant manner. They make sense to a Forth programmer but may
@@ -87,20 +76,13 @@
 \ ** R14     Multi-tasker Program counter
 \ ** R15     Multi-tasker task Status register
 
-\  [UNDEFINED] XASSEMBLER
-\  [IF]  CR CR .( **9900 CROSS ASSEMBLER IS NOT LOADED**) ABORT
-\  [ELSE] CR .( ** 9900 XASSEMBLER is loaded **)
-\  [THEN]
 
 \ ==============================================================
 \ F O R T H   V I R T U A L   M A C H I N E  S U P P O R T
+\ contains macros: PUSH, POP, CALL, etc...
 
-CROSS-COMPILING
-[UNDEFINED] CALL,
-[IF]
-    CR ." Defining Forth Virtual machine MACROs ..."
-    include CC9900\SRC.ITC\FORTHVM.HSF  \ contains macros: PUSH, POP, CALL, etc...
-[THEN]
+CR ." Defining Forth Virtual machine MACROs ..."
+     include CC9900\SRC.ITC\FORTHVM.HSF
 
 \ ==============================================================
 \ T I - 9 9   S U P P O R T
@@ -130,7 +112,7 @@ ORG-ADDR@ 2 cells + equ HSprims   \ beginning of the code to be copied to HS ram
 \ *G move dictionary pointer back 1 cell, patch 'addr' into CFA field
 
 \ ==============================================================
-\ FAST CODE PRIMITIVES. Concept from TI-Forth and TURBO Forth by Mark Wills
+\ FAST CODE PRIMITIVES. Concept from TI-Forth and TURBO Forth, by Mark Wills
 
 \ The following code is copied into TI-99 "PAD" memory chip by COLD
 \ (see HILEVEL.HSF) to address _HSstart (8388)
@@ -140,6 +122,7 @@ ORG-ADDR@ 2 cells + equ HSprims   \ beginning of the code to be copied to HS ram
 TALIGN
 NEW-JMPTABLE
 XSTATE OFF
+
 l: _exit      IP RPOP,        \ >8388
 l: _next                      \ Forth ITC NEXT routine (>838A)
 @@9:         *IP+ W  MOV,     \ move CFA into Working register & incr IP
@@ -148,46 +131,38 @@ l: _next                      \ Forth ITC NEXT routine (>838A)
 
 l: _enter     IP RPUSH,       \ push IP register onto the return stack
               W IP MOV,       \ move PFA into Forth IP register
-              @@9 JMP,
+              next,
 
-l: _?branch   \ Faster way to avoid penalty of TOS refill
-              TOS DEC,        \ After DEC if tos=0, this will cause a carry flag                     10
-              TOS POP,        \ refill TOS changes L> A> EQ flags, BUT does not change carry flag    22
-              @@2 JOC,        \                                                                      10
-l: _branch   *IP IP ADD,      \ *IP points to an offset number in memory. Add to IP causes a jump.
-              @@9 JMP,        \ *replaced NEXT, with short JMP. 20% faster! same size                10
-@@2:          IP INCT,        \ move IP forward past branch offset (don't branch)                    10
-              @@9 JMP,        \ JMP to _next
 
 l: _lit       TOS     PUSH,   \ 28
              *IP+ TOS MOV,    \ 22
-              @@9 JMP,
+              next,
 
 l: _drop     TOS POP,
-             @@9 JMP,
+             next,
 
 l: _DUP      TOS PUSH,
-             @@9 JMP,
+             next,
 
 l: _PLUS    *SP+ TOS ADD,     \ ADD 2nd item to TOS and incr stack pointer.
-             @@9 JMP,
+             next,
+             next,
+
 l: _HSend    \ this label tells the compiler where the high speed code ends
 
 \ ==============================================================
 \ calculate and name the entry points for the fast memory code
 
-\ * Address NEXT2 must be loaded into R10 at startup *  ( see INIT in CAMEL99.HSF)
-\ --------------------------------------------------
- _exit  >HSRAM equ EXIT2
+\ * Address NEXT2 must be loaded into R10 at startup *
+  ( see COLD in HILEVEL.HSF)
+
  _next  >HSRAM equ NEXT2   \ entry address of NEXT in fast RAM
  _HSend >HSRAM equ HSend   \ end of hi-speed memory code. Needed by copy loop in INIT
- _enter >HSRAM equ DOENTER
 
 \ ==============================================================
 \   ********  C O M P I L E R   C O N T R O L ****************
 
-[UNDEFINED] REGISTERS
-[IF]  FALSE VALUE REGISTERS  [THEN]
+FALSE VALUE REGISTERS  \ do loop in R13,R14
 
 \   **********************************************************
 CR .( FORTH PRIMITIVES BEGIN)
@@ -201,13 +176,13 @@ CR .( FORTH PRIMITIVES BEGIN)
 \ we resolve the reference for the cross-compiler to use later on.
 
 \ ******************** EXECUTORS ARE SPECIAL CASES *************************
-\ *           EXECUTOR word's CFA MUST point to runnable CODE              *
+\ *           EXECUTOR word's CFA MUST start with runnable CODE            *
 \ **************************************************************************
 
 CODE EXIT    ( -- )         \ compiled when ';' is executed
       _exit >HSRAM CFA!
 ENDCODE
-T' EXIT RESOLVES 'EXIT
+ T' EXIT RESOLVES 'EXIT
 
 CODE DOCOL   ( a -- )         \ Executor that executes a "colon" definition.
     _enter >HSRAM CFA!
@@ -283,12 +258,21 @@ CODE EXECUTE ( xt -- )
               ENDCODE
 
 \ these run from high speed RAM
- CODE ?BRANCH
-             _?BRANCH >HSRAM CFA!  \ put fast address into the CFA
-              ENDCODE
-
- CODE BRANCH
-             _BRANCH >HSRAM CFA!   \ put fast address into the CFA
+\ CODE ?BRANCH
+\             _?BRANCH >HSRAM CFA!  \ put fast address into the CFA
+\              ENDCODE
+\
+\ CODE BRANCH
+\             _BRANCH >HSRAM CFA!   \ put fast address into the CFA
+\              ENDCODE
+CODE ?BRANCH
+              TOS DEC,        \ if tos=0, this will cause a carry flag
+              TOS POP,        \ changes L> A> EQ flags, BUT does not change carry flag
+              @@2 JOC,
++CODE BRANCH *IP IP ADD,      \ *IP points to an offset number in memory. Add to IP causes a jump.
+              NEXT,           \ *iNLINE NEXT is faster
+@@2:          IP INCT,        \ move IP forward past branch offset (don't branch)
+              NEXT,
               ENDCODE
 
 \ ==================================================================
@@ -399,9 +383,9 @@ CODE SP!     ( a -- )
               ENDCODE
 
 CODE DROP    ( w -- )
-             _drop >HSRAM CFA!
+            _drop >HSRAM CFA!
 \              TOS POP,             \ 22 *SP+ TOS MOV,
-\              NEXT,
+              NEXT,
               ENDCODE
 
 CODE NIP     ( n n' -- n')
@@ -421,7 +405,7 @@ CODE DUP    ( w -- w w )          \ create a Forth Header for DUP
              _DUP >HSRAM CFA!       \ use hi-speed ram version
 \              TOS PUSH,
 \              NEXT,
-              ENDCODE
+\              ENDCODE
 
 CODE SWAP    ( w1 w2 -- w2 w1 )
               TOS   W MOV,          \ 14
@@ -570,7 +554,7 @@ CODE +       ( u1 u2 -- u )
               _PLUS >HSRAM CFA!
 \             *SP+ TOS ADD,         \ ADD 2nd item to TOS and incr stack pointer.
 \              NEXT,
-            ENDCODE
+\              ENDCODE
 
 CODE -       ( u1 u2 -- u )
              *SP+ TOS SUB,
@@ -785,41 +769,42 @@ CODE MIN     ( n1 n2 -- n)
               ENDCODE
 
 \ ==================================================================
-CR .( CMOVE CMOVE>  FILL ) \ * Using WHILE protects against n=0
-CODE CMOVE  ( src dst n -- )   \ forward character move
-            *SP+ R0 MOV,       \ pop DEST into R0
-            *SP+ R1 MOV,       \ pop source into R1
-             TOS TOS MOV,
-             NE IF,
+CR .( MOVE FILL )
+CODE MOVE  ( src dst n -- )   \ forward character move
+    *SP+ R0  MOV,      \ pop DEST into R0
+    *SP+ R1  MOV,      \ pop source into R1
+     TOS TOS MOV,
+     NE IF,            \ if n=0 we are done
+\ need some copies
+            R0  R2 MOV, \ dup dest
+            R0  R3 MOV, \ dup dest
+            TOS R3 ADD, \ R3=dest+n
+\ test window:  src  dst dst+n WITHIN
+            R0  R3 SUB,
+            R1  R2 SUB,
+            R3  R2 CMP,
+            HI IF, \ do cmove> ............
+                TOS W MOV,      \ dup n
+                    W DEC,         \ compute n-1
+                W  R1 ADD,      \ point to end of source
+                W  R0 ADD,      \ point to end of destination
                 BEGIN,
-                  *R1+ *R0+ MOVB, \ byte move, with auto increment by 1.
-                  TOS DEC,       \ we can test it before the loop starts
+                  *R1 *R0 MOVB,
+                       R1 DEC,  \ dec source
+                       R0 DEC,  \ dec dest
+                      TOS DEC,  \ dec the counter in TOS (R4)
                 EQ UNTIL,
-             ENDIF,
-             TOS POP,
-             NEXT,
-             ENDCODE
 
-\ OCT 5 2020 Fixed computation for end of strings and inner loop.
-CODE CMOVE>  ( src dst n -- )  \ move chars from end of string and go backwards
-           *SP+ R2 MOV,    \ pop DEST into R2
-           *SP+ R1 MOV,    \ pop source into R1
-            TOS TOS MOV,
-            NE IF,
-                TOS W  MOV,    \ dup n
-                W DEC,         \ compute n-1
-                W R1 ADD,      \ point to end of source
-                W R2 ADD,      \ point to end of destination
-                BEGIN,
-                  *R1 *R2  MOVB,
-                   R1 DEC,     \ move the pointers back (NO auto decrement, damn)
-                   R2 DEC,
-                   TOS DEC,    \ decr the counter in TOS (R5)
-                EQ UNTIL,
-             ENDIF,
-             TOS POP,
-             NEXT,
-             ENDCODE
+           ELSE,  \ do cmove .............
+               BEGIN,
+                 *R1+ *R0+ MOVB, \ byte move, with auto increment by 1.
+                 TOS DEC,        \ we can test it before the loop starts
+               EQ UNTIL,
+           ENDIF,
+     ENDIF,
+     TOS POP,
+     NEXT,
+     ENDCODE
 
 0 [IF]
 \ fills CELLs. If len is ODD, one extra byte is filled. BE careful
@@ -849,6 +834,15 @@ CODE FILL   ( addr cnt char -- )
              NEXT,             \                             =116
              ENDCODE
 
+\ CODE ERASE ( addr cnt  -- ) \ 20% faster than 0 FILL
+\           *SP+ R1 MOV,
+\           BEGIN,
+\              *R1+ CLR,
+\              TOS DEC,
+\           LTE UNTIL,
+\           TOS POP,
+\           NEXT,
+\           ENDCODE
 
 \ =================================================================
 cr .( ANS Forth DO/LOOP )
@@ -869,7 +863,7 @@ cr .( ANS Forth DO/LOOP )
 
 REGISTERS [IF]
 \     INCLUDE CC9900\CCLIB\DO-R15.HSF
-     INCLUDE CC9900\CCLIB\DOFAST.HSF
+      INCLUDE CC9900\CCLIB\DOFAST.HSF
 [ELSE]
 
 \ ===========================================================
@@ -879,7 +873,7 @@ cr .( Rstack based DO/LOOP )
 CODE <?DO> ( limit ndx -- )
             *SP TOS CMP,       \ compare 2 #s
              @@1 JNE,          \ if they are not the same jump to regular 'do.' (BELOW)
-             TOS POP,          \ remove ndx limit
+             TOS POP,          \ remove limit
              TOS POP,          \ refill TOS
              IP RPOP,
              NEXT,
@@ -900,19 +894,16 @@ CODE <+LOOP>
              @@2 JMP,
 +CODE <LOOP>
             *RP INC,           \ increment loop
-@@2:         NO IF,            \ if overflow then EXIT loop
-                *IP IP ADD,    \ jump back
-                ILNEXT,        \ faster INLINE NEXT macro
-             ENDIF,
+@@2:         @@1 JNO,          \ if no overflow then loop again
              IP INCT,          \ move past (LOOP)'s in-line parameter
-l: _unloop   RP  4 ADDI,       \ collapse rstack frame
+             @@3 JMP,          \ jump to UNLOOP
+@@1:         *IP IP ADD,       \ jump back
              ILNEXT,
-ENDCODE
 
-CODE UNLOOP
-              RP  4 ADDI,       \ collapse rstack frame
++CODE UNLOOP
+@@3:          RP  4 ADDI,      \ collapse rstack frame
               NEXT,
-              ENDCODE
+ENDCODE
 
 CODE I       ( -- n)
               TOS PUSH,         \ making space in TOS slows this down  28

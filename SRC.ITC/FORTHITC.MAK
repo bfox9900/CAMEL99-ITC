@@ -1,12 +1,15 @@
-\ MAKE CAMEL99 ITC Forth                            Mar 2022 B Fox
+\ MAKE CAMEL99 ITC Forth                            Mar 2022 Brian Fox
 
+\ **********************************************************************
+\      compiler switches control HOW the system will be built
+\ **********************************************************************
 CROSS-COMPILING
-\ **********************************************************************
-\ compiler switches control HOW the system will be built
-\ **********************************************************************
 TRUE  VALUE ITC          \ used to prevent directly compiling HILEVEL.HSF
 FALSE VALUE SLOWER       \ TRUE saves 28 bytes, FALSE ->14% FASTER compile times
 FALSE VALUE HASHING      \ Not working yet
+
+TRUE  VALUE VDPI/O       \ select VDP chip console driver 
+FALSE VALUE TTYI/O       \ select 9902 RS232 console driver 
 
 \ ======================================================================
 \ TIB and Stack locations
@@ -20,11 +23,14 @@ EMEM TIBSIZE -  EQU 'TIB    \ Terminal input buffer just below
      'TIB  2 -  EQU 'SP0    \ FORTH DATA stack base address
      'SP0 6E -  EQU 'RP0    \ FORTH RETURN stack base address
 
+\ big stack version 
+\     3FFE       EQU 'SP0    \ FORTH DATA stack base address
+\     FE80       EQU 'RP0    \ FORTH RETURN stack base address
 
 \ ======================================================================
 \ Target memory location
 
-0 \ true= standard kernel ;  false=non-standard kernel
+0     \ true= standard kernel ;  false=non-standard kernel
 [IF]
     A000 VALUE CODESEG
     2000 VALUE HEAPSEG
@@ -34,40 +40,37 @@ EMEM TIBSIZE -  EQU 'TIB    \ Terminal input buffer just below
 [THEN]
 
 \ *******************************************************************
-\ Cross-compiler extensions, load threading mechanism words
+\ Cross-compiler extensions and threading mechanism words
 
- [CC] INCLUDE CC9900\SRC.ITC\ITCTYPES.HSF   \ CROSS-Compiler Extensions
-
+ [cc] include cc9900\src.itc\itctypes.hsf
+ [cc] include cc9900\src.itc\metadefs.hsf
 
 \ *******************************************************************
 \ Make Forth kernel
- [CC] INCLUDE CC9900\SRC.ITC\9900CODE.HSF   \ ASM primitives for TMS9900
- [CC] INCLUDE CC9900\SRC.ITC\BOOTSTRx.HSF   \ cross-compiler loops & branch
- [CC] include cc9900\SRC.ITC\ticktock.hsf   \ 9901 hardware timer
- [CC] INCLUDE CC9900\SRC.ITC\TI99IOX.HSF    \ VDP primitives & KEY
- [CC] INCLUDE CC9900\SRC.ITC\HILEVELX.HSF   \ CORE Forth words
+ [cc] include cc9900\src.itc\9900codm.hsf  \ asm primitives. M version has move
+ [cc] include cc9900\src.itc\ti99iox.hsf   \ vdp primitives & key
+
+ [cc] include cc9900\src.itc\bootstrx.hsf  \ cross-compiler loops & branch
+ [cc] include cc9900\src.itc\ticktock.hsf  \ 9901 hardware timer
+
+ [cc] include cc9900\src.itc\hilevelY.hsf  \ core forth words
 
 \ ======================================================================
 \  P A T C H   T H E   T A R G E T  S Y S T E M   V A R I A B L E S
 
 \
 \                             *IMPORTANT*
-\  Use [CC] and [TC] to explicately select compiler or target variables
+\ Use [CC] and [TC] to explicately select compiler or target variables
 \
 
- [CC] XLATEST @ DUP
- [TC] LATEST T! ORGLAST T!
+[CC] XLATEST @ DUP   [TC] LATEST T! ORGLAST T!
 
- T' LOADSYS  BOOT T!
-CROSS-COMPILING
-  CODESEG A000 <>
-  [IF]
-    [CC] THERE    [TC] DP T!
-    [CC] HEX A000 [TC] ORGDP T!
-  [ELSE]
-     [CC] THERE 2+ DUP
-		 [TC] DP T!  ORGDP T!
-  [THEN]
+[CC] CODESEG A000 <>
+[IF]    [CC] HEX A004 DUP
+[ELSE]  [CC] THERE 2+ DUP
+[THEN] 	[TC] DP T!  ORGDP T!
+
+	T' LOADSYS  BOOT T!
 
 [CC]
 \ ======================================================================
@@ -76,7 +79,6 @@ CROSS-COMPILING
  T' COLD >BODY BOOT-ADDRESS T!
 
 CROSS-COMPILING HEX
-
   CODESEG A000 = [IF]  FILENAME: CAMEL99  [THEN]
   CODESEG 6000 = [IF]  FILENAME: CAML99SC [THEN]
   CODESEG 2000 = [IF]  FILENAME: CAML99LR [THEN]
@@ -104,4 +106,4 @@ CROSS-COMPILING HEX
   CR ." === COMPILE ENDED PROPERLY ==="
  QUIT
 
- \ BYE  ( un-comment this to return to DOS)
+ \ BYE  ( un-comment this line to return to DOS after compilation)

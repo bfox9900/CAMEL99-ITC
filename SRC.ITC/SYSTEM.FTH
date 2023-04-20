@@ -1,4 +1,4 @@
-CR .( Extensions...)
+CR .( ANS FORTH Extensions...)
 
 : PARSE-NAME  BL PARSE-WORD ;
 : CHAR        PARSE-NAME DROP C@ ;
@@ -6,18 +6,20 @@ CR .( Extensions...)
 
 : NEEDS  ( -- ?)  BL WORD FIND NIP  ;
 : FROM   ( ? -- ) PARSE-NAME ROT IF  2DROP EXIT THEN  INCLUDED ;
-: INCLUDE ( <text>)
-  PARSE-NAME INCLUDED SPACE LINES @ DECIMAL . ." lines" ;
+: INCLUDE ( <text>) PARSE-NAME INCLUDED SPACE LINES @ DECIMAL . ." lines" ;
 .( .)
 HEX
 : CODE      ( -- )  HEADER  HERE 2+ , !CSP ;
 : NEXT,     ( -- )  045A , ;  \ B *R10
 : ENDCODE   ( -- )  ?CSP  ;
 
-\ 1 cell alias. *FOR CODE WORDS ONLY*
-: ALIAS ( XT -- <newname> ) 2+ HEADER  , ;
-' 2* ALIAS CELLS  ' 2+ ALIAS CELL+   ' 1+ ALIAS CHAR+  ' 2+ ALIAS >BODY
+\ 1 instruction aliases for ANS compliance
+CODE CELLS   A104 , NEXT, ENDCODE  \ 2*
+CODE CHAR+   0584 , NEXT, ENDCODE  \ 1+
+CODE >BODY   05C4 , NEXT, ENDCODE  \ 2+
+CODE CELL+   05C4 , NEXT, ENDCODE  \ 2+
 : CHARS ;
+
 .( .)
 : ;CODE
    POSTPONE (;CODE)

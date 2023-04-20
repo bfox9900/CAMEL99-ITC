@@ -5,8 +5,8 @@ for the curious. The source code for the cross-compiler is in the Compiler
 folder is rather messy but it works.
 
 ### Disk System Organization
-The newest version of the cross-compiler is XFC99X.exe.
-It is in the xfc99x.zip file.
+Version 2.69 uses a new cross-compiler:  FCC99B.EXE
+It is in FCC99B.ZIP
 
 The cross-compiler runs on MS DOS. Hey it's retro computing. I used DOSBOX.
 In DOS Box create the CC9900 folder tree as it exists in GitHub.
@@ -15,7 +15,7 @@ In DOS Box create the CC9900 folder tree as it exists in GitHub.
 All paths in the source files are explicitly spelled out in the form:
 
 `CC9900\SRC.ITC\HILEVEL.HSF`
-	  
+
 (.HSF files are for Harvard Softworks Forth)
 
 
@@ -52,11 +52,11 @@ At the DOS prompt type:
 ```
 XFC99X  fload cc9900\src.itc\forthitc.mak
 ```
-Enjoy the prompts scrolling by. 
+Enjoy the prompts scrolling by.
 This will create a PROGRAM file called CAMEL99
 
 ### SuperCart Kernel Build
-SuperCart Kernel is a binary image that loads and runs with Editor 
+SuperCart Kernel is a binary image that loads and runs with Editor
 Assembler Super Cartridge that has 8K RAM installed. This is puts
 Camel99 in the cartridge memory space and gives you access to the
 "entire" 32K of RAM. :)
@@ -81,9 +81,9 @@ FALSE  \ **set to false for SuperCart kernel**
 
 At the DOS prompt type:    
 ```
-XFC99X fload cc9900\src.itc\forthitc.mak
+XFC99Y fload cc9900\src.itc\forthitc.mak
 ```
-This will create a PROGRAM file call CAML99SC 
+This will create a PROGRAM file call CAML99SC
 
 
 *****************************************************

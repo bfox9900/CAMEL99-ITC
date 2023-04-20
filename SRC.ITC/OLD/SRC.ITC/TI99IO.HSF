@@ -32,10 +32,10 @@
 \ R1  current workspace
 \ R3  VDP data port
 \ R4  VDP memory address
-
+HEX
 \
 \ ================ LEAF SUB-ROUTINES  ** NOT NESTABLE ** ===================
-TARGET-COMPILING
+CROSS-ASSEMBLING \ TARGET-COMPILING
 \ VDP set-address sub-routines
 L: WMODE  ( Vaddr -- Vaddr)
            TOS 4000 ORI,
@@ -122,15 +122,14 @@ CODE VC! ( char vaddr --)
 \  *NEW* inline address setter.  6% faster on Tursi Sprite Benchmark
           TOS 4000 ORI,
           R1 STWP,           \ avoids 2 SWPB instructions
-          R3 8C02 LI,
+          R2 POP,            \ char in R2
           0 LIMI,
-          9 (R1) *R3 MOVB,   \ write odd byte from TOS (ie: R4)
-          TOS *R3 MOV,       \ MOV writes the even byte to the port address
+          9 (R1) 8C02 @@ MOVB,   \ write odd byte from TOS (ie: R4)
+          TOS    8C02 @@ MOVB,   \ MOV writes the even byte to the port address
 \ --------------------------
-          TOS POP,
-          9 (R1) VDPWD @@ MOVB,  \ Odd byte R4, write to screen
-          TOS POP,               \ refill TOS
+          3 (R1) VDPWD @@ MOVB,  \ Odd byte R2, write to screen
           2 LIMI,
+          TOS POP,               \ refill TOS
           NEXT,
           ENDCODE
 
@@ -140,8 +139,8 @@ CODE V! ( n Vaddr  -- )      \ Video store 16BIT int
          TOS POP,
          TOS  *R3 MOVB,       \ even byte
          9 (R1) *R3 MOVB,     \ Odd byte R4, write to screen
-         TOS POP,             \ refill TOS
          2 LIMI,
+         TOS POP,             \ refill TOS
          NEXT,
          ENDCODE
 

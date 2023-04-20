@@ -64,7 +64,6 @@ CROSS-COMPILING
 
                 DOES> @ nfa>PFA T@ ; \ Run-time: fetch the nfa we stored and convert to PFA & fetch the data
 
-\ SYNONYM VALUE  CONSTANT              \ same thing in ITC Forths.
 
 \ =======================================================================
 \ TMS9900 and user variables under CAMEL99

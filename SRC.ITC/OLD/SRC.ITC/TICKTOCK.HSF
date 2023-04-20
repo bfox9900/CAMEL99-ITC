@@ -1,0 +1,58 @@
+\ TICKTOCK.HSF  TMS9901 hardware timer interface for Camel 99 Forth
+
+\ credit to: http://www.unige.ch/medecine/nouspikel/ti99/tms9901.htm#Timer
+\ impovements based on code from Tursi Atariage
+\ TMR! now loads from the Forth stack
+\ Jan 31, 2021 simplified JIFFS
+\ Dec 2021  removed JIFFS , replaced with TICKS which gives ~10mS resolution
+
+\ timer resolution:  64 clock periods, thus 64*333 = 21.3 microseconds
+\ Max Duration    :  ($3FFF) 16383 *64*333 ns = 349.2 milliseconds
+[CC] DECIMAL
+TARGET-COMPILING
+CODE TMR!   ( n -- )         \ load TMS9901 timer from stack
+             0 LIMI,
+             R12 CLR,        \ CRU addr of TMS9901 = 0
+             0   SBO,        \ SET bit 0 to 1, Enter timer mode
+             R12 INCT,       \ CRU Address of bit 1 = 2 , I'm not kidding
+             TOS 14 LDCR,    \ Load 14 BITs from TOS into timer
+            -1  SBZ,         \ reset bit 0, Exits clock mode, starts decrementer
+             2 LIMI,
+             TOS POP,
+             NEXT,
+             ENDCODE
+
+CODE TMR@   ( -- n)         \ read the TMS9901 timer
+             0 LIMI,
+             TOS PUSH,
+             R12 2 LI,      \ cru = 1 (honest, 2=1)
+            -1 SBO,         \ SET bit 0 TO 1, Enter timer mode
+             TOS 14 STCR,   \ READ TIMER (14 bits)
+            -1 SBZ,         \ RESET bit 1, exit timer mode
+             2 LIMI,
+             NEXT,
+             ENDCODE
+
+0 [IF]
+: TICK ( -- )
+            TMR@
+            BEGIN   \ inner loop ~ 10 mS
+              PAUSE
+              TMR@ OVER - ABS 423 >
+            UNTIL
+            DROP
+;
+
+[ELSE]
+\ OLD VERSION
+ : TICKS  ( n -- )   \ n must be less than 4000. 4000 TICKS ~= 100 mS
+            TMR@ >R
+            BEGIN
+              PAUSE
+              TMR@ R@ - ABS  OVER >
+            UNTIL
+            R> 2DROP
+ ;
+[THEN]
+
+[CC] HEX

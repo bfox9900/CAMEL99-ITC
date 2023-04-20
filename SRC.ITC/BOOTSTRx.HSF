@@ -7,6 +7,7 @@
 \       final cross-compiler words for branching, looping and cross-
 \       compiling versions of colon and semi-colon
 
+
 CROSS-COMPILING
 CR .( branch cross-compilers if then else etc...)
 : AHEAD    ( -- addr) THERE     0 T, ;
@@ -63,7 +64,7 @@ host: ;                            \ this the CROSS-compiler's ';'
 \ FINAL ':' and ';' that will be the versions that actually run in the
 \ TARGET Forth. (yes it's confusing) Renaming them allows me to remain sane.
 \
-SYNONYM x:   :                        \ "TARGET-compiling colon"
-SYNONYM ;x   ;  IMMEDIATE             \ "TARGET-compiling semi-colon"
+SYNONYM x:   :                     \ "TARGET-compiling colon"
+SYNONYM ;x   ;  IMMEDIATE          \ "TARGET-compiling semi-colon"
 
-\ .XMEM                               \ show the cross compiler memory. It should be empty.
+\ .XMEM                            \ show the cross compiler memory. It should be empty.

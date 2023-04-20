@@ -4,11 +4,12 @@
 
 \ Define the FORTH virtual machine registers in terms of the TARGET machine registers
 
-CROSS-ASSEMBLING     \ extend the functionality of the Cross-Assembler
+CROSS-ASSEMBLING
 
+\ extend the Cross-Assembler
 XASSEMBLER DEFINITIONS
 : TOS     R4  ;        \ TOP of stack is cached in R4
-: SP      R6  ;        \ parameter stack pointer
+: SP      R6  ;        \ data stack pointer
 : RP      R7  ;        \ return stack pointer
 : W       R8  ;        \ Forth 'W' register OR general purpose in a system CODE word
 : IP      R9  ;        \ Forth VM Instruction pointer
@@ -96,13 +97,13 @@ XASSEMBLER DEFINITIONS
 \
 \ In CAMEL99 we initialize the NEXT register (R10) with the startup code:
 \
-\            R10 NEXT2 LI,     \  see: INIT in CAMEL99.hsf
+\            R10 NEXT2 LI,     \  see: COLD in HILEVEL.hsf
 
 \ =========================================================================
-\ This is that actual macro that runs at the end of CAMEL99 code words
+\ This is that actual code that runs at the end of CAMEL99 code words
 \ It is equivalent to "return" for a Forth system
 
-: JMP-NEXT       ( -- ) *NEXT B, ;     \ this is 4 bytes, 12 cycles
+: JMP-NEXT   ( -- ) *NEXT B, ;   \ 4 bytes, 12 cycles
 
 \ ==========================================================================
 \ RESOLVE NEXT, a deferred word
@@ -127,7 +128,6 @@ XASSEMBLER DEFINITIONS
              *W+  R5 MOV,    \ move contents of CFA to R5 & INCR W   \ 22
              *R5  B,         \ branch to the address in R5           \ 12
 ;                                                                 \ = 56
-
 
 \ debugging macro.   Stops machine code in place
 : BREAK    $$ JMP, ;

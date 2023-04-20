@@ -2,7 +2,8 @@
  \ *New: [PAB FNAME] is passed to DSRLNK on the Forth stack
  \ Added FOPEN and FGET, common factors for ANS files
 
-[CC] HEX [TC]
+[CC] HEX
+TARGET-COMPILING
 
 \ VARIABLE ^PAB            \ *moved to CAMEL kernel file
 
@@ -28,7 +29,7 @@ CODE [PAB   ( -- adr) TOS PUSH,  ^PAB @@ TOS MOV,  NEXT, ENDCODE
  CODE FNAME]  ( vaddr -- vaddr') TOS  9 ADDI,     NEXT, ENDCODE \ 9+   string    32
 
 \ control the PAB stack
-[CC] HEX [TC]
+
 12C CONSTANT PSZ       \ size of PAB+BUFFER
 
 \ generic file error handler
@@ -40,7 +41,6 @@ CODE [PAB   ( -- adr) TOS PUSH,  ^PAB @@ TOS MOV,  NEXT, ENDCODE
            2DUP VC! 1+ SWAP VWRITE ;
 
 \ === High Level File functions ====
-[CC] HEX [TC]
 : FILEOP  ( opcode -- err)           \ TI99 O/S call
          PAUSE                       \ better multi-tasking
         [PAB VC!                     \ write opcode byte to VDP PAB
@@ -69,11 +69,11 @@ CODE [PAB   ( -- adr) TOS PUSH,  ^PAB @@ TOS MOV,  NEXT, ENDCODE
 
 \ *G INCLUDED can bootstrap the system on startup. It is nestable.
 \ ** Saves all state info and allocates a new PAB in VDP RAM
-\ ** and a RAM buffer in the HEAP
-\ Cross-compiler usage: TS" DSK1.START" INCLUDED
+\ ** Uses TIB as the RAM buffer
+\ Cross-compiler usage: S" DSK1.START" INCLUDED
 : INCLUDED  ( caddr len -- )
            ?FILE
-           CR T." Loading: " 2DUP TYPE
+           CR ." Loading: " 2DUP TYPE
            SOURCE-ID @ >IN @ 2>R           \ save source-ID, input pointer
            PSZ NEGATE ^PAB +!              \ make new PAB, on pab stack
            ( $ len ) 50 14 FOPEN ?FILERR   \ OPEN as 80 FIXED DV80 INPUT
@@ -82,8 +82,7 @@ CODE [PAB   ( -- adr) TOS PUSH,  ^PAB @@ TOS MOV,  NEXT, ENDCODE
            BEGIN
              2 FILEOP 0=                   \ file read operation
            WHILE
-             RP@ 80 -  DUP FGET            \ space above Rstack is the buffer 
-        ( -- addr len ) INTERPRET          \ interpret the buffer
+             TIB DUP FGET INTERPRET        \ interpret the buffer
              LINES 1+!                     \ count the line
            REPEAT
            PSZ ^PAB +!                     \ remove PAB from pab stack
