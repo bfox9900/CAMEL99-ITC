@@ -1,24 +1,22 @@
-\ VT100.FTH  For Camel99 Forth by Brian Fox 2019
-\ License: Public Domain with no Warranty, neither explicit nor implied
-
-CR .( VT100 terminal control)
+CR .( VT100 terminal control, [0,0] Home coordinates  May 2020 )
 DECIMAL
-\ type un-signed number, base 10, with no space and restore previous radix
-: <ARG>   ( n -- ) BASE @ >R   0 <# DECIMAL #S #> TYPE   R> BASE ! ;
+\ type 'n' as a two digit number in base 10, with no space
+: <##>   ( n -- )
+         BASE @ >R                   \ save radix
+         0 <#  DECIMAL # #  #> TYPE  \ convert to 2 digits & print
+         R> BASE ! ;                 \ restore radix
 
 \ markup language for terminal control codes
+\ : <ESC>   ( -- )   27 EMIT ;
 : <ESC>[  ( -- )   27 EMIT  91 EMIT  ;
-: <UP>    ( n -- ) <ESC>[ <ARG> ." A" ;
-: <DOWN>  ( n -- ) <ESC>[ <ARG> ." B" ;
-: <RIGHT> ( n -- ) <ESC>[ <ARG> ." C" ;
-: <BACK>  ( n -- ) <ESC>[ <ARG> ." D" ;
-: <HOME>  ( -- )   <ESC>[ ." 0;0H" ;
-: <CLS>   ( n -- ) <ESC>[ ." 2J" ;
-: <CLRLN> ( -- )   <ESC>[ ." K" ;
+: <UP>    ( n -- ) <ESC>[ <##> ." A" ;
+: <DOWN>  ( n -- ) <ESC>[ <##> ." B" ;
+: <RIGHT> ( n -- ) <ESC>[ <##> ." C" ;
+: <BACK>  ( n -- ) <ESC>[ <##> ." D" ;
+: <HOME>  ( -- )   <ESC>[ ." H"   0 0 VROW 2! ;
 
-\ redefine Forth words using markup words
-: AT-XY   ( col row --) 2DUP VROW 2!   <ESC>[ <ARG> ." ;" <ARG> ." f" ;
-: PAGE ( -- ) <CLS>  <HOME> ;
-
-CR .( PAGE, AT-XY set for VT100)
-
+\ define Forth words using markup words
+: PAGE    ( n -- ) <ESC>[ ." 2J"  <HOME> ;
+: AT-XY   ( col row --)
+          2DUP VROW 2!  \ store col,row
+          <ESC>[ 1+ <##> ." ;" 1+ <##> ." f" ;
