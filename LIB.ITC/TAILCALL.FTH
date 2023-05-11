@@ -30,6 +30,5 @@ VARIABLE TAILCALL  \ control tail call optimizizing with this variable
       ELSE 
          POSTPONE ; 
       THEN 
-
 ; IMMEDIATE
 
