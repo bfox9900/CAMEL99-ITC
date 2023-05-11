@@ -73,7 +73,7 @@ CR .( variables)
  VARIABLE VTAX         ( tax collected)
  VARIABLE X            ( temporary storage for X position)
  VARIABLE Y            ( temporary storage for Y position)
- VARIABLE CREDIT       ( players credit in taxes)
+ VARIABLE CREDIT       ( players credit in dollars?)
 
 
 CR .( utility words)
@@ -103,7 +103,6 @@ DECIMAL
 : HOME ( --- )  0 0 AT-XY ;
 
 \ % COMPUTING
-
 : 10%  ( n -- n')  10 / ;
 : 40%  ( n -- n')  4 10 */ ;
 
@@ -325,7 +324,8 @@ CR .( initialisers)
    ENDCASE
 ;
 
-: RESET-NEW-TIMER  29 3 DIFF @ * - NEW ! ; ( how often computer creates fleets)
+( how often computer creates fleets)
+: RESET-NEW-TIMER  29 3 DIFF @ * - NEW ! ; 
 
 DECIMAL
 : INITIALISE
@@ -564,7 +564,7 @@ DECIMAL
           HONK DELAY LOPROMPT:
       REPEAT
       DUP [MY SHIPS] +!   \ add ships to the fleet
-      ( #ships) R> * NEGATE  CREDIT +!    ( update credit)
+      ( #ships) R> * NEGATE  CREDIT +!    ( deduct credits)
       'FLEET'  [MY Y]@ [MY X]@ GALAXY C!  ( place our fleet symbol)
    ELSE
       PROMPT: ." NO SHIPS AVAILABLE"
@@ -938,9 +938,19 @@ DECIMAL
       TRUE
    ENDIF ;
 
-: GAME-END? ( -- ? ) #MOVES @ 0= ;    ( game end if #MOVES is zero)
+: GAME-END? ( -- ? ) 
+   [MY SHIPS]@ 0=    \ out of ships 
+   CREDIT @ 0=  AND \ and out of money 
 
-: END-MSG   CLEAR-MSG  0 12 AT-XY ." END OF GAME COMMANDER"  ABORT ;
+   #MOVES @ 0=  OR   \ OR out of moves 
+;  
+
+: END-MSG   
+   CLEAR-MSG  
+   0 12 AT-XY ." END OF GAME COMMANDER" 
+   LOPROMPT: ." TYPE RUN TO PLAY AGAIN"
+   ABORT
+;   
 
 : GAME       ( GAME LOOP )
    REDRAW
