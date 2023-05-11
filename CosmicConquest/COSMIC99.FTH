@@ -940,7 +940,7 @@ DECIMAL
 
 : GAME-END? ( -- ? ) 
    [MY SHIPS]@ 0=    \ out of ships 
-   CREDIT @ 0=  AND \ and out of money 
+   CREDIT @ 0=  AND  \ and out of money 
 
    #MOVES @ 0=  OR   \ OR out of moves 
 ;  
