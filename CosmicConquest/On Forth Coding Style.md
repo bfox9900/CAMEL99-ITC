@@ -61,7 +61,7 @@ Which one provides more utility to the programmer?
 ## What difference does it make?
 The differences above are quite striking. You don't typically chop up code this
 way in traditional procedural languages. The primary reason for that is the
-over- head for calling a sub-routine can be quite high in other languages.
+over-head for calling a sub-routine can be quite high in other languages.
 
 However Chuck Moore designed Forth to reduce that calling over-head. This gives
 the programmer more freedom to factor out common code from long sub-routines
