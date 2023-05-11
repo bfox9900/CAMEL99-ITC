@@ -259,24 +259,25 @@ DECIMAL
 \ ***************************
 \ move away after collision
 \ ***************************
-: BALL.MOVES ( n) 0 DO BALL SP.MOVE LOOP ;
-
 : WALL-CLR    
-  UNDERBALL BL <> IF 2 BALL.MOVES  THEN 
-  UNDERBALL BL <> IF 2 BALL.MOVES  THEN   
+  UNDERBALL BL <> IF BALL SP.MOVE BALL SP.MOVE  THEN 
+  UNDERBALL BL <> IF BALL SP.MOVE BALL SP.MOVE  THEN   
 ;
-
-: PADDLE-CLR  
-   BALL PADDLE 7 COINC IF 3 BALL.MOVES THEN 
-\   BALL PADDLE 7 COINC IF 2 BALL.MOVES THEN 
-;    
 
 : WALL-BOUNCE 
     BALL SP.Y VC@ 24 > 
     IF   BOUNCE.X  WALL-CLR EXIT THEN 
     BOUNCE.Y WALL-CLR ;
 
-: PADDLE-HIT ( -- ) BOUNCE.Y 2 BALL.MOVES 600 CLINK  PADDLE-CLR ;
+: PADDLE-HIT ( -- ) 
+  BOUNCE.Y 
+   BALL SP.MOVE BALL SP.MOVE
+   600 CLINK   
+  BEGIN 
+   BALL PADDLE 8 COINC
+  WHILE 
+     BALL SP.MOVE 
+  REPEAT ;
 
 \ ***************************
 \ keyboard control
@@ -335,7 +336,7 @@ VARIABLE SPEED
       ?WIN 
       BALL SP.MOVE
       PADDLE-CTRL
-      BALL PADDLE 9 COINC IF PADDLE-HIT THEN 
+      BALL PADDLE 8 COINC IF PADDLE-HIT THEN 
       UNDERBALL ( char)
       CASE      \ points Freq.
         MAGBAR   OF 6   1500 RICOCHET    ENDOF
