@@ -37,6 +37,7 @@ VARIABLE BALL#
 VARIABLE SCORE
 VARIABLE 'BALL      \ record the position so we don't calculate it twice
 VARIABLE REMAINING  \ # squares left to win
+VARIABLE SPEED 
 
 
 \ ***************************
@@ -260,9 +261,12 @@ DECIMAL
 \ move away after collision
 \ ***************************
 : WALL-CLR    
-  UNDERBALL BL <> IF BALL SP.MOVE BALL SP.MOVE  THEN 
-  UNDERBALL BL <> IF BALL SP.MOVE BALL SP.MOVE  THEN   
-;
+  5 0 DO  
+    BALL SP.MOVE  
+    SPEED @ TICKS  
+  LOOP 
+  BALL SP.MOVE 
+  ;
 
 : WALL-BOUNCE 
     BALL SP.Y VC@ 24 > 
@@ -270,14 +274,15 @@ DECIMAL
     BOUNCE.Y WALL-CLR ;
 
 : PADDLE-HIT ( -- ) 
-  BOUNCE.Y 
-   BALL SP.MOVE BALL SP.MOVE
-   600 CLINK   
-  BEGIN 
-   BALL PADDLE 8 COINC
-  WHILE 
-     BALL SP.MOVE 
-  REPEAT ;
+    BOUNCE.Y 
+    600 CLINK   
+    9 0 
+    DO  
+      BALL SP.MOVE
+      SPEED @ TICKS
+    LOOP 
+    BALL SP.MOVE
+;
 
 \ ***************************
 \ keyboard control
@@ -328,7 +333,6 @@ DECIMAL
 \ for debugging
 : ?BREAK     ?TERMINAL IF CYAN SCREEN TRUE ABORT" BREAK" THEN ;
 
-VARIABLE SPEED 
 
 : BALLINPLAY
     BEGIN
