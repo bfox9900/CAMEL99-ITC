@@ -226,7 +226,6 @@ BALLCHARS 8 + CONSTANT PADDLECHARS
   SETCOLORS  BLACK SCREEN  DRAW.BORDER
   .SCORE  .BALLS  RAINBOW  ;
 
-
 \ ***************************
 \ coordinate conversion
 \ ***************************
@@ -261,16 +260,14 @@ DECIMAL
 \ move away after collision
 \ ***************************
 : WALL-CLR    
-  5 0 DO  
+  8 0 DO  
     BALL SP.MOVE  
     SPEED @ TICKS  
   LOOP 
-  BALL SP.MOVE 
-  ;
+;
 
 : WALL-BOUNCE 
-    BALL SP.Y VC@ 24 > 
-    IF   BOUNCE.X  WALL-CLR EXIT THEN 
+    BALL SP.Y VC@ 24 > IF  BOUNCE.X  WALL-CLR EXIT THEN \ if we hit the top 
     BOUNCE.Y WALL-CLR ;
 
 : PADDLE-HIT ( -- ) 
