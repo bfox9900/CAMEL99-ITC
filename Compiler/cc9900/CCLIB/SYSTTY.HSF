@@ -20,10 +20,10 @@ TARGET-COMPILING
             HEX ;
 
 \ CELLS et all, ANS Forth Core wordset
-CODE: CELLS  T'  2* [CC] 2+ THERE 2- T! [TC]
-CODE: CELL+  T'  2+ [CC] 2+ THERE 2- T! [TC]
-CODE: CHAR+  T'  1+ [CC] 2+ THERE 2- T! [TC]
-CODE: >BODY  T'  2+ [CC] 2+ THERE 2- T! [TC]
+CODE CELLS  T'  2* [CC] 2+ THERE 2- T! [TC]
+CODE CELL+  T'  2+ [CC] 2+ THERE 2- T! [TC]
+CODE CHAR+  T'  1+ [CC] 2+ THERE 2- T! [TC]
+CODE >BODY  T'  2+ [CC] 2+ THERE 2- T! [TC]
 
 : CHARS ;  \ noop in CAMEL99 Forth
 
