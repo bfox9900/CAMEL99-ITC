@@ -20,7 +20,7 @@ CODE: [PAB   ( -- adr) TOS PUSH,  ^PAB @@ TOS MOV,  NEXT, END-CODE
 \ Read/write the PAB data fields with:  V@/V!  VC@/VC! VREAD/VWRITE
 
 \ Example:  [PAB FBUFF] V@   [PAB CHARS] VC@
- \                                                                       data     size
+\                                                                       data     size
  CODE: FLG]    ( vaddr -- vaddr') TOS INC,         NEXT, END-CODE \ 1+    byte      1
  CODE: FBUFF]  ( vaddr -- vaddr') TOS INCT,        NEXT, END-CODE \ 2+    cell      2
  CODE: RECLEN] ( vaddr -- vaddr') *TOS+ *TOS+ MOV, NEXT, END-CODE \ 4+    byte      1
@@ -60,12 +60,12 @@ CODE: [PAB   ( -- adr) TOS PUSH,  ^PAB @@ TOS MOV,  NEXT, END-CODE
 [CC] HEX [TC]
 
 : FILEOP  ( opcode -- err)           \ TI99 O/S call
-           PAUSE                     \ better multi-tasking
+          PAUSE                      \ better multi-tasking
           [PAB VC!                   \ write opcode byte to VDP PAB
           [PAB ( -- vaddr)
           \ *CRITICAL* must clear ERR code bits in PAB
-           DUP FLG] DUP VC@ 1F AND SWAP VC!
-           FNAME] DSRLNK ( -- err)   \ DSRLINK with parameter
+          DUP FLG] DUP VC@ 1F AND SWAP VC!
+          FNAME] DSRLNK ( -- err)    \ DSRLINK with parameter
 ;
 
 \ VARIABLE: LINES                            \ moved to Kernel
