@@ -1,0 +1,34 @@
+CR .( compiling ANS Forth extensions...)
+
+\ Smart including
+\ Usage: NEEDS HCHAR FROM DSK1.GRAFIX
+
+TARGET-COMPILING
+
+: NEEDS  ( -- ?)  BL WORD FIND NIP  ;
+: FROM   ( ? -- )
+         BL PARSE-WORD ROT ( addr len ? --)
+         0= IF  INCLUDED
+         ELSE   2DROP
+         THEN ;
+
+\ INCLUDE  Forth 2012 word
+: PARSE-NAME ( <text> -- adr len ) BL PARSE-WORD ; \ Forth 2012 word
+
+: INCLUDE  ( <text> -- )  PARSE-NAME INCLUDED SPACE
+            LINES @ DECIMAL . T." lines"
+            HEX ;
+
+\ CELLS et all, ANS Forth Core wordset
+CODE: CELLS  T'  2* [CC] 2+ THERE 2- T! [TC]
+CODE: CELL+  T'  2+ [CC] 2+ THERE 2- T! [TC]
+CODE: CHAR+  T'  1+ [CC] 2+ THERE 2- T! [TC]
+CODE: >BODY  T'  2+ [CC] 2+ THERE 2- T! [TC]
+
+: CHARS ;  \ noop in CAMEL99 Forth
+
+\ CHAR   converts ASCII char to a number, for interpret mode
+ : CHAR    ( -- <c>) BL WORD CHAR+ C@ ;
+\ for compiling a colon definition
+ : [CHAR]  ( -- <c>) ?COMP CHAR POSTPONE LITERAL ; XIMMEDIATE
+

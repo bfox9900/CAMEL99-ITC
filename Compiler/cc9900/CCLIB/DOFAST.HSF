@@ -1,0 +1,61 @@
+\ FASTER DO LOOPS
+\ this do loop is about 14% faster than rstack based do loops
+\ nested benchmarks are only 8% faster because of reaching deeper into Rstack.
+
+CR .( Register based DO LOOPs)
+CR .( **NOT MULT-TASKING COMPATIBLE**)
+
+          R13 EQU NDX
+          R14 EQU LMT
+
+CODE <?DO> ( limit ndx -- )
+             *SP TOS CMP,        \ compare 2 #s
+              @@1 JNE,           \ if they are not the same jump to regular 'do.'  (BELOW)
+              SP INCT,           \ remove limit
+              TOS POP,           \ remove limit
+              TOS POP,           \ refill TOS
+              IP RPOP,
+              NEXT,
++CODE <DO> ( limit indx -- )
+@@1:          LMT  RPUSH,        \ push limit
+              NDX  RPUSH,        \ push index
+              LMT 8000 LI,       \ load "fudge factor" to LIMIT REG. (R14)
+              TOS NDX MOV,
+             *SP+ LMT SUB,       \ pop LIMIT, compute 8000h-limit "fudge factor"
+              R14 NDX ADD,       \ loop ctr = index+fudge
+              TOS POP,           \ refill TOS
+              NEXT,
+              ENDCODE
+
+CODE <+LOOP>
+              TOS NDX ADD,      \ saving space by jumping into <loop>
+              TOS POP,          \ refill TOS, (does not change overflow flag)
+              @@2 JMP,
++CODE <LOOP>
+              NDX INC,          \ increment loop
+@@2:          @@1 JNO,          \ if no overflow then loop again
+              IP INCT,          \ move past (LOOP)'s in-line parameter
+              @@3 JMP,          \ jump to UNLOOP
+
+@@1:         *IP IP ADD,        \ jump back
+              ILNEXT,
+
++CODE UNLOOP
+@@3:          NDX RPOP,         \ restore old loop values
+              LMT RPOP,
+              NEXT,
+              ENDCODE
+
+CODE I       ( -- n)
+              TOS PUSH,
+              NDX TOS MOV,
+              LMT TOS SUB,      \ index = loopindex - fudge
+              NEXT,
+              ENDCODE
+
+CODE J       ( -- n)
+              TOS PUSH,
+             *RP TOS MOV,       \ outer loop index is on the rstack
+              2 (RP) TOS SUB,   \ index = loopindex - fudge
+              NEXT,
+              ENDCODE

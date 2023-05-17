@@ -1,0 +1,16 @@
+\ 16bit CELL move, A.6.1.1900 MOVE
+\ like CMOVE but 2x faster because it moves 2 bytes per iteration
+
+CODE: MOVE16  ( src dst n -- )
+            *SP+ R0 MOV,       \ pop DEST into R0
+            *SP+ R1 MOV,       \ pop source into R1
+             TOS TOS MOV,
+             @@2 JEQ,          \ if n=0 get out
+             TOS INC,          \ make sure n is even
+             TOS -2 ANDI,
+@@1:        *R1+ *R0+ MOV,     \ memory to memory move, auto increment by 2. :-)
+             TOS DECT,         \ we are moving 2 bytes at once!
+             @@1 JGT,
+@@2:         TOS POP,
+             NEXT,
+             END-CODE

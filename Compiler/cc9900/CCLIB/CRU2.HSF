@@ -1,0 +1,86 @@
+\ CRU support for CAMEL99   BJFOX 6FEB2018
+\ FOR XFCC99 CROSS-COMPILER
+
+[cc] HEX
+
+TARGET-COMPILING
+
+CODE: CRU! ( CRUaddr -- )   \ load CRU adr to R12
+        TOS R12 MOV,
+        TOS POP,
+        NEXT,
+        END-CODE
+
+CODE: CRU@  ( -- CRUaddr ) \ read R12 to TOS
+        TOS PUSH,
+        R12 TOS MOV,
+        NEXT,
+        END-CODE
+
+\ *set the CRU address before using these words*
+
+\ fastest for bit 0
+CODE: 0SBO  ( -- ) 0 SBO,  NEXT, END-CODE
+CODE: 0SBZ  ( -- ) 0 SBZ,  NEXT, END-CODE
+
+\ slower but bit variable
+CODE: SBO ( c -- )
+        TOS 1D00 ORI,
+        TOS X,
+        TOS POP,
+        NEXT,
+        END-CODE
+
+CODE: SBZ ( c -- )
+        TOS 1E00 ORI,
+        TOS X,
+        TOS POP,
+        NEXT,
+        END-CODE
+
+CODE: TB ( c -- ? ) \ builds instruction at runtime Why?
+        TOS R0 MOV,
+        TOS CLR,
+        R0 1F00 ORI,
+        R0 X,
+        EQ IF, TOS SETO, ENDIF,
+        NEXT,
+        END-CODE
+
+CODE: LDCR ( data bits -- ) \ cru base must be set with CRU!
+       *SP+   R0 MOV,   \ pop data -> R0
+        TOS 000F ANDI,  \ instruction built in TOS
+        NE IF,
+             TOS 8 CMPI,
+             LTE IF,
+                 R0 SWPB,   \ swap the data byte
+            ENDIF,
+        ENDIF,
+        TOS 06 SLA,
+        TOS 3000 ORI,   \ create: R0 bits LDCR,
+        TOS X,          \ execute the intruction
+        TOS POP,
+        NEXT,
+        END-CODE
+
+\ Performs the TMS9900 STCR instruction. The bit count is n1.
+\ The CRU base is set first with CRU! The returned value is n2.
+CODE: STCR ( bits --- n )
+        R0 CLR,       \
+        TOS 000F ANDI,
+        TOS R2 MOV,
+        TOS 06 SLA,
+        TOS 3400 ORI,  \ create: R0 bits STCR,
+        TOS X,         \ execute the intruction
+        R2 R2 MOV,
+        NE IF,
+             R2 08 CMPI,
+             LTE IF,
+                R0 SWPB,
+             ENDIF,
+        ENDIF,
+        R0 TOS MOV,
+        NEXT,
+        END-CODE
+
+

@@ -1,0 +1,83 @@
+\ ANS/ISO  T A R G E T   B R A N C H   C O M P I L E R S    Mar 23 2021 B Fox
+
+\ These versions RUN IN THE TARGET system to compile loops and branches in the TI-99.
+\ These versions do not use compile-time checking like Fig-Forth.
+\ This improves compile time speed only
+
+TARGET-COMPILING
+: <BACK    ( addr --)     HERE -  , ;   \ resolve branch backwards
+: AHEAD    COMPILE BRANCH HERE  0 , ;  XIMMEDIATE \ compile a jump forward
+
+\ CAMEL Forth LEAVE stack pointer is called LP. It is initialized by QUIT
+\ : >L        ( x -- ) ( L: -- x ) 2 LP +!   LP @ ! ;     \ LP stack grows up
+\  : L>        ( -- x ) ( L: x -- ) LP @ @  -2 LP +! ;
+\ ASM is 4 bytes smaller in DTC
+ CODE >L
+    R1 STWP,
+    3A (R1) INCT,
+    3A (R1) R0 MOV,
+    TOS *R0 MOV,
+    TOS POP,
+    NEXT,
+ ENDCODE
+
+ CODE L>
+     TOS PUSH,
+     R1 STWP,
+     3A (R1) TOS MOV,
+     *TOS TOS MOV,
+     3A (R1) DECT,
+     NEXT,
+ENDCODE
+
+\ -----------------------------------------------------------------------
+\ RAKE  resolves branching out of DO/LOOPS that use LEAVE
+\       CAMEL Forth calls this ENDLOOP... but it RAKEs the LEAVEs. Get it?
+
+\ NOTE: We MUST put RAKE here because it uses the cross-compiler's
+\       WHILE/REPEAT loop. We cannot CROSS COMPILE loops in our code AFTER we
+\       define the TARGET system LOOPS below.
+
+0 [IF]
+\ THEN computes offset between addr and HERE, stores result in addr
+  : THEN  ( addr -- )  HERE OVER - SWAP ! ;  XIMMEDIATE ( 14 bytes)
+
+[ELSE]
+  CODE: THEN ( addr -- )  \ 12 bytes
+    R1 STWP,          \ DP is a user variable
+    24 (R1) R0 MOV,   \ DP @  ( ie: HERE -> R0 )
+    TOS R0 SUB,       \ OVER -
+    R0 *TOS MOV,      \ SWAP !
+    TOS POP,
+    NEXT,
+  END-CODE  XIMMEDIATE
+
+[THEN]
+
+: RAKE    ( -- ) ( L: 0 a1 a2 .. aN -- )
+      BEGIN  L> ?DUP WHILE   t[COMPILE] THEN   REPEAT  ;  XIMMEDIATE
+
+\ ========================================================================
+\ F I N I T E   L O O P   C O M P I L E R S
+\                 -compile this-   - run this now-
+: DO        ( -- ) ?COMP COMPILE <DO>     HERE 0 >L ;  XIMMEDIATE
+: ?DO       ( -- ) ?COMP COMPILE <?DO>    HERE 0 >L ;  XIMMEDIATE
+: LEAVE     ( -- ) ( L: -- addr )
+            COMPILE UNLOOP  t[COMPILE] AHEAD >L ; XIMMEDIATE
+
+\ complete a DO loop
+: LOOP      ( -- )  COMPILE <LOOP>  <BACK  RAKE ; XIMMEDIATE
+: +LOOP     ( -- )  COMPILE <+LOOP> <BACK  RAKE ; XIMMEDIATE
+
+\ these should be compiled directly for IF ELSE AGAIN
+
+\ SIMPLIFIED LOOPS
+\ Posted by dxforth comp.lang.forth
+\ Modded for Cross-compiler to compute branch offsets AND no POSTPONE word
+: BEGIN   HERE ;                                XIMMEDIATE
+: IF      COMPILE ?HSBRANCH  HERE   0 , ;         XIMMEDIATE
+: ELSE    T[COMPILE] AHEAD SWAP T[COMPILE] THEN ; XIMMEDIATE
+: UNTIL   COMPILE ?HSBRANCH <BACK ;               XIMMEDIATE
+: AGAIN   COMPILE HSBRANCH  <BACK ;               XIMMEDIATE
+: WHILE   T[COMPILE] IF SWAP ;                  XIMMEDIATE
+: REPEAT  T[COMPILE] AGAIN T[COMPILE] THEN ;    XIMMEDIATE

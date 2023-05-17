@@ -1,0 +1,12 @@
+\ fast mem2mem xchg   
+
+\ usage:   X Y XCHG  \ moves contents from X->Y & Y->X
+\ 6x faster than Forth version on stack.
+CODE: XCHG   ( adr1 adr2 -- ) \ exchange values of 2 variables
+             *SP+  R0 MOV,    \ pop adr1 into R0
+             *R0   W  MOV,    \ adr1 @  W  !
+             *TOS *R0 MOV,    \ mem2me m move  adr2 to adr1
+              W  *TOS MOV,    \ move value adr1 to adr2
+              TOS POP,
+              NEXT,
+              END-CODE

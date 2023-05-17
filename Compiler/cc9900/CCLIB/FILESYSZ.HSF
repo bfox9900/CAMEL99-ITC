@@ -1,0 +1,97 @@
+ \ FilesysX.hsf    Apr 8 2019
+ \ *New: [PAB FNAME] is passed to DSRLNK on the Forth stack
+ \       Removed PSHPAB POPPAB to save space. Only used once in the file
+
+[CC] HEX
+
+TARGET-COMPILING
+
+\ VARIABLE: ^PAB            \ *moved to CAMEL kernel file
+
+\ To save kernel space we are reading/writing VDP directly.
+\ There is NO PAB duplicate in CPU RAM.
+
+\ fast fetch of pab base pointer. (*This is also the OPCODE field)
+CODE: [PAB   ( -- adr) TOS PUSH,  ^PAB @@ TOS MOV,  NEXT, END-CODE
+
+\ PAB field words calculate offset from [PAB base in ** VDP RAM **
+\ CODE is 16 BYTES smaller than Forth equivalent and faster
+\ Trailing square bracket is to indicate they are used with [PAB
+\ Read/write the PAB data fields with:  V@ V!  VC@ VC! VREAD VWRITE
+
+\ Example:  [PAB FBUFF] V@   [PAB CHARS] VC@
+\ DLEN is an extra PAB field by B Fox                                    data     size
+ CODE: FLG]    ( vaddr -- vaddr') TOS INC,         NEXT, END-CODE \ 1+    byte      1
+ CODE: FBUFF]  ( vaddr -- vaddr') TOS INCT,        NEXT, END-CODE \ 2+    cell      2
+ CODE: RECLEN] ( vaddr -- vaddr') *TOS+ *TOS+ MOV, NEXT, END-CODE \ 4+    byte      1
+ CODE: CHARS]  ( vaddr -- vaddr') TOS  5 ADDI,     NEXT, END-CODE \ 5+    byte      1
+ CODE: REC#]   ( vaddr -- vaddr') TOS  6 ADDI,     NEXT, END-CODE \ 6+    cell      2
+ CODE: STAT]   ( vaddr -- vaddr') TOS  8 ADDI,     NEXT, END-CODE \ 8+    byte      1
+ CODE: FNAME]  ( vaddr -- vaddr') TOS  9 ADDI,     NEXT, END-CODE \ 9+    string    32
+
+\ control the PAB stack
+12C CONSTANT: PSZ       \ size of PAB+BUFFER
+
+\ generic file error handler
+: ?FILERR  ( ior -- )
+           ?DUP IF CR CR T." * File Err #" . HONK ABORT THEN ;
+
+: VPLACE   ( $addr len Vaddr -- )  \ like PLACE, but for VDP RAM
+           2DUP VC! 1+ SWAP VWRITE ;
+
+: CPOS ( addr len char -- n) >R 2DUP R> SCAN NIP - NIP ;
+
+
+\ init PAB to DV80 file format
+: INITPAB  ( $addr len -- )
+           [PAB 29 0 VFILL           \ *MUST* erase OLD PAB and file name
+           14 [PAB FLG]    VC!       \ mode: input,display,variable
+           50 [PAB RECLEN] VC!       \ 80 bytes/rec
+           [PAB FNAME] DUP           \ -- addr len Vaddr Vaddr
+           20 + [PAB FBUFF] V!       \ FBUFF=32 bytes past fname
+           VPLACE                    \ write string to [PAB FNAME]
+;
+
+\ === HI LEVEL FUNCTIONS ====
+[CC] HEX [TC]
+
+: FILEOP  ( opcode -- err)           \ TI99 O/S call
+           PAUSE                     \ better multi-tasking
+           [PAB VC!                   \ write opcode byte to VDP PAB
+           [PAB FLG] DUP VC@ 1F AND SWAP VC! \ *CRITICAL* clear ERR code bits in PAB
+           5 [PAB FNAME] DSRLNK      \ DSRLINK with parameters
+;
+\ VARIABLE: LINES                            \ moved to Kernel
+
+: ?FILE ( n -- ) 0= TS" Filename" ?ABORT ;   \ tests string length only
+
+\ see E/A Manual page 298 for meaning
+: FSTAT ( -- c)  9 FILEOP DROP [PAB STAT] VC@ ;
+: (EOF) ( -- ?)  FSTAT 3 AND ;   \ End of file test, current PAB
+
+\ This word can bootstrap the system on startup.
+\ INCLUDED is nestable. Saves all state info
+\ Cross-compiler usage: TS" DSK1.START" INCLUDED
+\ 2000 CONSTANT: LBUFF   \ line buffer replaced with PAD. July 3 2020
+
+: INCLUDED  ( caddr len -- )
+           DUP ?FILE
+           CR T." Loading: " 2DUP TYPE
+           SOURCE-ID @ >IN @ 2>R           \ save source-ID, input pointer
+           PSZ NEGATE ^PAB +!              \ make new PAB on the PAB stack
+           INITPAB
+           0 FILEOP ?FILERR                \ open new file (sets new DSRNAM)
+           SOURCE-ID 1+!                   \ incr. source ID (1st file is 1)
+           LINES OFF
+           BEGIN
+             2 FILEOP 0=                   \ read a record, close file if EOF
+           WHILE
+            [PAB FBUFF] V@                 \ get read data from vdp
+            [PAB CHARS] VC@ >R             \ data length to rstack
+             PAD  R@    VREAD              \ read VDP to PAD
+             PAD  R>   <INTERP>            \ interpret Vaddr,len on stack
+             LINES 1+!                     \ count the line
+           REPEAT
+           PSZ ^PAB +!                     \ remove PAB from pab stack
+           2R> >IN !  SOURCE-ID !          \ restore >IN, SOURCE-ID
+;

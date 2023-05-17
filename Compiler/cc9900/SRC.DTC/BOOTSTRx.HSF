@@ -1,0 +1,73 @@
+\ C R O S S - C O M P I L E R  B O O T - S T R A P P I N G
+\ Feb 2022: Finally figured out how to cross-compile ISO loop.
+
+\ Final additions to the cross-compiler
+
+\ NOTE: After all the primitives are compiled we use them to create the
+\       final cross-compiler words for branching, looping and cross-
+\       compiling versions of colon and semi-colon
+
+CROSS-COMPILING
+_BRANCH  >HSRAM EQU HSBRANCH
+_?BRANCH >HSRAM EQU ?HSBRANCH
+
+CR .( branch cross-compilers if then else etc...)
+: AHEAD    ( -- addr) THERE   0 T, ;
+: <BACK    ( addr --) THERE  -  T, ;
+
+: THEN          THERE OVER - SWAP T! ; IMMEDIATE
+: BEGIN         THERE  ;  IMMEDIATE
+: IF             ?HSBRANCH T, AHEAD ; IMMEDIATE
+: ELSE           HSBRANCH  T, AHEAD SWAP [COMPILE] THEN  ; IMMEDIATE
+: UNTIL          ?HSBRANCH T, <BACK ; IMMEDIATE
+: AGAIN          HSBRANCH  T, <BACK ; IMMEDIATE
+: WHILE         [COMPILE] IF  SWAP  ; IMMEDIATE
+: REPEAT        [COMPILE] AGAIN [COMPILE] THEN ; IMMEDIATE
+
+\ finite loop cross-compilers
+: DO            TCOMPILE <DO>  THERE ; IMMEDIATE
+: ?DO           TCOMPILE <?DO> THERE ; IMMEDIATE
+
+: LOOP          TCOMPILE <LOOP>  <BACK ; IMMEDIATE
+: +LOOP         TCOMPILE <+LOOP> <BACK ; IMMEDIATE
+
+\ : FOR         TCOMPILE <FOR>  THERE ;  IMMEDIATE
+\ : NEXT        TCOMPILE <NEXT> <BACK ;  IMMEDIATE
+
+\ ========================================================================
+\ C R O S S - C O M P I L I N G   C O L O N   &   S E M I - C O L O N
+cr .( cross compiler ':' and ';')
+
+\ In the following definiton we use the HOST: ;HOST compiler words to create
+\ new versions of : and ; that cross-compile FORTH words into the TARGET
+
+host: :                             \ this is the CROSS compiler's ':'
+                !CSP                \ record the "current stack position" (used later)
+                ]T                  \ set XSTATE to true ie: turn on the compiler
+                <colon:>            \ put the word name in the Target dictionary and the mirror vocabulary
+                THIDE               \ set the 'smudge' bit so we can't find this word during compilation
+                TINTERPRET          \ run the cross compiler/interpreter on the input stream
+;host
+
+?stk
+
+host: ;                            \ this the CROSS-compiler's ';'
+                TREVEAL            \ un-smudge the word so it can be found in the dictionary
+                'EXIT cfa,
+                ?CSP               \ check is stack is the same place as when we started the definition
+                T[                 \ reset XSTATE (TARGET STATE) to interpreting
+
+;host   immediate
+
+?stk
+
+\ ========================================================================
+\ F I N A L   T A R G E T -  C O M P I L I N G   C O L O N  &  S E M I - C O L O N
+\ These alias names are used at the very end of the code to define the
+\ FINAL ':' and ';' that will be the versions that actually run in the
+\ TARGET Forth. (yes it's confusing) Renaming them allows me to remain sane.
+\
+SYNONYM x:   :                        \ "TARGET-compiling colon"
+SYNONYM ;x   ;  IMMEDIATE             \ "TARGET-compiling semi-colon"
+
+\ .XMEM                               \ show the cross compiler memory. It should be empty.

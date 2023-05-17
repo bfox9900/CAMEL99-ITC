@@ -1,0 +1,38 @@
+\ *********************************************************************
+\ * Faster vwrite does 8 bytes per write where possible
+\ *
+\ * R0: Destination address
+\ * R1: Source address
+\ * R2: Number of bytes to copy /8
+\ * R4: Number of bytes to copy
+\ *
+CODE: VWRITE ( src dest cnt -- )   \ cnt is in R4, TOS cache register
+    *SP+ R0  MOV,    \ pop destination to R0
+     WMODE @@ BL,    \ call: set VDP address in write mode
+    *SP+ R1 MOV,     \ pop src to R1
+     R0  VDPWD LI,   \ set R0 to VDP write-port address
+     TOS R2 MOV,     \ DUP CNT to R2
+     R2 3  SRL,      \ divide count by 8 for block writes
+     NE IF,
+           BEGIN, 
+             R1 *+  R0 ** MOVB,
+             R1 *+  R0 ** MOVB,
+             R1 *+  R0 ** MOVB,
+             R1 *+  R0 ** MOVB,
+             R1 *+  R0 ** MOVB,
+             R1 *+  R0 ** MOVB,
+             R1 *+  R0 ** MOVB,
+             R1 *+  R0 ** MOVB,
+                    R2   DEC,
+           EQ UNTIL,
+           R2  0007 ANDI,           \ Isolate number of remaining bytes
+           R2  TOS   MOV,           \ update TOS to new count value
+     ENDIF,
+\ write remaining 7 or less characters
+     BEGIN
+          R1 *+  R0 ** MOVB,
+          R4    DEC,
+     EQ UNTIL,
+     TOS POP,
+     NEXT,
+     END-CODE

@@ -1,0 +1,44 @@
+\  TTY  D R I V E R
+
+[cc] cr .( TTY Console)
+
+ include cc9900\SRC.ITC\TTYIO.HSF     \ ti99 rs232 i/o
+
+[CC] HEX [TC]
+
+: EMIT   ( c -- ) PAUSE (EMIT) ;   \  'EMIT PERFORM ;
+
+: CR   ( -- ?)   \ comm port carriage return
+         0D EMIT 0A EMIT
+         VCOL OFF
+         VROW @ 1+  17 MIN VROW !  ; \ don't count past last line
+
+\ pronounced "SEE-PER-ELL-STORE"
+: C/L!  ( c/l -- )          \ "chars per line store"
+        DUP C/L !           \ copy chars per line in C/L variable
+        L/SCR *  C/SCR ! ;  \ multiply by lines/scr, and record in C/SCR
+
+\ FAST user variable
+CODE C/L@   ( -- n )  \ this is used in the KERNEL. Saves bytes
+             TOS         PUSH,   \ and is 50% faster than C/L @
+             TOS         STWP,
+             2E (TOS) TOS MOV,
+             NEXT,
+             END-CODE
+[cc] HEX [tc]
+
+[PRIVATE]
+: (TYPE)  ( addr cnt --) 0 ?DO COUNT (EMIT) LOOP ;  \ band-aid to fix ?DO
+
+[PUBLIC]
+: TYPE    ( addr cnt -- ) PAUSE (TYPE) DROP ;
+
+[CC] T' TYPE  RESOLVES 'TYPE  [TC]
+
+: SPACE  ( -- )   BL (EMIT) ;
+: SPACES ( n -- ) 0 MAX  0 ?DO  SPACE  LOOP ;
+
+\ Simple VDP output word for boot messages on TI-99 screen
+: VTYPE   ( adr len  ) VROW 2@ >VPOS SWAP VWRITE  ;
+
+: KEY     ( -- char)  BEGIN  PAUSE  CKEY? ?DUP   UNTIL ;

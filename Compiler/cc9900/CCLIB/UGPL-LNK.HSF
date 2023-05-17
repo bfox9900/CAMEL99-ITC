@@ -1,0 +1,154 @@
+\ ###    T R A N S L A T E D   T O   X F C 9 9   A S S E M B L E R         ###
+\    *--------------------------------------------------------------------*
+\    * GPLLNK- A universal GPLLNK - 6/21/85 - MG                          *
+\    * This routine will work with any GROM library slot since it is      *
+\    * indexed off of R13 in the GPLWS.  (It does require Mem Expansion)  *
+\    * This GPLLNK does NOT require a module to be plugged into the       *
+\    * GROM port so it will work with the Editor/Assembler,               *
+\    * Mini Memory (with Mem Expansion), Extended Basic, the Myarc        *
+\    * CALL LR("DSKx.xxx") or the CorComp Disk Manager Loaders.           *
+\    * It saves and restores the current GROM Address in case you want    *
+\    * to return back to GROM for Basic or Extended Basic CALL LINKs      *
+\    * or to return to the loading module.                                *
+\    *                                                                    *
+\    *    ENTER: The same way as the E/A GPLLNK, i.e., BLWP @GPLLNK       *
+\    *                                                 DATA >34           *
+\    *                                                                    *
+\    *    NOTES: Do Not REF GPLLNK when using this routine in your code.  *
+\    *                                                                    *
+\    * 70 Bytes - including the GPLLNK Workspace                          *
+\    *--------------------------------------------------------------------*
+
+CROSS-COMPILING  CR .( Loading Universal GPL Link )
+
+CROSS-ASSEMBLING
+83E0       EQU GPLWS             \  GPL workspace
+[CC] GPLWS 8 + CROSS-ASSEMBLING EQU GR4               \  GPL workspace R4
+[CC] GPLWS 12 + CROSS-ASSEMBLING EQU GR6               \  GPL workspace R6
+8373       EQU STKPNT            \  GPL Stack pointer
+60         EQU LDGADD            \  Load & ECUTE GROM address entry point
+200E       EQU XTAB27            \  Low Mem XML table location 27
+166C       EQU GETSTK
+
+\ *** moved to after the code ****
+\    GPLLNK DATA GLNKWS      R7      Set up BLWP Vectors
+\           DATA GLINK1      R8
+l: RTNAD   DATA XMLRTN    \  R9    \  address where GPL XML returns to us
+l: GXMLAD  DATA 176C      \  R10   \  GROM Address for GPL XML (0F 27 Opcode)
+           DATA 50        \  R11   \  Initialized to >50 where PUTSTK address resides
+
+   THERE   EQU GLNKWS              \  GPLLNK's workspace of which only
+           BSS 08        \  R12-R15 ...registers R7 through R15 are used
+
+l: GLINK1 *R11    GR4 @@ MOV,      \ Put PUTSTK Address into R4 of GPL WS
+          *R14+   GR6 @@ MOV,      \ Put GPL Routine Address in R6 of GPL WS
+           XTAB27 @@ R12 MOV,      \ Save the value at >200E
+           R9  XTAB27 @@ MOV,      \ Put XMLRTN Address into >200E
+           GPLWS        LWPI,      \ Load GPL WS
+          *R4 BL,                  \ Save current GROM Address on stack
+     GXMLAD @@ 8302 (R4) MOV,      \ Push GPL XML Add on stack for GPL ReTurn
+           STKPNT @@ INCT,         \ Adjust the stack pointer
+           LDGADD @@ B,            \ Execute our GPL Routine
+
+l: XMLRTN  GETSTK @@ R4 MOV,       \ Get GETSTK pointer
+          *R4  BL,                 \ Restore GROM address off the stack
+           GLNKWS LWPI,            \ Load our WS
+           R12 XTAB27 @@ MOV,      \ Restore >200E
+           RTWP,                   \ All Done - Return to Caller
+
+\ >>vectors defined after the labels in Forth Assembler<<
+l: GPLLNK  DATA GLNKWS    \  R7   \  Set up BLWP Vectors
+           DATA GLINK1    \  R8
+
+\    *--------------------------------------------------------------------*
+\    * DSRLNK - A Universal Device Service Routine Link - MG              *
+\    *      (Uses console GROM 0's DSRLNK routine)                        *
+\    *      (Do not REF DSRLNK or GPLLNK when using these routines)       *
+\    *      (This DSRLNK will also handle Subprograms and CS1, CS2)       *
+\    *                                                                    *
+\    *      ENTER: The same way as the E/A DSRLNK, i.e., BLWP @DSRLNK     *
+\    *                                                   DATA 8           *
+\    *                                                                    *
+\    *      NOTES: Must be used with a GPLLNK routine                     *
+\    *             Returns ERRORs the same as the E/A DSRLNK              *
+\    *             EQ bit set on return if error                          *
+\    *             ERROR CODE in caller's MSB of Register 0 on return     *
+\    *                                                                    *
+\    * 186 Bytes total - including GPLLNK, DSRLNK and both Workspaces     *
+\    *--------------------------------------------------------------------*
+
+     50   EQU PUTSTK                 \ Push GROM Add to stack pointer
+     836D EQU TYPEB                  \ DSRLNK Type byte for GPL DSRLNK
+     8356 EQU NAMLEN                 \ Device name length pointer in VDP PAB
+     8C02 EQU VWA                    \ VDP Write Address location
+     8800 EQU VRD                    \ VDP Read Data byte location
+     83E9 EQU GR4LB                  \ GPL Workspace R4 Lower byte
+     837C EQU GSTAT                  \ GPL Status byte location
+
+
+l:  DSRADD BYTE 03                     \ High byte of GPL DSRLNK address
+l:  DSRAD1 BYTE 00                     \ Lower byte of GPL DSRLNK address
+
+l:  DSRWS  EQU  THERE                   \ Start of DSRLNK workspace
+l:  DR3LB  EQU  THERE 7 +               \ lower byte of DSRLNK workspace R3
+
+l:  DLINK1 R12  R12    MOV,     \ R0      Have we already looked up the LINK address?
+           @@7         JNE,     \ R1      YES!  Skip lookup routine
+\    *<<-------------------------------------------------------------------------->>*
+\    * This section of code is only executed once to find the GROM address          *
+\    * for the GPL DSRNK - which is placed at DSRADD and R12 is set to >2000        *
+\    * to indicate that the address is found and to be used as a mask for EQ & CND  *
+\    *------------------------------------------------------------------------------*
+           GPLWS        LWPI,   \  R2,R3   else load GPL workspace
+           PUTSTK @@ R4 MOV,    \  R4,R5   Store current GROM address on the stack
+          *R4           BL,     \  R6
+           R4      11   LI,     \  R7,R8   Load R4 with address of LINK routine vector
+           R4 402 (R13) MOVB,   \  R9,R10  Set up GROM with address for vector
+
+\    ***les*** Note on above instruction:
+\    ***les***    1. R13 of GPLWS has >9800=GRMRD (GROM Read Data)
+\    ***les***    2. >402 added to GRMRD yields >9C02=GRMWA (GROM Write Address)
+
+           @@6 JMP,             \  R11    Jump around R12-R15
+           DATA 0               \  R12    contains >2000 flag when set
+           DATA 0               \  R13    contains WS, PC & ST for RTWP
+           DATA 0               \  R14
+           DATA 0               \  R15
+@@6: ( DLINK2)
+           GR4LB @@ 402(R13) MOVB,      \ Finish setting up GROM address
+           GETSTK @@ R5 MOV,            \ Take some time & set up GETSTK pointer
+          *R13 DSRAD1 @@ MOVB,          \ Get the GPL DSR LINK vector
+           DSRADD @@ INCT,              \ Adjust it to get past GPL FETCH instruction
+          *R5 BL,                       \ Restore the GROM address off the stack
+           DSRWS LWPI,                  \ Reload DSRLNK workspace
+           R12 2000 LI,                 \ Set flag to signify DSRLNK address is set
+
+\   *<<-------------------------------------------------------------------------->>*
+@@7: ( DLINK3 )
+           R14 INC,                     \ Adjust R14 to point to caller's DSR Type byte
+          *R14+ TYPEB @@ MOVB,          \ Move it into >836D for GPL DSRLNK
+           NAMLEN @@ R3 MOV,            \ Save VDP address of Name Length
+           R3 -8 AI,                    \ Adjust it to point to PAB Flag byte
+           GPLLNK @@ BLWP,              \ Execute DSR LINK
+
+\ ***DSRADD   **moved ABOVE code
+\ ***DSRAD1
+
+\    *----Error Check & Report to Caller's R0 and EQU bit-------------------------
+           DR3LB @@ VWA @@ MOVB,        \ Set up LSB of VDP Add for Error Flag
+           R3       VWA @@ MOVB,        \ Set up MSB of VDP Add for Error Flag
+           R12      R15    SZCB,        \ Clear EQ bit for Error Report
+           VRD @@   R3     MOVB,        \ Get PAB Error Flag
+           R3       5      SRL,         \ Adjust it to 0-7 error code
+           R3      *R13    MOVB,        \ Put it into Caller's R0 (msb)
+           @@8             JNE,         \ If it's not zero, set EQ bit
+           GSTAT @@ R12    COC,           \ Else, test CND bit for Link Error (00)
+           @@9 JNE,                     \ No Error, Just return
+@@8: ( SETEQ ) SOCB R12,R15             \ Error, so set Caller's EQ bit
+@@9: ( DSREND) RTWP                     \ All Done - Return to Caller
+
+\ Set BLWP Vectors After the code ===================================
+l: _DSRLNK  DATA DSRWS
+            DATA DLINK1   
+
+[CC] CR .( GPL link loaded )

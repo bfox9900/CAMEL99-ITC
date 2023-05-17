@@ -1,0 +1,109 @@
+\ C R O S S   C O M P I L E R   W O R D   " C R E A T O R S "
+\ I add  the ':' to the cross-compiler creating words just so I can remember what's what.
+
+\ create DTC macros that will be compiled into FORTH words
+CR .( DTC macros )
+
+CROSS-COMPILING
+
+\ over-write these for DTC headers
+: cfa>pfa       ( cfa -- pfa )   2 cells + ;  \ PFA is after the BL instruction
+: nfa>pfa       ( nfa -- pfa )  nfa>cfa cfa>pfa ;
+
+
+: TCODE-ERR     TRUE ABORT" Cannot run Target CODE words" ;
+
+: ?code-ERR   sp@ csp @ - ABORT" XASM99: code word has left something on the stack" ;
+
+: (CODE)       TCREATE:           \ make the word header(TCREATE: Taligns when done)
+    \ ** DTC CODE words start at the CFA, no extra field req'd **
+
+                tcodewords 1+!  \ count the new code word for COMPILER report
+                TALIGN ;
+
+ \ you MUST use CROSS-ASSEMBLING directive before using CODE
+: CODE         !CSP                \ record the stack pointer for error checking
+                (CODE)             \ create the code word header
+                NEW-JMPTABLE       \ init the jump table
+                DOES> TCODE-ERR ;  \ if you try to run these words they error out
+
+: +CODE         (CODE)              \ keep same jump-table but add this label inside a definition
+                                   \ so we can jump from word to word
+                 DOES> TCODE-ERR ;
+
+: ENDCODE      ?CODE-ERR ;
+
+
+\ these routines compile the 'jump to the EXECUTOR' for each word type
+\ they are not defined yet so we make DEFERRed place-holders
+DEFER JMP.DOCOL
+DEFER JMP.DOVAR
+DEFER JMP.DOCON
+DEFER JMP.DOUSER
+
+cr .( create: variable: constant: )
+: CREATE
+                TCREATE:                       \ compile time: create a dual header and record the Target NFA in Host Forth
+                'dovar  @@ BL,                 \ compile this code in definition
+                                               \ (PFA is empty)
+                DOES> @ NFA>PFA ;              \ Run-time: fetch the nfa
+
+: VARIABLE
+                TCREATE:                       \ compile time: create a dual header and record the Target NFA in Host Forth
+                'dovar  @@ BL,                 \ compile this code in definition
+                0 T,                           \ compile a zero into the PFA
+
+                DOES> @ NFA>PFA ;              \ Run-time: fetch the nfa
+
+: 2VARIABLE
+                TCREATE:                       \ compile time: create a dual header and record the Target NFA in Host Forth
+                'dovar  @@ BL,                 \ compile this code in definition
+                0 T, 0 T,                      \ make space for 2 cells and init them to 0
+
+                DOES> @ NFA>PFA ;              \ Run-time: fetch the NFA
+
+: CONSTANT                                    \ CONSTANT: words are used like a normal constant for debugging and compiling on the HOST
+                TCREATE:                       \ compile time: create a dual header and record the Target LFA in Host Forth
+                'docon  @@ BL,                 \ compile this code in definition
+                ( n) T,                        \ compile the actual number into the next CELL which is the TARGET word's PFA
+
+                DOES> @ NFA>PFA T@ ;           \ Run-time: fetch the nfa
+
+SYNONYM VALUE  CONSTANT                       \ same thing in ITC Forths.
+
+\ =======================================================================
+\ TMS9900 and user variables under CAMEL99
+
+\ USER variables are used in Multi-tasking Forth systems.
+\ They are "local" to a specific task and usually reference by a pointer
+\ called 'UP' (user pointer)
+\ CAMEL99 does not have a user pointer. It uses the TMS9900 WP register
+\ Cool trick, but it means we can't read a value from the TARGET system
+\ for the cross-compiler to use.
+
+\ So we have to create a variable UP(t) and assign the value of the for
+\ of the WP register for the Cross compiler to calculate a USER variable's
+\ Address.
+
+CR .( user: <colon:> ....)
+
+\ create a compiler variable so the compiler knows where the WP register is pointing
+HOST-COMPILING
+VARIABLE UP(t)   HEX 8300 UP(t) !              \  primary workspace is at at HEX 8300
+
+CROSS-COMPILING
+
+: USER
+                TCREATE:                       \ compile time: create a dual header
+                'douser @@ BL,                 \ compile this code in definition
+                ( n) T,                        \ compile the user variable no. in the PFA of the word.
+
+                DOES> @ nfa>PFA t@  UP(t) @ + ;  \ reads parameter field (PFA) add it to the address of target UP
+
+
+\ create smart TARGET colon words that abort if you try to run them
+: <colon:>
+                TCREATE:                       \ create a dual header (in HOST and in TARGET)
+                'DOCOL @@ BL,                  \ compile code to branch to _docol
+
+                DOES> true abort" Cannot run a TARGET colon definition" ;

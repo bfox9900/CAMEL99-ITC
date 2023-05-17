@@ -1,0 +1,61 @@
+\ T A R G E T   B R A N C H   C O M P I L E R S
+
+\ These versions RUN IN THE TARGET system to compile loops and branches in the TI-99.
+\ CAMEL99 uses compile time checking for completion of IF ELSE THEN, DO/LOOP etc.
+\ using the word ?PAIRS like old Forths. This is not used in ANS/ISP Forth anymore.
+
+TARGET-COMPILING
+: ?PAIRS   ( n1 n2 --) -  TS" Not finished"  ?ABORT ;
+
+\ branch compilers: these make the code look clearer by naming the direction
+\                           [PRIVATE]   ( save 16 bytes)
+: AHEAD    ( -- addr)  HERE  0 COMPILE, ;         \ leave adr for forward branch, compile empty cell
+: BACK     ( addr -- ) HERE  - COMPILE, ;         \ compile a branch offset (ADDR-HERE = OFFSET we jump to)
+: RESOLVE  ( addr -- ) HERE OVER - SWAP ! ; \ resolve forward branch and compile offset at addr
+
+                          [PUBLIC]
+\ CAMEL Forth LEAVE stack is called L0. It is initialized by QUIT.
+: >L        ( x -- ) ( L: -- x )  \ push x to leave stack
+            2 LP +!  LP @ ! ;        ( L stack grows up)
+
+: L>        ( -- x )  ( L: x -- ) \ pop x from leave stack
+            LP @ @   -2 LP +! ;
+
+\ ========================================================================
+\ F I N I T E   L O O P   C O M P I L E R S
+\                 -compile this-   - run this now-
+: DO        ( -- ) COMPILE <DO>     HERE 0 >L   3 ;       XIMMEDIATE
+: ?DO       ( -- ) COMPILE <?DO>    HERE 0 >L   3 ;       XIMMEDIATE
+
+: LEAVE     ( -- ) ( L: -- addr )
+            COMPILE UNLOOP   COMPILE BRANCH AHEAD >L  ;   XIMMEDIATE
+
+\ -----------------------------------------------------------------------
+\ RAKE  resolves branching out of DO/LOOPS that use LEAVE
+\       CAMEL Forth calls this ENDLOOP... but it RAKEs the LEAVEs. Get it?
+
+: RAKE      ( -- ) ( L: 0 a1 a2 .. aN -- )
+            BEGIN  L> ?DUP WHILE  RESOLVE  REPEAT ;       XIMMEDIATE
+
+\ NOTE: We MUST put RAKE here because it uses the cross-compiler's
+\       WHILE/REPEAT loop. We cannot CROSS COMPILE loops in our code AFTER we
+\       define the TARGET system LOOPS below.
+
+: LOOP      ( -- )  3 ?PAIRS COMPILE <LOOP>  BACK  RAKE ; XIMMEDIATE
+: +LOOP     ( -- )  3 ?PAIRS COMPILE <+LOOP> BACK  RAKE ; XIMMEDIATE
+
+\ ========================================================================
+\ C O N D I T I O N A L   B R A N C H E S
+: IF          ( ? -- ) COMPILE ?BRANCH AHEAD 2 ;         XIMMEDIATE
+: THEN        ( -- )  ?COMP  2 ?PAIRS RESOLVE ;          XIMMEDIATE
+
+: ELSE        ( -- )  2 ?PAIRS  COMPILE BRANCH AHEAD SWAP 2
+                      T[COMPILE] THEN 2 ;                XIMMEDIATE
+
+\ ========================================================================
+\ I N F I N I T E   L O O P   C O M P I L E R S
+: BEGIN       ( -- addr n) ?COMP HERE  1  ;              XIMMEDIATE
+: AGAIN       ( -- )   1 ?PAIRS COMPILE BRANCH BACK   ;  XIMMEDIATE
+: UNTIL       ( ? -- ) 1 ?PAIRS COMPILE ?BRANCH BACK  ;  XIMMEDIATE
+: WHILE       ( ? -- ) T[COMPILE] IF  2+  ;              XIMMEDIATE
+: REPEAT ( -- ) 2>R T[COMPILE] AGAIN 2R> 2- T[COMPILE] THEN ; XIMMEDIATE

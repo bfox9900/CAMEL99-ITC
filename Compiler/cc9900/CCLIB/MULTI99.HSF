@@ -1,0 +1,163 @@
+\ TASKS99.HSF for CAMEL99                               06JAN2017 Brian Fox
+
+\ Loosely derived from COOPTASK.MAX for MaxForth        B Fox 1992
+
+[undefined] XASSEMBLER [IF] ."  **This is for XASM99 cross compiler"
+                            cr ." Compile halted."  ABORT [THEN]
+
+\ This is a conventional Forth multi-tasker using a single workspace
+\ and stacks. It uses CPU R15 as the USER pointer register.
+
+\ It is interesting to note that the Forth virtual machine uses 3 registers
+\ for context,two stack pointers and the instruction pointer and the TMS9900
+\ also uses 3 registers for context, WP, PC and ST.
+
+\ =======================================================================
+\ CAMEL99 MULTI-TASKING USER AREA
+\ -----------------------------------------------------------------------
+\ R0   LOCAL general purpose register     ( workspace begins)
+\ R1   LOCAL general purpose register
+\ R2   LOCAL general purpose register
+\ R3   LOCAL general purpose register
+\ R4   LOCAL Top of stack cache
+\ R5   LOCAL overflow for mult. & div.,       // general purpose register (used by NEXT)
+\ R6   LOCAL parameter stack pointer ('SP')
+\ R7   LOCAL return stack pointer    ('RP')
+\ R8   LOCAL Forth working register  ('W')    // general purpose register in code words
+\ R9   LOCAL Forth interpreter pointer ('IP)
+\ R10  LOCAL Forth's "NEXT" routine cached in R10
+\ R11  LOCAL 9900 sub-routine return register // general purpose register in code words
+\ R12  LOCAL 9900 CRU register                // general purpose register in code words
+\ R13  LOCAL DO/LOOP index
+\ R14  LOCAL DO/LOOP limit
+\ **NEW**
+\ R15  LOCAL User pointer. (UP) pointer to User area base address, right after workspace
+
+\ ------------------------------------------------------------------------
+\ there is apace after the registers for 16 user variables
+
+\ Index      Name
+\ ------------------
+\  0    USER TFLAG    LOCAL task's awake/asleep flag
+\  2    USER TLINK    link to the next task in the round-robin queue
+\  4    USER RSAVE    storage for my Return stack pointer
+\  6    USER RUN      hold that word that runs in this task
+\  8    USER VAR4
+\  A    USER VAR5
+\  C    USER VAR6
+\  E    USER VAR7
+\ 10    USER VAR8
+\ 12    USER VAR9
+\ 16    USER VAR10
+\ 18    USER VAR11
+\ 1A    USER VAR12
+\ 1C    USER VAR13
+\ 1E    USER VAR14
+\ 1F    USER VAR15
+\ -----------------------------------------------------------------------
+\  20 CELLS  LOCAL Parameter stack base address (grows downwards)
+\  20 CELLS  LOCAL Return stack base address    (grows downwards)
+\ =======================================================================
+
+
+CROSS-ASSEMBLING
+ CODE: MYSELF ( -- PID)         \ return my "Process ID" ( ie: the workspace)
+            TOS PUSH,
+            TOS STWP,           \ fetch the cpu WP register to Forth TOS
+            NEXT,
+            END-CODE
+
+8300 CONSTANT: USER0            \ user0 is the main Forth task workspace
+
+\ Coventional Forth Pause
+CODE: PAUSE  ( -- )                  \ this is the context switcher
+              SP RPUSH,              \ 28
+              IP RPUSH,              \ 28
+              RP  4 (UP) MOV,        \ 22 save my return stack pointer in RSAVE user-var
+              BEGIN,
+                 2 (UP) UP MOV,      \ 22 load the next task's UP into CPU UP  (context switch)
+                 *UP R0 MOV,         \ 18 test the tlag for zero
+              NE UNTIL,              \ 10 loop until it's not zero
+              4 (UP) RP MOV,         \ 22 restore local Return stack pointer so I can retrieve IP and SP
+              IP RPOP,               \ 22 load this task's IP
+              SP RPOP,               \ 22  load this task's SP
+              NEXT,               \ = 194 * .333 = 64.6uS context switch
+              END-CODE
+
+VARIABLE: UP
+
+CODE: UP!   ( addr -- )
+            TOS UP MOV,
+            TOS POP,
+            NEXT,
+            END-CODE
+
+\ calc. size of task memory block (168 bytes)
+[CC] DECIMAL
+     15 cells                   \ register space
+     28 cells +                 \ 28 user variables space
+     20 cells +                 \ parameter stack
+     20 cells +                 \ return stack
+     CELL+                      \ 1 cell extra for safety
+[TC] CONSTANT: USIZE            \ "user area" size
+
+TARGET-COMPILING
+: LOCAL   ( PID uvar -- addr) MYSELF -  + ;   \ usage:  TASK1 TSP LOCAL @
+: SLEEP  ( task -- )  0 SWAP TFLAG LOCAL ! ;
+: WAKE   ( task -- ) -1 SWAP TFLAG LOCAL ! ;
+
+( *** YOU  M U S T  call INIT-MULTI ONCE before multi-tasking  ***)
+: INIT-MULTI ( -- )
+             USER0 UP!          \ set my user-pointer register
+             MYSELF TLINK !
+             TRUE TFLAG !  ;   \ Set my tlink to my own user-area, mark myself awake
+
+\ these words allow us to push values onto a local return stack
+: }RP-- ( task -- )  -2 SWAP RSAVE LOCAL +! ;         \ make space on the local Rstack
+: }>R  ( n task -- )  DUP }RP--  RSAVE LOCAL @  ! ;   \ push n onto local Rstack )
+
+[CC] HEX
+TARGET-COMPILING
+: FORK    ( taskaddr -- )
+            >R                                   \ copy taskaddr
+            R@ USIZE FF FILL                     \ erase user area
+            USER0 R@ 20 CMOVE                    \ copy USER0 vars to taskaddr
+
+            R@ 90 +  R@ RSAVE LOCAL !            \ set Rstack base to this user area
+
+            TLINK @                              \ get copy of current users workspace addr
+            R@ TLINK !                           \ store taskaddr in curr. user's tlink
+            R@ TLINK LOCAL !                     \ now store curr. user into taskaddr's space
+
+            R> SLEEP  ;                          \ put the new task to sleep
+
+: ASSIGN ( XT task -- )                          \ put stack address and XT onto local task's Rstack
+           2dup JOB local !
+           dup 58 +  over }>R                    \ calc local SP base, push to rstack (Pstack is empty)
+           dup JOB local over }>R ;              \ push addr of RUN onto local Rstack (goes into IP when task runs)
+
+TARGET-COMPILING
+
+\ Syntax for setting up 2 tasks:
+\ ------------------------------
+
+\ INIT-MULTI              ( setup the root task for mult-tasking)
+
+\ F000 CONSTANT TASK1    ( pointers to some unused memory
+\ EF00 CONSTANT TASK2
+
+\ TASK1 MAKE-USER         ( initialize the memory to be a user-area)
+\ TASK2 MAKE-USER
+
+\ VARIABLE X1
+\ VARIABEL X2
+
+\ : THING1  begin   1 X1 +!  pause again  ;  \ code that needs to run in a task
+\ : THING2  begin  -1 X2 +!  pause again ;   \ code that needs to run in a task
+
+\   T' THING1 TASK1 ASSIGN
+\   T' THING2 TASK2 ASSIGN
+
+\   TASK1 WAKE
+\   TASK2 WAKE
+

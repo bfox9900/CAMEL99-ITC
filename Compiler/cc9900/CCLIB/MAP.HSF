@@ -1,0 +1,21 @@
+\ map.hsf   
+\ maps SAMS extended memory into expansion RAM space in 4K blocks
+
+HEX
+\ translated from TurboForth for CAMEL99 Forth
+CODE: MAP ( bank addr -- )
+       TOS F000 ANDI,       \ 4k boundary only
+       TOS   0B SRL,        \ divide by 2048
+       TOS 4000 ADDI,       \ convert to SAMS register address
+      *SP+   R2 MOV,        \ get bank
+       R2    FF ANDI,       \ mask off any crap
+       R2    R0 MOV,        \ keep a copy
+       R2    08 SLA,        \ move to high byte
+       R0    R2 XOR,        \ combine r0 & r2. Hi & lo bytes are now identical
+       R12 1E00 LI,         \ cru address of SAMS
+       0 SBO,               \ enable SAMS registers
+       R2  *TOS MOV,        \ poke sams register
+       0 SBZ,               \ disable sams registers
+       TOS POP,             \ refill TOS
+       NEXT,
+       END-CODE

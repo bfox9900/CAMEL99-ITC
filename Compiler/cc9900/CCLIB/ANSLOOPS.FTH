@@ -1,0 +1,59 @@
+\ ========================================================================
+\ T A R G E T   B R A N C H   C O M P I L E R S
+
+\ These versions RUN IN THE TARGET system to compile loops and branches in the TI-99.
+\ CAMEL99 uses compile time checking for completion of IF ELSE THEN, DO/LOOP etc.
+
+TARGET-COMPILING
+\ branch compilers: these make the code look clearer by naming the direction
+\                           [PRIVATE]   ( save 16 bytes)
+: AHEAD    ( -- addr)  HERE   0 , ;         \ leave adr for forward branch, compile empty cell
+: BACK     ( addr -- ) HERE   - , ;         \ compile a branch offset (ADDR-HERE = OFFSET we jump to)
+: RESOLVE  ( addr -- ) HERE OVER - SWAP ! ; \ resolve forward branch and compile offset at addr
+
+                          [PUBLIC]
+\ CAMEL Forth LEAVE stack is called L0. It is initialized by QUIT.
+: >L        ( x -- ) ( L: -- x )  \ push x to leave stack
+            2 LP +!  LP @ ! ;        ( L stack grows up)
+
+: L>        ( -- x )  ( L: x -- ) \ pop x from leave stack
+            LP @ @   -2 LP +! ;
+
+\ ========================================================================
+\ F I N I T E   L O O P   C O M P I L E R S
+\                 -compile this-   - run this now-
+: DO        ( -- ) ?COMP COMPILE <DO>     HERE 0 >L ; XIMMEDIATE
+: ?DO       ( -- ) COMPILE <?DO>    HERE 0 >L   ;       XIMMEDIATE
+
+: LEAVE     ( -- ) ( L: -- addr )
+            COMPILE UNLOOP   COMPILE BRANCH AHEAD >L  ;   XIMMEDIATE
+
+\ -----------------------------------------------------------------------
+\ RAKE  resolves branching out of DO/LOOPS that use LEAVE
+\       CAMEL Forth calls this ENDLOOP... but it RAKEs the LEAVEs. Get it?
+
+: RAKE      ( -- ) ( L: 0 a1 a2 .. aN -- )
+            BEGIN  L> ?DUP WHILE  RESOLVE  REPEAT ;       XIMMEDIATE
+
+\ NOTE: We MUST put RAKE here because it uses the cross-compiler's
+\       WHILE/REPEAT loop. We cannot CROSS COMPILE loops in our code AFTER we
+\       define the TARGET system LOOPS below.
+
+: LOOP      ( -- )  COMPILE <LOOP>  BACK  RAKE ; XIMMEDIATE
+: +LOOP     ( -- )  COMPILE <+LOOP> BACK  RAKE ; XIMMEDIATE
+
+\ ========================================================================
+\ C O N D I T I O N A L   B R A N C H E S
+: IF          ( ? -- ) ?COMP COMPILE ?BRANCH AHEAD ;    XIMMEDIATE
+: THEN        ( -- )   ?COMP RESOLVE ;                  XIMMEDIATE
+
+: ELSE        ( -- )  COMPILE BRANCH AHEAD SWAP
+                      T[COMPILE] THEN ;                 XIMMEDIATE
+
+\ ========================================================================
+\ I N F I N I T E   L O O P   C O M P I L E R S
+: BEGIN       ( -- addr n) ?COMP HERE ;         XIMMEDIATE
+: AGAIN       ( -- )   COMPILE BRANCH BACK   ;  XIMMEDIATE
+: UNTIL       ( ? -- ) COMPILE ?BRANCH BACK  ;  XIMMEDIATE
+: WHILE       ( ? -- ) T[COMPILE] IF ( 2+)  ;   XIMMEDIATE
+: REPEAT ( -- ) 2>R T[COMPILE] AGAIN 2R> ( 2-) T[COMPILE] THEN ; XIMMEDIATE

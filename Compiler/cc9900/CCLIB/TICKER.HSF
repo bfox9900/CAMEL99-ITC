@@ -1,0 +1,21 @@
+\ ticker.fth  using ISR system counter
+
+\ max delay is about  FF * 1/60 = 4.25 seconds
+HEX
+8378 CONSTANT t     \ address of the tick counter
+
+\ : TICK  ( -- )     \ waits 1/60 of a second
+\          t @           \ read isr counter
+\          BEGIN
+\             PAUSE      \
+\             DUP  t @   \ get another
+\          <> UNTIL      \ loop until not equal
+\          DROP ;
+
+: TICK   8 0 DO PAUSE LOOP ;
+: JIFFS  0 ?DO  TICK LOOP ;
+
+\ MS resolution limited to 1/60 second and minimum is 1/60 sec.
+
+: MS  ( n -- )  4 RSHIFT  1 MAX JIFFS ;
+

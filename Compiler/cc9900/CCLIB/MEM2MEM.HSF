@@ -1,0 +1,96 @@
+\ ========================================================================
+\ D I R E C T   M E M O R Y   O P E R A T I O N S
+\ TMS9900 indirect addressing mode we can do things faster to variables
+\ by transfering: memory->memory  verus  memory->stack->memory
+CR
+CR .( ** MEMORY TO MEMORY OPERATIONS ** )
+CR
+
+CODE: 1+!    ( addr -- )
+             *TOS  INC,
+              NEXT,
+              END-CODE
+
+CODE: 1-!    ( addr -- )
+             *TOS  DEC,
+              NEXT,
+              END-CODE
+              
+CODE: @+!   ( addr addr2 -- ) \ fetch value & add to value in addr2
+            *SP+ R1 MOV,
+            *R1 *TOS ADD,
+             TOS POP,
+             NEXT,
+             END-CODE
+             
+CODE: @-!   ( addr addr2 -- )  \ fetch from addr & subtract from addr2
+             *SP+  R1 MOV,
+             *R1 *TOS SUB,
+              TOS POP,
+              NEXT,
+              END-CODE
+
+CODE: INCT!    ( addr -- )
+             *TOS  INCT,
+              NEXT,
+              END-CODE
+
+CODE: DECT!    ( addr -- )
+             *TOS  DECT,
+              NEXT,
+              END-CODE
+
+CODE: AND!   ( u adr -- )        \ Equivalent to:   X @ 00FF AND  X !
+             *SP INV,            \ Usage:    00FF X AND!
+             *SP+ *TOS SZC,
+              TOS POP,
+              NEXT,
+              END-CODE
+
+CODE: OR!    ( u adr -- )
+             *SP+ *TOS OR,
+              TOS POP,
+              NEXT,
+              END-CODE
+
+CODE: XOR!   ( u adr -- )
+             *SP+ *TOS XOR,
+              TOS POP,
+              NEXT,
+              END-CODE
+
+CODE: INV!   ( adr -- )
+             *TOS INV,
+              TOS POP,
+              NEXT,
+              END-CODE
+
+CODE: ABS!   ( adr -- )
+             *TOS ABS,
+              TOS POP,
+              NEXT,
+              END-CODE
+
+CODE: NEG!  ( adr -- )
+             *TOS NEG,
+              TOS POP,
+              NEXT,
+              END-CODE
+
+CODE: MOV    ( addr addr -- ) \ Forth:  addr @ addr !
+             *SP+   W MOV,
+             *W  *TOS MOV,
+              TOS POP,
+              NEXT,
+              END-CODE
+
+\ : XCHG     OVER @  OVER @  SWAP ROT !  SWAP ! ;  (18bytes, 600+ uS)
+
+CODE: XCHG   ( adr1 adr2 -- ) \ exchange values of 2 variables
+             *SP+  R0 MOV,    \ pop adr1 into R0             22
+             *R0   W  MOV,    \ adr1 @  W  !                 18
+             *TOS *R0 MOV,    \ mem2me m move  adr2 to adr1  22
+              W  *TOS MOV,    \ move value adr1 to adr2      18
+              TOS POP,        \                              22
+              NEXT,           \ 10 bytes                     92 uS
+              END-CODE

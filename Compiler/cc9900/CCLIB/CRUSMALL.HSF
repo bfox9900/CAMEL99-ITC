@@ -1,0 +1,21 @@
+\ CRUSMALL minimal support for CAMEL99   BJFOX 6FEB2018
+
+CROSS-ASSEMBLING
+
+\ 4 words are the minimal CRU words I need to run the DISK system
+CODE: CRU! ( addr -- )  \ set the CRU base address for CRU words
+         TOS R12 MOV,   \ load CRU adr to R12
+         TOS POP,       \ refill TOS register
+         NEXT,
+         END-CODE
+
+CODE: CRU@  ( -- addr ) \ read R12
+        TOS PUSH,
+        R12 TOS MOV,
+        NEXT,
+        END-CODE
+
+CODE: 0SBO   ( -- )  0 SBO, NEXT,   END-CODE     \ faster but less versatile
+CODE: 0SBZ   ( -- )  0 SBZ, NEXT,   END-CODE
+
+

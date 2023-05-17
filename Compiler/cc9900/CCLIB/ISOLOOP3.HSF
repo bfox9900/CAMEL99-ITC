@@ -1,0 +1,64 @@
+\ ========================================================================
+\ T A R G E T   B R A N C H   C O M P I L E R S
+
+\ These versions RUN IN THE TARGET system to compile loops and branches in the TI-99.
+\ CAMEL99 uses compile time checking for completion of IF ELSE THEN, DO/LOOP etc.
+\ using the word ?PAIRS like old Forths. This is not used in ANS/ISP Forth anymore.
+
+TARGET-COMPILING
+ : ?PAIRS   ( n1 n2 --) -  TS" Unfinished"  ?ABORT ;
+
+\ branch compilers: these make the code look clearer by naming the direction
+\  *** removed BRANCH COMPILERS to save space and improve compile times ***
+
+\ leave adr for forward branch, compile empty cell
+\ : AHEAD    ( -- addr)  HERE   0 , ;
+\ compile a branch offset (ADDR-HERE = OFFSET we jump to)
+\ : BACK   ( addr -- ) HERE   - , ; IMMEDIATE
+\ : RESOLVE  ( addr -- ) HERE OVER - SWAP ! ; \ resolve forward branch and compile offset at addr
+
+\ CAMEL Forth LEAVE stack is called L0. It is initialized by QUIT.
+: >L        ( x -- ) ( L: -- x )  \ push x to leave stack
+            2 LP +!  LP @ ! ;        ( L stack grows up)
+
+: L>        ( -- x )  ( L: x -- ) \ pop x from leave stack
+            LP @ @   -2 LP +! ;
+
+\ ========================================================================
+\ F I N I T E   L O O P   C O M P I L E R S
+\                 -compile this-   - run this now-
+: DO        ( -- ) ?COMP COMPILE <DO>  HERE   0 >L  ; XIMMEDIATE
+: ?DO       ( -- ) ?COMP COMPILE <?DO> HERE   0 >L  ; XIMMEDIATE
+
+: LEAVE     ( -- ) ( L: -- addr )
+            COMPILE UNLOOP   COMPILE BRANCH  HERE 0 , >L ; XIMMEDIATE
+
+\ ========================================================================
+\ RAKE  resolves branching out of DO/LOOPS that use LEAVE
+\       CAMEL Forth calls this ENDLOOP... but it RAKEs the LEAVEs. Get it?
+
+: RAKE      ( -- ) ( L: 0 a1 a2 .. aN -- )
+            BEGIN  L> ?DUP WHILE  HERE OVER - SWAP !  REPEAT ; XIMMEDIATE
+
+\ NOTE: We MUST put RAKE here because it uses the cross-compiler's
+\       WHILE/REPEAT loop. We cannot CROSS COMPILE loops in our code AFTER we
+\       define the TARGET system LOOPS below.
+
+: LOOP      ( -- ) COMPILE <LOOP>   HERE - ,   RAKE ; XIMMEDIATE
+: +LOOP     ( -- ) COMPILE <+LOOP>  HERE - ,   RAKE ; XIMMEDIATE
+
+\ ========================================================================
+\ C O N D I T I O N A L   B R A N C H E S
+: IF        ( ? -- ) COMPILE ?BRANCH  HERE 0 , ;     XIMMEDIATE
+: THEN      ( -- )  ?COMP   HERE OVER - SWAP ! ; XIMMEDIATE
+
+: ELSE      ( -- )   COMPILE BRANCH  HERE 0 , SWAP
+                   t[COMPILE] THEN  ;                XIMMEDIATE
+
+\ ========================================================================
+\ I N F I N I T E   L O O P   C O M P I L E R S
+: BEGIN     ( -- addr n) ?COMP HERE  ;                 XIMMEDIATE
+: AGAIN     ( -- )   COMPILE BRANCH   HERE - ,  ;      XIMMEDIATE
+: UNTIL     ( ? -- ) COMPILE ?BRANCH  HERE - ,  ;      XIMMEDIATE
+: WHILE       ( ? -- ) T[COMPILE] IF   ;            XIMMEDIATE
+: REPEAT ( -- ) >R T[COMPILE] AGAIN   R> T[COMPILE] THEN ; XIMMEDIATE

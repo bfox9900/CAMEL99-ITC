@@ -1,0 +1,43 @@
+\ From Turbo Forth modded for CAMEL99
+[CC] HEX
+CROSS-ASSEMBLING
+CODE: SBO ( cru bit -- )
+          TOS FF   ANDI,   \ clip to lower 8 bits
+          R12      POP,    \ pop cru base to r12
+          W 1D00   LI,     \ SBO opcode ->W
+          TOS W    ADD,    \ add bit number to opcode
+          W        X,      \ execute the SBO instruction
+          TOS      POP,    \ refill TOS
+          NEXT,
+          END-CODE
+
+CODE: SBZ ( cru bit -- )
+          TOS FF   ANDI,   \ clip to lower 8 bits
+          R12      POP,    \ pop cru base to r12
+          W 1E00   LI,     \ SBZ opcode -> W
+          TOS W    ADD,    \ add bit number to opcode
+          W        X,      \ execute the SBZ instruction
+          TOS      POP,
+          NEXT,
+          END-CODE
+
+\ From TURBO Forth by Mark Wills with mods for CAMEL99
+CODE: >MAP ( bank address -- ) \ If a SAMS card is present, maps "bank" to "address"
+        ( address in TOS)
+          TOS F000 ANDI,   \ set to 4k boundary
+          TOS 0B SRL,      \ divide by 2048
+          TOS 4000 ADDI,   \ convert to SAMS register address
+         *SP+  R2 MOV,     \ get bank
+          R2 FF ANDI,      \ mask off any crap
+          R2 R0 MOV,       \ keep a copy
+          R2 8 SLA,        \ move to high byte
+          R0 R2 XOR,       \ combine r0 & r2. Hi & lo bytes are now identical
+          R12 1E00 LI,     \ cru address of SAMS
+          0 SBO,           \ enable SAMS registers
+          R2 *TOS MOV,     \ poke sams register
+          0 SBZ,           \ disable sams registers
+          TOS POP,         \ refill TOS
+          NEXT,            \ 38  bytes
+          END-CODE
+
+

@@ -1,0 +1,6 @@
+\ CODE.FTH let's you make machine code words
+
+: >BODY     ( cfa -- pfa ) 2+ ;
+: NEXT,     ( -- )  045A , ;
+: CODE      ( -- )  HEADER  HERE >BODY , !CSP ;
+: ENDCODE  ( -- )  ?CSP  ;

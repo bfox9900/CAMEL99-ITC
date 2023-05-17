@@ -1,0 +1,94 @@
+\ Fast control C reader
+
+\ Using KSCAN takes 54 ticks in ITC Forth.  ( 1134 uS)
+\ ^C? takes only 13 ticks.                  (  277 uS)
+
+\  R1     TB 0    TB 1    TB 2    TB 3    TB 4    TB 5    TB 6    TB 7
+\ ---------------------------------------------------------------------
+\ 0000    =       space   enter           fctn    shift   ctrl
+\ 0100    .       L       O       9       2       S       W       X
+\ 0200    ,       K       I       8       3       D       E       C
+\ 0300    M       J       U       7       4       F       R       V
+\ 0400    N       H       Y       6       5       G       T       B
+\ 0500    /       ;       P       0       1       A       Q       Z
+\ 0600    Fire1   Left1   Right1  Down1   Up1
+\ 0700    Fire2   Left2   Right2  Down2   Up2
+\ ---------------------------------------------------------------------
+
+\ Improved alternate Keyboard table by Lee Stewart
+\       +-----+----------- ------------------------------------------------------+------------+
+\ R12   |     |<------------------------- COLUMN ------------------------------>|            |
+\ ADDR  +-----+-------+-------+-------+-------+-------+-------+--------+--------+------------+
+\ ----- | ROW |   0   |   1   |   2   |   3   |   4   |   5   |   6    |   7    | alpha-lock |
+\       +-----+-------+-------+-------+-------+-------+-------+--------+--------+------------+
+\ 0006  |  0  |   =   |   .   |   ,   |   M   |   N   |   /   | fire1  | fire2  |            |
+\       +-----+-------+-------+-------+-------+-------+-------+--------+--------+------------+
+\ 0008  |  1  | space |   L   |   K   |   J   |   H   |   ;   | left1  | left2  |            |
+\       +-----+-------+-------+-------+-------+-------+-------+--------+--------+------------+
+\ 000A  |  2  | enter |   O   |   I   |   U   |   Y   |   P   | right1 | right2 |            |
+\       +-----+-------+-------+-------+-------+-------+-------+--------+--------+------------+
+\ 000C  |  3  |       |   9   |   8   |   7   |   6   |   0   | down1  | down2  |            |
+\       +-----+-------+-------+-------+-------+-------+-------+--------+--------+------------+
+\ 000E  |  4  | fctn  |   2   |   3   |   4   |   5   |   1   |  up1   |  up2   | alpha-lock |
+\       +-----+-------+-------+-------+-------+-------+-------+--------+--------+------------+
+\ 0010  |  5  | shift |   S   |   D   |   F   |   G   |   A   |        |        |            |
+\       +-----+-------+-------+-------+-------+-------+-------+--------+--------+------------+
+\ 0012  |  6  | ctrl  |   W   |   E   |   R   |   T   |   Q   |        |        |            |
+\       +-----+-------+-------+-------+-------+-------+-------+--------+--------+------------+
+\ 0014  |  7  |       |   X   |   C   |   V   |   B   |   Z   |        |        |            |
+\       +-----+-------+-------+-------+-------+-------+-------+--------+--------+------------+
+
+[CC] HEX
+CROSS-ASSEMBLING
+\ sub routine to read key matrix. Set R1 to the column to read
+L: _RKEYS  R12  0024  LI,       \ set CRU address for column select chip
+           R1   3     LDCR,     \ Set 3 bits of column
+           R2         SETO,     \ R2 gets the bits. set all bits to 1
+           R12  0006  LI,       \ R12-address to read rows
+           R2   8     STCR,     \ store 8 row values of current column (bits)->R2 ***
+           R2         INV,      \ outputs are low active so flip bits
+           R2  TOS    ADD,      \ collect all the bits in TOS (R4)
+                      RT,
+
+CODE: ^C? ( -- ?) \ fast check if ctrl C key pressed  277 uS
+           TOS        PUSH,     \ make room in TOS register
+           TOS        CLR,      \ TOS will accumulate keyboard bits
+           R1         CLR,      \ R1 is column to read. starts at 0
+          _RKEYS  @@  BL,       \ read keys in column 0
+           R1   0200  LI,       \ set row to 2
+          _RKEYS  @@  BL,       \ read keys in column 0
+           SCRTO  @@  CLR,      \ Reset TI system screen timeout counter
+           TOS C000   CMPI,     \ look for ctrl 'C'. (2 bits set)
+           @@2        JEQ,      \ ^C was pressed
+           TOS        CLR,      \ no ^C, clear TOS, return to forth
+           NEXT,
+
+@@2:       TOS        SETO,     \ set TOS to -1 (Forth true flag)
+           NEXT,                \ return to Forth
+           END-CODE             \ 273 uS vs 1,134 KEY?
+
+\ *---------------------------------------------
+\ * Calling the built-in Fctn-4 test in console ROM
+\   http://www.unige.ch/medecine/nouspikel/ti99/keyboard.htm
+\ *---------------------------------------------
+CODE: ?TERMINAL ( -- ?)    \ 170uS  16 bit ROM speed. Same name as TI-Forth
+           TOS      PUSH,
+           TOS      CLR,
+           0020 @@  BL,          \ R12 will be modified
+           @@1      JNE,         \ It wasn't pressed
+           TOS      SETO,
+@@1:       NEXT,
+           END-CODE
+
+
+CODE: ISQUIT
+            TOS      PUSH,
+            TOS      SETO,       \  all bits high
+            R12 0024 LI,         \  Address for column selection
+            TOS    3 LDCR,       \  Select column
+            R12 0006 LI,         \  Address to read rows
+            TOS    8 STCR,
+\            TOS       INV,
+            TOS  1100 ANDI,      \  Mask all irrelevant bits
+            NEXT,
+            END-CODE

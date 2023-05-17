@@ -1,0 +1,40 @@
+\ FOR NEXT  loops  with INDEX in R15 for CAMEL99
+
+\                     FOR       DO
+\ 10^6 iterations     43.5      48.0
+
+\ 10.3% faster than DO/lOOP on RSTACK
+\ Not a much as I thought.
+
+\ *** I find no difference printing numbers in a loop**
+
+
+\ uses usigned int. Counts down from 65535 to 0
+CROSS-ASSEMBLING
+
+CODE: <FOR>
+        R15 RPUSH,                     \ R15 is the loop index
+        TOS R15 MOV,
+        TOS POP,
+        NEXT,
+        END-CODE
+
+CODE: X                               \ X is the loop index
+        TOS PUSH,
+        R15 TOS MOV,
+        NEXT,
+        END-CODE
+
+CODE: <NEXT>
+        R15 DEC,                       \ decr top of R-stack
+        @@1 JNC,                       \ jump on transition to -1
+       *IP IP ADD,                     \ exit the loop
+        NEXT,
+
+@@1:    IP INCT,                      \ move past the parameter
+        R15 RPOP,
+        NEXT,
+
+\ TARGET-COMPILING
+\ : FOR       ( n -- ) ?comp  COMPILE <FOR> HERE 67 ;       XIMMEDIATE
+\ : NEXT      ( -- )   67 ?pairs  COMPILE <NEXT> HERE - , ; XIMMEDIATE

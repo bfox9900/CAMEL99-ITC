@@ -1,0 +1,167 @@
+\ DSRfast.HSF for XFC99 cross-compiler/Assembler  27SEP2020 B Fox
+\ PASSES error code back to Forth workspace, TOS register
+
+\ Source:
+\ http://atariage.com/forums/topic/283914-specialized-file-access-from-xb/page-2
+\ posted by InsaneMultitasker via Thierry Nouspikel
+
+CROSS-ASSEMBLING  XASSEMBLER DEFINITIONS
+
+\ we need more labels than I normally use for Forth style CODE Words
+ A DUP refer: @@A    binder: @@A:
+ B DUP refer: @@B    binder: @@B:
+
+CROSS-COMPILING XASSEMBLER DEFINITIONS
+\ MACRO to simplify the VDP code
+: VDPWA, ( reg -- )
+       DUP           SWPB,   \ setup VDP address
+       DUP VDPWA @@  MOVB,   \ write 1st byte of address to VDP chip
+       DUP           SWPB,
+           VDPWA @@  MOVB,   \ write 2nd byte of address to VDP chip
+                     NOP,  ; \ need this tiny delay for VDP chip
+
+: [TOS]      8 (R13)  ;  \ gives access to Forth top of stack register
+
+[CC]
+HEX 837C EQU GPLSTAT
+
+TARGET-COMPILING
+l: HEX20   20 BYTE,
+l: HEXAA   AA BYTE,
+l: PERIOD  2E BYTE,      \ '.'
+          .EVEN
+l: CYC1    DATA 0000           \ this empty space seems to be required ??
+
+[CC] RP0 80 -     EQU DREGS    \ memory below Forth RETURN stack is DSR workspace
+[CC] 1 2* DREGS + EQU DREG(1)  \ device name length from Forth
+\ [CC] 4 2* DREGS + EQU DREG(4)  \ device name length counter
+[CC] 5 2* DREGS + EQU DREG(5)  \ compute address of DREGS register 5
+[CC] DREGS 10 -   EQU NAMBUF   \ 16 byte buffer below workspace
+
+
+CLR-JMPTABLE
+\ === DSR ENTRY POINT ===
+l: DSR1
+                 0  LIMI,   \ disable interrupts for VDP access
+      *R14+     R5  MOV,    \ fetch '8' from program ->R5, auto inc PC for return
+       HEX20 @@ R15 SZCB,   \ status flag=0. *this is critical for REAL IRON*
+
+\ Test for valid device length
+      R1        R1  MOV,    \ test R4(device name length)=0
+      @@6           JEQ,    \ if so, goto ERROR
+      R1        07  CMPI,   \ is dev name length>7
+      @@8           JGT,    \ if so, goto @@8 ERROR
+
+       8356 @@  R0  MOV,    \ [PAB FNAME] to R0
+       R0       R9  MOV,    \ dup R0 to R9
+       R9       -8  ADDI,   \ R9-8 = [PAB FLG]
+
+\ copy VDP FNAME -> namebuf for length in R1  (up to '.' character)
+       R0            INC,    \ skip the count byte
+       R0          VDPWA,    \ set VDP address
+       R1        R3  MOV,    \ DUP length byte to R3
+       R2    NAMBUF  LI,     \ R2 is ^namebuf
+       BEGIN,
+          VDPRD @@  *R2+ MOVB,    \ copy to namebuf & inc pointer
+          R3          DEC,CMP,    \ is counter = fnamelength
+       EQ UNTIL,
+
+       83D0 @@       CLR,    \ erase magic CRU addr. holder
+       R1   8356 @@  ADD,    \ add offset to PAB address (makes "real PAB")
+       R1            DEC,    \ LENGTH must be without '.' ie: "DSK1"
+       R1   8354 @@  MOV,    \ put length in magic address
+
+\ ==== GPL WORKSPACE ====
+       83E0         LWPI,    \ SROM (search ROM device list)
+       R1           CLR,     \ MAGIC GPL REG. 1 to call DSR, returns error
+       R12     0F00 LI,      \ init CRU base to 0F00
+\ scan for I/O cards
+      BEGIN,
+@@A:     R12   R12   MOV,
+         NE IF,              \ if card address<>0
+              00 SBZ,        \ turn off card
+         ENDIF,
+         R12    0100  ADDI,  \ advance CRU to next card
+         83D0 @@      CLR,   \ erase magic address
+         R12    1F00  CMPI,  \ last card?
+         GT IF,
+              DREGS   LWPI, \ Switch to DSR Workspace
+              R1 0006 LI,   \ set error 6
+              @@5 JMP,      \ jump to errors
+         ENDIF,
+
+\ card activation...
+         R12  83D0 @@ MOV,   \ save card CRU in magic address
+         00           SBO,   \ turn on the card
+         R2   4000    LI,    \ ROM start addr -> R2
+        *R2  HEXAA @@ CMPB,  \ test for card ID byte "AA"
+      EQ UNTIL,              \ loop until card is found
+      DREG(5) @@ R2 ADD,     \ add '8'+4000= >4008 DSR ROM list
+      @@B           JMP,
+
+@@3: \ scan ROM linked list for code address
+      BEGIN,
+         BEGIN,
+           83D2 @@   R2 MOV,   \ start of ROM device list -> R2
+           00           SBO,   \ turn card on
+@@B:      *R2       R2  MOV,   \ Fetch next link
+           @@A          JEQ,   \ if link=0 goto @@A (NEXT CARD)
+           R2  83D2 @@  MOV,   \ save link address in magic address
+           R2           INCT,  \ R2 = code pointer
+          *R2+      R9  MOV,   \ fetch code address ->R9
+           8355 @@  R5  MOVB,  \ dev length->R5
+           @@4          JEQ,   \ if 0 we have a string match
+           R5      *R2+ CMPB,
+         EQ UNTIL,
+
+\ find dev string match
+         R5       08  SRL,     \ shift length byte
+         R6   NAMBUF  LI,      \ R6 hold ^nambuf
+         BEGIN,
+           *R6+   *R2+ CMPB,   \ compare namebuf to ROM string
+            @@3        JNE,    \ if mismatch goto @@3
+            R5         DEC,    \ dec the counter register
+         EQ UNTIL,
+@@4: \ run DSR code
+         R1        INC,        \ count entries into the DSR ?
+        *R9         BL,        \ call the DSR code
+      AGAIN,                   \ try next card
+\   -- DSR returns here if we are done --
+
+\ error handlers
+ @@6:  \ device len=0 error
+ @@8:  \ device len>7 error
+       00            SBZ,  \ Turn off the card
+       DREGS         LWPI, \ ==== DSR Workspace ====
+       R9           VDPWA, \ set vdp address to [PAB FLAG]
+       VDPRD @@  R1  MOVB, \ read error value to DREGS R1
+       R1 0D         SRL,  \ shift error to correct range
+       NE IF,
+@@5:       \ end of cards error entry point
+           R1      [TOS] MOV,  \ Move error code to Forth TOS
+           GPLSTAT @@ R0 MOVB, \ get gpl status byte
+                      R0 SWPB,
+           R0       0020 ANDI, \ mask to get GPL error bit
+           R0      [TOS] OR,   \ combine GPL & DSR error codes
+       ENDIF,
+       RTWP,                   \ return to Forth
+
+\    ====== DSR LINK ENDS======
+\ /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
+
+\ create the vector for BLWP
+l: DLNK      DREGS DATA,   \ the workspace
+             DSR1  DATA,   \ entry address of the code
+
+CODE: DSRLNK  ( dev_len [pab_fname] -- ior)
+       TOS  8356 @@ MOV,
+              TOS   POP,
+              TOS  SWPB,
+       TOS  DREG(1) @@ MOV, \ pass length to dsr R1
+               TOS CLR,
+    TOS GPLSTAT @@ MOVB,   \ clear GPL status register
+           DLNK @@ BLWP,
+                 8 DATA,   \ Offset to DSR linked list in card ROM
+                 2 LIMI,
+                   NEXT,
+END-CODE

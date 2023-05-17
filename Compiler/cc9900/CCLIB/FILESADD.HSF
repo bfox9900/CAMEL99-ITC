@@ -1,0 +1,144 @@
+\ filesys1 is a minimal single file test system  BJF 17MAR2018
+
+\  *** NEEDS DISKDSR.HSF compiled into the system
+
+\  *** NEEDS MINIMAL CRU:   CRU! CRU@  0SBO  0 SBZ
+
+
+\ Createpab does setup per E/A manual
+\ : CREATEPAB  ( addr len -- )            \ usage: S" DSK1.DATA" CREATEPAB
+\              PDATA _FNAME PLACE        \ put filename in PDATA
+\              PAB PSIZE 0 VFILL         \ erase old data
+\              PDATA PAB PSIZE VWRITE ;  \ write PDATA to PAB
+
+\ =====================================================
+\ CAMEL99 hi-level API
+
+\ generic file error handler
+: ?FILERR  ( ior -- ) ?DUP IF T." Error# " .  ABORT THEN ;
+
+\ FILE ACCESS MODES always change the PDATA buffer ONLY.
+\ After PDATA is configured CREATEPAB writes it to VDP PAB.
+
+\ file access mode (FAM) modifiers
+\ : AND.FAM!   ( mask -- ) PDATA _FAM TUCK C@ AND SWAP C! ;
+\ : OR.FAM!    ( mask -- ) PDATA _FAM TUCK C@ OR  SWAP C! ;
+
+\ define file access modes with bits for clarity
+\ 2 BASE !
+\ : DISPLAY    ( -- ) 11110111 AND.FAM! ;
+\ : INTERNAL   ( -- ) 00001000  OR.FAM! ;
+
+\ : UPDATE     ( -- ) 11111001 AND.FAM! ;
+\ : OUTPUT     ( -- ) 00000010  OR.FAM! ;
+\ : INPUT      ( -- ) 00000100  OR.FAM! ;
+\ : APPEND     ( -- ) 00000110  OR.FAM! ;
+
+\ : SEQUENTIAL ( -- ) 11111110 AND.FAM! ;
+\ : RELATIVE   ( -- ) 00000001  OR.FAM! ;
+
+\ : VARI       ( -- ) 00010000  OR.FAM! ;
+\ : FIXED      ( -- ) 11101111 AND.FAM! ;
+
+\ set the record length of a file during
+\ only works with OPEN & CREATE-FILE
+\ : RECLEN     ( n --) PDATA _RECLEN C! ;
+
+[CC] HEX [TC]
+\ PAB FLAGS/STATUS field access words
+: PAB.FLG!    ( c-- ) PAB 1+ VC! ;
+: PAB.FLG@    ( -- c) PAB 1+ VC@ ;
+
+: ERR@    ( -- n)
+          PAB.FLG@ 0E0 AND      \ mask out the error bits
+          GPLSTAT C@ 4 RSHIFT   \ shift GPL status to lower nibble
+          OR  ;                 \ OR together.
+
+: FileOp  ( c -- n)
+          PAB VC!                  \ write opcode byte to VDP PAB
+          PAB.FLG@ 1F AND PAB.FLG! \ clear err code bits
+          0 GPLSTAT C!             \ clear GPL status register
+          DiskON
+          DSKLNK BLWP ERR@
+          DiskOFF  ;
+
+: NEWFILE ( $addr len -- ) \  *STACK PICTURE*
+         2DUP CREATEPAB  ( -- $addr len realpab)
+         -ROT            ( -- realpab $addr len )
+         DiskON ?CardID                           \ abort if card is not 'AA'
+         DSRFIND         ( -- realpab link)
+         DUP ?DEVERR                              \ ABORT if link=0
+         DUP >DSR$       ( -- link $)             \ link->DSR$ ie: the name of the DSR
+             C@ 8355 C!                           \ len(DSR$) -> hex8355
+                         ( -- link)
+         >ENTRY  83E0 9 REG# !                    \ convert link to DSR entry -> GPL.R9
+        ( -- realpab ) 8356 !                     \ the "REAL" PAB file name stored here
+;
+
+\ : NEWFILE ( addr len -- )
+\         2DUP CREATEPAB  ( -- caddr len)
+\         DiskON ?CardID  ( -- caddr len)
+\         DSRFIND         ( -- link)      \ link=0 if we can't find this device
+\         DUP ?DEVERR                     \ ABORT if we can't find the device
+\         DUP  >DSR$      ( -- link $)    \ link->DSR$ ie: the name of the DSR
+\              C@ 8355 C!                 \ len(DSR$) -> hex8355
+\                         ( -- link)
+\         >ENTRY  83E0 9 REG# !           \ convert link to DSR entry -> GPL R9
+\         PAB _FNAME 5 + 8356 ! ;         \ PAB file name stored here
+
+
+: OPEN    ( caddr len -- ) NEWFILE 0 FileOp ;  \ ~14mS to open a file
+\ : CREATE-FILE ( caddr len -- ior ) UPDATE OPEN ;
+: CLOSE   ( -- ior)   1 FileOp ;
+: READ    ( -- ior)   2 FileOp ;
+\ : WRITE   ( -- ior)   3 FileOp ;
+\ : REWIND  ( -- ior)   4 FileOp ;
+\ : LOAD    ( -- ior)   5 FileOp ;
+\ : SAVE    ( -- ior)   6 FileOp ;
+\ : DELETE  ( -- ior)   7 FileOp ;
+\ : SCRATCH ( -- ior)   8 FileOp ;
+
+\ : FILE-STATUS  ( -- char) 9 FileOp DROP  PAB 8 + VC@ ;
+
+\ return VDP buffer and characters read as a Forth stack string
+: VSOURCE   ( -- vaddr len)                   \ faster version
+            PAB _FBUFF V@  PAB _CHARS VC@ ;   \ PAB 2+ DUP V@ SWAP 3 + VC@
+
+\ : READ-LINE ( c-addr u1 -- u2 flag ior )
+\             READ DUP >R                  \ rpush the error#
+\             0= IF
+\                PAB _FBUFF V@ -ROT VREAD     \ move VDP fbuff to c-addr
+\                PAB _CHARS VC@               \ get actual chars read
+\                R@ 0=                        \ flag=true if no read error
+\            THEN R> ;
+
+[CC] H T@ [TC] CONSTANT: FBUFF$      [CC]  H T@ 84 +  H T!  [TC]
+
+: V$PLACE  ( Vdp len addr -- )      \ read VDP string into counted string
+           2DUP C!  1+ SWAP VREAD ;
+
+: REFILL   ( -- ? )
+           READ DUP >R
+           0= IF
+               VSOURCE FBUFF$ V$PLACE
+           THEN R> ;
+
+: -EOF?   ( err -- ) 5 RSHIFT 5 <> ;
+
+: INCLUDED  ( addr len -- )
+            DV128  OPEN ?FILERR
+            1 SOURCE-ID !                    \ SOURCE-ID is handle
+            SOURCE 2>R  >IN @ >R
+            BEGIN
+                 REFILL  -EOF?
+            WHILE
+                FBUFF$ COUNT INTERPRET         \ interpret the new string
+            REPEAT
+            R> >IN !  2R> 'SOURCE 2!         \ restore source & >IN
+            SOURCE-ID OFF
+            CLOSE ?FILERR   ;
+
+\ read/write file position from the VDP PAB
+\ : REC#@    ( -- n) PAB 6 + V@ ;
+\ : REC#!    ( n --) PAB 6 + V! ;
+

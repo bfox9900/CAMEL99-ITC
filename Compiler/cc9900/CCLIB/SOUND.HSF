@@ -1,0 +1,111 @@
+\ TMS9919 SOUND CHIP DRIVER and CONTROL LEXICON     Jan 2017 BJF
+
+\ ==========================================================================
+\ C H I P   C O N T R O L   C O N S T A N T S
+
+[CC] HEX
+
+TARGET-COMPILING
+\ TMS9919 is a memory mapped device on the TI-99 @ >8400
+\  8400 constant: sndport  \ only used once so no need to take up name space
+
+\ frequency code must be ORed with these numbers to create a sound
+\ The number is then split into 2 bytes and each one is sent to the chip
+  8000 constant: osc1
+  A000 constant: osc2
+  C000 constant: osc3
+  E000 constant: noise
+
+\ Attenuation values are ORed with these values to change volume (0= max, 15 = off)
+    90 constant: ATT1
+    B0 constant: ATT2
+    D0 constant: ATT3
+    F0 constant: ATT4  ( noise volume adjust)
+
+[cc] decimal [tc]
+
+\ I don't have 2constants in the CAMEL compiler so we are doing it manually
+
+: f(clk) ( -- d)  4496 17 ;    \ this returns 111,860.8 Hz the ACTUAL f(clk)
+
+[cc] hex
+\ ===================================================================
+\ A S M   H E L P E R S   F O R   S P E E D
+
+CROSS-ASSEMBLING
+\ >FCODE re-arranges Freq. nibbles (4bits) for the TMS9919
+\ A HEX frequency value of >0145 must be converted to  >0514
+CODE: >FCODE ( 0xyz -- 0zxy)    \ an fcode is the 12 bits needed to create freq.
+        TOS   R1 MOV,           \ make copy
+        R1    04 SRL,           \ shift 0xyz  to 00xy
+        TOS  SWPB,              \ 0xyz  yz0x
+        TOS  0F00 ANDI,         \ 0z00
+        R1   TOS ADD,           \ 0zxy)
+        NEXT,
+        END-CODE
+        
+[UNDEFINED] SPLIT
+[IF]
+CODE: SPLIT ( AABB --  BB AA )
+        TOS R1 MOV,             \ make a copy
+        TOS 8 SRL,              \ slide 'AA' to the right
+        R1 00FF ANDI,           \ mask out AA from the copy
+        R1 PUSH,
+        NEXT,
+        END-CODE
+[THEN]
+
+
+TARGET-COMPILING
+\ for simplicity we will use an "ACTIVE DEVICE" concept using variables
+variable: THE-OSC               \ holds the active OSC value
+variable: THE-ATT               \ holds the active attenuator value
+
+\ ==================================================================
+\ S O U N D   P R I M I T I V E S
+
+TARGET-COMPILING
+
+: hz>fcode ( freq -- fcode )
+       f(clk) rot UM/MOD NIP 0A /   \ convert freq. to bytes and divide by 10)
+       >fcode ;                     \ fix the nibbles so the work on 9919)
+
+[UNDEFINED] SND! [IF] : SND! ( c -- )  8400 c!  ;   [THEN]
+
+\ : SND!  ( c -- )  cr t." >"  HEX U. ;  \ **for testing**  dumps sound data to screen
+
+\ ==================================================================
+\ Set the sound "GENerator that is active.
+\ Once selected they are used by Hz and db to set the freq and attenuation level.
+\ The osc and attentuator are selected at the same time
+
+: GEN! ( osc att -- )  THE-ATT !  THE-OSC ! ;
+
+\ ==================================================================
+\ S C I E N T I F I C   S O U N D   C O N T R O L   L E X I C O N
+
+: GEN1 ( -- )  osc1  att1  gen! ;
+: GEN2 ( -- )  osc2  att2  gen! ;
+: GEN3 ( -- )  osc3  att3  gen! ;
+: GEN4 ( -- )  noise att4  gen! ;
+
+: Hz   ( n -- )                \ set the freq. in Herz (lowest = 110Hz
+        hz>fcode               \ convert n to Fcode#
+        the-OSC @ OR           \ OR in the oscillator to use
+        split snd!  snd! ;     \ split and write bytes to chip
+
+\ dB has a range of  0 to -30 in 2 db increments
+: dB   ( level -- )            \  usage: -6 db
+        abs  2/  0F min        \ clip max value to F
+        the-att @ OR snd! ;    \ OR new value with the current attenuator and write to chip
+
+: MUTE ( -- )  -30 db ;        \ mutes active generator
+: SILENT ( --)  9F snd!  BF snd!  DF snd!  FF snd! ;  \ turn off all sounds
+
+[cc] decimal [tc]
+\ Code the classic TI-99 sounds defined in our new language
+: BEEP  ( -- ) GEN1  1398 Hz  -4 dB  170 MS  MUTE ;
+: HONK  ( -- ) GEN1   218 Hz   0 dB  170 MS  MUTE ;
+[cc] hex [tc]
+
+\ ============================[ CODE ENDS ]=========================

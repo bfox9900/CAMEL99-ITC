@@ -1,0 +1,44 @@
+\ machine forth style "address register" primitives
+
+\ *** NOT COMPATIBLE WITH REGISTER BASED DO LOOPS ***
+
+CROSS-ASSEMBLING
+
+CODE: A! ( n -- )        \ A! pop TOS to A
+         TOS R14 MOV,
+         TOS POP,
+         NEXT,
+         END-CODE
+
+CODE: A@ ( -- n )        \ A@ push A to TOS
+         TOS PUSH,
+         R14 TOS MOV,
+         NEXT,
+         END-CODE
+
+CODE: *A  ( -- n)        \ push *A (indirect) to TOS
+         TOS PUSH,
+        *R14 TOS MOV,
+         NEXT,
+         END-CODE
+
+CODE: *A++  ( -- n)        \ push *A (indirect) to TOS
+         TOS PUSH,
+        *R14 TOS MOV,
+         NEXT,
+         END-CODE
+
+CODE: A+! ( n --)        \ add n to A
+         TOS R14 ADD,
+         TOS POP,
+         NEXT,
+         END-CODE
+
+CODE: *AC@+            \ push byte at *A to TOS, add 1 to A
+         TOS PUSH,
+        *R14+ TOS MOVB,
+         TOS 8 SRL,
+         NEXT,
+         END-CODE 
+
+TARGET-COMPILING

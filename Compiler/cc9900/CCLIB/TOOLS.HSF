@@ -1,0 +1,100 @@
+\ ========================================================================
+\ T O O L S
+
+\ Nov 18 2017 - replace ^C? with ?TERMINAL IN ?BREAK. Uses much faster
+\             - console ROM routine.
+
+\ Nov 23 2017 - used new OUT variable to auto CR in WORDS
+
+[CC] HEX CR ." Tools..."
+
+TARGET-COMPILING
+: ?          ( adr -- ) @ . ;
+
+\ : DEPTH      ( -- n )   SP0 SP@ 2+ - 2/  ; \ in kernel
+
+\ .s is ccmplicated with TOS in a register
+: .S        ( -- )
+            T." |" 
+            DEPTH 0 ?DO   I PICK  U.   LOOP ;
+
+
+
+: ?BREAK    ( -- )  ?TERMINAL  TS" *BREAK*" ?ABORT  ;
+
+: WORDS     ( -- )
+             CR
+             0        ( word counter on stack)
+             LATEST @
+             BEGIN
+                DUP   ( -- nfa) COUNT TYPE SPACE
+                SWAP 1+ SWAP       \ inc. the counter
+                NFA>LFA @ DUP
+                ?BREAK
+             0= UNTIL
+             DROP
+             CR  U. SPACE t." words" ;
+
+-1 [IF]
+\ BFox DUMP looks like dos debug, but without segment address
+\ modified for TI-99 40 column screen
+
+: .####       ( n --) 0 <# # # # # #> TYPE ;
+
+: .ASCII      ( adr n --)    \ print ascii values or '.' for non-printable chars
+              BOUNDS
+              DO
+                 I C@ DUP
+                 BL 1-  80 WITHIN       \ check for printable char (from SPACE to ASCII '~')
+                 0= IF DROP  T[CHAR] .  \ replace unprintable chars with '.'
+                 THEN EMIT
+              LOOP ;
+
+[CC] DECIMAL [TC]
+: ?80         ( -- 16 | 8)             \ test for 80 column mode, return columns
+              VMODE @ 80 = IF 16 ELSE 8 THEN ;
+
+[CC] HEX [TC]
+: DUMP        ( offset n -- )
+               BASE @ >R
+               HEX
+               BOUNDS                 \ 'I' is the address pointer
+               DO PAUSE
+                  CR @
+                  I  .####  T[CHAR] : EMIT                         \ print the adr
+                  I  ?80  BOUNDS DO  SPACE I @ .#### 2 +LOOP SPACE  \ print 8 bytes of memory
+                  I  ?80  .ASCII                                    \ print 8 ascii format BYTES
+                  ?BREAK
+               ?80 +LOOP                                            \ increment the offset address by 8
+               CR
+               R> BASE ! ;
+[then]
+
+0 [if]
+: .VASC      ( adr n --)    \ print ascii values or '.' for non-printable chars
+              BOUNDS
+              DO
+                 I VC@ DUP
+                 BL 1-  80 WITHIN       \ check for printable char (from SPACE to ASCII '~')
+                 0= IF DROP  T[CHAR] .  \ replace unprintable chars with '.'
+                 THEN EMIT
+              LOOP ;
+
+: VDUMP        ( offset n -- )
+               BASE @ >R
+               HEX
+               BOUNDS                 \ 'I' is the address pointer
+               DO PAUSE
+                  CR V@
+                  I  .####  T[CHAR] : EMIT                         \ print the adr
+                  I  ?80  BOUNDS DO  SPACE I V@ .#### 2 +LOOP SPACE  \ print 8 bytes of memory
+                  I  ?80  .ASCII                                    \ print 8 ascii format BYTES
+                  ?BREAK
+               ?80 +LOOP                                            \ increment the offset address by 8
+               CR
+               R> BASE ! ;
+[THEN]
+
+\ : .FREE      CR
+\             3F20 H @  - CR T." Lower mem: " U.
+\              FF00 HERE - CR T." Upper mem: " U.  ;

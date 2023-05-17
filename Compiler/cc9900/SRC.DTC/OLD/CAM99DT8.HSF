@@ -1,0 +1,1031 @@
+\   _____          __  __ ______ _     ___   ___
+\  / ____|   /\   |  \/  |  ____| |   / _ \ / _ \
+\ | |       /  \  | \  / | |__  | |  | (_) | (_) |
+\ | |      / /\ \ | |\/| |  __| | |   \__, |\__, |
+\ | |____ / ____ \| |  | | |____| |____ / /   / /
+\  \_____/_/    \_\_|  |_|______|______/_/   /_/
+\
+\  _____ _______ _____   ______ ____  _____ _______ _    _
+\ |  __ \__   __/ ____| |  ____/ __ \|  __ \__   __| |  | |
+\ | |  | | | | | |      | |__ | |  | | |__) | | |  | |__| |
+\ | |  | | | | | |      |  __|| |  | |  _  /  | |  |  __  |
+\ | |__| | | | | |____  | |   | |__| | | \ \  | |  | |  | |
+\ |_____/  |_|  \_____| |_|    \____/|_|  \_\ |_|  |_|  |_|
+\
+\
+
+\ Copyright (c) 2018 Brian Fox
+\ KILWORTH Ontario Canada
+\ brian.fox@foxaudioresearch.ca
+\ This program is free software; you can redistribute it and/or modify
+\ it under the terms of the GNU General Public License as published by
+\ the Free Software Foundation; either version 3 of the License, or
+\ (at your option) any later version.
+\ You should have received a copy of the GNU General Public License
+\ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+\
+\ The work derived from CAMEL Forth under the GNU General Public License.
+\ CamelForth (c) 2009 Bradford J. Rodriguez.
+\ Commercial inquiries for Camel Forth should be directed to:
+\ 115 First St., #105, Collingwood, Ontario L9Y 4W3 Canada
+\ or via email to bj@camelforth.com
+
+
+HEX
+[undefined] XASSEMBLER
+[if] cr ." TI-99 Cross Assembler not loaded" ABORT
+[then]
+
+
+\ ========================================================================
+\ M E M O R Y   U S A G E   D E F I N I T I O N S
+CROSS-COMPILING
+HEX
+       0FFFE   EQU EMEM    \ EMEM = "end of memory"
+   EMEM 0080 - EQU 'TIB    \ ADDRESS OF Terminal Input Buffer
+   EMEM 'TIB - EQU TIBSIZE \ 128 bytes
+
+\ ========================================================================
+\ Create FORTH stacks
+HEX
+      'TIB 2  - EQU SP0    \ FORTH return stack base address
+     'TIB 200 - EQU RP0    \ FORTH parameter stack base address
+
+\ ========================================================================
+\ load cross-compiling versions of CODE VARIABLE CONSTANT USER  :
+
+ INCLUDE CC9900\compiler\dtcTYPES.HSF
+\ ========================================================================
+\ C O D E   P R I M I T I V E S
+\ [CC] is short form for CROSS-COMPILING.
+
+[CC] cr .( Compile Forth Assembler primitives ...)
+
+ INCLUDE CC9900\SRC.DTC\9900DTBL.HSF   \ direct threaded primitives using BL instruction
+ INCLUDE CC9900\SRC.ITC\TI99IO.HSF     \ TI99 I/O ROUTINES
+
+ 'LIT  CONSTANT 'LIT
+
+
+\ ========================================================================
+\ T A R G E T   D E - C O M P I L E R
+\ "TSEE" lets you de-compile Target words from within the HOST Forth
+\ Great to confirm the compiler is making correct code.
+\         *** THIS ONE DOES NOT WORD ON DTC HEADERS *****
+
+ CROSS-COMPILING
+ FALSE [IF]
+        INCLUDE CC9900\CCLIB\TSEE.HSF
+ [THEN]
+
+
+\ ========================================================================
+\ C R O S S   C O M P I L E R   B O O T - S T R A P P I N G
+
+\ The words in this file "bootstrap" the compiler.
+\ They allow the compiler to do things before they are defined in the
+\ Target system.  IF,ELSE,THEN, BEGIN,WHILE,REPEAT,UNTIL ':'  ';'
+\ are all defined in the BOOTSTRP,HSF file.
+
+CROSS-COMPILING
+INCLUDE CC9900\CCLIB\BOOTSDTC.HSF  \ it was simpler to keep this in a separate file
+
+\ ========================================================================
+\ T A R G E T  S T A T E
+
+TARGET-COMPILING
+
+   VARIABLE STATE
+
+   STATE [CC] TO XSTATE
+
+\ ========================================================================
+\ S Y S T E M   C O N S T A N T S
+
+CROSS-COMPILING HEX
+cr .( Constants and Variables...)
+
+TARGET-COMPILING
+\ ASM/Equate       Forth Name
+\ -----------      ------------
+ 'TIB     CONSTANT TIB            \ address of terminal input buffer (TIB) in high memory
+  SP0     CONSTANT SP0            \ Parameter stack base address
+  RP0     CONSTANT RP0            \ Return stack base address
+ TIBSIZE  CONSTANT TIB#           \ size of terminal input buffer
+\ 83C2    CONSTANT AMSQ           \ disables misc. ISRs.  see TI-Tech pages on internet
+
+\ Utility constants
+\ in Forth, literal numbers need 4 bytes, constants use only 2 bytes
+        0 CONSTANT FALSE
+       -1 CONSTANT TRUE
+        0 CONSTANT 0
+        1 CONSTANT 1
+        2 CONSTANT 2
+        3 CONSTANT 3
+       20 CONSTANT BL             \ blank character
+
+\ ========================================================================
+\ U S E R   V A R I A B L E S
+\ CAMEL99 uses space after workspace for user vars.
+\ User variables begin at >8320 for the primary Forth task
+[CC] HEX [TC]
+\ USER 0..1F are CPU workspace registers
+\ ( *not all USER vars are named to save KERNEL space* )
+      20 USER TFLAG             \ TASK flag awake/asleep status
+      22 USER JOB               \ Forth word that runs in a task
+      24 USER DP                \ dictionary pointer
+      26 USER HP                \ hold pointer, for text->number conversion
+      28 USER CSP
+      2A USER BASE
+      2C USER >IN
+      2E USER C/L               \ Chars per line (32 or 40 depending on VDP mode)
+      30 USER OUT               \ counts chars since last CR (newline)
+      32 USER VROW              \ current VDP column (in fast RAM)
+      34 USER VCOL              \ current VDP row (in fast RAM)
+\     36 USER CURRENT
+\     38 USER CONTEXT
+      3A USER LP                \ LEAVE stack pointer.
+      3C USER SOURCE-ID         \ 0 for console,  -1 for EVALUATE, 1 for include
+      3E USER 'SOURCE           \ WATCH OUT! This is 2variable, occupies 3E and 40
+\      40 USER -------          \ used by 'SOURCE
+
+       46 USER TPAD
+\      2E USER 'EMIT            \ vector for char. output routine
+\      30 USER 'CR              \ vector for carriage return
+\      32 USER 'KEY             \ vector for wait-for-key
+\      34 USER 'KEY?            \ vector for key pressed test
+\      36 USER 'TYPE            \ vector for block output
+\      38 USER 'PAGE            \ vector for screen clear
+
+\      54 USER ---  1+ DSRSIZ    \ O/S use *PROTECTED IN ROOT TASK, Free for other tasks
+\      56 USER ---  DSRNAM       \ O/S use *PROTECTED IN ROOT TASK, Free for other tasks
+\      58 USER ---               \ O/S use *PROTECTED IN ROOT TASK, Free for other tasks
+
+\      5A USER                   \ Free user variable
+\      5C USER                   \ Free user variable
+\      5E USER                   \ Free user variable
+\      60 USER                   \ Free user variable
+\      62 USER                   \ Free user variable
+\      64 USER                   \ Free user variable
+\      66 USER                   \ Free user variable
+\      68 USER                   \ Free user variable
+\      6A USER                   \ Free user variable
+\      6C USER                   \ Free user variable
+\      6E USER                   \ Free user variable
+\ ** total of 39 user variables are available in workspace 8300.
+
+\ Other High speed RAM locations
+\ *these constants define memory locations so they are actually VARIABLES :-)
+ _floor CONSTANT FLOOR           \ flag: 0=Symetrical div.  -1=floored div.
+\   8375 CONSTANT KVAL            \ GPL KSCAN outputs ascii value here. >FF if no key pressed
+   83D4 CONSTANT KTP             \ copy of VDP R1. TI-99 system stores the keyboard type here
+   83C6 CONSTANT KUNIT#          \ keyboard unit# (CAMEL99 uses MODE 5, BASIC MODE)
+   837C CONSTANT GPLSTAT         \ System status byte. (GPL status regiser)
+
+\ These system variables control cold starting the system
+VARIABLE LATEST                  \ LATEST returns the NFA of last word defined
+VARIABLE ORGDP                   \ restore DP to this on COLD boot
+VARIABLE ORGLAST                 \ restore LATEST to this on COLD boot
+VARIABLE BOOT                    \ ADDRESS OF THE FIRST Forth word to run
+VARIABLE TPAD                    \ "task pad" offset for each task. separate pad per task
+
+[CC] DECIMAL [TC]
+   0024 CONSTANT L/SCR           \ 24 lines per screen on a TI-99
+
+[CC] HEX [TC]
+VARIABLE VMODE                   \ keeps track of the video mode we are in
+VARIABLE VTOP                    \ top of video screen memory. defaults to 0
+
+\ FORTH CR ORDER
+[TC]
+VARIABLE L0   [CC] 4 CELLS TALLOT   \ LEAVE stack used to resolve nested LEAVEs (4 LEAVEs max)
+
+[tc]
+VARIABLE ^PAB                    \ pointer to current open file PAB
+VARIABLE LINES                   \ track lines compiled in a file
+VARIABLE C/SCR                   \ chars per screen >300 or 3C0
+VARIABLE 'IV                     \ Vector for the interpreter
+VARIABLE H                       \ MASTER HEAP POINTER can also be a user variable
+VARIABLE CURS    [CC] 5F CURS T! [TC]
+
+?stk
+\ ==============================================
+\ F O R T H   M E M O R Y   A L L O C A T I O N
+[CC] cr .( Hi-level FORTH Primitives...)
+
+\ For DTC Forth we code as much as possible in Assembler.
+\ This save 4 bytes per definition in the header AND it's faster too.
+
+TARGET-COMPILING
+
+\ Code words save 4 bytes vs Forth in DTC and are FASTER!
+CODE HERE ( -- addr) TOS PUSH,   DP @@ TOS MOV,  NEXT, END-CODE
+CODE ALLOT ( n -- )  TOS  DP @@ ADD,  TOS POP,  NEXT, END-CODE
+: ALIGN     ( -- )    HERE ALIGNED DP ! ;
+CODE ,  ( n --)  DP @@ R1 MOV,  TOS *R1 MOV,  DP @@ INCT, TOS POP, NEXT, END-CODE
+
+CODE C, ( c --)
+         DP @@ R1 MOV,  TOS SWPB,
+         TOS *R1 MOVB,  DP @@ INC,
+         TOS POP,
+         NEXT,
+         END-CODE
+
+\ : PAD       ( -- addr) HERE TPAD @ + ;  \ MULT-TASK friendly using TPAD
+CODE PAD   TOS PUSH,
+            DP @@ TOS MOV,
+            TPAD @@ TOS ADD,
+            NEXT,
+            END-CODE
+
+: COMPILE   ( -- )  R> DUP 2+ >R @ , ;  \ append inline execution token
+
+\ set the precedence BIT in the last word defined
+: IMMEDIATE ( --)  01 LATEST @ 1- ( -- imm-fld) C! ;
+
+: LITERAL   ( n -- n|~) STATE @ IF  'LIT ,  ,  THEN ; XIMMEDIATE
+
+\ turn on the compiler
+CODE ]     ( -- ) STATE @@ SETO,  NEXT, END-CODE  XIMMEDIATE
+
+\ turn off the compiler
+CODE [     ( -- ) STATE @@ CLR,   NEXT, END-CODE  XIMMEDIATE
+
+: DEPTH ( -- n )  SP0 SP@ 2+ - 2/ ;
+
+\ ******  SPECIAL FOR DTC ****************
+CODE >BODY ( cfa -- pfa) *TOS+ *TOS+ MOV, NEXT, END-CODE   \ 4+ CODE trick
+
+\ ========================================================================
+\ PAB base address
+
+\ >8370 contains 'AA' for the TI-99 O/S to identify end of VDP RAM
+\ We can't touch that byte so the pab stack base address starts 2 bytes below
+\ : VDPTOP  ( -- n) 8370 @ 2- ;
+CODE VDPTOP   TOS PUSH,  8370 @@ TOS MOV,  TOS DECT, NEXT, END-CODE
+
+
+[CC] cr .( Stack primitives ...)  [tc]
+\ ========================================================================
+\ S T A C K   P R I M I T I V E S
+\ most stack primitives have been implemented in ASSEMBLER for speed
+
+\  : TUCK  SWAP OVER ;
+ CODE TUCK  ( w1 w2 --  w2 w1 w2 ) \ same size as Forth
+        *SP   R1 MOV,
+         TOS *SP MOV,
+              R1 PUSH,
+         NEXT,
+         END-CODE
+
+ \ these make compiling 1% faster but are 14 bytes bigger
+ CODE 2>R    ( d -- ) ( r-- n n)
+              RP -4 ADDI,          \ 14
+              TOS 2 (RP) MOV,      \ 22
+             *SP+   *RP MOV,       \ 26
+              TOS POP,             \ 22
+              NEXT,              \ = 84
+              END-CODE
+
+ CODE 2R>     ( -- d )
+              TOS PUSH,            \ 28
+              SP DECT,             \ 10
+             *SP  RPOP,            \ 26
+              TOS RPOP,            \ 22
+              NEXT,              \ = 88
+              END-CODE
+
+\ NOT standard forth. Equivalent to *TOS INC and *TOS DEC in Assembler
+\ : 1+!   ( addr -- )  1 SWAP +! ;
+\ : 1-!   ( addr -- ) -1 SWAP +! ;
+
+CODE 1+! ( addr -- )  *TOS INC,  TOS POP,  NEXT,   END-CODE
+CODE 1-! ( addr -- )  *TOS DEC,  TOS POP,  NEXT,   END-CODE
+
+\ ========================================================================
+\ C O M P A R I S O N   O P E R A T O R S
+[cc] cr .( Comparison)
+
+( All are smaller as CODE words in DTC.  See: 9900DTBL.hsf
+
+: <>  ( n n == ?)  =  INVERT ;
+
+TARGET-COMPILING
+\ : WITHIN ( u lo hi -- t ) OVER - -ROT - U> ;
+CODE WITHIN   ( n  lo  hi -- flag )
+              *SP  TOS  SUB,
+              *SP+ *SP  SUB,
+               TOS *SP+ SUB,
+               TOS CLR,
+               NC IF,  TOS SETO, ENDIF,
+               NEXT,
+               END-CODE
+
+\ ========================================================================
+\ M I X E D  (32BIT/16BIT)   M A T H   O P E R A T I O N S
+\ === SMALLER FASTER ANS COMPLIANT ===
+\ We included a signed M/MOD primitive as a code word.
+\ The code is used with permission from FBForth by Lee Stewart.
+\ M/MOD can switch com FLOORED or symetrical DIVISION with:
+\     FLOOR ON  ( floored)
+\     FLOOR OFF ( symetrical)
+
+: */MOD       ( n1 n2 n3 -- n4 n5)  >R UM* R> M/MOD ;
+: S>D         ( n -- d)  DUP 0< ;
+: M+    S>D  D+ ;
+: /MOD        ( n1 n2 -- n3 n4) >R S>D R> M/MOD ;
+: /           ( n n -- n)   /MOD NIP  ; \ smaller than CODE words (4 bytes each)
+: MOD         ( n n -- n)   /MOD DROP ;
+: */          ( n n n -- n) */MOD NIP ;
+
+\ ========================================================================
+\ S T R I N G   T H I N G S
+
+TARGET-COMPILING
+ : MOVE    ( src dst n -- )  \ determines if we are over-writing memory
+          >R  2DUP SWAP DUP R@ +  \ -- src dst dst src src+n
+          WITHIN
+          IF    R> CMOVE>         \ src <= dst < src+n
+          ELSE  R> CMOVE
+          THEN ;
+
+\ CAMEL Forth calls this ">COUNTED"
+: PLACE       ( src n dst -- ) 2DUP C! 1+ SWAP MOVE ;
+
+\ : /STRING   ( c-addr1 u1 n -- c-addr2 u2 ) ROT OVER + -ROT - ; \ ~ 290uS
+CODE /STRING ( c-addr1 u1 n -- c-addr2 u2 ) \ ~20uS!!       Clks
+              TOS *SP SUB,                                  \ 18
+              TOS 2 (SP) ADD,                               \ 22
+              TOS POP,                         \ refill TOS   22
+              NEXT,                            \ 8 bytes      62
+              END-CODE
+
+\ compile a stack string into memory with the count (Gforth)
+: S,         ( c-addr u -- ) HERE OVER 1+ ALLOT PLACE  ALIGN ;
+
+\ ========================================================================
+\ H E A D E R   N A V I G A T I O N
+
+TARGET-COMPILING
+: NFA>LFA       ( nfa -- lfa)  3 - ;
+: NFA>CFA       ( nfa -- cfa ) COUNT  7F AND + ALIGNED ;
+
+\ smudge bit control in the Camel Forth
+: HIDE          ( -- )  LATEST @ ( nfa) DUP C@ 80 OR  SWAP C! ;
+: REVEAL        ( -- )  LATEST @ ( nfa) DUP C@ 7F AND SWAP C! ;
+
+[CC] cr .( Parsing...)
+\ ========================================================================
+\ P A R S E   W O R D
+
+\ courtesy Brad Rodriguez,  My favourite FORTH Canadian
+TARGET-COMPILING
+
+\ : SOURCE      ( -- adr n) 'SOURCE 2@ ;    \ Common factor, saves space
+ CODE SOURCE  ( -- adr n)
+              TOS PUSH,        \ save old stack  28
+              TOS 'SOURCE LI,  \                 12
+              2 (TOS) PUSH,    \ fetch 2nd cell  38
+             *TOS TOS MOV,     \ fetch 1st cell  18
+              NEXT,            \ 13 BYTES        96
+              END-CODE
+
+: PARSE    ( char -- c-addr u )  \ gForth
+              >R
+              SOURCE  >IN @ OVER MIN /STRING
+              OVER SWAP R>  SCAN >R
+              OVER - DUP
+              R> IF 1+ THEN  >IN +! ;
+
+: PARSE-WORD  ( char -- c-addr n)  \ Camel/BFox common factor for WORD
+              DUP SOURCE >IN @ /STRING
+              ROT SKIP
+              DROP SOURCE  -ROT -  MIN  0 MAX >IN !
+              PARSE ;
+
+: WORD     ( char -- c-addr)
+              PARSE-WORD HERE PLACE
+              HERE BL OVER COUNT + C!  \ append blank character
+;
+
+[CC] cr .( CAMEL FORTH Number conversion)
+\ ========================================================================
+\ S T R I N G  T O  N U M B E R   C O N V E R S I O N
+
+[CC] HEX
+
+TARGET-COMPILING
+CODE DIGIT?   ( char -- n f )
+               TOS PUSH,          \  dup char
+               TOS -30 ADDI,      \  convert char to number
+               TOS 9 CMPI, GT
+               IF,
+                  TOS -7 ADDI, LTE
+                  IF,
+                      TOS CLR,  \ bad result
+                      NEXT,
+                  ENDIF,
+               ENDIF,
+               TOS BASE @@ CMP, GTE  \ compare to radix
+               IF,
+                  TOS CLR,    \ bad result
+                  NEXT,
+               ENDIF,
+               TOS *SP MOV,   \ replace char with no.
+               TOS SETO,      \ set flag to true
+               NEXT,          \ 24 bytes 3 uS
+               END-CODE
+
+                \          [PRIVATE]
+: ?SIGN      ( adr n -- adr' n' ?) \ advance adr/n if sign; return NZ if negative
+              OVER C@                       \ -- adr n c
+              2C - DUP ABS 1 = AND          \ -- +=-1, -=+1, else 0
+              DUP IF 1+                     \ -- +=0, -=+2
+                     >R 1 /STRING R>        \ -- adr' n' f
+              THEN ;
+
+              \              [PUBLIC]
+: UD*        ( ud1 u2 -- ud3)              \ 32*16->32 multiply
+              DUP >R * SWAP R> UM* ROT + ; \ simplified with * BF.
+
+CODE BASE@
+            TOS PUSH,
+            R1 STWP,
+            2A (R1) TOS MOV,
+            NEXT,
+ENDCODE
+
+: >NUMBER  ( ud adr u -- ud' adr' u' )
+            BEGIN
+            DUP WHILE
+                OVER C@ DIGIT?
+                0= IF DROP EXIT THEN
+               >R 2SWAP BASE@ UD*
+                R> M+ 2SWAP
+                1 /STRING
+            REPEAT ;
+
+\ *G This is smaller than original ?NUMBER but ***FLAG LOGIC IS REVERSED***
+: NUMBER?  ( addr len -- n ?)      \ ?=0 is good conversion
+           (          -- addr len) \ bad conversion
+            OVER C@ T[CHAR] - = DUP>R     \ save flag for later
+            IF 1 /STRING THEN             \ remove minus sign
+            0 0  2SWAP >NUMBER NIP NIP    \ convert the number
+            R> IF SWAP NEGATE SWAP THEN   \ negate if needed
+;
+
+\ ========================================================================
+\ S I M P L E   S O U N D  I N T E R F A C E
+
+[CC] include cc9900\cclib\ticktock.hsf     \ load the hardware milli-second timer
+
+TARGET-COMPILING
+\ : MS     0 ?DO  09 0 DO LOOP  LOOP ;
+
+CODE SND!  ( c -- ) \ write a byte to address of TMS9919 chip
+            TOS SWPB, TOS 8400 @@ MOVB, TOS POP,  NEXT, END-CODE
+
+: BEEP     ( -- )
+            80 SND!  \ 2 byte values for OSC1 1328Hz in TOS, send 80
+            05 SND!    \ send 05
+            91 SND!
+            AA MS
+            9F SND! ;
+
+: HONK     ( -- )
+            81 SND!  \ byte values for OSC1 218Hz
+            20 SND!
+            90 SND!
+            AA MS
+            9F SND! ;
+
+\ ========================================================================
+\ V D P  S C R E E N   D R I V E R
+[CC] cr .( Console output)
+
+HEX [TC]
+
+: C/L!     ( c/l -- )  \ pronounced "SEE-PER-ELL-STORE"
+           DUP C/L !           \ set chars per line
+           L/SCR *  C/SCR ! ;  \ calc.chars per screen
+
+: VPOS    ( -- vaddr)  VROW 2@  >VPOS ;
+\ : VPUT   ( char -- ) VPOS VC! ; \ moved to TI99PRIM.HSF as CODE
+
+: AT-XY   ( col row -- ) VROW 2! ;  \ set VDP address for Fast type
+: CLRLN   ( col row -- ) 2DUP AT-XY >VPOS C/L@ BL VFILL ;
+
+-1 [IF]
+CODE TOPLN ( -- vaddr)
+       TOS PUSH,
+       VPG @@  TOS MOV,
+       VTOP @@ TOS ADD,
+       NEXT,
+       END-CODE  ( only 2 bytes bigger than Forth, 4X faster)
+[ELSE]
+
+    : TOPLN ( -- vaddr)  VPG @ VTOP @ + ;
+
+[THEN]
+\ =====================================================================
+\ *G Scrolling has been implemented in Forth using VREAD & VWRITE
+\ ** Uses un-allocated Dictionary as a temporary buffer to hold lines of text
+
+\ Notes: Using SEVENs program as a benchmark
+\ Buffer Lines	Sevens Speed
+\     1          	01:08.71
+\     2           01:02.13  10% faster
+: SCROLL ( buffer vaddr -- )
+       PAUSE
+       HERE 100 +     \ grab some space above Forth PAD
+       TOPLN C/SCR @  ( -- buffer Vstart len)
+       BOUNDS  ( -- buffer SCRend SCRstart)
+       DO
+         I  C/L@ +  OVER  C/L@ 2* VREAD
+         DUP  I           C/L@ 2* VWRITE
+       C/L@ 2* +LOOP
+       DROP
+       0 17 AT-XY  VPOS C/L@ BL VFILL
+;
+
+[THEN]
+
+\ ========================================================================
+\ V D P   T E X T   O U T P U T
+
+[cc] HEX [tc]
+\ : >=    1- > ;    \ Moved to 9900FAS3.HSF
+
+: CR     ( -- )
+          PAUSE
+          VCOL OFF
+          VROW DUP 1+! @ L/SCR 1- >
+          IF  SCROLL  THEN  ;
+
+: ?CR    ( column -- ) C/L@ >= IF  CR  THEN ;
+
+: PAGE   ( -- )
+          TOPLN C/SCR @ BL VFILL
+          0 0 AT-XY ;
+
+: BS     ( --)  VCOL DUP @ 1- 0 MAX  SWAP ! ;
+
+: (EMIT) ( char -- ) VPOS VC!  VCOL DUP 1+! @ ?CR ;
+
+: EMIT   ( char -- )  \ shows how to handle control characters
+          PAUSE
+          DUP 0D = IF  DROP CR   EXIT THEN
+          DUP 08 = IF  DROP BS   EXIT THEN
+          (EMIT) ;
+
+: TYPE   ( adr cnt -- ) PAUSE 0 ?DO COUNT (EMIT) LOOP DROP ;
+: SPACE  ( -- )   BL (EMIT) ;
+: SPACES ( n -- ) 0 MAX  0 ?DO SPACE LOOP ;
+
+\ ========================================================================
+\ S T R I N G   L I T E R A L S
+[cc] HEX [tc]
+\ run-time action of S"   (For ITC Forth only)
+: (S")       ( -- c-addr u)
+             R>              \ string we entered is on rstack
+             COUNT           \ compute addr & len
+             2DUP + ALIGNED  \ 2dup and add to get end of string addr
+             >R ;            \ rpush the address,
+                             \ IP will now skip past text on return
+
+\ ========================================================================
+\ Re-solve CROSS-COMPILER Forward reference for '(S") and 'TYPE
+CROSS-COMPILING
+
+T' (S")  RESOLVES '(S")
+T' TYPE  RESOLVES 'TYPE
+
+[cc] cr .( Character input)
+\ ========================================================================
+\ C H A R A C T E R   I N P U T
+
+TARGET-COMPILING
+\ Cursor flash control is now done by reading the 9901 timer.
+\ It counts down from >3FFF in 349mS. If the timer> 1FFF we show the cursor.
+\ If < 1FFF show the screen char. Flash rate is about 2 per second.
+\ VPUT does the PAUSE for multi-tasking
+: KEY      ( -- char)
+            BEGIN                 \ start the loop
+              PAUSE               \ Essential for Multi-tasking with Console
+              TMR@ 1FFF <         \ 9901>1FFF ?
+              IF   CURS @         \ true? fetch the cursor char
+              ELSE BL             \ false? get the screen char
+              THEN VPOS VC!       \ then put on screen (also does PAUSE)
+              KEY?                \ check the keyboard
+              ?DUP                \ DUP IF <> 0
+            UNTIL                 \ loop until a key pressed
+            BL VPOS VC! ;             \ put the space char on screen
+
+\ High level: input/output          (c) 31mar95 bjr
+: ACCEPT     ( c-addr +n -- +n')
+             OVER + 1- OVER
+             BEGIN  KEY DUP 0D <>
+             WHILE
+                DUP EMIT
+                DUP 8 =
+                IF   DROP 1-  >R OVER R> UMAX
+                ELSE OVER C!  1+ OVER UMIN
+                THEN
+             REPEAT
+             DROP NIP SWAP -  ;
+
+[cc] cr .( Number printing)
+\ ======================================================================
+\ N U M B E R   T O   S T R I N G   C O N V E R S I O N
+
+\ Forth number conversion shows the elegance of Charles Moore's
+\ way of thinking.  At a glance it is hard to understand how
+\ these words work. But read the comments and the code in the order
+\ shown to see how they build on each other.
+\ With these simple words you can create arbitrary number formatting in 114 bytes!
+\ Numeric conversion is done least significant digit first, so
+\ the output buffer is built backwards in memory from PAD.
+
+
+TARGET-COMPILING
+\ : UD/MOD ( ud1 u2 -- u3 ud4)
+\         >R 0 R@ UM/MOD -ROT R> UM/MOD ROT ;   \ 32/16->32 divide
+
+\ ====================================================
+\ Build 25 Sept 21 2018, added 1-! for faster HOLD
+\ : HOLD   ( char -- ) HP 1-!  HP @ C! ;
+CODE HOLD  ( char -- )
+\ *G HOLD is CODE. 4 bytes bigger, 9% faster number output than Forth version.
+          R1 STWP,        \ get workspace pointer
+          26 (R1) DEC,    \ DEC address in HP user variable
+          26 (R1) R1 MOV, \ put the address into R1
+          TOS SWPB,
+          TOS *R1 MOVB,   \ store char in address in R1
+          TOS POP,
+          NEXT,
+          ENDCODE
+
+\ HOLD and >DIGIT are in the inner loop so ASM speed-ups
+\ makes a real difference in number printing speed
+\ AND we save 12 bytes using ASM >DIGIT IN DTC Forth
+
+\ : >DIGIT ( n -- c) DUP 9 > 7 AND + 30 + ; \ convert n to ascii digit c
+ CODE >DIGIT  ( n -- c)        \ ASM is 9 bytes smaller 4X faster
+            TOS 9 CMPI,
+            HI IF,              \ if n>9
+               TOS 7 ADDI,      \ number is not base 10, add 7
+            ENDIF,
+            TOS  TCHAR 0 ADDI,  \ add ASCII 0 to TOS create char value
+            NEXT,
+            END-CODE
+
+: <#     ( --)   PAD HP ! ;
+: #      ( u -- ud2 ) 0 BASE@ UM/MOD >R  BASE@ UM/MOD SWAP >DIGIT HOLD R> ;
+: #S     ( ud1 -- ud2)  BEGIN  # 2DUP OR  WHILE REPEAT ;
+: #>     ( ud1 -- c-addr u) 2DROP HP @ PAD OVER - ;
+: SIGN   ( n -- ) 0< IF  T[CHAR] -  HOLD  THEN ;
+: UD.    ( d -- ) <#  #S  #> TYPE SPACE ;
+: U.     ( u -- ) 0 UD. ;
+: .      ( n -- ) DUP ABS 0 <#  #S ROT SIGN  #> TYPE SPACE ;
+
+\ ========================================================================
+\ M I S C E L L A N E O U S
+\
+TARGET-COMPILING
+: RECURSE     ( -- ) LATEST @ NFA>CFA ,  ; XIMMEDIATE
+
+: DECIMAL ( -- ) 0A BASE ! ;
+: HEX     ( -- ) 10 BASE ! ;
+
+\ ========================================================================
+\ I N T E R P R E T E R   F O R W A R D   R E F E R E N C E
+
+: INTERPRET    ( addr len -- )  'IV @ EXECUTE ;  \ fetch the XT, pass to execute
+
+\ ========================================================================
+\ Q U I T :  The  O U T E R   I N T E R P R E T E R
+
+: QUIT     ( -- )
+           RP0 RP!
+           SOURCE-ID OFF
+           t[COMPILE] [
+           BEGIN
+              TIB DUP TIB# ACCEPT SPACE
+            ( addr len) INTERPRET
+              STATE @ 0= IF  T."  ok" CR THEN
+           AGAIN ;
+
+: EVALUATE ( c-addr u -- j*x)
+           SOURCE-ID ON
+           SOURCE 2>R
+           >IN @ >R
+           INTERPRET
+           R> >IN !
+           2R> 'SOURCE 2!
+           SOURCE-ID OFF ;
+
+\ ======================================================================
+\ E R R O R   H A N D L I N G
+\
+: ABORT    ( -- )
+          SP0 SP!
+          VDPTOP ^PAB !   \ set base pab pointer
+          CR QUIT ;
+
+: ?ABORT   ( f caddr u --)
+          ROT
+          IF
+           CR
+            CR T." * " TYPE  T."  ?" HONK
+            SOURCE-ID @   ( if source is NOT console)
+            IF  T."  Line " LINES @ DECIMAL U.
+                CR CR SOURCE TYPE
+            THEN ABORT
+          THEN 2DROP ;
+
+\ flag        addr length
+: ?ERR     ( ? -- )             HERE COUNT ?ABORT ;
+: ?EXEC    ( -- ) STATE @       TS" Interpret only" ?ABORT ;
+: ?COMP    ( -- ) STATE @ 0=    TS" Compile only"   ?ABORT ;
+: ?CSP     ( -- ) SP@ CSP @ -   TS" Unfinished"     ?ABORT ;
+: !CSP     ( -- ) SP@ CSP ! ;
+
+\ ========================================================================
+\ S T R I N G   L I T E R A L
+\ Non-standard: when interpreting S" puts the string in PAD
+
+: S"           ( -- )
+               T[CHAR] " PARSE
+               STATE @
+               IF  COMPILE (S")  S,
+               ELSE PAD PLACE PAD COUNT
+               THEN  ; XIMMEDIATE
+
+: ABORT"      ( i*x 0  -- i*x)    \ R: j*x -- j*x  x1=0
+              ?COMP
+             T[COMPILE] S"
+              COMPILE ?ABORT ; XIMMEDIATE
+
+[cc] cr .( FIND )
+\ ========================================================================
+\ D I C T I O N A R Y   S E A R C H
+
+TARGET-COMPILING
+: FIND  ( caddr --  caddr  0  if not found)
+\                    xt  1  if immediate,
+\                    xt -1  if "normal"
+           LATEST @  (FIND) ;
+
+: '        ( -- xt) BL WORD FIND 0= ?ERR ;
+
+: [']      ( -- <name> ) ?COMP  '  T[COMPILE] LITERAL ; XIMMEDIATE
+
+: POSTPONE ( <name> -- )      \ replaces COMPILE and [COMPILE]
+           ?COMP
+           BL WORD FIND DUP 0= ?ERR
+           0< IF   COMPILE COMPILE
+              THEN COMPILE, ; XIMMEDIATE
+
+\ ========================================================================
+\ T E X T   O U T P U T
+
+: ."    ( "ccc<single-quote>" -- )  \ Thanks Niel Baud R.I.P.
+        t[COMPILE] S"                ( -- str len)
+        STATE @ IF   COMPILE TYPE
+                ELSE TYPE
+                THEN ; XIMMEDIATE
+
+: .(     T[CHAR] ) PARSE TYPE ;     \ "talking" comment
+
+[CC] cr .( Interpreter/compiler loop)
+\ ========================================================================
+\ I N T E R P R E T E R  /  C O M P I L E R
+
+
+TARGET-COMPILING
+: <INTERP>  ( i*x c-addr u -- j*x )
+         'SOURCE 2!  >IN OFF
+          BEGIN
+              BL WORD DUP C@ ( -- addr len)
+          WHILE
+              FIND ?DUP
+              IF ( it's a word)
+                   1+ STATE @ 0= OR
+                   IF   EXECUTE
+                   ELSE COMPILE,
+                   THEN
+              ELSE ( it's a number)
+                   COUNT NUMBER? ?ERR
+                   t[COMPILE] LITERAL
+              THEN
+              DEPTH 0< TS" Short stack" ?ABORT
+          REPEAT
+          DROP ;
+
+
+\ ======================================================================
+\ T I - 9 9   T E X T   M O D E   C O N T R O L
+TARGET-COMPILING
+
+: TEXT    ( -- )
+            0 BEGIN DUP . 1+ AGAIN
+             F0 DUP 83D4 C!
+       ( -- F0) 01 VWTR
+              0  2 VWTR  \ set VDP screen page
+               VTOP OFF  \ topline VDP offset
+               VPG  OFF  \ VDP screen page offset
+             12  7 VWTR  \ sets FG & BG color
+             28 C/L!
+             0 0 AT-XY
+             2 VMODE !  \ 2=ID for 40 column "TEXT" mode
+             0 3C0 41 VFILL
+             PAGE ;
+
+\ ========================================================================
+\ D I C T I O N A R Y   C R E A T I O N
+
+: HEADER, ( addr len --)
+            ALIGN
+            LATEST @ ,
+            0 C,
+            HERE LATEST !
+            S, ;
+
+: HEADER   BL PARSE-WORD HEADER, ;
+
+\ ========================================================================
+\ T A R G E T   S Y S T E M   D E F I N I N G   W O R D S
+\ dtc requires that each word starts with a branch to its executor routine.
+\ DTC BRANCH and LINK COMPILER: Handy for making new Direct threaded words
+: B&L,   ( addr --- )  06A0 ,    ,  ;
+
+\ Executor Assembler labels, converted to FORTH constants
+  _DOCON  CONSTANT 'DOCON  ( A020)
+  _DOVAR  CONSTANT 'DOVAR  ( A028)
+  _DOUSER CONSTANT 'DOUSER ( A030)
+ _DODOES  CONSTANT 'DODOES ( A03A)
+
+\                   name-creator  runtime-action  parameter(s)
+\                   ------------  --------------  -----------
+: CONSTANT  ( n --)  HEADER      'DOCON  B&L,       , ;  \ the comma is a number compiler, remember?
+: USER      ( n --)  HEADER      'DOUSER B&L,       , ;  \ USER compiles the offset in bytes from top of WKSP
+: CREATE    ( -- )   HEADER      'DOVAR  B&L,         ;  \ create does not compile a parameter
+: VARIABLE  ( -- )   CREATE                       0 , ;  \ variables are set to zero when created
+
+\ from studying gforth. It's a nice factor.
+\ compiles:  BL @>839C ( docolon)
+: (:NONAME) ( -- )   839C B&L,  HIDE  ]  ;   \ common to ':' and ':NONAME'
+
+\ =======================================================================
+\ D O E S   S U P P O R T
+: (;CODE)
+         R>                        \ pops the address of the machine code fragment
+         LATEST @ NFA>CFA 2+       \ gets the CFA of the latest word & skip past BL instruction
+         !  ;                      \ store the machine code address in the BL instruction data field
+
+: DOES>  ( -- )                    \ change action of latest def'n
+        COMPILE (;CODE)
+        0460 , A042 ,              \ *BRANCH* to  _DODOES (cannot BL this or we lose R11 value)
+       ; XIMMEDIATE
+
+
+\ =======================================================================
+\ TI-99 F I L E   S Y S T E M   I N T E R F A C E
+
+ [CC] include CC9900\cclib\dsrlinkA.hsf
+ [CC] include CC9900\cclib\filesysY.hsf
+
+
+\ =======================================================================
+\ LOOPS AND BRANCH COMPILERS FOR THE TI-99 SYSTEM
+\ [CC] CR .( TARGET forth BRANCHING and LOOPING ...)
+
+\ [CC]  include cc9900\cclib\loopsDTC.hsf
+
+\ =======================================================================
+\ Init functions
+\ 1. CREATE the FORTH VIRTUAL MACHINE when CAMEL99 starts
+\ 2. copy code from HSPRIMS to HSTART($8388)
+\ 3. Set the Forth IP to address of BOOT variable
+
+CROSS-ASSEMBLING
+
+CODE INIT
+              WRKSP0 LWPI,      \ set Forth workspace (>8300)
+              R0 HSprims LI,    \ R0 is beginning of fast primitives
+              R1 HSstart LI,    \ R1 is where we move them to
+              BEGIN,
+               *R0+ *R1+ MOV,   \ move cells
+                R1 HSend CMPI,  \ compare dest. to the HSend address
+              EQ UNTIL,         \ until the two are equal
+
+              SP  SP0  LI,     \ set data stack address
+              RP  RP0  LI,     \ set return stack address
+              R10 NEXT2 LI,     \ set Forth interpreter into R10
+              IP  BOOT  LI,     \ set Forth instruction pointer to BOOT
+             *R10 B,            \ run NEXT, ie enter Forth
+              END-CODE
+
+\ CODE STEP
+\       BEGIN, 0020 @@ BL, EQ UNTIL, \ wait key press
+\ END-CODE
+
+[CC] HEX
+\ ======================================================================
+\ B O O T   U P   C O D E
+TARGET-COMPILING
+: COLD       ( -- )
+              T[CHAR] A 0 VC!
+              ORGLAST @  LATEST !
+              ORGDP @  DP !
+              26 TPAD !                      \ PAD=HERE+>26, room for HOLD buffer
+              2000 H !                       \ inits HEAP to >2000
+              TMR!                           \ set 9901 timer to count continuously
+              2 KUNIT# C!                    \ keyboard #2 is the BASIC keyboard
+              T['] <INTERP> 'IV !            \ set the interpreter vector
+              SOURCE-ID OFF                  \ source-id=0 is console input
+              TIB 0 'SOURCE 2!  >IN OFF      \ init interpret to TIB
+              HEX                            \ set the RADIX to hex
+              TEXT
+              \ VDP start screen
+              TS" CAMEL99 DTC V2.68" TYPE
+              VDPTOP ^PAB !
+\              TS" DSK1.START" INCLUDED      \ load the start file
+            DECIMAL
+              ABORT ;                        \ start the interpreter
+
+\ ======================================================================
+\ define target comment words
+TARGET-COMPILING
+: (         T[CHAR] ) PARSE 2DROP ; XIMMEDIATE
+: \                 1 PARSE 2DROP ; XIMMEDIATE
+
+[CC]
+\ ******************************************************************
+\ ***    FROM HERE ON MUST USE [CC] BEFORE ADDING COMMENTS       ***
+\ ******************************************************************
+\ ======================================================================
+\ C O L O N   C O M P I L E R
+
+\ These are the last definitions but they allow us to extend the TARGET
+\ Forth system with Source code
+
+\ To avoid name confusion we use X:  ;X to create the TARGET system ':' and ';'
+TARGET-COMPILING
+ X: :         !CSP  HEADER (:NONAME)  ;X
+
+ X: :NONAME   HERE  !CSP   (:NONAME)  ;X
+
+ X: ;        [  REVEAL  8388 ,  ?CSP ;X  XIMMEDIATE
+
+[CC]
+\           F O R T H   S Y S T E M   C O D E   E N D S
+\ /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
+cr ." Forth Kernel compiled completely"
+
+\ ======================================================================
+\  P A T C H   T H E   T A R G E T  S Y S T E M   V A R I A B L E S
+
+\ Set the target system's LATEST variable to the last WORD compiled
+\ AND copy it into ORGLAST, which is used during COLD re-starts.
+
+
+ \ We stay in the cross-compiler for this work
+[cc]  ALSO FORTH      XLATEST @ DUP  LATEST T!
+                       ORGLAST T!
+
+\ set TARGET Forth's DP variable to the same address as the cross-compiler (THERE)
+\ also copy it into the ORGDP variable used for cold re-starts
+
+            THERE DUP DP T!
+                   ORGDP T!
+
+\ ======================================================================
+\ P A T C H   T A R G E T   I M A G E
+
+\ Update the filename, boot-address and BOOT word in the TARGET MEMORY IMAGE
+
+         FILENAME: CAMDTC58
+         T' INIT   BOOT-ADDRESS T!
+         T' COLD   BOOT T!
+
+         END.
+
+\ ======================================================================
+\ S A V E   B I N A R Y  I M A G E   F I L E
+
+         FILENAME$ $SAVE-EA5.        \ FILENAME$ was set by FILENAME:
+
+\ ======================================================================
+\  C O P Y   T O   T I - 9 9   V I R T U A L   D I S K
+.( copying binary file to TI-99 Emulator DSK1.DTC)
+
+( //  shells out to the DOS shell in HSF2012)
+
+      // copy CAMDTC58  cc9900\CAMEL99.WIP\dsk1.dtc\
+
+CROSS-COMPILING
+
+ CR ." === COMPILE ENDED PROPERLY ==="
+
+ \ BYE          \ exit the cross compiler or stay in to debug

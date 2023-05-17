@@ -1,0 +1,41 @@
+\ GROM words for CAMEL99 Forth
+\ *** cross compiler use only ***
+
+\ for reference. Equates are in 99EQU.hsf
+\ 9800 equ GRMRD ( GROM base)   \ GROM read byte
+\ 9802 equ GRMRA                \ GROM set read address
+\ 9C00 equ GRMWD                \ GROM write byte
+\ 9C02 EQU GRMWA                \ GROM set write address
+
+CROSS-ASSEMBLING
+l: GRMWA!
+        R0 GRMWA @@ MOVB,       \ Set GROM source address
+        R0 SWPB,
+        R0 GRMWA @@ MOVB,
+        RT,
+
+CODE: GVMOVE ( grom_addr vdp_addr cnt -- ) \ GROM->VDP direct move
+        R0 POP,
+        WMODE @@ BL,             \ Set VDP target address
+        R0 POP,
+        GRMWA! @@ BL,            \ Set GROM source address
+@@1:    GRMRD @@ VDPWD @@ MOVB,  \ Copy from GROM to VDP
+        TOS DEC,                 \ count in TOS register (R4)
+        @@1 JNE,
+        TOS POP,
+        NEXT,
+        END-CODE
+
+CODE: GROM ( ADR -- )     \ set intial address
+        TOS R0 MOV,
+        GRMWA! @@ BL,
+        TOS POP,
+        NEXT,
+        END-CODE
+
+CODE: GC@+  ( -- byte)    \ read GROM byte with auto increment address
+        TOS PUSH,
+        GRMRD @@ TOS MOVB,
+        TOS 8 SRL,
+        NEXT,
+        END-CODE
