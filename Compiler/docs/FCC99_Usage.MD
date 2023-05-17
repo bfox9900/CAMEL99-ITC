@@ -77,7 +77,13 @@ C:\> FCC99D fload cc9900\src.itc\forthitc.mak
 *****************************************************
 ## Kernel Version LOG
 
-### CAMEL99 V2.69 
+### CAMEL99 V2.69 2023
+Restored TICKS to the timer system. 1mS resolution did not work with multi-tasking.
+The CPU is too slow to handle short delays when context switching.  
+MS now has a 32mS minimum delay. This makes it less likely than the timer will
+overflow with many tasks switching. 
+
+### CAMEL99 V2.69 2022
 Removed TICKS. Replaced with MS which is now set to 1MS resolution. 
 This may be longer while multi-tasking. 
 
