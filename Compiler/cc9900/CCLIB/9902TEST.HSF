@@ -8,7 +8,6 @@
 \ Jul 30/2019  added CTS control in CKEY? for hardware handshaking
 \ - CKEY
 
-
 [CC] HEX [TC]
 \     1300 CONSTANT RS232/1   \ RS232/1 card address
 \     1500 CONSTANT RS232/2   \ RS232/2 card address
