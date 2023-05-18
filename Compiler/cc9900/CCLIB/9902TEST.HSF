@@ -1,4 +1,4 @@
-\ xfcc99 cross-compiler tms9902 rs232/1 DIRECT cru DRIVER 9Feb2019 bjf
+\ fcc99 cross-compiler tms9902 rs232/1 DIRECT cru DRIVER 9Feb2019 bjf
 \ CODE words are used to save kernel space by not needing the CRU library
 
 \ These routines push the value in R12 onto the return stack
@@ -10,10 +10,10 @@
 
 
 [CC] HEX [TC]
-\     1300 CONSTANT: RS232/1    \ RS232/1 card address
-\     1500 CONSTANT: RS232/2    \ RS232/2 card address
-\      40 CONSTANT: TTY1       \ 40 = uart#1
-\      80 CONSTANT: TTY2       \ 80 = uart#2
+\     1300 CONSTANT RS232/1    \ RS232/1 card address
+\     1500 CONSTANT RS232/2    \ RS232/2 card address
+\      40 CONSTANT TTY1       \ 40 = uart#1
+\      80 CONSTANT TTY2       \ 80 = uart#2
 
 \ 9902 control bits
 [CC] DECIMAL
@@ -31,10 +31,10 @@
 
 TARGET-COMPILING
 \ these variables are the data needed for 1 comm UART connection
-VARIABLE: CARD   \ CRU address of rs232 card. Default to >1300
-VARIABLE: UART   \ /tty1 = >40  /tty2 = ?80
-VARIABLE: BPS    \ 0034 BPS T!   \ 9600 baud
-VARIABLE: PROTO  \ 9300 PROTO T! = 8 bits, no parity, 1 stops
+VARIABLE CARD   \ CRU address of rs232 card. Default to >1300
+VARIABLE UART   \ /tty1 = >40  /tty2 = ?80
+VARIABLE BPS    \ 0034 BPS T!   \ 9600 baud
+VARIABLE PROTO  \ 9300 PROTO T! = 8 bits, no parity, 1 stops
 
 \ *FUTURE*  comm port data structure
 \                 card    uart   bps    proto
@@ -44,79 +44,79 @@ VARIABLE: PROTO  \ 9300 PROTO T! = 8 bits, no parity, 1 stops
 
 \ 9900 sub-routines. *NOT* Forth words.
 l: CARD-ON
-         CARD @@ R12 MOV,   \ select the card
-         7 SBO,             \ turn LED on
-         RT,
+       CARD @@ R12 MOV,   \ select the card
+       7 SBO,             \ turn LED on
+       RT,
 l: CARD-OFF
-         CARD @@ R12 MOV,   \ select the card
-         7 SBZ,             \ turn LED off
-         RT,
+       CARD @@ R12 MOV,   \ select the card
+       7 SBZ,             \ turn LED off
+       RT,
 
 \ *variables CARD, UART, BPS and PROTO must be set correctly before using OPEN-TTY*
-CODE: OPEN-TTY  ( -- ) \ Usage: /TTY1 OPEN-TTY
-         R12 RPUSH,
-         CARD-ON @@ BL,     \ load the card address
-         UART @@ R12 ADD,   \ add 9902 port address
-         RESET SBO,         \ reset UART
-         PROTO @@ 8 LDCR,   \ set protocol
-         LDIR SBZ,          \ disable 9902 timer
-         BPS @@ 0C LDCR,    \ set baud rate
-         CARD-OFF @@ BL,
-         R12 RPOP,          \ restore R12
-         NEXT,
-         END-CODE
+CODE OPEN-TTY  ( -- ) \ Usage: /TTY1 OPEN-TTY
+       R12 RPUSH,
+       CARD-ON @@ BL,     \ load the card address
+       UART @@ R12 ADD,   \ add 9902 port address
+       RESET SBO,         \ reset UART
+       PROTO @@ 8 LDCR,   \ set protocol
+       LDIR SBZ,          \ disable 9902 timer
+       BPS @@ 0C LDCR,    \ set baud rate
+       CARD-OFF @@ BL,
+       R12 RPOP,          \ restore R12
+       NEXT,
+       ENDCODE
 
 [CC] DECIMAL [TC]
 \ this word turns on the LED when sending
-CODE: CEMIT ( c -- )  \ 'com-emit"
-         R12 RPUSH,
-         CARD-ON @@ BL,
-         UART @@ R12 ADD,   \ add UART offset
+CODE CEMIT ( c -- )  \ 'com-emit"
+       R12 RPUSH,
+       CARD-ON @@ BL,
+       UART @@ R12 ADD,   \ add UART offset
 \     *** DSR handshake  ***
-         BEGIN, 27 TB, EQ UNTIL,   \ wait for -DSR=0
+       BEGIN, 27 TB, EQ UNTIL,   \ wait for -DSR=0
 
 \  *** handshake hardware ***
-         16 SBO,        \ set RTS
-\         BEGIN, 28 TB, EQ UNTIL,  \ wait for CTS line
+       16 SBO,        \ set RTS
+\      BEGIN, 28 TB, EQ UNTIL,  \ wait for CTS line
 \  ******************************
-         BEGIN, 22 TB, EQ UNTIL,   \ wait XBRE empty
-         TOS SWPB,      \ put byte on the other side
-         TOS 8 LDCR,    \ send 8 bits
-         16 SBZ,        \ reset RTS
+       BEGIN, 22 TB, EQ UNTIL,   \ wait XBRE empty
+       TOS SWPB,      \ put byte on the other side
+       TOS 8 LDCR,    \ send 8 bits
+       16 SBZ,        \ reset RTS
 
 \ housekeeping on USER VARIABLES...
-         R1      STWP,  \ get current user area address
-         48 (R1) INC,   \ inc  OUT user variable **DECIMAL OFFSET VALUES**
-         CARD-OFF @@ BL,
-         R12 RPOP,
-         TOS POP,
-         NEXT,
-         END-CODE
+       R1      STWP,  \ get current user area address
+       48 (R1) INC,   \ inc  OUT user variable **DECIMAL OFFSET VALUES**
+       CARD-OFF @@ BL,
+       R12 RPOP,
+       TOS POP,
+       NEXT,
+       END-CODE
 
  [CC] DECIMAL [TC]
-CODE: CKEY? ( -- n )          \  "com-key"
-         0 LIMI,
-         R12 RPUSH,           \ save R12 on return stack
-         CARD @@ R12 MOV,     \ set base address of CARD
-         TOS PUSH,            \ give us a new TOS register (R4)
-         TOS CLR,             \ erase it
+CODE CKEY? ( -- n )          \  "com-key"
+       0 LIMI,
+       R12 RPUSH,           \ save R12 on return stack
+       CARD @@ R12 MOV,     \ set base address of CARD
+       TOS PUSH,            \ give us a new TOS register (R4)
+       TOS CLR,             \ erase it
 \  *** handshake hardware ON ***
-         5 SBZ,               \ CARD CTS line LOW. You are clear to send
-         UART @@ R12 ADD,     \ add UART, >1300+40 = CRU address
-         21 TB,               \ test if char ready
-         EQ IF,
+       5 SBZ,               \ CARD CTS line LOW. You are clear to send
+       UART @@ R12 ADD,     \ add UART, >1300+40 = CRU address
+       21 TB,               \ test if char ready
+       EQ IF,
              TOS 8 STCR,      \ read the char
              18 SBZ,          \ reset 9902 rcv buffer
              TOS SWPB,        \ shift char to other byte
-         ENDIF,
+       ENDIF,
 \  *** handshake hardware off ***
-         CARD @@ R12 MOV,     \ select card
-         5 SBO,               \ CTS line HIGH. I am busy!
+       CARD @@ R12 MOV,     \ select card
+       5 SBO,               \ CTS line HIGH. I am busy!
 \  ******************************
-         R12 RPOP,            \ restore old R12
-         2 LIMI,
-         NEXT,
-         END-CODE
+       R12 RPOP,            \ restore old R12
+       2 LIMI,
+       NEXT,
+       ENDCODE
 
 [CC] HEX [TC]
 
