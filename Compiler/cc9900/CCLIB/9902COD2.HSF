@@ -27,77 +27,77 @@
        7F EQU $7F
 
 TARGET-COMPILING
-VARIABLE: BPS    0034 BPS T!   \ 9600 baud
-VARIABLE: PROTO  9300 PROTO T! \ 8 bits, no parity, 1 stops
-VARIABLE: PORT
-VARIABLE: QHEAD
-VARIABLE: QTAIL
+VARIABLE BPS    0034 BPS T!   \ 9600 baud
+VARIABLE PROTO  9300 PROTO T! \ 8 bits, no parity, 1 stops
+VARIABLE PORT
+VARIABLE QHEAD
+VARIABLE QTAIL
 
 CROSS-ASSEMBLING
 l: LEDON
-         R12 RS232/1 LI,    \ select the card
-         7 SBO,             \ turn LED on
-         RT,
+       R12 RS232/1 LI,    \ select the card
+       7 SBO,             \ turn LED on
+       RT,
 l: LEDOFF
-         R12 RS232/1 LI,    \ select the card
-         7 SBZ,             \ turn LED off
-         RT,
+       R12 RS232/1 LI,    \ select the card
+       7 SBZ,             \ turn LED off
+       RT,
 
 [CC] HEX [TC]
 
-CODE: OPEN-TTY  ( port -- ) \ Usage: /TTY1 OPEN-TTY
-         R12 RPUSH,
-         LEDON @@ BL,
-         TOS R12 MOV,       \ load 9902 port address
-         RESET SBO,         \ reset card
-         TOS PORT @@ MOV,   \ set the port variable to use
-         PROTO @@ 8 LDCR,   \ set protocol
-         LDIR SBZ,          \ disable 9902 timer
-         BPS @@ 0C LDCR,    \ set baud rate
-         TOS POP,           \ refill TOS
-         LEDOFF @@ BL,
-         R12 RPOP,          \ restore R12
-         NEXT,
-         END-CODE
+CODE OPEN-TTY  ( port -- ) \ Usage: /TTY1 OPEN-TTY
+       R12 RPUSH,
+       LEDON @@ BL,
+       TOS R12 MOV,       \ load 9902 port address
+       RESET SBO,         \ reset card
+       TOS PORT @@ MOV,   \ set the port variable to use
+       PROTO @@ 8 LDCR,   \ set protocol
+       LDIR SBZ,          \ disable 9902 timer
+       BPS @@ 0C LDCR,    \ set baud rate
+       TOS POP,           \ refill TOS
+       LEDOFF @@ BL,
+       R12 RPOP,          \ restore R12
+       NEXT,
+       ENDCODE
 
 [CC] DECIMAL
 CROSS-ASSEMBLING
 \ this word turns on the LED when sending
-CODE: CEMIT ( c -- )  \ 'com-emit"
-         R12 RPUSH,
-         LEDON @@ BL,
-         PORT @@ R12 MOV,
-         BEGIN,
-           27 TB, EQ    \ test -DSR bit =0
-         UNTIL,
-         16 SBO,        \ set RTS
-         BEGIN,
-           22 TB, EQ    \ wait XBRE empty
-         UNTIL,
-         TOS SWPB,      \ put byte on the other side
-         TOS 8 LDCR,    \ send 8 bits
-         16 SBZ,        \ reset RTS
-         OUT  @@ INC,
-         VCOL @@ INC,
-         TOS POP,
-         LEDOFF @@ BL,
-         R12 RPOP,
-         NEXT,
-         END-CODE
+CODE CEMIT ( c -- )  \ 'com-emit"
+       R12 RPUSH,
+       LEDON @@ BL,
+       PORT @@ R12 MOV,
+       BEGIN,
+         27 TB, EQ    \ test -DSR bit =0
+       UNTIL,
+       16 SBO,        \ set RTS
+       BEGIN,
+         22 TB, EQ    \ wait XBRE empty
+       UNTIL,
+       TOS SWPB,      \ put byte on the other side
+       TOS 8 LDCR,    \ send 8 bits
+       16 SBZ,        \ reset RTS
+       OUT  @@ INC,
+       VCOL @@ INC,
+       TOS POP,
+       LEDOFF @@ BL,
+       R12 RPOP,
+       NEXT,
+       ENDCODE
 
-CODE: CKEY? ( -- n )      \  "com-key"
-         R12 RPUSH,
-         PORT @@ R12 MOV,    \ select the 9902
-         TOS PUSH,
-         TOS CLR,
-         21 TB,              \ test if char ready
-         EQ IF,
-            16 SBO,          \ set RTS (handshake rcv off)
-            TOS 8 STCR,      \ read the char
-            TOS 8 SRL,       \ shift to other byte
-               18 SBZ,       \ reset 9902 rcv buffer
-         ENDIF,
-         16 SBZ,       \ reset RTS
-         R12 RPOP,
-         NEXT,
-         END-CODE
+CODE CKEY? ( -- n )      \  "com-key"
+       R12 RPUSH,
+       PORT @@ R12 MOV,    \ select the 9902
+       TOS PUSH,
+       TOS CLR,
+       21 TB,              \ test if char ready
+       EQ IF,
+          16 SBO,          \ set RTS (handshake rcv off)
+          TOS 8 STCR,      \ read the char
+          TOS 8 SRL,       \ shift to other byte
+             18 SBZ,       \ reset 9902 rcv buffer
+       ENDIF,
+       16 SBZ,       \ reset RTS
+       R12 RPOP,
+       NEXT,
+       ENDCODE

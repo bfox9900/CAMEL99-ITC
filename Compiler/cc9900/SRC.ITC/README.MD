@@ -5,8 +5,8 @@ for the curious. The source code for the cross-compiler is in the Compiler
 folder is rather messy but it works.
 
 ### Disk System Organization
-Version 2.69 uses a new cross-compiler:  FCC99B.EXE
-It is in FCC99B.ZIP
+Version 2.69 uses a new cross-compiler:  FCC99D.EXE
+It is in FCC99D.ZIP
 
 The cross-compiler runs on MS DOS. Hey it's retro computing. I used DOSBOX.
 In DOS Box create the CC9900 folder tree as it exists in GitHub.
@@ -14,19 +14,18 @@ In DOS Box create the CC9900 folder tree as it exists in GitHub.
 
 All paths in the source files are explicitly spelled out in the form:
 
-`CC9900\SRC.ITC\HILEVEL.HSF`
+`CC9900\SRC.ITC\HILEVELY.HSF`
 
 (.HSF files are for Harvard Softworks Forth)
 
-
 #### Assumed file paths:
 ```
-    c:\forth\                  has XFC99X.exe compiler    
+    c:\forth\                  has FCC99D.exe compiler    
     c:\forth\cc9900\           Project folder
     c:\forth\cc9900\src.itc\   all Camel99 source files for ITC
 ```    
 
-Therefore unzip XFC99X.ZIP in the \forth\ directory
+Therefore unzip FCC99D.ZIP in the \forth\ directory
 
 ## Standard Kernel Build V2.69
 Loads and runs with normal Editor assembler cartridge. Entry=HEX A000
@@ -38,6 +37,7 @@ set the compiler switches as shown below in FORTHITC.MAK
  TRUE  VALUE ITC          \ used to prevent directly compiling HILEVEL.HSF
  FALSE VALUE SLOWER       \ TRUE saves 28 bytes
  FALSE VALUE HASHING      \ Not working yet
+
  TRUE \ true= standard kernel ;  false=non-standard kernel
  [IF]
      A000 VALUE KERNORG

@@ -17,7 +17,6 @@ TARGET-COMPILING
 
 : AHEAD    ( -- addr)   HERE 0 , ;  \ compile empty jump forward
 
-
 \ CAMEL Forth LEAVE stack pointer is called LP. It is initialized by QUIT
 SLOWER [if]
 : >L        ( x -- ) ( L: -- x ) 2 LP +!   LP @ ! ;     \ LP stack grows up
