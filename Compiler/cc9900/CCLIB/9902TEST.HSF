@@ -10,14 +10,14 @@
 
 
 [CC] HEX [TC]
-\     1300 CONSTANT RS232/1    \ RS232/1 card address
-\     1500 CONSTANT RS232/2    \ RS232/2 card address
+\     1300 CONSTANT RS232/1   \ RS232/1 card address
+\     1500 CONSTANT RS232/2   \ RS232/2 card address
 \      40 CONSTANT TTY1       \ 40 = uart#1
 \      80 CONSTANT TTY2       \ 80 = uart#2
 
 \ 9902 control bits
 [CC] DECIMAL
-       13 EQU LDIR           \ "load interval register"
+       13 EQU LDIR     \ "load interval register"
 \ for reference...
 \      16 EQU RTSON    \ request to send
 \      18 EQU RIENB    \ rcv interrupt enable

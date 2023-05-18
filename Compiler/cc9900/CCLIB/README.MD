@@ -1,5 +1,18 @@
-CCLIB FOLDER FOR CAMEL99
+# CCLIB FOR CAMEL99
 
-This folder contains library code that can be compiled by the XFC99 cross-compiler.
+This folder contains legacy code that was primarily used in testing pieces of
+the system before the final Forth progam was running. 
 
-As of Version 1.9 there is an 8K limitation on the size of the binary file so all these files cannot be loaded at the same time.
+The method used was to compile parts of the system and write small Forth programs
+to exercise the new components. This was done until a working system emerged.
+
+It is preferable now to use the files in LIB.ITC and preface them with the appropriate compiler commands. 
+
+
+TARGET-COMPILING    \ used before compiling 
+[TC]                \ short form for target-compiling
+
+CROSS-COMPLING      \ use for interpreted functions 
+[CC]                \ short form for CROSS-COMPILING 
+
+[CC]  HEX  [TC]     \ changing radix during compiling 
