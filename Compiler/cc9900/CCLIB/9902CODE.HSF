@@ -1,4 +1,4 @@
-\ xfcc99 cross-compiler tms9902 rs232/1 DIRECT cru DRIVER 9Feb2019 bjf
+\ fcc99 cross-compiler tms9902 rs232/1 DIRECT cru DRIVER 9Feb2019 bjf
 \ CODE words are used to save kernel space by not needing the CRU library
 
 \ These routines push the value in R12 onto the return stack
