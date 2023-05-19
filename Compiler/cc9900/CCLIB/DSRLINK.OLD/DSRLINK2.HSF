@@ -1,0 +1,184 @@
+\ DSRLNK in XFC99 cross-compiler 9900 Assembler
+
+\ Source:
+\ http://atariage.com/forums/topic/283914-specialized-file-access-from-xb/page-2
+\ by InsaneMultitasker
+
+
+CROSS-ASSEMBLING  XASSEMBLER DEFINITIONS
+
+\ we need more labels than I normally use for Forth style CODE Words
+ A refer: @@A    A binder: @@A:
+ C refer: @@C    C binder: @@C:
+11 refer: @@11  11 binder: @@11:
+
+CROSS-COMPILING XASSEMBLER DEFINITIONS
+\ MACRO to simplify the VDP code
+: VDPWA, ( reg -- )
+       DUP           SWPB,   \ setup VDP address
+       DUP VDPWA @@  MOVB,
+       DUP           SWPB,
+           VDPWA @@  MOVB,
+                     NOP,  ;
+
+TARGET-COMPILING
+
+[cc] HEX [tc]
+
+8C02 EQU VDPWA
+8C00 EQU VDWWD
+8800 EQU VDPRD
+837C EQU STATUS
+
+l: HEX20  20 BYTE,
+l: HEXAA  AA BYTE,
+l: PERIOD 2E BYTE,  \ '.'
+         .EVEN
+
+\ l: CARD  0000 DATA,
+\ l: ENTRY  0000 DATA,
+\ l: SAVE3  0000 DATA,
+\ l: SAVE4  0000 DATA,
+\ l: SAVE5  0000 DATA,
+
+CREATE: NAMBUF   6 TALLOT   \ 'since we know were using "dskN."
+
+\
+l: H2000  2000 DATA,
+l: CYC1   0000 DATA,
+l: H1300  1300 DATA,
+
+\ take some space in Forth DATA stack for a workspace
+[CC] SP0 100 - [TC] VALUE: DREGS
+
+[CC] 5 2* DREGS + [TC] EQU DREG(5)
+
+
+CLR-JMPTABLE
+
+CREATE: DSR1
+      *R14+     R5   MOV,    \ CALLER'S address->R5, auto inc for return
+       HEX20 @@ R15  SZCB,   \ clear DSR wksp
+       8356 @@  R0   MOV,    \ [PAB FNAME] to R0
+       R0       R9   MOV,    \ dup R0 to R9
+       R9       FFF8 ADDI,   \ R9-8 = [PAB FLG]
+       VDPRD @@ R1   MOVB,   \ R1= length of FNAME
+       R0           VDPWA,
+       R1       R3   MOVB,   \ DUP length byte to R3
+       R3       08   SRL,    \ swap the byte to other side
+       R4            SETO,   \ R4 = -1
+       R2   NAMBUF   LI,     \ R2 is ^namebuf
+
+  BEGIN, \ DLOOP1  ( copy VDP FNAME ->namebuf upto '.' character  )
+       R0            INC,    \ point to next fname VDP address
+       R4            INC,    \ counter starts at 0
+       R4       R3   CMP,    \ is counter>fnamelenth
+       @@1           JEQ,    \ JEQ to DJUMP1
+       R0          VDPWA,
+       VDPRD @@ R1  MOVB,    \ read next VDP char from fname
+       R1      *R2+ MOVB,    \ copy to namebuf & inc pointer
+       R1 PERIOD @@ CMPB,    \ is it a '.'
+  EQ UNTIL,                  \ DLOOP1  ( until '.' found )
+
+@@1:   R4        R4  MOV,    \ DJUMP1
+       @@6           JEQ,    \ DJUMP6
+       R4        07  CMPI,
+       @@8           JGT,    \ DJUMP6
+       83D0 @@       CLR,
+       R4   8354 @@  MOV,
+\       R4   SAVE3 @@ MOV,
+       R4            INC,
+       R4   8356 @@  ADD,
+\       8356 @@ SAVE4 @@ MOV,
+
+\ ==== GPL WORKSPACE ====
+       83E0         LWPI,  \ SROM   ( search ROM device list)
+       R1           CLR,
+       H2000 @@ CYC1 @@ MOV,
+       R12     1000 LI,
+       @@A          JMP,  \ DLOOP2
+
+@@11:  R12   0F00   LI,    \ SROM1
+       H1300 @@ CYC1 @@ MOV,
+
+@@A:  \ DLOOP2  scan for device cards
+    BEGIN,
+       R12   R12   MOV,
+       NE IF,             \ new card address?
+           00 SBZ,        \ turn the old one off
+       ENDIF,
+       R12    0100  ADDI,
+       83D0 @@      CLR,
+       R12    2000  CMPI,
+       @@11         JEQ,  \  SROM1
+       R12  CYC1 @@ CMP,
+       @@5          JEQ,  \ DJUMP5
+       R12  83D0 @@ MOV,
+       00           SBO,
+       R2   4000    LI,    \ ROM start addr ->R2
+      *R2  HEXAA @@ CMPB,  \ test for card present
+    EQ UNTIL,              \ loop until card is found
+       DREG(5) @@ R2 ADD,
+       @@C          JMP, \ DJUMP3
+
+
+@@3: \ DLOOP3
+    BEGIN,
+       83D2 @@   R2 MOV, \ ROM device list -> R2
+       00           SBO, \ turn card on
+@@C:  *R2       R2  MOV, \ DJUMP3  Fetch next link
+       @@A          JEQ, \ DLOOP2  if link=0 we are done here
+       R2  83D2 @@  MOV, \ save link address in magic address
+       R2           INCT, \ R2 = code pointer
+      *R2+      R9  MOV,  \ FETCH code address ->R9
+       8355 @@  R5  MOVB,
+       @@4          JEQ, \  DJUMP4
+       R5      *R2+ CMPB,
+    EQ UNTIL,            \ JNE DLOOP3
+       R5       08  SRL,
+       R6  NAMBUF   LI,
+
+\ DLOOP4
+    BEGIN,
+       *R6+   *R2+  CMPB,
+        @@3          JNE, \  DLOOP3
+        R5           DEC,
+    EQ UNTIL,             \ JNE, DLOOP4
+
+@@4: \ DJUMP4
+       R1            INC,
+\       R1  SAVE5 @@  MOV,
+\       R9  ENTRY @@  MOV,
+\       R12 CARD @@  MOV,
+      *R9            BL,  \ call the DSR code
+       @@3           JMP, \ DLOOP3
+       00            SBZ,
+\ ==== DSR Workspace ====   \  going home!
+       DREGS         LWPI,
+       R9    R0      MOV,   \ put [PAB FLG] addr ->R0
+       R0            SWPB,
+       R0           VDPWA,
+       VDPRD @@  R1  MOVB, \ read error value
+       R1 0D         SRL,  \ put in the correct range
+       @@11          JNE,  \  DJUMP7
+                    RTWP,  \ back to Forth workspace
+
+\ error condition handlers
+@@5:       DREGS     LWPI, \ DJUMP5
+@@6: @@8:  R1        CLR,  \ DJUMP6
+@@7: @@11:                 \ DJUMP7
+        R1           SWPB,
+        R1      *R13 MOVB,
+        HEX20 @@ R15 SOCB,
+                     RTWP,
+
+\ the vector for BLWP
+l: DLNK   DREGS T, DSR1 T,
+
+CODE: DSRLNK
+        0 LIMI,
+        DLNK @@      BLWP,
+        8            DATA,
+        2 LIMI,
+        NEXT,
+        END-CODE

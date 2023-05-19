@@ -1,0 +1,123 @@
+\ DISK only DSRLINK   VERSION 2                BJF MAR 20 2018
+
+\ In Version 2 I removed the CPU buffer called PDATA and create VDP words
+\ to read and write the fields. This seems less schizophrenic.
+\ PAB is in VDP memory space so manage everything there.
+
+\ Overview:
+\ This file provides a way to CALL code in the DSR ROM.
+\ R9 of the GPL workspace must be pre-loaded with the entry address
+\ for the DSR code that you are calling.
+
+
+\ USAGE:   DSKLNK BLWP  **notice DSK LNK not  DSR LNK**
+
+TARGET-COMPILING
+
+\ This 32 byte workspace is only needed to give us 
+\ a way to return to Forth.  Sad :-(
+
+2000 VALUE: DSRWKSP     \ workspace fixed at >2000
+
+\ ===============================================================
+\ This is the only code used to CALL the DSR ROM code
+CODE: CALLDSR ( -- )     \ must be called with BLWP
+             83E0 LWPI,             \ change to GPL workspace
+            *R9 BL,                 \ GPL R9 already has the entry address
+             DEAD DATA,             \ This normally has DATA 8 in it. :-)
+             DSRWKSP LWPI,          \ back to the dummy workspace
+             RTWP,                  \ Return to Forth
+             NEXT,
+             END-CODE
+
+
+\ Create the VECTOR that we call with BLWP. 
+\ (Apologies for the cross-compiler magic incantation)
+
+\               workspace    compile program address
+\               ---------    -----------------------
+CREATE: DSKLNK   DSRWKSP T,  T' CALLDSR [CC] >BODY T, [TC]
+
+\ ===============================================================
+\ Define PAB constants
+\
+[CC] HEX [TC]
+ 3EDF CONSTANT: [0]PAB    \ 1ST peripheral access block at top of VDP RAM
+   20 CONSTANT: PSIZE     \ size of a PAB in CAMEL99 Forth 32 bytes
+
+
+ [0]PAB VALUE: PAB   \ "THE" PAB we are actually using.
+
+\ NOTE: PAB is set to [0]PAB for the Kernel.
+\       We adjust the value of PAB with HANDLES for ANS Files
+
+\ PAB structure field calculators
+    : _FAM    ( addr -- addr')  1+  ; \ FAM -> "file access mode"
+    : _FBUFF  ( addr -- addr')  2+  ; \ file buffer address field
+
+\ these are the same size as Forth code. ASM is faster
+CODE: _RECLEN ( addr -- addr') TOS 4 ADDI, NEXT, END-CODE
+CODE: _CHARS  ( addr -- addr') TOS 5 ADDI, NEXT, END-CODE
+CODE: _REC#   ( addr -- addr') TOS 6 ADDI, NEXT, END-CODE
+CODE: _FNAME  ( addr -- addr') TOS 9 ADDI, NEXT, END-CODE
+
+\  RAM->VDP & VDP->RAM string operations
+: VPLACE  ( $addr len Vaddr -- ) 2DUP VC! CHAR+ SWAP VWRITE ;
+\ : VGET    ( Vaddr len $addr -- ) 2DUP C! 1+ SWAP VREAD ;
+\ ========================================================
+\ Create the DSR card scanner
+[CC] HEX [TC]
+1100 CONSTANT: DSKCARD    \ No need to scan for the Floppy DISK CARD. It's here
+4000 CONSTANT: 'ID        \ DSR ROM header addresses
+4008 CONSTANT: 'DSRLIST
+
+CREATE: DEV$   [CC] 08 TALLOT  [TC]  \ DEV$ holds the string of left of the '.'
+
+: /DOT    ( caddr len -- caddr len')  \ cut string at the dot
+           2DUP T[CHAR] . SCAN NIP -  ;
+
+\ MAKEDV80 writes 4 PAB fields directly to VDP ram.
+\ This saves 32 bytes of CPU ram and does not affect speed much.
+
+\ Returns filename only for DSR. Ex: DSK1.TEST  becomes  .TEST
+: MAKEPAB  ( addr len -- real-PAB-addr)
+             PAB PSIZE 0 VFILL             \ erase the VDP PAB to be safe.
+             PAB 20 +  PAB _FBUFF V!       \ set FBUFF 32 bytes past PAB
+             14   PAB _FAM    VC!          \ default to: DISPLAY,VARIABLE
+             50   PAB _RECLEN VC!          \ 80 bytes/record
+             2DUP PAB _FNAME VPLACE        \ dup & write string to PAB
+             /DOT NIP 1+ ( -- n)           \ compute offset upto '.' in string
+             PAB _FNAME + ;                \ add offset to PAB _FNAME
+                                           \ *this is the PAB address for the ROM code
+
+: >DSR$   ( link -- $) 4 +  ;     \ add 4 to the link gets to the DSR$
+
+: =$ ( $1 $2 -- flag) OVER C@ 1+ S= 0= ; \ compare 2 counted strings
+
+\ DSRFIND searches for a matching device NAME in the DSR ROM
+\ It returns the link-field!. link-field+2 = runnable code address
+
+: DSRFIND ( addr len -- link_addr)
+           /DOT DEV$ PLACE
+           'DSRLIST                    \ 1st LINK in ROM linked list
+           BEGIN
+              @                        \ fetch the next link
+              DUP 0=                   \ test for end of list
+              SWAP DEV$ OVER >DSR$ =$    \ test string match in ROM
+              ROT OR                   \ if either is true we're done.
+           UNTIL ;
+
+\ card control lexicon
+: Enable   ( CRU -- )
+           CRU@ OVER <>               \ is this a different card?
+           IF   0SBZ                  \ if so, turn it off
+           THEN CRU! 0SBO ;           \ then turn on the requested card
+
+: Disable  ( CRU -- )  CRU! 0SBZ ;
+
+\ hi level commands
+: DiskON  ( -- ) DSKCARD  DUP 83D0 !  Enable ;   \ 99-4A needs CRU copied to 83D0 (magic)
+: DiskOFF ( -- ) DSKCARD  Disable ;
+
+
+

@@ -1,0 +1,128 @@
+\ DISK only DSRLINK
+\ This file provides a way to CALL code in the DSR ROM.
+\ R9 of the GPL workspace must be pre-loaded with the entry address
+\ for the DSR code that you are calling.
+
+\ low level access to device service routines
+
+\ USAGE:   DSKLNK BLWP  **notice DSKLNK not  dsRlnk**
+
+TARGET-COMPILING
+
+2000 CONSTANT: DSRWKSP   \ workspace is at start of HEAP
+
+[CC]  2020 H T!          \ manually move heap pointer
+
+TARGET-COMPILING
+CODE: CALLDSR ( -- )     \ must be called with BLWP
+             83E0 LWPI,             \ change to GPL workspace
+            *R9 BL,                 \ GPL R9 already has the entry address
+             @@1 JMP,
+             @@2 JMP,
+@@1:         DSRWKSP @@ SETO,       \ return true flag IN R0 if there is an error
+@@2:         DSRWKSP LWPI,          \ Returns here if error ?
+             RTWP,                  \ Return to Forth
+             NEXT,
+             END-CODE
+
+\ *** DSRLNK is the VECTOR that is called by BLWP ***
+\               workspace   compile program address
+\               ---------   -----------------------
+CREATE: DSKLNK   DSRWKSP T,     T' CALLDSR [CC] >BODY T, [TC]
+
+\ ======================================================================
+\ Disk Device service routine access begins
+
+\ define a PAB block. Consist of 32 bytes for PAB + 256 bytes for file buffer
+\
+[CC] HEX [TC]
+ 3EDF CONSTANT: [0]PAB    \ 1ST peripheral access block at top of VDP RAM
+   20 CONSTANT: PSIZE     \ size of a PAB in CAMEL99 Forth 32 bytes
+
+
+ [0]PAB VALUE: PAB   \ "THE" PAB we are actually using.
+
+\ NOTE: PAB is set to [0]PAB for the Kernel.
+\       We adjust the value of PAB with HANDLES for ANS Files
+
+
+
+\ PABIMAGE    open,DIS vdpBUF  lenchars rec#   offst  Filename
+\ ------------------------------------------------------------------
+2020 CONSTANT: PDATA     [CC]  H T@ PSIZE +  H T!  [TC]
+
+\  PAB structure fields access with code words for speed
+    : _FAM    ( addr -- addr')  1+  ; \ "file access mode"
+    : _FBUFF  ( addr -- addr')  2+  ; \ VDP mem. file buffer
+CODE: _RECLEN ( addr -- addr') TOS 4 ADDI, NEXT, END-CODE
+CODE: _CHARS  ( addr -- addr') TOS 5 ADDI, NEXT, END-CODE
+CODE: _REC#   ( addr -- addr') TOS 6 ADDI, NEXT, END-CODE
+CODE: _FNAME  ( addr -- addr') TOS 9 ADDI, NEXT, END-CODE
+
+
+\ ========================================================
+\ Create the DSR card scanner
+[CC] HEX [TC]
+1100 CONSTANT: DSKCARD    \ No need to scan for the Floppy DISK CARD. It's here
+4000 CONSTANT: 'ID        \ DSR ROM header addresses
+4008 CONSTANT: 'DSRLIST
+
+CREATE: DEV$   [CC] 08 TALLOT  [TC]  \ DEV$ holds the string of left of the '.'
+
+: /DOT    ( caddr len -- caddr len')  \ cut string at the dot
+           2DUP T[CHAR] . SCAN NIP -  ;
+
+: FAM!    ( fam -- )  PDATA _FAM C!   ;
+: RECLEN! ( byte --)  PDATA _RECLEN C! ;       \ (decimal)80 byte records
+
+\ CREATEPAB does this:  OPEN #1:"DSK1.TEST", INPUT, DISPLAY, VARIABLE 80
+\ Returns filename only for DSR. Ex: DSK1.TEST  becomes  .TEST
+: CREATEPAB  ( addr len -- real-PAB-addr)
+             2DUP                       \ dup the string info
+             PDATA _FNAME PLACE         \ place the string in PDATA buffer
+             PAB PSIZE 0 VFILL          \ erase VDP PAB memory
+             PDATA PAB PSIZE VWRITE     \ write PDATA to VDP PAB
+             PAB 20 + PDATA _FBUFF !    \ set FBUFF 32 bytes past PAB
+
+             /DOT NIP 1+ ( -- n)        \ compute offset upto '.'
+             PAB _FNAME + ;             \ add offset to PAB _FNAME
+                                        \ *this is the REAL PAB address that
+                                        \ DSR uses!!!
+
+\ removed to save space. only used twice
+\ : >DSR$   ( link -- $) 4 +  ;         \ convert list link to DSR$
+
+: =$ ( $1 $2 -- flag) OVER C@ 1+ S= 0= ; \ compare 2 counted strings
+
+\ DSRFIND searches for a matching device NAME in the DSR ROM
+\ It returns the link-field!. link-field+2 = runnable code address
+
+: DSRFIND ( addr len -- link_addr)
+           /DOT DEV$ PLACE
+           'DSRLIST                    \ 1st LINK in ROM linked list
+           BEGIN
+              @                        \ fetch the next link
+              DUP 0=                   \ test for end of list
+              SWAP DEV$ OVER 4 + =$    \ test string match in ROM
+              ROT OR                   \ if either is true we're done.
+           UNTIL ;
+
+\ card control lexicon
+: Enable   ( CRU -- )
+           CRU@ OVER <>               \ is this a different card?
+           IF   0SBZ                  \ if so, turn it off
+           THEN CRU! 0SBO ;           \ then turn on the requested card
+
+: Disable  ( CRU -- )  CRU! 0SBZ ;
+
+\ hi level commands
+: DiskON  ( -- ) DSKCARD  DUP 83D0 !  Enable ;   \ 99-4A needs CRU copied to 83D0 (magic)
+: DiskOFF ( -- ) DSKCARD  Disable ;
+
+\ some error handlers
+: ?CardID  ( -- )      'ID C@ AA <> TS" CARD not enabled" ?ABORT ;
+: ?DEVERR  ( link -- ) 0= TS" Device not found" ?ABORT ;
+
+\ primtives that convert something to another thing
+: REG#   ( workspace R# -- addr)  CELLS +  ; \ return address of R# in workspace
+: >ENTRY ( DSRlink -- entry_addr) CELL+ @ ;

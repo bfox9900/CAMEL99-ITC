@@ -1,0 +1,100 @@
+\ DISK only DSRLINK   VERSION 2                BJF MAR 20 2018
+\ Aug 2018 replaced literal $20 with CONSTANT BL to save space
+
+\ Overview:
+\ This file provides a way to CALL code in the DSR ROM.
+\ R9 of the GPL workspace is loaded directly with the entry address
+\ for the DSR code that you are calling.
+\ USAGE:   DSKLNK BLWP  **notice DSK LNK not  DSR LNK**
+
+TARGET-COMPILING
+\ Steal top address of the data stack and use for DSRWSP.
+\ We in fact only use 6 bytes.
+\ This workspace is only needed to isolate the Forth
+\ workspace from the DSR workspace.
+
+\                 [CC] [PRIVATE] [TC]
+\ Define PAB constants
+[CC] HEX [TC]
+ 1100 CONSTANT: DSKCARD   \ No need to scan for the Floppy DISK CARD. It's here
+ 4000 CONSTANT: 'ID       \ DSR ROM header addresses
+ 4008 CONSTANT: 'DSRLIST
+
+[CC] SP0 100 - [TC] VALUE: DSRWKSP
+\ dsrwksp will become hold the variables in registers
+\ R0 DSRNAM  (the realpab that goes into 8356)
+\ R1 CARD address ( >1100)
+\ R2
+\ R3
+\ R4
+
+\ ========================================================
+               [CC] [PUBLIC] [TC]
+\ ========================================================
+\ Create the VECTOR that we call with BLWP.
+\               workspace    compile program address
+\               ---------    -----------------------
+CREATE: DSKLNK  DSRWKSP T,  [cc] THERE TCELL + T, [tc]
+             0 LIMI,
+             837C @@ CLR,     \ clr GPL status flag
+             83E0 LWPI,       \ change to GPL workspace
+             R12 DSKCARD CMPI,
+             NE IF,
+                0 SBZ,
+             ENDIF,
+             R12 DSKCARD LI,  \ card address -> GPL R12
+             R12 83D0 @@ MOV, \ signals O/S that we are live
+             0 SBO,           \ turn on the card
+             *R13  R9 MOV,
+            *R9 BL,           \ branch to ROM code
+             NOP,              \ on error DSR returns here
+             0 SBZ,           \ on success turn off card
+             83D0 @@ CLR,
+             DSRWKSP LWPI,    \
+             2 LIMI,
+             RTWP,            \ Return to Forth Workspace
+             NEXT,
+
+\ ========================================================
+\ Create the DSR card scanner
+[CC] HEX [TC]
+           [CC] [PUBLIC] [TC]
+
+: /DOT    ( caddr len -- caddr len')  \ cut string at the dot
+           2DUP T[CHAR] . SCAN  NIP -  ;
+
+: =$ ( $1 $2 -- flag) OVER C@ 1+ S= 0= ; \ compare 2 counted strings
+
+\ DSRFIND searches for a matching device NAME in the DSR ROM starting at ROMLIST
+\ It returns the link-address. (Link-address+2 = runnable code address)
+: DSRFIND ( addr len ROMLIST -- link_addr)
+           -ROT                        \ save the ROM list for later
+     ( $20) BL MALLOC >R               \ get a temp$ buffer >20 bytes
+           /DOT DUP  8355 !            \ store length as an int.
+           R@ PLACE                    \ cut filename at dot, place in temp$
+           BEGIN
+              @ DUP 83D2 !             \ fetch the next link
+              DUP 0=                   \ test for end of list
+              SWAP  R@ OVER 4 +  =$    \ match TEMP$ to $ in ROM
+              ROT OR                   \ if either is true we're done.
+           UNTIL
+           BL MFREE                    \ release 20 bytes to heap
+           R> DROP ;                   \ free the heap
+
+CODE: Enable ( CRU -- )       \ CODE versions, NO need for CRUSMALL library
+              TOS R12 CMP,
+              NE IF,
+                   0 SBZ,
+              ENDIF,
+              TOS R12 MOV,
+              0 SBO,
+              TOS POP,
+              NEXT,
+              END-CODE
+
+CODE: Disable ( CRU -- )
+              TOS R12 MOV,
+              0 SBZ,
+              TOS POP,
+              NEXT,
+              END-CODE

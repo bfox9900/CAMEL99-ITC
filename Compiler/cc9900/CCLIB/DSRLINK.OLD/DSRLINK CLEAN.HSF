@@ -1,0 +1,188 @@
+\ **********************
+TARGET-COMPILING
+
+[cc] HEX [tc]
+8C02 EQU VDPWA
+8C00 EQU VDWWD
+8800 EQU VDPRD
+837C EQU STATUS
+
+
+l: HEX20  20 BYTE, 
+l: HEXAA  AA BYTE, \ >AA
+l: PERIOD 2E BYTE, \ '.'
+         .EVEN
+
+l: SAVE1  0000 DATA, >0000
+l: SAVE2  0000 DATA, >0000
+l: SAVE3  0000 DATA, >0000
+l: SAVE4  0000 DATA, >0000
+l: SAVE5  0000 DATA, >0000
+
+l: NAMBUF BSS  6  \ 'since we know were using "dskN."
+
+\
+l: H2000  2000 DATA, \ >2000
+l: CYC1   0000 DATA, \ 0
+l: H1300  1300 DATA, \ >1300
+
+\ we need more labels than I normally use for Forth Words
+ A refer: @@A    A binder: @@A:
+ B refer: @@B    B binder: @@B:
+ C refer: @@C    C binder: @@C:
+ D refer: @@D    D binder: @@D:
+ E refer: @@E    E binder: @@E:
+ F refer: @@F    F binder: @@F:
+10 refer: @@10  10 binder: @@10:
+11 refer: @@11  11 binder: @@11:
+
+\ take some space in Forth DATA stack for a workspace
+[CC] SP0 100 - [TC] VALUE: DREGS
+[cc] 5 2* DREGS + EQU DREG(10)
+
+CLR-JMPTABLE
+CREATE DSR1
+       *R14+    R5   MOV,    \ entry address->R5, auto inc,
+       $20 @@   R15  SZCB,   \ clear DSR wksp
+       8356 @@  R0   MOV,    \ ^PAB to R0
+       R0       R9   MOV,    \ dup R0 to R9
+       R9       FFF8 ADDI,   \ R9-8 = [PAB FLG]
+       R0            SWPB,   \ write ^pab as VDP address
+       R0 VDPWA @@   MOVB,
+       R0            SWPB,
+       R0 VDPWA @@   MOVB,
+                     NOP,
+       VDPRD @@ R1   MOVB,   \ read VDP byte ???
+       R1       R3   MOVB,
+       R3       08   SRL,
+       R4            SETO,
+       R2   NAMBUF   LI,
+
+\ DLOOP1
+@@2:   R0            INC,
+       R4            INC,
+       R4       R3   CMP,
+       @@1 JEQ,              \ JEQ   DJUMP1
+       R0            SWPB,
+       R0  VDPWA @@  MOVB,
+       R0            SWPB,
+       R0  VDPWA @@  MOVB,
+                     NOP,
+       VDPRD @@  R1  MOVB,
+       R1       *R2+ MOVB,
+       R1 PERIOD @@  CMPB,
+       @@2           JNE,   \  DLOOP1
+
+\ DJUMP1
+@@1:   R4        R4  MOV,
+       @@6           JEQ,           \  DJUMP6
+       R4        07  CMPI,
+       @@8           JGT,           \  DJUMP6
+       83D0 @@       CLR,
+       R4   8354 @@  MOV,
+       R4   SAVE3 @@ MOV,
+       R4            INC,
+       R4   8356 @@  ADD,
+       8356 @@ SAVE4 @@ MOV,
+
+\ SROM
+@@10:  83E0         LWPI,
+       R1           CLR,
+       H2000 @@ CYC1 @@ MOV,
+       R12     1100 LI,
+       @@A          JMP,  \ DLOOP2
+
+\ SROM1
+@@11:  R12   0F00   LI,
+       H1300 @@ CYC1 @@ MOV,
+
+\ DLOOP2
+@@A:   R12    R12   MOV,
+       @@B          JEQ, \  DJUMP2
+       00           SBZ,
+
+\ DJUMP2
+@@B    R12    0100  ADDI,
+       83D0 @@      CLR,
+       R12 2000 @@  CMPI,
+       @@11         JEQ,  \  SROM1
+
+       R12  CYC1 @@ CMP,
+       @@5          JEQ, \ DJUMP5
+
+       R12  83D0 @@ MOV,
+       00           SBO,
+       R2   4000    LI,
+      *R2  HEXAA @@ CMPB,
+       @@A JNE.          \  DLOOP2
+      DREG(10) @@ R2 ADD,
+       @@C          JMP, \   DJUMP3
+
+\ DLOOP3
+@@E:   83D2 @@   R2 MOV,
+       00           SBO, \ turn card on
+
+\ DJUMP3
+@@C:  *R2       R2  MOV,
+       @@A          JEQ, \  DLOOP2
+       R2  83D2 @@  MOV,
+       R2           INCT,
+      *R2+      R9  MOV,
+       8355 @@  R5  MOVB,
+       @@D          JEQ, \  DJUMP4
+       R5     *R2+  CMPB,
+       @@E:         JNE, \  DLOOP3
+       R5     08    SRL,
+       R6  NAMBUF   LI,
+
+\ DLOOP4
+@@F:  *R6+   *R2+   CMPB,
+       @@E          JNE, \  DLOOP3
+
+       R5           DEC,
+       @@F          JNE, \  DLOOP4
+
+\ DJUMP4
+@@4: @@D:
+       R1            INC,
+       R1  SAVE5 @@  MOV,
+       R9  SAVE2 @@  MOV,
+       R12 SAVE1 @@  MOV,
+      *R9            BL,
+       @@E           JMP, \ DLOOP3
+       00            SBZ,
+       DREGS         LWPI,
+       R9    R0      MOV,
+       R0            SWPB,
+       R0  VDPWA @@  MOVB,
+       R0            SWPB,
+       R0  VDPWA @@  MOVB,
+                     NOP,
+       VDPRD @@  R1  MOVB,
+       R1 0D         SRL,
+       @@1l          JNE, \  DJUMP7
+                     RTWP,
+
+\ DJUMP5
+@@5:    DREGS        LWPI,
+
+\ DJUMP6
+@@6: @@8: R1         CLR,
+
+\ DJUMP7
+@@7:  @@11:
+        R1           SWPB,
+        R1,*R13      MOVB,
+        HEX20 @@ R15 SOCB,
+                     RTWP,
+
+\ the vector for BLWP
+CREATE: (DSRLNK)  DREGS T, DSR1 T,
+
+CODE: DSRLNK
+       (DSRLNK) @@       BLWP,
+        8 DATA,
+        NEXT,
+        END-CODE
+
+
