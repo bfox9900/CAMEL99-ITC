@@ -43,7 +43,7 @@ VARIABLE SCORE
 VARIABLE 'BALL      \ record the position so we don't calculate it twice
 VARIABLE REMAINING  \ # squares left to win
 VARIABLE SPEED 
-0 VALUE PADDLE-TASK 
+\ 0 VALUE PADDLE-CTRL 
 
 \ ***************************
 \ handy primitives
@@ -275,7 +275,7 @@ DECIMAL
 
 : WALL-BOUNCE 
     BALL 
-    DUP SP.Y VC@ 24 >  
+    DUP SP.Y VC@ 27 >  
     IF   BOUNCE.X   \ if we hit the top 
     ELSE BOUNCE.Y   \ if we hit a wall
     THEN WALL-CLR
@@ -350,7 +350,7 @@ DECIMAL
       ENDCASE
       PAUSE
       SPEED @ TICKS 
-      1 SP.Y VC@ 200 >
+      BALL SP.Y VC@ 200 >
     UNTIL         
     BONK 
 ;
@@ -418,8 +418,7 @@ DECIMAL
 : GO
     DECIMAL
     QUIT-ON
-    PADDLE-TASK SPAWN TO PADDLE-TASK 
-    PADDLE-TASK WAKE 
+    PADDLE-TASK SPAWN WAKE 
     MULTI       
     BEGIN 
       SETUP  
