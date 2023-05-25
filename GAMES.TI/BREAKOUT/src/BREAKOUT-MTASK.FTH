@@ -2,10 +2,10 @@
 
 \ Uses DSK1.MOTION library. 
 \ MOTION sets SPRITE motion vector. SP.MOVE moves sprite 1 increment.
-\ See the file for more details
+\ See the file dsk1.motion for more details
 
-\ NEEDS DUMP   FROM DSK1.TOOLS
-\ FAST#S
+\ NEEDS DUMP   FROM DSK1.TOOLS ( debugging)
+
 NEEDS HCHAR  FROM DSK1.GRAFIX
 NEEDS SPRITE FROM DSK1.DIRSPRIT
 NEEDS MOTION FROM DSK1.MOTION
@@ -19,6 +19,7 @@ NEEDS JOYST  FROM DSK1.JOYST
 NEEDS QUIT-ON FROM DSK1.QUITKEY 
 NEEDS YIELD  FROM DSK1.MTASK99 
 NEEDS VALUE  FROM DSK1.VALUES 
+NEEDS U.R    FROM DSK1.UDOTR 
 
 : EMPTY S" REMOVE MARKER REMOVE" EVALUATE ;
 
@@ -26,7 +27,7 @@ MARKER REMOVE
 
 EMPTY
 
-\ create a task in heap, fork it, assign Execution, return PID
+\ allocate task space in heap, fork it, assign Execution, return PID
 : SPAWN  ( xt -- pid)  USIZE MALLOC DUP >R FORK  R@ ASSIGN  R> ;
  
 \ Extensions to MOTION 
@@ -123,7 +124,7 @@ CREATE NUMERALS
   DATA 0000,7E66,7E06,7E00     \ 57
 
 DECIMAL
-: DEF-NUMBERS    NUMERALS 48 ]PDT 10 8* VWRITE ;
+: DEF-NUMBERS ( --)  NUMERALS 48 ]PDT 10 8* VWRITE ;
 
 \ ****************************************
 \ * Character Patterns
@@ -163,7 +164,7 @@ VIOBAR  8 + CONSTANT BLKSQR
 BLKSQR  8 + CONSTANT BALLCHARS
 BALLCHARS 8 + CONSTANT PADDLECHARS
 
-: SPRITE-DEF (  addr char -- ) ]PDT 64 VWRITE ;
+: SPRITE-DEF ( addr char -- ) ]PDT 64 VWRITE ;
 
 : DEF-SHAPES
     SQUARE BORDER CHARDEF
@@ -215,14 +216,10 @@ BALLCHARS 8 + CONSTANT PADDLECHARS
     BALLCHARS  WHITE  127 104  BALL SPRITE 
     SERVING BALL MOTION ;
 
-: .#####    ( n -- ) 0 <#  # # # # #  #> TYPE ;
-: .SCORE  ( -- ) 4 0 AT-XY SCORE @ .##### ;
-: .BALLS  ( -- ) 20 0 AT-XY BALL# @ .  ;
+: .SCORE  ( -- ) 4 0 AT-XY SCORE @ 5 U.R ;
+: .BALLS  ( -- ) 20 0 AT-XY BALL# @ 2 .R  ;
 
 : .PADDLE ( -- ) PADDLECHARS MAGENTA 127 176 PADDLE SPRITE ;
-
-: PADDLE-LOC+! ( n -- ) 
-    PADDLE SP.X VC@ +  10 230 CLIP  PADDLE SP.X VC! ;
 
 : START-POSITIONS    BALL.HOME  .SCORE  .BALLS   .PADDLE ;
 
@@ -245,20 +242,25 @@ DECIMAL
   DUP 'BALL ! ;
 
 : UNDERBALL ( pix piy -- c) BALLADDR VC@ ;
-: BOUNCE.X  ( -- )  BALL VECT.X  DUP @ NEGATE SWAP ! BALL SP.MOVE ;
-: BOUNCE.Y  ( -- )  BALL VECT.Y  DUP @ NEGATE SWAP ! BALL SP.MOVE ;
+: BOUNCE.X  ( spr# --) VECT.X  DUP @ NEGATE SWAP ! BALL SP.MOVE ;
+: BOUNCE.Y  ( spr# --) VECT.Y  DUP @ NEGATE SWAP ! BALL SP.MOVE ;
 : FALLING?  BALL VECT.Y @ 0> ;
 : RISING?   BALL VECT.Y @ 0< ;
 
-
 : RICOCHET ( points freq --)
-    BL 'BALL @ VC! 
-    BOUNCE.Y CLINK  SCORE +!  .SCORE 100 TICKS 
-    REMAINING 1-! ;
+  BL 'BALL @ VC! 
+  BALL BOUNCE.Y CLINK  SCORE +!  .SCORE 100 TICKS 
+  REMAINING 1-! ;
 
 : OFFSET ( -- n)  
   PADDLE SP.X VC@  
   BALL SP.X VC@ - 2 /  -1 1 CLIP ;    
+
+ DECIMAL 
+\ clipped for sprite column boundaries
+: VC+!  ( n Vaddr --) DUP>R  VC@ +  17 223 CLIP  R> VC! ;
+: PADDLE+!   PADDLE SP.X VC+!  ;
+
 
 \ ***************************
 \ move away after collision
@@ -272,11 +274,15 @@ DECIMAL
 ;
 
 : WALL-BOUNCE 
-    BALL SP.Y VC@ 24 > IF  BOUNCE.X  WALL-CLR EXIT THEN \ if we hit the top 
-    BOUNCE.Y WALL-CLR ;
+    BALL 
+    DUP SP.Y VC@ 24 >  
+    IF   BOUNCE.X   \ if we hit the top 
+    ELSE BOUNCE.Y   \ if we hit a wall
+    THEN WALL-CLR
+;
 
 : PADDLE-HIT ( -- ) 
-    BOUNCE.Y 
+    BALL BOUNCE.Y 
     600 CLINK   
     9 0 
     DO  
@@ -286,40 +292,9 @@ DECIMAL
     LOOP 
 ;
 
-\ ***************************
-\ keyboard control
-\ ***************************
-
-\ HEX 83C8 CONSTANT REPEATING
-\ DECIMAL
-\ : PADDLE-CTRL
-\    REPEATING ON
-\    KEY?
-\    CASE
-\     83 OF  -3 PADDLE-LOC+!  ENDOF \ 'S'
-\     68 OF   3 PADDLE-LOC+!  ENDOF \ 'D'
-\    ENDCASE
-\ ;
-
-\ ***************************
-\ Joystick control task runs in background 
-\ ***************************
-HEX
-: PADDLE-CTRL
-    BEGIN 
-        PAUSE 
-        0 JOYST
-        CASE
-            2 OF  -1 PADDLE-LOC+!  ENDOF
-            4 OF   1 PADDLE-LOC+!  ENDOF 
-        ENDCASE
-        4 TICKS 
-    AGAIN     
-;
-
 DECIMAL 
 : WAIT-FIRE    BEGIN  PAUSE 0 JOYST 1 =  UNTIL ;
-
+  
 : .REPLAY 
   DELALL 
   11 21 AT-XY ." GAME OVER"
@@ -333,7 +308,7 @@ DECIMAL
 : SCORE-MULTIPLIER
     SCORE @ 1
     ?DO  
-      4 0 AT-XY I .#####
+      4 0 AT-XY I 5 U.R
       9 9 AT-XY ." MULTIPLIER!"
       750 CLINK 
       2 9 ERASELN
@@ -362,7 +337,6 @@ DECIMAL
     \ ?BREAK
       ?WIN PAUSE 
       BALL SP.MOVE
-    \ PADDLE-CTRL
       BALL PADDLE 8 COINC IF  PADDLE-HIT THEN 
       UNDERBALL ( char)
       CASE      \ points  Freq.
@@ -397,7 +371,7 @@ DECIMAL
     2 22 ERASELN ;
 
 : .CREDITS 
-   5 14 AT-XY ." RAINBOW BUSTER VER 3"
+   5 14 AT-XY ." RAINBOW BUSTER VER 3.1"
    9 15 AT-XY ."   FOR TI-99"
    6 16 AT-XY ." BY BRIAN FOX 2023" 
 
@@ -425,10 +399,26 @@ DECIMAL
   CLS
 ;
 
+\ ********************************************
+\ Joystick control runs as a background task
+\ ********************************************
+
+:NONAME
+    BEGIN 
+        PAUSE 
+        0 JOYST
+        CASE
+          2 OF  -1 PADDLE+!  ENDOF
+          4 OF   1 PADDLE+!  ENDOF 
+        ENDCASE
+        5 TICKS 
+    AGAIN    \ never stops because it is a separate task 
+; CONSTANT PADDLE-TASK
+
 : GO
     DECIMAL
     QUIT-ON
-    ['] PADDLE-CTRL SPAWN TO PADDLE-TASK 
+    PADDLE-TASK SPAWN TO PADDLE-TASK 
     PADDLE-TASK WAKE 
     MULTI       
     BEGIN 
