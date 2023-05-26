@@ -378,7 +378,7 @@ DECIMAL
       BALL SP.Y VC@ 200 >
     UNTIL         
     BONK               \ missed the ball return   
-  \  BALL# 1-! .BALLS  
+    BALL# 1-! .BALLS  
 ;
 
 : CLS      ( -- ) 24 13 DO  2 I ERASELN  LOOP ; 
