@@ -247,11 +247,6 @@ DECIMAL
 : FALLING?  BALL VECT.Y @ 0> ;
 : RISING?   BALL VECT.Y @ 0< ;
 
-: RICOCHET ( points freq --)
-  BL 'BALL @ VC! 
-  BALL BOUNCE.Y CLINK  SCORE +!  .SCORE 100 TICKS 
-  REMAINING 1-! ;
-
 : OFFSET ( -- n)  
   PADDLE SP.X VC@  
   BALL SP.X VC@ - 2 /  -1 1 CLIP ;    
@@ -265,31 +260,50 @@ DECIMAL
 \ ***************************
 \ move away after collision
 \ ***************************
-: WALL-CLR    
-  8 0 DO  
-    PAUSE 
-    BALL SP.MOVE  
-    SPEED @ TICKS  
-  LOOP 
+
+: BALL.MOVE    PAUSE BALL SP.MOVE  SPEED @ TICKS  ;
+
+: MOVES  0 ?DO  BALL.MOVE PAUSE  LOOP ;
+
+: TOPWALL? ( --?) BALL SP.Y VC@ 30 < ;
+: WALL?    ( --?) UNDERBALL BORDER = ; 
+: PADDLE?  ( -- ?) BALL PADDLE 8 COINC ;
+
+: TOPBOUNCE 
+  TOPWALL? 
+  IF  BALL BOUNCE.Y  3 MOVES 
+      WALL? 
+      IF BALL BOUNCE.X 
+         8 MOVES  
+      THEN 
+  THEN
 ;
 
-: WALL-BOUNCE 
-    BALL 
-    DUP SP.Y VC@ 27 >  
-    IF   BOUNCE.X   \ if we hit the top 
-    ELSE BOUNCE.Y   \ if we hit a wall
-    THEN WALL-CLR
+: SIDEBOUNCE 
+  WALL? 
+  IF  BALL BOUNCE.X 
+      BEGIN BALL SP.MOVE WALL? 0= UNTIL 
+      TOPWALL?
+      IF   
+         BALL BOUNCE.Y 
+         9 MOVES 
+      THEN
+  THEN 
 ;
+
+: WALL-BOUNCE ( -- ) TOPBOUNCE SIDEBOUNCE ;
+
+: PADDLE-BOUNCE 
+  BALL BOUNCE.Y 
+  BEGIN PADDLE? 
+  WHILE 
+    BALL.MOVE
+  REPEAT ;    
 
 : PADDLE-HIT ( -- ) 
-    BALL BOUNCE.Y 
     600 CLINK   
-    9 0 
-    DO  
-      PAUSE
-      BALL SP.MOVE
-      SPEED @ TICKS
-    LOOP 
+    PADDLE-BOUNCE 
+    SIDEBOUNCE 
 ;
 
 DECIMAL 
@@ -312,32 +326,44 @@ DECIMAL
       9 9 AT-XY ." MULTIPLIER!"
       750 CLINK 
       2 9 ERASELN
-    7 +LOOP 
+    9 +LOOP 
     SCORE @ BALL# @ *  SCORE !
     .SCORE
+   
 ;
 
-: ?WIN  
-   REMAINING @ IF  EXIT THEN    
+: .BALL# 
+   BALL# @ DUP . ." BALL" IF ." S" THEN  ;
+
+: ?WIN 
+   REMAINING @ IF  EXIT  THEN   
    DELALL 
    10 5 AT-XY ." HEY YOU WON !!" 
-    4 7 AT-XY ." WITH " BALL# @ . ." BALLS REMAINING"
-   SCORE-MULTIPLIER 
-   .REPLAY  
-;
+    4 7 AT-XY ." WITH " .BALL#  ."  REMAINING"
+    BALL# @ 1 > IF  SCORE-MULTIPLIER  THEN 
+    28 6 * REMAINING !  \ # blocks to WIN
+    BALL# OFF 
+  ;
 
 \ for debugging
-: ?BREAK     
-  ?TERMINAL 
-  IF CYAN SCREEN TRUE ABORT" BREAK" 
-  THEN ;
+\ : ?BREAK     
+\  ?TERMINAL 
+\  IF CYAN SCREEN TRUE ABORT" BREAK" 
+\  THEN ;
+
+: RICOCHET ( points freq --)
+  CLINK
+  BL 'BALL @ VC! 
+  PAUSE 
+  BALL BOUNCE.Y  SCORE +!  .SCORE 
+  PAUSE 
+  REMAINING 1-! ;
 
 : BALLINPLAY
     BEGIN
-    \ ?BREAK
-      ?WIN PAUSE 
-      BALL SP.MOVE
-      BALL PADDLE 8 COINC IF  PADDLE-HIT THEN 
+      ?WIN 
+      BALL.MOVE
+      PADDLE? IF  PADDLE-HIT THEN 
       UNDERBALL ( char)
       CASE      \ points  Freq.
         MAGBAR   OF 6     1500 RICOCHET    ENDOF
@@ -348,11 +374,11 @@ DECIMAL
         VIOBAR   OF 1     1000 RICOCHET    ENDOF
         BORDER   OF WALL-BOUNCE 200 CLINK  ENDOF
       ENDCASE
-      PAUSE
-      SPEED @ TICKS 
+      PAUSE 
       BALL SP.Y VC@ 200 >
     UNTIL         
-    BONK 
+    BONK               \ missed the ball return   
+  \  BALL# 1-! .BALLS  
 ;
 
 : CLS      ( -- ) 24 13 DO  2 I ERASELN  LOOP ; 
@@ -362,7 +388,7 @@ DECIMAL
   SETCOLORS  SCORE OFF 
   2 MAGNIFY 
   10 BALLS 
-  28 6 * REMAINING !  \ HIT 168 blocks to WIN
+  28 6 * REMAINING !  \ # blocks to WIN
   CLEAR ;
 
 : .PRESS-FIRE
@@ -382,9 +408,9 @@ DECIMAL
 : SET-SPEED 
      KEY 
      CASE 
-      [CHAR] 1 OF  200 SPEED !  ENDOF 
-      [CHAR] 2 OF   50 SPEED !  ENDOF 
-      [CHAR] 3 OF    1 SPEED !  ENDOF 
+      [CHAR] 1 OF  250 SPEED !  ENDOF 
+      [CHAR] 2 OF   90 SPEED !  ENDOF 
+      [CHAR] 3 OF    3 SPEED !  ENDOF 
                     50 SPEED ! ( default to medium)
      ENDCASE 
 ;
@@ -411,7 +437,7 @@ DECIMAL
           2 OF  -1 PADDLE+!  ENDOF
           4 OF   1 PADDLE+!  ENDOF 
         ENDCASE
-        5 TICKS 
+        SPEED @ 2/ 5 MAX TICKS 
     AGAIN    \ never stops because it is a separate task 
 ; CONSTANT PADDLE-TASK
 
@@ -433,8 +459,7 @@ DECIMAL
         SERVING BALL MOTION 
         START-POSITIONS
         WAIT-FIRE 
-        BALLINPLAY
-        BALL# 1-! .BALLS
+        BALLINPLAY 
       REPEAT
       .REPLAY
     AGAIN 
