@@ -343,6 +343,7 @@ DECIMAL
     BALL# @ 1 > IF  SCORE-MULTIPLIER  THEN 
     28 6 * REMAINING !  \ # blocks to WIN
     BALL# OFF 
+    .REPLAY 
   ;
 
 \ for debugging

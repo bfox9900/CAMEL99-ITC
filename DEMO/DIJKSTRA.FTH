@@ -84,24 +84,6 @@ SQUARE WHTSQR CHARDEF
           10 16 WHTSQR 256 VCHAR
           21  8 REDSQR 256 VCHAR ;
 
-\ Algorithm Dijkstra(A)  \ A is an array of three colors
-\ begin
-\   r <- 1;
-\   b <- n;
-\   w <- n;
-\ while (w>=r)
-\       check the color of A[w]
-\       case 1: red
-\               swap(A[r],A [w]);
-\                r<-r+1
-\       case 2: white
-\               w<-w-1
-\       case 3: blue
-\               swap(A[w],A[b]);
-\               w<-w-1;
-\               b<-b-1
-\ end
-
 
 \ generic exchange is verbose
 \ : XCHG  ( adr1 adr2 -- )
