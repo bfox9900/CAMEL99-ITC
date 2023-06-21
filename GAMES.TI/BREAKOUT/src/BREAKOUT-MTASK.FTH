@@ -1,4 +1,5 @@
 \ BREAKOUT.FTH  on Camel99 Forth     Aug 2022 Brian Fox
+\ Updated June 21 2023
 
 \ Uses DSK1.MOTION library. 
 \ MOTION sets SPRITE motion vector. SP.MOVE moves sprite 1 increment.
@@ -242,8 +243,8 @@ DECIMAL
   DUP 'BALL ! ;
 
 : UNDERBALL ( pix piy -- c) BALLADDR VC@ ;
-: BOUNCE.X  ( spr# --) VECT.X  DUP @ NEGATE SWAP ! BALL SP.MOVE ;
-: BOUNCE.Y  ( spr# --) VECT.Y  DUP @ NEGATE SWAP ! BALL SP.MOVE ;
+: BOUNCE.X  ( spr# --) VECT.X  DUP @ NEGATE SWAP ! ( BALL SP.MOVE) ;
+: BOUNCE.Y  ( spr# --) VECT.Y  DUP @ NEGATE SWAP ! ( BALL SP.MOVE) ;
 : FALLING?  BALL VECT.Y @ 0> ;
 : RISING?   BALL VECT.Y @ 0< ;
 
@@ -257,40 +258,24 @@ DECIMAL
 : PADDLE+!   PADDLE SP.X VC+!  ;
 
 
-\ ***************************
-\ move away after collision
-\ ***************************
+\ ***************************************
+\ ball movement and collision detection
+\ ***************************************
 
-: BALL.MOVE    PAUSE BALL SP.MOVE  SPEED @ TICKS  ;
-
-: MOVES  0 ?DO  BALL.MOVE PAUSE  LOOP ;
-
-: TOPWALL? ( --?) BALL SP.Y VC@ 30 < ;
-: WALL?    ( --?) UNDERBALL BORDER = ; 
 : PADDLE?  ( -- ?) BALL PADDLE 8 COINC ;
 
-: TOPBOUNCE 
-  TOPWALL? 
-  IF  BALL BOUNCE.Y  3 MOVES 
-      WALL? 
-      IF BALL BOUNCE.X 
-         8 MOVES  
-      THEN 
-  THEN
-;
+: BALL.MOVE    SPEED @ TICKS  BALL SP.MOVE ;
 
-: SIDEBOUNCE 
-  WALL? 
-  IF  BALL BOUNCE.X 
-      BEGIN BALL SP.MOVE WALL? 0= UNTIL 
-      TOPWALL?
-      IF   
-         BALL BOUNCE.Y 
-         9 MOVES 
-      THEN
-  THEN 
-;
+: MOVES  0 ?DO  BALL.MOVE LOOP ;
 
+: WALL?    ( --?) UNDERBALL BORDER = ; 
+: CLEAR-WALL  BEGIN  WALL?    WHILE  BALL.MOVE  REPEAT ;
+
+: TOPWALL? ( --?) BALL SP.Y VC@ 32 < ;
+: CLEAR-TOP   BEGIN  TOPWALL? WHILE  BALL.MOVE  REPEAT ;
+
+: TOPBOUNCE   TOPWALL? IF  BALL BOUNCE.Y  CLEAR-TOP  THEN ;
+: SIDEBOUNCE  WALL?    IF  BALL BOUNCE.X  CLEAR-WALL  THEN ;
 : WALL-BOUNCE ( -- ) TOPBOUNCE SIDEBOUNCE ;
 
 : PADDLE-BOUNCE 
@@ -307,7 +292,14 @@ DECIMAL
 ;
 
 DECIMAL 
-: WAIT-FIRE    BEGIN  PAUSE 0 JOYST 1 =  UNTIL ;
+: JOYKEY  ( -- n) \ wait for any joystick output 
+  BEGIN  
+    PAUSE 
+    0 JOYST 
+    ?DUP 
+  UNTIL ;
+
+: WAIT-FIRE    BEGIN  JOYKEY 1 = UNTIL ;
   
 : .REPLAY 
   DELALL 
@@ -351,6 +343,7 @@ DECIMAL
 \  ?TERMINAL 
 \  IF CYAN SCREEN TRUE ABORT" BREAK" 
 \  THEN ;
+
 
 : RICOCHET ( points freq --)
   CLINK
@@ -409,10 +402,10 @@ DECIMAL
 : SET-SPEED 
      KEY 
      CASE 
-      [CHAR] 1 OF  250 SPEED !  ENDOF 
-      [CHAR] 2 OF   90 SPEED !  ENDOF 
-      [CHAR] 3 OF    3 SPEED !  ENDOF 
-                    50 SPEED ! ( default to medium)
+      [CHAR] 1 OF  300 SPEED !  ENDOF 
+      [CHAR] 2 OF  150 SPEED !  ENDOF 
+      [CHAR] 3 OF   50 SPEED !  ENDOF 
+                   150 SPEED ! ( default to medium)
      ENDCASE 
 ;
 
@@ -429,18 +422,19 @@ DECIMAL
 \ ********************************************
 \ Joystick control runs as a background task
 \ ********************************************
-
-:NONAME
+        
+: PADDLE-MOVER 
     BEGIN 
-        PAUSE 
-        0 JOYST
-        CASE
-          2 OF  -1 PADDLE+!  ENDOF
-          4 OF   1 PADDLE+!  ENDOF 
-        ENDCASE
-        SPEED @ 2/ 5 MAX TICKS 
+      JOYKEY 
+      CASE
+        2 OF  -2 PADDLE+!  ENDOF
+        4 OF   2 PADDLE+!  ENDOF 
+      ENDCASE
+      SPEED @ 2* TICKS 
     AGAIN    \ never stops because it is a separate task 
-; CONSTANT PADDLE-TASK
+; 
+
+' PADDLE-MOVER CONSTANT PADDLE-TASK
 
 : GO
     DECIMAL
