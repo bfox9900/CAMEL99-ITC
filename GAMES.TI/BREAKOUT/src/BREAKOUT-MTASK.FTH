@@ -321,29 +321,18 @@ DECIMAL
     9 +LOOP 
     SCORE @ BALL# @ *  SCORE !
     .SCORE
-   
 ;
 
 : .BALL# 
    BALL# @ DUP . ." BALL" IF ." S" THEN  ;
 
-: ?WIN 
-   REMAINING @ IF  EXIT  THEN   
-   DELALL 
-   10 5 AT-XY ." HEY YOU WON !!" 
-    4 7 AT-XY ." WITH " .BALL#  ."  REMAINING"
-    BALL# @ 1 > IF  SCORE-MULTIPLIER  THEN 
-    28 6 * REMAINING !  \ # blocks to WIN
-    BALL# OFF 
-    .REPLAY 
-  ;
+: ?WIN   REMAINING @ IF  EXIT  THEN ;
 
 \ for debugging
 \ : ?BREAK     
 \  ?TERMINAL 
 \  IF CYAN SCREEN TRUE ABORT" BREAK" 
 \  THEN ;
-
 
 : RICOCHET ( points freq --)
   CLINK
@@ -355,7 +344,7 @@ DECIMAL
 
 : BALLINPLAY
     BEGIN
-      ?WIN 
+      REMAINING @ 0= IF EXIT THEN 
       BALL.MOVE
       PADDLE? IF  PADDLE-HIT THEN 
       UNDERBALL ( char)
@@ -378,12 +367,14 @@ DECIMAL
 : CLS      ( -- ) 24 13 DO  2 I ERASELN  LOOP ; 
 
 : SETUP ( -- ) 
+  SINGLE
+  CLEAR
   DEF-NUMBERS  DEF-SHAPES  
   SETCOLORS  SCORE OFF 
   2 MAGNIFY 
   10 BALLS 
   28 6 * REMAINING !  \ # blocks to WIN
-  CLEAR ;
+  ;
 
 : .PRESS-FIRE
     6 22 AT-XY ." PRESS FIRE TO SERVE" 
@@ -394,18 +385,17 @@ DECIMAL
    5 14 AT-XY ." RAINBOW BUSTER VER 3.1"
    9 15 AT-XY ."   FOR TI-99"
    6 16 AT-XY ." BY BRIAN FOX 2023" 
-
    4 23 AT-XY ." PRESS A KEY TO CONTINUE"
-   KEY DROP   
+   KEY DROP 
 ;    
 
 : SET-SPEED 
      KEY 
      CASE 
       [CHAR] 1 OF  300 SPEED !  ENDOF 
-      [CHAR] 2 OF  150 SPEED !  ENDOF 
-      [CHAR] 3 OF   50 SPEED !  ENDOF 
-                   150 SPEED ! ( default to medium)
+      [CHAR] 2 OF  200 SPEED !  ENDOF 
+      [CHAR] 3 OF   60 SPEED !  ENDOF 
+                   200 SPEED ! ( default to medium)
      ENDCASE 
 ;
 
@@ -436,17 +426,28 @@ DECIMAL
 
 ' PADDLE-MOVER CONSTANT PADDLE-TASK
 
+: ?WINNER 
+  REMAINING @ 0= 
+  IF 
+    DELALL 
+    10 5 AT-XY ." HEY YOU WON !!" 
+    4 7 AT-XY ." WITH " .BALL#  ."  REMAINING"
+    BALL# @ 1 > IF  SCORE-MULTIPLIER  THEN 
+    BALL# OFF 
+  THEN 
+;
+
 : GO
     DECIMAL
     QUIT-ON
     PADDLE-TASK SPAWN WAKE 
-    MULTI       
     BEGIN 
       SETUP  
       DRAW.SCR
       .CREDITS 
       LEVEL-MENU
       .PRESS-FIRE
+      MULTI       
       CLS
       BEGIN
         BALL# @
@@ -455,6 +456,7 @@ DECIMAL
         START-POSITIONS
         WAIT-FIRE 
         BALLINPLAY 
+        ?WINNER 
       REPEAT
       .REPLAY
     AGAIN 
