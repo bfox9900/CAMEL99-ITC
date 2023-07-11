@@ -127,7 +127,7 @@ Now accessing data looks like this:
 ```
 
 ### Less Comments Required
-On of the side-effects of one line definitions and syntax enhancments is that 
+One of the side-effects of one line definitions and syntax enhancments is that 
 if you choose your names wisely, you can understand the code easier when you come back to it. 
 This means expansive text comments are not as necessary and we all know how fast comments go stale. 
 
