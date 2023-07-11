@@ -124,8 +124,8 @@ CREATE PROGNAME  10 ALLOT
           [CHAR] 9 OF  PARSE# H !           ENDOF
           [CHAR] F OF  DROP 0               ENDOF \ remove remaining content
           [CHAR] : OF  .TOOLVER             ENDOF
-          [CHAR] 7 OF  4 /STRING            ENDOF
-          [CHAR] 8 OF  4 /STRING            ENDOF
+          [CHAR] 7 OF  4 /STRING            ENDOF \ checksum (not used)
+          [CHAR] 8 OF  4 /STRING            ENDOF \ ignore checksum
 
           [CHAR] D OF  [CHAR] D ?TAG        ENDOF
           [CHAR] E OF  [CHAR] E ?TAG        ENDOF
