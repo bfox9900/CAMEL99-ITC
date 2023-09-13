@@ -40,9 +40,9 @@ DECIMAL
 : >COUNTED ( addr len -- caddr) DROP [ 1 CHARS ] LITERAL - ;
 
 \ ==== From Wil Baden's Tool Belt [R.I.P. Wil] ====
-\ : PLACE       ( addr n dst$ -- ) 2DUP C! 1+ SWAP CMOVE ; \ in kernel
+\ : PLACE       ( addr n dst$ -- ) 2DUP C! 1+ SWAP MOVE ; \ in kernel
 \ : C+!         ( n addr -- )      DUP >R  C@ +  R> C! ;   \ in Kernel
-: +PLACE      ( addr n $ -- )    2DUP 2>R  COUNT + SWAP CMOVE  2R> C+! ;
+: +PLACE      ( addr n $ -- )    2DUP 2>R  COUNT + SWAP MOVE  2R> C+! ;
 : APPEND-CHAR ( char caddr -- )  DUP >R COUNT DUP 1+ R> C! + C! ;
 
 \ ==== Replicate TI BASIC string functions ====

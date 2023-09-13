@@ -1,6 +1,6 @@
 \ Uses ANS Forth stack strings. ( addr len -- ) on the stack
-\ this are faster to process than copying strings to memory 
-\ between every operation
+\ which is faster to process than copying strings to memory 
+\ between every operation. 
 
 HERE 
 
@@ -22,7 +22,7 @@ MXLEN 1+ CONSTANT SSW     \ width of string stack items
 \ ==== From Wil Baden's Tool Belt [R.I.P. Wil] ====
 \ : PLACE     ( addr n dst$ -- ) 2DUP C! 1+ SWAP MOVE ; \ in CAMEL99 Kernel
 \ : C+!       ( n addr -- )      DUP >R  C@ +  R> C! ;   \ moved to kernel
-: +PLACE      ( adr n adr -- )   2DUP 2>R  COUNT +  SWAP MOVE 2R> C+! ;
+: +PLACE      ( adr n adr -- ) 2DUP 2>R  COUNT +  SWAP MOVE 2R> C+! ;
 
 \ ==== string stack helpers ====
 : SPUSH    ( addr len -- adr' len ) NEW: TOP$ DUP >R PLACE R> COUNT ;
