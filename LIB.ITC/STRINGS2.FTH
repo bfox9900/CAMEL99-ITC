@@ -2,7 +2,7 @@
 \ which is faster to process than copying strings to memory 
 \ between every operation. 
 
-NEEDS DUMP FROM DSK1.TOOLS 
+\ NEEDS DUMP FROM DSK1.TOOLS 
 
 HERE 
 NEEDS COMPARE FROM DSK1.COMPARE
@@ -17,8 +17,8 @@ MXLEN 1+ CONSTANT SSW     \ width of string stack items
 : COLLAPSE ( -- ) SSP OFF  ;    \ reset string stack pointer to zero
 
 \ * You have a choice where to place the string stack *
-\ : TOP$     ( -- $) SSP @ PAD + ;      \ $stack in free dictionary space
-: TOP$     ( -- $) SSP @  H @ + COUNT ;  \ $stack in free HEAP memory 
+ : TOP$     ( -- $) SSP @ PAD + MXLEN + ;      \ $stack in free dictionary space
+\ : TOP$     ( -- $) SSP @  H @ + COUNT ;  \ $stack in free HEAP memory 
 
 \ ==== From Wil Baden's Tool Belt [R.I.P. Wil] ====
 \ : PLACE     ( addr n dst$ -- ) 2DUP C! 1+ SWAP MOVE ; \ in CAMEL99 Kernel
@@ -29,11 +29,15 @@ MXLEN 1+ CONSTANT SSW     \ width of string stack items
 : ?SSP     ( -- ) SSP @ 0= ABORT" Empty $ stack" ;
 : DROP$    ( -- ) ?SSP MXLEN NEGATE SSP +! ;
 
+: ?$SIZE    ( n -- ) MXLEN > ABORT" $ too big!" ;
+: $!       ( addr len addr len --) DROP 1-  OVER ?$SIZE  PLACE ; 
+: $+!      ( addr len addr len --) DROP 1-  OVER ?$SIZE  +PLACE ; 
+
 \ ==== Replicate TI-BASIC string functions ====
 : LEN      ( adr len -- n ) DUP ;
 : SEG$     ( adr len n1 n2 -- addr len) >R  1- /STRING DROP R> ;
 : STR$     ( n -- adr len) DUP ABS 0 <# #S ROT SIGN #> ;
-: VAL$     ( adr len - n ) PAD PLACE PAD NUMBER? ABORT" VAL$ err" ;
+: VAL$     ( adr len - n ) NEW: TOP$ $!  TOP$ NUMBER? ABORT" VAL$ err" ;
 : CHR$     ( ascii# -- adr len ) NEW: TOP$ 1 OVER C! SWAP OVER 1+ C! ;
 : ASC      ( adr len -- adr len) DROP 1 ;
 
@@ -41,9 +45,6 @@ MXLEN 1+ CONSTANT SSW     \ width of string stack items
 : LEFT$  ( addr len n -- addr  n) NIP ;   \ :-) 
 : RIGHT$ ( addr len n -- addr' n) OVER - ABS 0 MAX /STRING ;
 
-: ?$SIZE    ( n -- ) MXLEN > ABORT" $ too big!" ;
-: $!       ( addr len addr len --) DROP 1-  OVER ?$SIZE  PLACE ; 
-: $+!      ( addr len addr len --) DROP 1-  OVER ?$SIZE  +PLACE ; 
 
 \ Concatenate 2 stack strings using TOP$ as a temp buffer.
 : &        ( addr len addr len -- addr len )
@@ -62,8 +63,8 @@ MXLEN 1+ CONSTANT SSW     \ width of string stack items
 \ When a DIM string is executed it returns a stack string.
 : DIM     ( n -- )
     DUP ?$SIZE
-	  CREATE 0 C, ALLOT ALIGN       \ prepare a counted string
-	  DOES>  COUNT ; ( -- addr len) \ returns stack string
+	CREATE 0 C, ALLOT ALIGN       \ prepare a counted string
+	DOES> COUNT ; ( -- addr len)  \ returns stack string
 
 : PRINT$   ( addr len -- )  CR TYPE ;  \ print on new line
 
