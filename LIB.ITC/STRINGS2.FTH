@@ -31,14 +31,14 @@ MXLEN 1+ CONSTANT SSW     \ width of string stack items
 
 \ ==== Replicate TI-BASIC string functions ====
 : LEN      ( adr len -- n ) DUP ;
-: SEG$     ( adr len n1 n2 -- addr len) >R 1- /STRING DROP R> ;
+: SEG$     ( adr len n1 n2 -- addr len) >R  1- /STRING DROP R> ;
 : STR$     ( n -- adr len) DUP ABS 0 <# #S ROT SIGN #> ;
 : VAL$     ( adr len - n ) PAD PLACE PAD NUMBER? ABORT" VAL$ err" ;
 : CHR$     ( ascii# -- adr len ) NEW: TOP$ 1 OVER C! SWAP OVER 1+ C! ;
 : ASC      ( adr len -- adr len) DROP 1 ;
 
-: &        ( $1 $2 -- top$)   \ concatenate operator
-           SWAP COUNT SPUSH >R COUNT R@ +PLACE R>  ; \ A$ B$ &  PRINT
+: &        ( addr len addr len -- addr len )
+           2SWAP PAD PLACE  PAD +PLACE  PAD COUNT ;  
 
 : COPY$    ( $1 $2 -- )  >R COUNT R> PLACE ;
 
