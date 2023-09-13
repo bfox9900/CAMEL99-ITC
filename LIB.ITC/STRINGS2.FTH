@@ -2,6 +2,10 @@
 \ this are faster to process than copying strings to memory 
 \ between every operation
 
+HERE 
+
+NEEDS COMPARE FROM DSK1.COMPARE
+
 DECIMAL
 \ === string stack ====
          VARIABLE SSP     \ the string stack pointer
@@ -12,14 +16,13 @@ MXLEN 1+ CONSTANT SSW     \ width of string stack items
 : COLLAPSE ( -- ) SSP OFF  ;    \ reset string stack pointer to zero
 
 \ * You have a choice where to place the string stack *
-\ : TOP$     ( -- $) SSP @ PAD + ;      \ string stack in free dictionary space
-: TOP$     ( -- $) SSP @ H @ + COUNT ;  \ string stack in free HEAP memory (low mem)
-
+\ : TOP$     ( -- $) SSP @ PAD + ;      \ $stack in free dictionary space
+: TOP$     ( -- $) SSP @ H @ + COUNT ;  \ $stack in free HEAP memory 
 
 \ ==== From Wil Baden's Tool Belt [R.I.P. Wil] ====
-\ : PLACE     ( addr n dst$ -- ) 2DUP C! 1+ SWAP CMOVE ; \ in CAMEL99 Kernel
+\ : PLACE     ( addr n dst$ -- ) 2DUP C! 1+ SWAP MOVE ; \ in CAMEL99 Kernel
 \ : C+!       ( n addr -- )      DUP >R  C@ +  R> C! ;   \ moved to kernel
-: +PLACE      ( adr n adr -- )   2DUP 2>R  COUNT +  SWAP CMOVE 2R> C+! ;
+: +PLACE      ( adr n adr -- )   2DUP 2>R  COUNT +  SWAP MOVE 2R> C+! ;
 
 \ ==== string stack helpers ====
 : SPUSH    ( addr len -- adr' len ) NEW: TOP$ DUP >R PLACE R> COUNT ;
@@ -30,7 +33,7 @@ MXLEN 1+ CONSTANT SSW     \ width of string stack items
 : LEN      ( adr len -- n ) DUP ;
 : SEG$     ( adr len n1 n2 -- addr len) >R >R R> 1- /STRING DROP R> ;
 : STR$     ( n -- adr len) DUP ABS 0 <# #S ROT SIGN #> ;
-: VAL$     ( adr len - n ) PAD PLACE PAD ?NUMBER 0= ABORT" VAL$ err" ;
+: VAL$     ( adr len - n ) PAD PLACE PAD NUMBER? ABORT" VAL$ err" ;
 : CHR$     ( ascii# -- adr len ) NEW: TOP$ 1 OVER C! SWAP OVER 1+ C! ;
 : ASC      ( adr len -- adr len) DROP 1 ;
 
@@ -79,4 +82,4 @@ MXLEN 1+ CONSTANT SSW     \ width of string stack items
 
 COLLAPSE  ( initializes the string stack)
 
-( 700+ BYTES)
+HERE SWAP - DECIMAL . .( bytes used)

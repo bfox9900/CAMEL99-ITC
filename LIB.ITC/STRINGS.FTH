@@ -12,6 +12,7 @@
 \ Nov 25, 2018 - MOVED string stack to top of HEAP (un-allocated)
 \ Apr 15, 2020 - added NEEDS/FROM for V2.59
 \ Jun 24, 2022 - added PUSH$
+\ Sept 13 2023 - changed CMOVE to MOVE for version 2.69 kernel
 
 NEEDS S=     FROM DSK1.COMPARE
 NEEDS MALLOC FROM DSK1.MALLOC
@@ -32,7 +33,7 @@ HEX 3FFE SSW +  CONSTANT $STACK
 : TOP$     ( -- $) $STACK SSP @ + ;
 
 \ changed APPEND to +PLACE to avoid name conflict with FILE SYSTEM WORD
-: +PLACE      ( addr n $ -- ) 2DUP 2>R  COUNT +  SWAP CMOVE 2R> C+! ;
+: +PLACE      ( addr n $ -- ) 2DUP 2>R  COUNT +  SWAP MOVE 2R> C+! ;
 
 .( ..)
 \ string stack helpers ====
