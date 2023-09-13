@@ -35,7 +35,7 @@ MXLEN 1+ CONSTANT SSW     \ width of string stack items
 : ASC      ( adr len -- adr len) DROP 1 ;
 
 : &        ( $1 $2 -- top$)   \ concatenate operator
-           SWAP COUNT SPUSH >R COUNT R@ APPEND R>  ; \ A$ B$ &  PRINT
+           SWAP COUNT SPUSH >R COUNT R@ +PLACE R>  ; \ A$ B$ &  PRINT
 
 : COPY$    ( $1 $2 -- )  >R COUNT R> PLACE ;
 
