@@ -2,8 +2,9 @@
 \ which is faster to process than copying strings to memory 
 \ between every operation. 
 
-HERE 
+NEEDS DUMP FROM DSK1.TOOLS 
 
+HERE 
 NEEDS COMPARE FROM DSK1.COMPARE
 
 DECIMAL
@@ -17,7 +18,7 @@ MXLEN 1+ CONSTANT SSW     \ width of string stack items
 
 \ * You have a choice where to place the string stack *
 \ : TOP$     ( -- $) SSP @ PAD + ;      \ $stack in free dictionary space
-: TOP$     ( -- $) SSP @ H @ + COUNT ;  \ $stack in free HEAP memory 
+: TOP$     ( -- $) SSP @  H @ + COUNT ;  \ $stack in free HEAP memory 
 
 \ ==== From Wil Baden's Tool Belt [R.I.P. Wil] ====
 \ : PLACE     ( addr n dst$ -- ) 2DUP C! 1+ SWAP MOVE ; \ in CAMEL99 Kernel
@@ -25,7 +26,6 @@ MXLEN 1+ CONSTANT SSW     \ width of string stack items
 : +PLACE      ( adr n adr -- ) 2DUP 2>R  COUNT +  SWAP MOVE 2R> C+! ;
 
 \ ==== string stack helpers ====
-: SPUSH    ( addr len -- adr' len ) NEW: TOP$ DUP >R PLACE R> COUNT ;
 : ?SSP     ( -- ) SSP @ 0= ABORT" Empty $ stack" ;
 : DROP$    ( -- ) ?SSP MXLEN NEGATE SSP +! ;
 
@@ -37,49 +37,56 @@ MXLEN 1+ CONSTANT SSW     \ width of string stack items
 : CHR$     ( ascii# -- adr len ) NEW: TOP$ 1 OVER C! SWAP OVER 1+ C! ;
 : ASC      ( adr len -- adr len) DROP 1 ;
 
+\ MS BASIC functions
+: LEFT$  ( addr len n -- addr  n) NIP ;   \ :-) 
+: RIGHT$ ( addr len n -- addr' n) OVER - ABS 0 MAX /STRING ;
+
+: ?$SIZE    ( n -- ) MXLEN > ABORT" $ too big!" ;
+: $!       ( addr len addr len --) DROP 1-  OVER ?$SIZE  PLACE ; 
+: $+!      ( addr len addr len --) DROP 1-  OVER ?$SIZE  +PLACE ; 
+
+\ Concatenate 2 stack strings using TOP$ as a temp buffer.
 : &        ( addr len addr len -- addr len )
-           2SWAP PAD PLACE  PAD +PLACE  PAD COUNT ;  
+        2SWAP NEW: TOP$ $! TOP$ $+!  TOP$ ;  
 
-: COPY$    ( $1 $2 -- )  >R COUNT R> PLACE ;
-
-\ compare strings also use S=
-: COMPARE$ ( $1 $2 -- flag) DUP C@ 1+ S= ;
-
-: =$       ( $1 $1 -- flag)  COMPARE$ 0= ;
-: <>$      =$ 0= ;
-: >$       ( $1 $2 -- flag)  COMPARE$ 0> ;  \ $1 > $2
-: <$       ( $1 $2 -- flag)  COMPARE$ 0< ;  \ $1 < $2
+: =$       ( addr len addr len -- ?) COMPARE 0= ;
+: <>$      ( addr len addr len -- ?) =$ 0= ;
+: >$       ( addr len addr len -- ?) COMPARE 0> ;  \ $1 > $2
+: <$       ( addr len addr len -- ?) COMPARE 0< ;  \ $1 < $2
 
 ( compile time string assignment)
-: ="       ( $addr -- <text> ) ?EXEC [CHAR] " PARSE ROT PLACE ;
-: =""      ( $addr -- ) ?EXEC  0 SWAP C! ;   \ sets string length to zero
+: ="       ( addr len -- <text> ) ?EXEC [CHAR] " PARSE 2SWAP $! ;
+: =""      ( addr len -- ) ?EXEC DROP 1-  0 SWAP C! ; 
 
-: ?$IZE    ( n -- ) MXLEN > ABORT" $ too big!" ;
-\ DIM creates a named string of n size in the Dictionary
-: DIM      ( n -- )
-           DUP ?$IZE
-           CREATE 0 C, ALLOT ;
+\ create a named string of size n 
+\ When a DIM string is executed it returns a stack string.
+: DIM     ( n -- )
+    DUP ?$SIZE
+	  CREATE 0 C, ALLOT ALIGN       \ prepare a counted string
+	  DOES>  COUNT ; ( -- addr len) \ returns stack string
 
-\ Alternative: creates a named string of n size in the HEAP (low mem)
-\ : DIM     ( n -- )
-\           DUP ?$IZE
-\           CREATE H @ DUP , 0 C!   \ record heap address and init length
-\                  1+ ALIGNED  H +! \ allot Heap memory to EVEN address
-\           DOES>  @  ;
+: PRINT$   ( addr len -- )  CR TYPE ;  \ print on new line
 
-: PUT      ( $1 $2 -- ) COPY$ COLLAPSE ;
-: PRINT$   ( $ -- )   COUNT TYPE ;
-: PRINT    ( $ -- )   CR PRINT$ COLLAPSE ;    \ print on new line, clean $stack
+\ These 2 functions clean up the string stack. cheap garage collection
+: PUT      ( addr len addr len -- ) $! COLLAPSE ; \ copy and clean $stack
+: PRINT    ( addr len -- )  PRINT$ COLLAPSE ;  \ print and clean $stack
 
-: (")      ( -- ) R> DUP COUNT + ALIGNED >R ; \ advance IP on Rstack, past end of string
-
-: "        ( -- )   \ create string literal when compiling
-           [CHAR] " PARSE              \ parse input upto quote char
-           STATE @                     \ are we compiling?
-           IF    POSTPONE (")  S,      \ action when Compiled
-           ELSE  SPUSH                 \ action when interpreted
-           THEN ; IMMEDIATE
+: "    POSTPONE S" ; IMMEDIATE  \ syntactic sugar
 
 COLLAPSE  ( initializes the string stack)
 
 HERE SWAP - DECIMAL . .( bytes used)
+
+\ TEST CODE 
+80 DIM A$ 
+80 DIM B$ 
+
+\ compile time assignment
+A$ =" The rain in Spain falls mainly on the plain."
+B$ =" Now is the time for all good men to come to the aid of their country"
+
+A$ PRINT  B$ PRINT 
+\ complex string statement 
+B$ 20 LEFT$  A$ 18 LEFT$ &  B$ 35 RIGHT$ &  PRINT  
+ 
+
