@@ -17,7 +17,7 @@ MXLEN 1+ CONSTANT SSW     \ width of string stack items
 : COLLAPSE ( -- ) SSP OFF  ;    \ reset string stack pointer to zero
 
 \ * You have a choice where to place the string stack *
- : TOP$     ( -- $) SSP @ PAD + MXLEN + ;      \ $stack in free dictionary space
+ : TOP$     ( -- $) SSP @ PAD +  ;      \ $stack in free dictionary space
 \ : TOP$     ( -- $) SSP @  H @ + COUNT ;  \ $stack in free HEAP memory 
 
 \ ==== From Wil Baden's Tool Belt [R.I.P. Wil] ====
