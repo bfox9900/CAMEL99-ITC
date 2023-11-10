@@ -8,6 +8,9 @@ DECIMAL
 \  ** EXPERIMENTAL DATA STRUCTURE ***
 \    COUNTED ARRAYS IN FREE MEMORY
 
+
+1 CELLS CONSTANT CELL 
+
 VARIABLE OLDDP
 VARIABLE LAST[]
 
@@ -21,11 +24,13 @@ VARIABLE LAST[]
 
 : CLEAN    LAST[] @ IF  LAST[] @ DP !  THEN ;
 
+\ create header, return the address
 : [[   ( -- addr )
-        HERE OLDDP ! DLINK,  HERE  0 ,  ; \ create header, return the address
+        HERE OLDDP ! DLINK,  HERE  0 ,  ; 
 
+\ end array, fill in the size
 : ]]   ( -- addr )
-       HERE OVER - 2- OVER ! ; \ end array, fill in the size
+       HERE OVER - CELL -   OVER ! ; 
 
 : SIZE ( addr -- addr size) DUP CELL+ SWAP @ ; \ size is in BYTES
 : LINK ( addr -- 'array[] | 0) 2- @ ;
@@ -50,29 +55,28 @@ DEFER ACTION
 : MAPPER   ( initial n -- )  REDUCER  ,  ; \ reduce and compile value
 
 : FILTRATION ( initial n -- ) \ reduce with conditional value compilation
-     2DUP SWAP REDUCER ( -- n ? )
-     IF  ,       \ if true compile n into array
-     ELSE DROP   \ otherwise throw it away
-     THEN  ;
+    2DUP SWAP REDUCER ( -- n ? )
+    IF  ,       \ if true compile n into array
+    ELSE DROP   \ otherwise throw it away
+    THEN  ;
 
 DECIMAL
 : FOREACH  ( inital addr size xt-- n) \ primary iterator
-         OVER 0= ABORT" REDUCE: size=0"
-         ACTOR @ >R  \ allow variable to be re-entrant
-         ACTOR !     \ set the XT of action on each cell
-         BOUNDS DO  I @ ACTION  2 +LOOP
-         R> ACTOR !
+    OVER 0= ABORT" REDUCE: size=0"
+    ACTOR @ >R  \ allow variable to be re-entrant
+    ACTOR !     \ set the XT of action on each cell
+    BOUNDS DO  I @ ACTION   CELL +LOOP
+    R> ACTOR !
 ;
 
 : REDUCE ( inital addr size xt-- n)
-         ['] REDUCER IS ACTION  FOREACH  ;
+    ['] REDUCER IS ACTION  FOREACH ;
 
 \ Use REDUCE to do something real
 : ..  ( 0 addr size -- )  ['] .  REDUCE ; \ print array signed
 : U.. ( 0 addr size -- )  ['] U. REDUCE ; \ print array un-signed
 : SUM     ( addr len ) 0 -ROT  ['] + REDUCE ;
 : AVERAGE ( addr len ) DUP 2/ >R  SUM  R> / ;
-
 
 \ MAP returns a new array as output 
 : MAP ( initial addr size xt-- addr' size')
@@ -108,7 +112,12 @@ A[] ' 1- MAP ..
 9 A[] ' = FILTER ..
 
 \ using the initial value 1, we can test for ODD/EVEN
-: EVEN? ( initial n -- n ?)  AND 0= ;
-: ODD?  ( initial n -- n ?)  AND 0> ;
-1 A[] ' EVEN? ..
-1 A[] ' ODD?  ..
+: EVEN ( initial n -- n ?)  AND 0= ;
+: ODD  ( initial n -- n ?)  AND 0> ;
+1 A[] ' EVEN FILTER ..
+1 A[] ' ODD  FILTER ..
+
+\ SEQUENTIAL actions 
+1 A[] ' ODD FILTER  ' 8* MAP  SUM . 
+
+
