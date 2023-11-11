@@ -32,13 +32,23 @@ VARIABLE LAST[]
 : ]]   ( -- addr )
        HERE OVER - CELL -   OVER ! ; 
 
+\ given and array pair, compute address at ndx
+: [] ( addr bytes ndx -- addr) 
+    CELLS TUCK SWAP CELL- > ABORT" index error"  + ;
+
+\ Fetch array item at index 
+: ]@ ( addr len ndx -- n) [] @ ;       
+
+\ store n in array at ndx 
+: ]! ( n addr len ndx) [] ! ;
+
 : SIZE ( addr -- addr size) DUP CELL+ SWAP @ ; \ size is in BYTES
 : LINK ( addr -- 'array[] | 0) 2- @ ;
 
 \ a word to name a counted array and return the (addr,len) pair
 : DATA:   CREATE
           ( addr --) ,
-          DOES> @ SIZE ( -- addr size)  ;
+          DOES> @ SIZE ( -- addr size) ;
 
 \ Explanation:
 \ ACTOR holds the execution token (XT) for the operation that will be done
@@ -116,6 +126,9 @@ A[] ' 1- MAP ..
 : ODD  ( initial n -- n ?)  AND 0> ;
 1 A[] ' EVEN FILTER ..
 1 A[] ' ODD  FILTER ..
+
+\ filter based on array element 
+A[] 0 ]@  A[] ' > FILTER ..
 
 \ SEQUENTIAL actions 
 1 A[] ' ODD FILTER  ' 8* MAP  SUM . 
