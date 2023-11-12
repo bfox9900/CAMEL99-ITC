@@ -34,7 +34,7 @@ VARIABLE LAST[]
 
 \ given and array pair, compute address at ndx
 : [] ( addr bytes ndx -- addr) 
-    CELLS TUCK SWAP CELL- > ABORT" index error"  + ;
+    CELLS TUCK SWAP CELL - > ABORT" index error"  + ;
 
 \ Fetch array item at index 
 : ]@ ( addr len ndx -- n) [] @ ;       
@@ -128,7 +128,7 @@ A[] ' 1- MAP ..
 1 A[] ' ODD  FILTER ..
 
 \ filter based on array element 
-A[] 0 ]@  A[] ' > FILTER ..
+A[] 3 ]@  A[] ' > FILTER ..
 
 \ SEQUENTIAL actions 
 1 A[] ' ODD FILTER  ' 8* MAP  SUM . 
