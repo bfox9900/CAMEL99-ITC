@@ -29,7 +29,7 @@ VARIABLE WID-LINK   \ Pointer to the most recently defined wordlist
 ;
 
 \ patch LASTEST NFA into wordlist name fld
-: WID-NAME! ( wid -- )  LATEST @ SWAP 4 + ! ;
+: WID-NAME! ( wid -- )  LATEST @ SWAP [ 2 CELLS ] LITERAL + ! ;
 
 CREATE ROOT            WORDLIST  WID-NAME!
 CREATE FORTH-WORDLIST  WORDLIST  WID-NAME!
