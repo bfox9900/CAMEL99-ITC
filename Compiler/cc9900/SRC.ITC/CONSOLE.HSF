@@ -1,4 +1,5 @@
 \ console.fth provides I/O for the TI-99 console     Feb 2023  Brian Fox 
+
 [CC] cr .( Console output)
 
 HEX 
@@ -36,39 +37,30 @@ CODE LASTLN ( -- vaddr)
 \ =====================================================================
 \ *G Scrolling has been implemented in Forth using VREAD & VWRITE
 \ ** Uses un-allocated Dictionary as a temporary buffer to hold lines of text
--1 [IF]
-\ 2 line buffer is a bit faster
+0 [IF]
+\ 4 line buffer is faster and has a reasonable size buffer for 80 cols.
 : SCROLL ( -- )
        PAUSE
        HERE 100 +     \ grab some space above Forth PAD
        TOPLN C/SCR @  ( -- buffer Vstart len)
        BOUNDS  ( -- buffer SCRend SCRstart)
        DO
-         I  C/L@ +  OVER  C/L@ 8* VREAD
-         DUP  I           C/L@ 8* VWRITE
-       C/L@ 8* +LOOP
+         I  C/L@ +  OVER  C/L@  4* VREAD
+         DUP  I           C/L@  4* VWRITE
+       C/L@  4* +LOOP
        DROP
        0 17 AT-XY VPOS C/L@ BL VFILL
 ;
 
 [ELSE]
-           [PRIVATE]
-\ alternative is not much faster
-CODE 8LINES  ( -- n)
- TOS PUSH,  C/L @@ TOS MOV,  TOS 3 SLA, NEXT, ENDCODE
-
-: VMOVE8 ( Vaddr -- Vaddr')
-       HERE 100 + >R
-       DUP C/L@ +  R@  8LINES  VREAD
-       R>  OVER       8LINES VWRITE
-       8LINES +
-;
-            [PUBLIC]
-: SCROLL
-   TOPLN
-   VMOVE8 VMOVE8 VMOVE8
-   DROP
-   0 17 AT-XY VPOS C/L@ BL VFILL
+\ 19% FASTER on SEVENS benchmark but uses a full screen buffer 
+ 
+: SCROLL ( -- ) 
+   HERE 100 +  TOPLN   ( -- buffer screen)
+   2DUP                ( -- buffer screen buffer screen)
+   C/L@ +  SWAP  C/SCR @ VREAD   C/SCR @ VWRITE
+   0 17 AT-XY 
+   VPOS C/L@ BL VFILL
 ;
 
 [THEN]
@@ -89,6 +81,7 @@ CODE 8LINES  ( -- n)
          (EMIT) ;
 
 : TYPE   ( addr cnt --)  PAUSE BOUNDS ?DO  I C@ (EMIT) LOOP ;
+T' TYPE  RESOLVES 'TYPE
 
 : SPACE  ( -- )   BL (EMIT) ;
 : SPACES ( n -- ) 0 MAX  0 ?DO  SPACE  LOOP ;

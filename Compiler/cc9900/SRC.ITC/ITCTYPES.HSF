@@ -27,7 +27,7 @@ CROSS-COMPILING
 : CODE         NEW-JMPTABLE      \ init the jump table
                +CODE ;
 
-: ENDCODE      ?CODE-ERR ;
+: ENDCODE      ?CODE-ERR  ;
 
 \ ============================================================================
 \ C R O S S   C O M P I L E R   W O R D   " C R E A T O R S "

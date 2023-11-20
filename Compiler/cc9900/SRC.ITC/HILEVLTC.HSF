@@ -36,6 +36,7 @@
 \ Jan 2022     create FORTHITC.MAK to build the project
 \ Oct 2022     Added META vocabulary
 \ Dec 2022     Changed FGET to return stack string ( buffer -- addr len)
+\ oct 2023     Used tail call optimizing on any words that could use it
 
 TARGET-COMPILING
 \ ======================================================================
@@ -128,7 +129,7 @@ SLOWER [IF]
 
   : HERE      ( -- addr) DP @  ;
   : ALLOT     ( n --)   DP +! ;
-  : ,         ( n -- )  HERE ! 2 ALLOT ;
+  : ,         ( n -- )  HERE ! 2 ALLOT -;
 
 [ELSE]
 
@@ -158,7 +159,7 @@ ENDCODE
 
 [THEN]
 
-: C,        ( n -- ) HERE C! 1 ALLOT  ;
+: C,        ( n -- ) HERE C! 1 ALLOT -;
 : COMPILE,  ( n -- )  , ;
 : ALIGN     ( -- )   HERE ALIGNED DP ! ;
 : PAD       ( -- addr) HERE TPAD @ + ;
@@ -317,7 +318,7 @@ CODE DUP>R  ( n -- n) TOS RPUSH,  NEXT, ENDCODE  \ used 3 times
       DUP SOURCE >IN @ /STRING
       ROT SKIP
       DROP SOURCE  -ROT -  MIN  0 MAX >IN !
-      PARSE ;
+      PARSE -;
 
 : WORD     ( char -- c-addr)
       PARSE-WORD HERE PLACE
@@ -410,14 +411,14 @@ TARGET-COMPILING
       80 SND! 5 SND!    \ pre-calculated values for OSC1 1390Hz
       91 SND!           \ turn on OSC1 at -2 dB level
       AA MS             \ Delay ~ 170 mS
-      9F SND! ;         \ turn off OSC1
+      9F SND! -;         \ turn off OSC1
 
 \ We use the HONK sound for ABORT like TI-BASIC does on errors
 : HONK     ( -- )
       81 SND! 20 SND!   \ pre-calculated values for OSC1 218Hz
       90 SND!           \ turn on OSC1 at 0 dB level
       AA MS             \ Delay ~ 170 mS
-      9F SND! ;         \ turn off OSC1
+      9F SND! -;         \ turn off OSC1
 
 \ ======================================================================
 \ V D P  S C R E E N   D R I V E R
@@ -457,9 +458,9 @@ CODE LASTLN ( -- vaddr)
 
 \ =====================================================================
 \ *G Scrolling has been implemented in Forth using VREAD & VWRITE
-\ ** Uses un-allocated Dictionary for a buffer to hold lines of text
-TRUE [IF]
-\ 2 line buffer is a bit faster, 8 lines are much faster
+\ ** Uses un-allocated Dictionary as a temporary buffer to hold lines of text
+-1 [IF]
+\ 2 line buffer is a bit faster
 : SCROLL ( -- )
       PAUSE
       HERE 100 +     \ grab some space above Forth PAD
@@ -471,7 +472,7 @@ TRUE [IF]
       C/L@ 8* +LOOP
       DROP
       0 17 AT-XY VPOS C/L@ BL VFILL
-;
+-
 
 [ELSE]
            [PRIVATE]
@@ -489,7 +490,7 @@ TRUE [IF]
       VMOVE8 VMOVE8 VMOVE8
       DROP
       0 17 AT-XY VPOS C/L@ BL VFILL
-;
+-;
 
 [THEN]
 
@@ -499,19 +500,19 @@ TRUE [IF]
 [cc] HEX [tc]
 : CR    ( -- )  (CR) L/SCR = IF  SCROLL  THEN ;
 : (EMIT) ( char -- ) CPUT IF  CR  THEN ;
-: PAGE   ( -- ) TOPLN LASTLN OVER -  BL VFILL   0 0 AT-XY ;
+: PAGE   ( -- ) TOPLN LASTLN OVER -  BL VFILL   0 0 AT-XY -;
 : BS     ( --)  VCOL DUP @ 1- 0 MAX  SWAP ! ;
 
 : EMIT   ( char -- )  \ handles some control characters
       PAUSE
       0D OVER= IF  DROP CR     EXIT THEN
       08 OVER= IF  DROP BS     EXIT THEN
-      (EMIT) ;
+      (EMIT) -;
 
 : TYPE   ( addr cnt --)  PAUSE BOUNDS ?DO  I C@ (EMIT) LOOP ;
 T' TYPE  RESOLVES 'TYPE
 
-: SPACE  ( -- )   BL (EMIT) ;
+: SPACE  ( -- )   BL (EMIT) -;
 : SPACES ( n -- ) 0 MAX  0 ?DO  SPACE  LOOP ;
 
 [cc] cr .( Console input)
@@ -531,7 +532,7 @@ TARGET-COMPILING
             KEY?            \ check the keyboard
             ?DUP            \ DUP IF <> 0
       UNTIL                 \ loop until a key pressed
-      BL VPUT ;             \ put the space char on screen
+      BL VPUT -;             \ put the space char on screen
 
 \ High level: input/output          (c) 31mar95 bjr
 : ACCEPT     ( caddr +n -- +n')
@@ -643,7 +644,7 @@ SLOWER [if]
 : ABORT    ( -- )
       SP0 SP!
       VDPTOP ^PAB !   \ set base pab pointer
-      CR QUIT ;
+      CR QUIT -;
 
 : ?ABORT   ( f caddr u --)
       ROT
@@ -657,10 +658,10 @@ SLOWER [if]
       THEN 2DROP ;
 
                   \ flag        addr length
-: ?ERR     ( ? -- )             HERE COUNT ?ABORT ;
-: ?EXEC    ( -- ) STATE @       S" Interpret only" ?ABORT ;
-: ?COMP    ( -- ) STATE @ 0=    S" Compile only"   ?ABORT ;
-: ?CSP     ( -- ) SP@ CSP @ -   S" Unfinished"     ?ABORT ;
+: ?ERR     ( ? -- )             HERE COUNT ?ABORT -;
+: ?EXEC    ( -- ) STATE @       S" Interpret only" ?ABORT -;
+: ?COMP    ( -- ) STATE @ 0=    S" Compile only"   ?ABORT -;
+: ?CSP     ( -- ) SP@ CSP @ -   S" Unfinished"     ?ABORT -;
 : !CSP     ( -- ) SP@ CSP ! ;
 
 \ ======================================================================
@@ -689,7 +690,7 @@ true [IF]  \ MULTI-STRING version
 : ABORT"   ( i*x 0  -- i*x)    \ R: j*x -- j*x  x1=0
       ?COMP
       [COMPILE] S"
-      COMPILE ?ABORT ; IMMEDIATE
+      COMPILE ?ABORT -; IMMEDIATE
 
 [cc] cr .( FIND )
 \ ======================================================================
@@ -733,7 +734,7 @@ VARIABLE 'FIND   \ *G vector for the action of find
       ?COMP
       BL WORD FIND DUP 0= ?ERR
       0< IF   COMPILE COMPILE
-      THEN  COMPILE, ;  IMMEDIATE
+      THEN  COMPILE, -;  IMMEDIATE
 
 \ ======================================================================
 \ T E X T   O U T P U T
@@ -745,7 +746,7 @@ VARIABLE 'FIND   \ *G vector for the action of find
       ELSE TYPE
       THEN ; IMMEDIATE
 
-: .(  [CHAR] ) PARSE TYPE ; IMMEDIATE
+: .(  [CHAR] ) PARSE TYPE -; IMMEDIATE
 
 [CC] cr .( Interpreter/compiler loop)
 \ ======================================================================
@@ -786,7 +787,8 @@ TARGET-COMPILING
       0 0 AT-XY
       2 VMODE !   \ 2=ID for 40 column "TEXT" mode
       PAGE
-;
+-;
+
 \ ======================================================================
 \ TI-99 F I L E   S Y S T E M   I N T E R F A C E
 
@@ -811,20 +813,20 @@ TARGET-COMPILING
           SPACE  R@ COUNT 1F AND TYPE  ."  isn't unique "
         THEN
       THEN
-      R>  DUP LATEST !     \ HERE is NFA of last word defined
-          CURRENT @ !      \ Also store in the current 'WID'
+      R> ( DUP LATEST ! )   \ HERE is NFA of last word defined
+            CURRENT @ !     \ Also store in the current 'WID'
 ;
 
-: HEADER ( <TEXT> ) BL PARSE-WORD HEADER, ;
+: HEADER ( <TEXT> )  BL PARSE-WORD HEADER, -;
 
 \ =======================================================
 \ T A R G E T   S Y S T E M   D E F I N I N G   W O R D S
 \                    text    runtime-action   parameter
 \                   -------  --------------- -----------
- : CONSTANT  ( n --)  HEADER  COMPILE DOCON     COMPILE, ;
- : USER      ( n --)  HEADER  COMPILE DOUSER    COMPILE, ;
+ : CONSTANT  ( n --)  HEADER  COMPILE DOCON     COMPILE, -;
+ : USER      ( n --)  HEADER  COMPILE DOUSER    COMPILE, -;
  : CREATE    ( -- )   HEADER  COMPILE DOVAR              ;
- : VARIABLE  ( -- )   CREATE                  0 COMPILE, ;
+ : VARIABLE  ( -- )   CREATE                  0 COMPILE, -;
 
 \ (:noname) from studying gforth. It's a nice factor.
  : (:NONAME) ( -- )  ['] DOCOL @ COMPILE,  HIDE  ]  ;
@@ -912,13 +914,13 @@ TARGET-COMPILING
         ORGLAST @ LATEST !
         LATEST DUP CONTEXT ! CURRENT !
         TEXT S" CAMEL99 Forth " TYPE .VER
-;
+-;
 
 \ G*  LOADSYS is the primary boot word that starts Forth and loads extensions
 : LOADSYS
       WARM
       S" DSK1.START" INCLUDED
-      CR QUIT ;
+      CR QUIT -;
 
 \ =====================================================================
 \ define target comment words

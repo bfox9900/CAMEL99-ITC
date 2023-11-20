@@ -22,7 +22,7 @@
        13 EQU LDIR           \ "load interval register"
 \      16 EQU RTSON    \ request to send
 \      18 EQU RIENB    \ rcv interrupt enable
-\      21 EQU RXRL     \ receive register loaded bit
+\      21 EQU RBRL     \ receive buffer register loaded
 \      22 EQU TXRE     \ transmit register empty bit
 \      27 EQU -DSR     \ NOT data set ready
 \      28 EQU -CTS     \ NOT clear to send
@@ -57,7 +57,7 @@ CODE OPEN-TTY  ( -- ) \ Usage: /TTY1 OPEN-TTY
          RESET SBO,         \ reset UART
          PROTO @@ 8 LDCR,   \ set protocol
          LDIR SBZ,          \ disable 9902 timer
-         BPS @@ 0C LDCR,    \ set baud rate
+         BPS @@ 0C LDCR,    \ set baud rate for XMIT & RCV
          CARD-OFF @@ BL,
          R12 RPOP,          \ restore R12
          NEXT,
@@ -74,9 +74,9 @@ CODE CEMIT ( c -- )  \ 'com-emit"
 
 \  *** handshake hardware ***
          16 SBO,        \ set RTS
-\         BEGIN, 28 TB, EQ UNTIL,  \ wait for CTS line
+\        BEGIN,  28 TB, EQ  UNTIL,  \ wait for CTS line
 \  ******************************
-         BEGIN, 22 TB, EQ UNTIL,   \ wait XBRE empty
+         BEGIN,  22 TB, EQ  UNTIL,   \ wait XBRE empty
          TOS SWPB,      \ put byte on the other side
          TOS 8 LDCR,    \ send 8 bits
          16 SBZ,        \ reset RTS
@@ -92,7 +92,7 @@ CODE CEMIT ( c -- )  \ 'com-emit"
          ENDCODE
 
 [CC] DECIMAL [TC]
-CODE KEY? ( -- n )          \  "com-key"
+CODE KEY? ( -- n )            \  "com-key"
          0 LIMI,
          R12 RPUSH,           \ save R12 on return stack  *Needed?*
          CARD @@ R12 MOV,     \ set base address of CARD
@@ -127,6 +127,9 @@ TARGET-COMPILING
        VROW @ 1+  17 MIN VROW !  ; \ don't count past last line
 
 : TYPE   ( addr cnt --)  PAUSE  BOUNDS ?DO  I C@ CEMIT LOOP ;
+T' TYPE  RESOLVES 'TYPE
+
+
 : SPACE  ( -- )   BL EMIT ;
 : SPACES ( n -- ) 0 MAX  0 ?DO  SPACE  LOOP ;
 \ : BS    ( --)  08 EMIT SPACE 08 EMIT ; 
@@ -142,6 +145,7 @@ TARGET-COMPILING
 \ : RS232/2  ( -- ) 1500  CARD ! ;
 : /TTY1    ( -- ) 040  UART ! ;
 : /TTY2    ( -- ) 080  UART ! ;
+\  : BA=1200         01A0 BPS ! ;
 : BA=2400         00D0 BPS ! ;
 : BA=9600  ( -- ) 0034 BPS ! ;
 : BA=19200 ( -- ) 001A BPS ! ;

@@ -168,6 +168,10 @@ ENDCODE
 : ]         ( -- ) STATE ON  ;
 : [         ( -- ) STATE OFF ;  IMMEDIATE
 : DEPTH     ( -- n ) SP0 SP@ 2+ - 2/ ; \ ** needs signed shift
+[cc] HEX [tc]
+
+: DECIMAL     ( -- ) 0A BASE ! ;
+: HEX         ( -- ) 10 BASE ! ;
 
 \ ======================================================================
 \ PAB Base Address
@@ -282,19 +286,17 @@ CODE /STRING ( c-addr1 u1 n -- c-addr2 u2 ) \ ~20uS!!       Clks
 \ H E A D E R   N A V I G A T I O N
 
 TARGET-COMPILING
-\ : NFA>LFA       ( nfa -- lfa)  3 - ;
+\ : NFA>LFA   ( nfa -- lfa)  3 - ;
 CODE NFA>LFA    TOS -3 ADDI, NEXT, ENDCODE  ( faster, same size)
 
 \ Changed 7F to 1F . 31 character max name length. 
 \ Other bits for future use
-: NFA>CFA       ( nfa -- cfa ) COUNT  1F AND + ALIGNED ;
-
-
-\ CODE DUPC@  TOS PUSH,  *TOS TOS MOVB,  TOS 8 SRL,  NEXT, ENDCODE 
+: NFA>CFA     ( nfa -- cfa ) COUNT  1F AND + ALIGNED ;
+: RECURSE     ( -- ) LATEST @ NFA>CFA , ; IMMEDIATE
 
 \ smudge bit control in the Camel Forth
-: HIDE          ( -- )  LATEST @ ( nfa) DUP C@ 80 OR  SWAP C! ;
-: REVEAL        ( -- )  LATEST @ ( nfa) DUP C@ 7F AND SWAP C! ;
+: HIDE        ( -- )  LATEST @ ( nfa) DUP C@ 80 OR  SWAP C! ;
+: REVEAL      ( -- )  LATEST @ ( nfa) DUP C@ 7F AND SWAP C! ;
 
 \ =====================================================================
 \ P A R S E   W O R D
@@ -304,14 +306,13 @@ TARGET-COMPILING
 CODE DUP>R  ( n -- n) TOS RPUSH,  NEXT, ENDCODE  \ used 3 times
 
 : SOURCE   ( -- addr len) 'SOURCE 2@ ;
-\ CODE OVER-   *SP TOS SUB,  NEXT, ENDCODE
 
 : PARSE    ( char -- c-addr u )  \ gForth
       >R
       SOURCE  >IN @ OVER MIN /STRING
       OVER SWAP R>  SCAN >R
-      OVER -
-      DUP R> IF 1+ THEN  >IN +! ;
+      OVER - DUP
+      R> IF 1+ THEN  >IN +! ;
 
 : PARSE-WORD  ( char -- c-addr n)  \ Camel/BFox common factor for WORD
       DUP SOURCE >IN @ /STRING
@@ -394,167 +395,12 @@ CODE DIGIT?   ( char -- n f )
 ;
 
 \ ======================================================================
-\ S I M P L E   S O U N D  I N T E R F A C E
-
-TARGET-COMPILING
-
-\ write a byte to address of TMS9919 chip
-\ added PAUSE for multi-tasking improvement 
-: SND!   ( c -- ) PAUSE 8400 C!  ;  \ 4 bytes, 277 uS
-
-\ [CC] DECIMAL [TC]
-\ : TICKS  MS ;  \ legacy word replaced by milliseconds  
-
-[CC] HEX [TC]
-: BEEP     ( -- )
-      80 SND! 5 SND!    \ pre-calculated values for OSC1 1390Hz
-      91 SND!           \ turn on OSC1 at -2 dB level
-      AA MS             \ Delay ~ 170 mS
-      9F SND! ;         \ turn off OSC1
-
-\ We use the HONK sound for ABORT like TI-BASIC does on errors
-: HONK     ( -- )
-      81 SND! 20 SND!   \ pre-calculated values for OSC1 218Hz
-      90 SND!           \ turn on OSC1 at 0 dB level
-      AA MS             \ Delay ~ 170 mS
-      9F SND! ;         \ turn off OSC1
-
-\ ======================================================================
-\ V D P  S C R E E N   D R I V E R
-[CC] cr .( Console output)
-
-HEX [TC]
-
-: C/L!     ( c/l -- )  \ pronounced "SEE-PER-ELL-STORE"
-      DUP C/L !           \ set chars per line
-      L/SCR *  C/SCR ! ;  \ calc. chars per screen
-
-: VPOS   ( -- vaddr) VROW 2@ >VPOS ;
-: VPUT   ( char -- ) VPOS VC! ;
-: AT-XY  ( col row -- ) VROW 2! ;  \ set VDP address for Fast type
-
-SLOWER [IF]
-
-    : TOPLN   ( -- vaddr)  VPG @ VTOP @ + ;  \ 10 bytes
-    : LASTLN  ( -- vaddr)  VPG @ C/SCR @ + ; \ 10 bytes
-
-[ELSE]
-
-CODE TOPLN ( -- vaddr)
-      TOS PUSH,
-      VPG @@  TOS MOV,
-      VTOP @@ TOS ADD,
-      NEXT,
-      ENDCODE  \ 12 bytes
-
-CODE LASTLN ( -- vaddr)
-      TOS PUSH,
-      VPG   @@ TOS MOV,
-      C/SCR @@ TOS ADD,
-      NEXT,
-      ENDCODE  \ 12 bytes
-[THEN]
-
-\ =====================================================================
-\ *G Scrolling has been implemented in Forth using VREAD & VWRITE
-\ ** Uses un-allocated Dictionary for a buffer to hold lines of text
-TRUE [IF]
-\ 2 line buffer is a bit faster, 8 lines are much faster
-: SCROLL ( -- )
-      PAUSE
-      HERE 100 +     \ grab some space above Forth PAD
-      TOPLN C/SCR @  ( -- buffer Vstart len)
-      BOUNDS  ( -- buffer SCRend SCRstart)
-      DO
-        I  C/L@ +  OVER  C/L@ 8* VREAD
-        DUP  I           C/L@ 8* VWRITE
-      C/L@ 8* +LOOP
-      DROP
-      0 17 AT-XY VPOS C/L@ BL VFILL
-;
-
-[ELSE]
-           [PRIVATE]
-
-: VMOVE8 ( Vaddr -- Vaddr')
-      C/L@ +  HERE 100 +  ( -- Vaddr addr)
-      2DUP  C/L@ 8*  VREAD
-      OVER         C/L@ 8*  VWRITE
-      C/L@ 8* +
-;
-            [PUBLIC]
-
-: SCROLL
-      TOPLN
-      VMOVE8 VMOVE8 VMOVE8
-      DROP
-      0 17 AT-XY VPOS C/L@ BL VFILL
-;
-
-[THEN]
-
-\ ======================================================================
-\ V D P   T E X T   O U T P U T
-
-[cc] HEX [tc]
-: CR    ( -- )  (CR) L/SCR = IF  SCROLL  THEN ;
-: (EMIT) ( char -- ) CPUT IF  CR  THEN ;
-: PAGE   ( -- ) TOPLN LASTLN OVER -  BL VFILL   0 0 AT-XY ;
-: BS     ( --)  VCOL DUP @ 1- 0 MAX  SWAP ! ;
-
-: EMIT   ( char -- )  \ handles some control characters
-      PAUSE
-      0D OVER= IF  DROP CR     EXIT THEN
-      08 OVER= IF  DROP BS     EXIT THEN
-      (EMIT) ;
-
-: TYPE   ( addr cnt --)  PAUSE BOUNDS ?DO  I C@ (EMIT) LOOP ;
-T' TYPE  RESOLVES 'TYPE
-
-: SPACE  ( -- )   BL (EMIT) ;
-: SPACES ( n -- ) 0 MAX  0 ?DO  SPACE  LOOP ;
-
-[cc] cr .( Console input)
-\ ======================================================================
-\ C H A R A C T E R   I N P U T
-\ *G Cursor flash control is now done by reading the 9901 timer.
-\ ** It counts down from >3FFF in 349mS. If the timer> 1FFF we show the cursor.
-\ ** If < 1FFF show the screen char. Flash rate is about 2 per second.
-
-TARGET-COMPILING
-: KEY      ( -- char)
-      BEGIN                 \ start the loop
-        PAUSE               \ Essential for Multi-tasking with Console
-        CURS @              \ fetch 2 char cursor (space & _ )
-        TMR@ 1FFF <         \ compare hardware timer to 1FFF
-        IF >< THEN VPUT     \ swap cursor bytes & write
-            KEY?            \ check the keyboard
-            ?DUP            \ DUP IF <> 0
-      UNTIL                 \ loop until a key pressed
-      BL VPUT ;             \ put the space char on screen
-
-\ High level: input/output          (c) 31mar95 bjr
-: ACCEPT     ( caddr +n -- +n')
-      OVER + OVER          \ removed 1-  to accept all chars
-      BEGIN
-        KEY DUP 0D <>
-      WHILE
-        DUP EMIT
-        DUP 8 =
-        IF   DROP 1-  3 PICK  UMAX  \ changed to use: 3 PICK   B.F.
-        ELSE OVER C!  1+ OVER UMIN
-        THEN
-      REPEAT
-      DROP NIP SWAP - ;
-
-\ ======================================================================
 \ S T R I N G   L I T E R A L S
 [cc] HEX [TC]
 \ run-time action of S"
 
 : (S")    ( -- c-addr u) R>  COUNT  2DUP + ALIGNED >R ;
 T' (S")  RESOLVES '(S")
-
 
 [cc] cr .( Number printing)
 \ =====================================================================
@@ -598,18 +444,58 @@ SLOWER [if]
 : #S     ( ud1 -- ud2)  BEGIN  # 2DUP OR  WHILE REPEAT ;
 : #>     ( ud1 -- c-addr u) 2DROP HP @ PAD OVER - ;
 : SIGN   ( n -- ) 0< IF  [CHAR] -  HOLD  THEN ;
+
+[CC] cr .( Console output)
+\ ======================================================================
+\  S C R E E N   D R I V E R
+
+ttyi/o 
+[if]   [cc] include cc9900\src.itc\TTY-IO.hsf
+[else] [cc] include cc9900\src.itc\console.hsf
+[then]
+
+\ ======================================================================
+\ N U M B E R  O U T P U T 
+TARGET-COMPILING 
+
 : UD.    ( d -- ) <#  #S  #> TYPE SPACE ;
 : U.     ( u -- ) 0 UD. ;
 : (.)    ( n -- caddr len)  DUP ABS 0 <#  #S ROT SIGN  #> ;
 : .      ( n -- ) (.)  TYPE SPACE ;
 
 \ ======================================================================
-\ M I S C E L L A N E O U S
-[cc] HEX [tc]
+\ S I M P L E   S O U N D  I N T E R F A C E
 
-: RECURSE     ( -- ) LATEST @ NFA>CFA , ; IMMEDIATE
-: DECIMAL     ( -- ) 0A BASE ! ;
-: HEX         ( -- ) 10 BASE ! ;
+TARGET-COMPILING
+
+\ write a byte to address of TMS9919 chip
+\ added PAUSE for multi-tasking improvement 
+: SND!   ( c -- ) PAUSE 8400 C!  ;  \ 4 bytes, 277 uS
+
+[CC] HEX 
+
+TTYI/O
+[if]
+ [TC] 
+      : BEEP   7 EMIT ;
+      : HONK    BEEP ; 
+   
+[ELSE] 
+[TC]
+      : BEEP     ( -- )
+        80 SND! 5 SND!    \ pre-calculated values for OSC1 1390Hz
+        91 SND!           \ turn on OSC1 at -2 dB level
+        AA MS             \ Delay ~ 170 mS
+        9F SND! ;         \ turn off OSC1
+
+\ We use the HONK sound for ABORT like TI-BASIC does on errors
+      : HONK     ( -- )
+      81 SND! 20 SND!   \ pre-calculated values for OSC1 218Hz
+      90 SND!           \ turn on OSC1 at 0 dB level
+      AA MS             \ Delay ~ 170 mS
+      9F SND! ;         \ turn off OSC1
+
+[THEN]
 
 \ ======================================================================
 \ I N T E R P R E T E R
@@ -668,7 +554,7 @@ SLOWER [if]
 
 true [IF]  \ MULTI-STRING version
 : S"  ( cccc" -- )          \ compiling action
-\ *G Non-standard: when interpreting S" puts the string at HERE+>IN
+\ *G Non-standard: when interpreting S" puts the string at PAD + >IN
 \ ** and returns the address.
       ( cccc" --- addr len) \ interpreting action *NON-STANDARD*
       [CHAR] " PARSE
@@ -700,9 +586,9 @@ TARGET-COMPILING
 
 HASHING [IF]
 CODE HASH  ( string wid-pfa -- thread-addr )
-      *SP+ R1 MOV,        \ Address of the STRING
+      *SP+ R1 MOV,       \ Address of the STRING
       R1     INC,
-      *R1  R1 MOVB,       \ fetch first character
+      *R1  R1 MOVB,      \ fetch first character
       R1   8 SRA,        \ switch to other side
       R1  03 ANDI,       \ use to LSB bits
       R1  R1 ADD,        \ 2* to make a cell offset
@@ -733,7 +619,7 @@ VARIABLE 'FIND   \ *G vector for the action of find
       ?COMP
       BL WORD FIND DUP 0= ?ERR
       0< IF   COMPILE COMPILE
-      THEN  COMPILE, ;  IMMEDIATE
+      THEN  COMPILE, ; IMMEDIATE
 
 \ ======================================================================
 \ T E X T   O U T P U T
@@ -774,7 +660,8 @@ TARGET-COMPILING
 \ ======================================================================
 \ T I - 9 9   T E X T   M O D E   C O N T R O L
 TARGET-COMPILING
-
+VDPI/O
+ [IF]
 : TEXT    ( -- )
       F0 DUP 83D4 C!
       ( -- F0) 01 VWTR
@@ -787,6 +674,8 @@ TARGET-COMPILING
       2 VMODE !   \ 2=ID for 40 column "TEXT" mode
       PAGE
 ;
+[THEN]
+
 \ ======================================================================
 \ TI-99 F I L E   S Y S T E M   I N T E R F A C E
 
@@ -811,11 +700,11 @@ TARGET-COMPILING
           SPACE  R@ COUNT 1F AND TYPE  ."  isn't unique "
         THEN
       THEN
-      R>  DUP LATEST !     \ HERE is NFA of last word defined
-          CURRENT @ !      \ Also store in the current 'WID'
+      R> DUP LATEST !     \ HERE is NFA of last word defined
+             CURRENT @ !  \ Also store in the current 'WID'
 ;
 
-: HEADER ( <TEXT> ) BL PARSE-WORD HEADER, ;
+: HEADER ( <TEXT> )  BL PARSE-WORD HEADER, ; 
 
 \ =======================================================
 \ T A R G E T   S Y S T E M   D E F I N I N G   W O R D S
@@ -882,17 +771,19 @@ ENDCODE
 
 \ *new* Added VER string for easy updates
 [CC] CODESEG 6000 =
-[IF]    [TC] : .VER   ." 2.69 20Apr23 SuperCart" ;
-[ELSE]  [TC] : .VER   ." 2.69 20Apr23" ;
+[IF]    [TC] : .VER   ." 2.70 19Nov23 SuperCart" ;
+[ELSE]  [TC] : .VER   ." 2.70 19Nov23" ;
 [THEN]
 
 [CC]
 \ ======================================================================
 \ B O O T   U P   C O D E
-HEX
-TARGET-COMPILING
-
 \ *G  WARM initializes variables and vectors
+
+HEX
+VDPI/O
+[IF]
+TARGET-COMPILING
 : WARM  ( -- )
         80 83C2 C!
         26 TPAD !
@@ -911,13 +802,43 @@ TARGET-COMPILING
         ORGDP @ DP !
         ORGLAST @ LATEST !
         LATEST DUP CONTEXT ! CURRENT !
-        TEXT S" CAMEL99 Forth " TYPE .VER
+        TEXT S" CAMEL99 Forth " TYPE  .VER
 ;
+[ELSE]
+\ RS232 WARM BOOT is slightly different
+TARGET-COMPILING
+: WARM  ( -- ) 
+      26 TPAD !
+      1000 VP !
+      50 C/L !  
+      H @ 2000 MAX 3FFF MIN  H !
+      3FFF TMR!
+      VDPTOP ^PAB !
+      L0 LP !
+      FLOOR ON
+      SOURCE-ID OFF
+
+      ['] <INTERP> 'IV !
+      ['] <FIND>   'FIND !
+      
+      RS232 /TTY1 BA=19200 8,N,1 OPEN-TTY         
+      
+      DECIMAL
+      ORGDP @ DP !
+      ORGLAST @ LATEST !
+      LATEST DUP CONTEXT ! CURRENT !
+      CR CR S" CAMEL99 Forth TTY" 2DUP 0 SWAP VWRITE
+      TYPE .VER
+;
+[THEN]
+
+CODE HALT  BEGIN, R13 INC, AGAIN,  NEXT, ENDCODE 
 
 \ G*  LOADSYS is the primary boot word that starts Forth and loads extensions
 : LOADSYS
       WARM
       S" DSK1.START" INCLUDED
+ \     HALT 
       CR QUIT ;
 
 \ =====================================================================

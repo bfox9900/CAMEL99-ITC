@@ -1,0 +1,15 @@
+\ TAIL CALL OPTIMIZING SEMI-COLON 
+
+
+HEX
+ CODE GOTO    *IP IP MOV,  NEXT, ENDCODE
+
+CROSS-COMPILING ALSO META DEFINITIONS 
+: -;  ( -- ) \ programmer controlled
+      THERE 2- @  >BODY      \ get previous XT, compute PFA
+     -2 TALLOT               \ erase the previous XT
+      TCOMPILE GOTO  T,      \ compile GOTO and the PFA
+      TCOMPILE [            \ turn off compiler
+      REVEAL
+      ?CSP
+; IMMEDIATE
