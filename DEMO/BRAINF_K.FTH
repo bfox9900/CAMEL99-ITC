@@ -14,7 +14,7 @@ VARIABLE ^P   \ the memory pointer
 : +     ( -- ) PEEK 1+ POKE ;           \ increment the byte at the ^P
 : -     ( -- ) PEEK 1- POKE ;           \ decrement the byte at the ^P
 : .     ( -- ) PEEK EMIT ;              \ output the byte at the ^P
-: ,     ( -- ) PAD DUP 3 ACCEPT  EVALUATE POKE ;
+: ,     ( -- ) KEY 7F AND POKE ;  \ TI-99 keys need a mask
 
 \ jump forward past the matching ] if the byte at the ^P is zero
 : [     ( -- ) POSTPONE BEGIN  POSTPONE PEEK  POSTPONE WHILE ; IMMEDIATE
@@ -27,4 +27,5 @@ VARIABLE ^P   \ the memory pointer
     + + + + + + + + [ > + + + + [ > + + > + + + > + + + > + < < < < - ] > +
     > + > - > > + [ < ] < - ] > > . > - - - . + + + + + + + . . + + + . > >
     . < - . < . + + + . - - - - - - . - - - - - - - - . > > + . > + + . ;
-    
+
+DECIMAL  
