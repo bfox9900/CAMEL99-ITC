@@ -8,10 +8,9 @@
 \ TI-99 
 \                 TurboForth 1.21     Nesting 1Mil  2:29
 \                 Camel99 Forth ITC   Nesting 1Mil  2:30.7
-\                 w/tail-call optimization          1.54.6
+\                 w/tail-call optimization          1:49.6 (old: 1.54.6)
 \                 Camel99 Forth DTC   Nesting 1Mil  2:16.6
 \                 w/tail-call optimization          1.38
-
 
 \                 ASMForth II         Nesting 1Mil  1:28.7
 \                 W/tail-call optimization          0:54.23
