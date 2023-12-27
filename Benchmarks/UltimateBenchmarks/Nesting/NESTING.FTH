@@ -12,7 +12,6 @@
 
 \                 ASMForth II         Nesting 1Mil  1:28.7
 \                 W/tail-call optimization          0:54.23
-HOST INCLUDE DSK1.ELAPSE 
 
 ASMFORTH 
 : BOTTOM ;
