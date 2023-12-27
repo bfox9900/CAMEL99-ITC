@@ -1,0 +1,29 @@
+DECIMAL
+
+: FIB1 ( N1 -- N2 )
+    DUP 2 < IF DROP 1 EXIT THEN
+    DUP  1- RECURSE
+    SWAP 2- RECURSE  + ;
+    
+: FIB1-BENCH 100 0 DO
+    20 0 DO I FIB1 DROP LOOP
+  LOOP ;
+
+: FIB2 ( N1 -- N2 )
+   0 1 ROT 0 DO
+      OVER + SWAP LOOP
+   DROP ;
+
+: FIB2-BENCH 100 0 DO
+    20 0 DO I FIB2 DROP LOOP
+  LOOP ;
+
+\ Camel99 has BOUNDS
+: FIB3 ( N1 -- N2 )
+   0 1 ROT 0 DO
+      BOUNDS LOOP
+   DROP ;
+
+: FIB3-BENCH 100 0 DO
+    20 0 DO I FIB3 DROP LOOP
+  LOOP ;

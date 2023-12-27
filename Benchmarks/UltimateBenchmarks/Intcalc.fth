@@ -1,0 +1,37 @@
+\ 11.1 Benchmark Helper
+
+NEEDS ELAPSE FROM DSK1.ELAPSE
+
+: BENCHME ( xt n -- )
+  DUP >R 0 DO
+    DUP EXECUTE
+    [CHAR] . EMIT
+  LOOP
+  DROP R> SPACE . ." Iterations." SPACE ;
+
+\ 11.2 DUP-DROP
+
+DECIMAL
+: DDBENCH 1 32767 0 DO DUP DROP LOOP DROP ;
+
+ELAPSE ' DDBENCH 100 BENCHM \  v2.69  47.68
+
+\ 11.3 IntCalc (Integer Calculations)
+DECIMAL
+32767 CONSTANT INTMAX
+
+VARIABLE INTRESULT
+
+: DOINT
+  1 DUP INTRESULT DUP >R !
+  BEGIN
+    DUP INTMAX <
+  WHILE
+    DUP NEGATE R@ +! 1+
+    DUP R@ +! 1+
+    R@ @ OVER * R@ ! 1+
+    R@ @ OVER / R@ ! 1+
+  REPEAT
+  R> DROP DROP ;
+
+ELAPSE ' DOINT 100 BENCHME  \ TOOO LONG ;) 
