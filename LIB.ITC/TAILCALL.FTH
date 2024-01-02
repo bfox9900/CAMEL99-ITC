@@ -15,20 +15,20 @@ DECIMAL
       ?CSP
 ; IMMEDIATE
 
-: COLON?  ( xt -- ?) @  [ ' DOCOL @ ] LITERAL = ;
-
-VARIABLE TAILCALL  \ control tail call optimizizing with this variable
+\ >> smart version but you don't need it << 
+\ : COLON?  ( xt -- ?) @  [ ' DOCOL @ ] LITERAL = ;
+\VARIABLE TAILCALL  \ control tail call optimizizing with this variable
                    \ TAILCALL ON  turns optimizer on
 
-: ;   ( -- )
-     TAILCALL @ 
-     IF 
-         PREVXT COLON?
-         IF   POSTPONE -;
-         ELSE POSTPONE ;
-         THEN 
-      ELSE 
-         POSTPONE ; 
-      THEN 
-; IMMEDIATE
+\ : ;   ( -- )
+\     TAILCALL @ 
+\     IF 
+\         PREVXT COLON?
+\         IF   POSTPONE -;
+\         ELSE POSTPONE ;
+\         THEN 
+\      ELSE 
+\         POSTPONE ; 
+\      THEN 
+\ ; IMMEDIATE
 
