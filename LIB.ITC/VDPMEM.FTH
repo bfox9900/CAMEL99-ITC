@@ -34,5 +34,6 @@ HEX 1000 VP !   \ "VDP pointer" start of free VDP RAM
 : V,      ( n -- )   VHERE V!   2 VALLOT ;
 : VCOUNT  ( vdp$adr -- vdpadr len ) DUP 1+ SWAP VC@ ;
 : VCREATE ( <text> -- ) VHERE CONSTANT  ; \ address when <text> invoked
-\ : VPLACE   ( $addr len Vaddr -- )  \ like PLACE for VDP RAM. In KERNEL 2.6
-\           2DUP VC! 1+ SWAP VWRITE ;
+
+\ like PLACE for VDP RAM. In KERNEL 2.6
+\ : VPLACE   ( $addr len Vaddr -- ) 2DUP VC! 1+ SWAP VWRITE ;
