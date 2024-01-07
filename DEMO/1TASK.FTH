@@ -1,6 +1,7 @@
 \ mtask demo
 NEEDS DUMP FROM DSK1.TOOLS
 NEEDS FORK FROM DSK1.MTASK99
+NEEDS MALLOC FROM DSK1.MALLOC 
 
 INIT-MULTI
 ( word to  create a task in heap and FORK)
@@ -9,33 +10,27 @@ INIT-MULTI
 USIZE TASK: TASK1
 
 HEX
-: DROP16  ( n --)  2DROP 2DROP 2DROP 2DROP
-                   2DROP 2DROP 2DROP 2DROP  ;
+DEAD CONSTANT $DEAD 
+BEEF CONSTANT $BEEF 
+
+\ fill and empty the stack 
+DECIMAL 
+: DEADS   0 0 AT-XY ." DEAD " 28 0 DO $DEAD   LOOP 500 MS ;
+: BEEFS   0 0 AT-XY ." BEEF " 28 0 DO $BEEF   LOOP 500 MS ;
+: ZEROS   0 0 AT-XY ." zero " 28 0 DO 0       LOOP 500 MS ;
+: DROPS   0 0 AT-XY ." drop " 28 0 DO DROP    LOOP 500 MS ;  
 
 \ show the round-robin task time in uS
 : .PULSE   TMR@ PAUSE TMR@ - ABS  213 10 */  U. ." uS" ;
 
-
 \ fill and clear data stack so it can be seen in debugger
 : STKTHING
-          HEX
-          80 TPAD !  \ move task's pad above root task'S pad
-          20 0 AT-XY
-          VROW 2@        \ fetch x,y
+          100 TPAD !  \ move task's pad above root task'S pad
           BEGIN
-            2DUP AT-XY ." TASK1   "
-            
-            10 0 DO DEAD  LOOP 100 MS
-            DROP16 100 MS
-
-            10 0 DO BEEF  LOOP 100 MS
-            DROP16 100 MS
-
-            10 0 DO 0     LOOP 100 MS
-            DROP16 100 MS
-            2DUP AT-XY DECIMAL  .PULSE
-            HEX 200 MS
-            PAUSE
+           DEADS DROPS ZEROS DROPS 
+           BEEFS DROPS ZEROS DROPS  
+          
+           PAUSE
           AGAIN ;
 
 ' STKTHING TASK1 ASSIGN
@@ -43,7 +38,8 @@ HEX
 \ To start:
 \ MULTI <ENTER>
 \ TASK1 WAKE <ENTER>
-\ (look at memory address >2000..2100 in debugger to see TASK1 stack
+\ .PULSE shows the round-robin time in micro-seconds 
+\ (look at memory address >2000..2500 in debugger to see TASK1 stack
 
 
 
