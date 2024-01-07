@@ -14,7 +14,6 @@ DECIMAL
 VARIABLE OLDDP
 VARIABLE LAST[]
 
-
 \ creator for counted arrays in empty memory
 \ Data structure has a 2 cell header
 \ Cell 1: LINK - to previous array or zero
@@ -43,7 +42,7 @@ VARIABLE LAST[]
 : ]! ( n addr len ndx) [] ! ;
 
 : SIZE ( addr -- addr size) DUP CELL+ SWAP @ ; \ size is in BYTES
-: LINK ( addr -- 'array[] | 0) 2- @ ;
+: LINK ( addr -- 'array[] | 0) CELL - @ ;
 
 \ a word to name a counted array and return the (addr,len) pair
 : DATA:   CREATE
