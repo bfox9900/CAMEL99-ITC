@@ -5,7 +5,7 @@
 \ This system compiles primitives from the kernel as super-instructions
 \ and compiles the execution token for the super instructions in a Forth word.
 
-\ NEEDS .S     FROM DSK1.TOOLS
+ NEEDS .S     FROM DSK1.TOOLS
 \ NEEDS ELAPSE FROM DSK1.ELAPSE
 NEEDS WORDLIST FROM DSK1.WORDLISTS
 
@@ -59,12 +59,16 @@ CODE +      A136 ,         NEXT, ENDCODE
 
 : COMPILES ( <codeword> ) POSTPONE [']  POSTPONE CODE, ; IMMEDIATE
 
-\ now we can steal code word from the kernel and compile it to target memory
+\ steal code word from the kernel and compile it to target memory
+\ These are MACHINE FORTH primitives.
 : DUP,   COMPILES DUP ;
 : DROP,  COMPILES DROP ;
 : 1-,    ( n -- n') COMPILES 1-  ; \ TOS DEC,
 
-: LIT,   ( -- n) DUP,  0204 T, ( n) T, ; \ compile n as literal in TOS
+: LIT,  \ compile time: ( n -) runtime: ( -- n) 
+         DUP,  
+         0204 T, ( n) T,  \ compile LI TOS 
+;          
 
 \ store a byte offset in odd byte of addr.
 \ Addr is the location of Jump instruction
@@ -128,27 +132,29 @@ ALSO JITS DEFINITIONS
 
 : REPEAT   POSTPONE AGAIN  POSTPONE THEN ; IMMEDIATE
 
-\ --------------------------------------------------------------
+\ ---------------------------------------------------------
 
 ONLY FORTH DEFINITIONS
 \ CFA of a code word contains the address of the next cell
 : CODE? ( XT -- ?)  DUP @ 2- = ;
+: NOTCODE? ( -- ?)  DUP @ 2- - ;
 
-: JITCOMPILE,  ( xt -- )
-          DUP CODE? IF  CODE,   EXIT  THEN  \ compile kernel code & exit
-  \ xt is not a code word...
-          DUP @   \ FETCH the "executor" address
-          CASE ( data words )
-             ['] DOVAR    OF  >BODY   LIT, ENDOF
-             ['] DOCON    OF  EXECUTE LIT, ENDOF
-             ['] DOUSER @ OF  EXECUTE LIT, ENDOF
-             TRUE ABORT" Can't optimize word"  ( any other Forth word bombs)
-         ENDCASE
+: DATA, ( XT -- )
+        @
+        CASE ( data words )
+            ['] DOVAR    OF  >BODY   LIT, ENDOF
+            ['] DOCON    OF  EXECUTE LIT, ENDOF
+            ['] DOUSER @ OF  EXECUTE LIT, ENDOF
+            TRUE ABORT" Can't optimize word"  ( any other Forth word bombs)
+        ENDCASE
 ;
+
+: JITCOMPILE,  ( xt -- ) DUP CODE? IF CODE,   ELSE  DATA,  THEN ;
 
 \ new interpreter loop
 \ 1. Executes Immediate words: BEGIN WHILE IF THEN etc.
 \ 2. Steals kernel code and compiles any CODE word.
+\ 2a Compiles variables, constants and user vars as literals
 \ 3. ABORTS if you try to compile a Forth word
 \ 4. Compiles literal numbers with LI instruction
 
@@ -161,7 +167,7 @@ ONLY FORTH DEFINITIONS
               IF ( it's a word)
                   1+ STATE @ 0= OR
                   IF   EXECUTE      \ IF BEGIN etc. are all immediate
-                  ELSE JITCOMPILE,  \ code and data are not
+                  ELSE JITCOMPILE,  
                   THEN
               ELSE
                   COUNT NUMBER? ?ERR
@@ -172,23 +178,24 @@ ONLY FORTH DEFINITIONS
           DROP
 ;
 
-: JIT: ( -- JIT-xt)
-        ALSO JITS         \ put JITS VOCABULARY first in search order
+: JIT: ( -- ) 
+        THERE ( -- XT)   \ execution token (XT) for the NEW compiled code
+        DUP CELL+ T, 
         :
-         THERE ( -- XT)   \ execution token (XT) for the NEW compiled code
-         DUP CELL+ T,     \ create the ITC header for a CODE word
-         ['] <JIT> 'IV !  \ switch to JIT compiler
+        ALSO JITS        \ put JITS VOCABULARY first in search order
+        ['] <JIT> 'IV !        
+        ]
 ;
 
 : ;JIT ( JIT-XT -- )
         PREVIOUS          \ restore previous search order
         ['] <INTERP> 'IV !
-         'NEXT' T,        \ compile NEXT at end of new code word
+        'NEXT' T,         \ compile NEXT at end of new code word
          ,                \ compile CODE word's XT into Forth definition
-        ?CS
         POSTPONE ;
 ; IMMEDIATE
 
-ONLY FORTH ALSO FORTH DEFINITIONS
+ONLY FORTH 
 
 HERE SWAP - SPACE DECIMAL . .( bytes)
+
