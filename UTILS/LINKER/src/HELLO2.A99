@@ -1,0 +1,57 @@
+* External References demo program for LINKERIII   2024 BFox 
+
+* requires DSK2.VDPLIB,OBJ linked before this program is linked
+
+        DEF  HELLO       * This DEF will appear in linker's DEF words
+ 
+        REF  VFILL,VMBW  * External: VDPLIB,OBJ
+*
+* EQUATES
+* 
+WRKSP   EQU  >8300       * Workspace shared with Forth
+BL      EQU  >2000       * 'blank" is space character 
+
+**********************
+* CODE SECTION 
+
+HELLO   LWPI WRKSP
+        LIMI 0
+
+*
+* clear the screen 
+*
+PAGE    LI R0,0
+        LI R1,BL
+        LI R2,768
+        BL @VFILL
+*
+* write the message 
+*
+        LI R0,0
+        LI R1,MSG1+1
+        LI R2,12
+        BL @VMBW 
+
+        BL @DELAY 
+
+        B *R10       * RETURN TO FORTH 
+
+*
+* small delay sub-routine 
+*
+DELAY   LI R4,>FFFF
+
+LOOP1   DEC R4 
+        JNE LOOP1 
+        RT
+
+*
+* DATA SECTION 
+*
+        EVEN
+MSG1    BYTE 12
+        TEXT 'Hello world!'
+        EVEN
+
+        END
+
