@@ -1,4 +1,4 @@
-EA3LOADER Read me file      Aug 10 2021
+#LINKER III     Jan 17 2024
 
 The LINKERIII program is updated in 2024 to correctly handle external references in multiple files. It enforces a "define before reference" rule like Forth or PASCAL. 
 This means there is no "forward referencing". 
