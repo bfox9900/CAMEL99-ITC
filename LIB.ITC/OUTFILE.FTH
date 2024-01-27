@@ -23,10 +23,18 @@ DECIMAL
 : CLOSE-OUTPUT ( -- )
       OUTH CLOSE-FILE DROP   0 TO OUTH ;
 
+: FLUSH-BUFFER ( -- )
+       3 FILEOP ?FILERR     \ write to disk
+       0 [PAB CHARS] VC!    \ reset byte counter
+         [PAB FBUFF] V@ 80 0 VFILL  \ erase buffer (debugging)
+;
 : [PABCHARS]+! ( n -- ) \ bump the file buffer char count by n
       [PAB CHARS] VC@  +
-      DUP [PAB RECLEN] VC@ > IF BEEP CR ." *WARNING: buffer overflow*" THEN
-      80 MIN  [PAB CHARS] VC! ;  \ update the PAB, clip to 80 chars
+      DUP [PAB RECLEN] VC@ > 
+      IF 
+        80 MIN  [PAB CHARS] VC! ;  \ update the PAB, clip to 80 chars
+        FLUSH-BUFFER 
+      THEN ;
 
 : OUTBUFF ( -- Vaddr) [PAB FBUFF] V@ [PAB CHARS] VC@ + ;
 
@@ -36,12 +44,6 @@ DECIMAL
        TUCK  ( -- len caddr len )       \ get a copy of the length
        OUTBUFF SWAP VWRITE              \ write string to buffer
        ( len) DUP [PABCHARS]+! OUT +! ; \ update Char count
-HEX
-: FLUSH-BUFFER ( -- )
-       3 FILEOP ?FILERR     \ write to disk
-       0 [PAB CHARS] VC!    \ reset byte counter
-      [PAB FBUFF] V@ 80 0 VFILL  \ erase buffer (debugging)
-;
 
 \ ==========================================
 \ redefine standard output words to echo to file if output handle is active
