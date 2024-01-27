@@ -1,74 +1,75 @@
 \ OUTFILE.FTH   echo screen output to text file      May 2021  Brian Fox
+\ updated Jan 2024 
 
-\ Method: Write data into pab FILE buffer, keeping track of char count
-\ Use the char count in the pab as Pointer into the Pab when we write
-\ So data is written to [PAB FBUFF] V@ [PAB CHARS] VC@ +
-\ Only write to disk when CR is encountered.
+\ Method: Write data directly into PAB file buffer
+\ Use the PAB char count in the PAB as pointer into the PAB when we write.
+\ ie: the buffer address= [PAB FBUFF] V@  + [PAB CHARS] VC@ 
+\ Only write to disk when CR is encountered or if buffer will overflow.
 \ No control characters allowed. Use spaces for DV80 files
 
+\                   *** THIS VERSION WORKS **** 
 NEEDS WRITE-FILE  FROM DSK1.ANSFILES
 NEEDS VALUE       FROM DSK1.VALUES
-
+ 
 DECIMAL
 0 VALUE OUTH   \ output file handle
-: MAKE-OUTPUT ( a u -- ) \ *G creates a new output file
-      DV80 W/O CREATE-FILE ?FILERR  TO OUTH ;
+VARIABLE FOUT  \ byte counter for outfile 
 
+: MAKE-OUTPUT ( a u -- ) \ *G creates a new output file
+    DV80 W/O CREATE-FILE ?FILERR  TO OUTH 
+    FOUT OFF ;
+ 
 \ : W/A   APPEND FAM @ ;  \ Moved to DSK1.ANSFILES
+: .OUT  ( -- ) FOUT @ U. ." bytes output"  ; 
 
 : OPEN-OUTPUT  ( a u -- ) \ open output file in APPEND mode
-      OUTH ABORT" Output file is already open"
-      DV80 W/A OPEN-FILE ?FILERR  TO OUTH ;
-
+    OUTH ABORT" Output file is already open"
+    DV80 W/A OPEN-FILE ?FILERR  TO OUTH 
+    FOUT OFF ;
+ 
 : CLOSE-OUTPUT ( -- )
-      OUTH CLOSE-FILE DROP   0 TO OUTH ;
+    OUTH CLOSE-FILE DROP   0 TO OUTH 
+    .OUT ;
+ 
+: WRITE-PAB ( handle -- ) SELECT  3 FILEOP ?FILERR ;
 
-: FLUSH-BUFFER ( -- )
-       3 FILEOP ?FILERR     \ write to disk
-       0 [PAB CHARS] VC!    \ reset byte counter
-         [PAB FBUFF] V@ 80 0 VFILL  \ erase buffer (debugging)
+: [PABCHARS]+! ( n -- ) [PAB CHARS] VC@  +  [PAB CHARS] VC! ; 
+: [OUTBUFF]    ( -- Vaddr) [PAB FBUFF] V@   [PAB CHARS] VC@ + ;
+
+: FLUSH-BUFFER ( -- ) OUTH WRITE-PAB    0 [PAB CHARS] VC! ;
+ 
+: OVERFLOW?  ( n -- ?)  \ test n bytes will overflow buffer
+    [PAB CHARS] VC@ +   \ add n to chars in the buffer 
+    [PAB RECLEN] VC@ >  \ compare to the maximum size 
 ;
-: [PABCHARS]+! ( n -- ) \ bump the file buffer char count by n
-      [PAB CHARS] VC@  +
-      DUP [PAB RECLEN] VC@ > 
-      IF 
-        80 MIN  [PAB CHARS] VC! ;  \ update the PAB, clip to 80 chars
-        FLUSH-BUFFER 
-      THEN ;
-
-: OUTBUFF ( -- Vaddr) [PAB FBUFF] V@ [PAB CHARS] VC@ + ;
 
 : >>OUT ( caddr len -- )
-       OUTH DUP 0= ABORT" Output file not open"
-       SELECT
-       TUCK  ( -- len caddr len )       \ get a copy of the length
-       OUTBUFF SWAP VWRITE              \ write string to buffer
-       ( len) DUP [PABCHARS]+! OUT +! ; \ update Char count
-
+    OUTH 0= ABORT" Output file not open"
+    OUTH SELECT 
+    DUP OVERFLOW? IF  FLUSH-BUFFER  THEN 
+    TUCK  ( -- len caddr len )         \ get a copy of the length
+    [OUTBUFF] SWAP VWRITE              \ write string to PAB buffer
+    ( len) DUP [PABCHARS]+!  FOUT +! ; \ update Char count
+ 
 \ ==========================================
-\ redefine standard output words to echo to file if output handle is active
+\ redefine standard output words to echo to file if output handle<>0
+: EMIT  ( c --)   OUTH IF DUP HERE C!  HERE 1 >>OUT  THEN EMIT ;
+: TYPE  ( a u --) OUTH IF 2DUP  >>OUT  THEN TYPE ;
 
-: EMIT ( c --)
-      DUP EMIT
-      OUTH IF HERE C!  HERE 1 >>OUT   EXIT
-      THEN DROP ;
-
-: TYPE  ( a u --)
-      2DUP TYPE
-      OUTH IF  >>OUT EXIT
-      THEN 2DROP ;
+: ."  (  ccc" -- )
+    POSTPONE S" 
+    STATE @ IF POSTPONE TYPE   EXIT   THEN TYPE ; IMMEDIATE
 
 : SPACE   BL EMIT ;
 : SPACES  ( n -- ) 0 MAX  0 ?DO  SPACE LOOP ;
-
+ 
 : CR   ( -- )
-      CR
-      OUTH
-      IF \ file is open
-         OUT @ 0= IF  SPACE THEN FLUSH-BUFFER
-      THEN OUT OFF ;
-
+    OUTH IF \ file is open
+       [PAB CHARS] VC@  0= IF SPACE THEN FLUSH-BUFFER
+    THEN CR  ;
+ 
 \ number output with echo
-: UD.    ( d -- ) <#  #S  #> TYPE SPACE ;
-: U.     ( u -- ) 0 UD. ;
-: .      ( n -- ) DUP ABS 0 <#  #S ROT SIGN  #> TYPE SPACE ;
+: UD.  ( d -- ) <#  #S  #> TYPE SPACE ;
+: U.   ( u -- ) 0 UD. ;
+: .    ( n -- ) DUP ABS 0 <#  #S ROT SIGN  #> TYPE SPACE ;
+ 
