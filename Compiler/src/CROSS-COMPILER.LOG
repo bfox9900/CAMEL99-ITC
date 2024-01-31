@@ -1,0 +1,47 @@
+Forth CROSS-COMPILER LOG AND TO-DO
+Jan 2024 Added src code folder on github and touched up readme
+
+
+Mar 2023 
+
+Added   , and  C,   to the META vocabulary.
+Rebuilt the cross-compiler as FCC99E.EXE
+
+Feb 2023
+FFC99D.EXE
+Removed all creator words from the compiler.
+They were old versions that are not used. SEE: ITCTYPES.hsf and DTCTYPES.HSF 
+
+Dec 2022
+Maintenance for FCC99C
+
+
+Oct 18 2022
+Create FCC99a cross-compiler.
+Created a META vocabulary that properly handles IMMEDIATE words WHILE
+target compiling.
+
+The META wordlist contains:
+: ."          POSTPONE T." ; IMMEDIATE
+: S"          POSTPONE TS" ; IMMEDIATE
+: [']         POSTPONE t['] ; IMMEDIATE
+: CHAR        TCHAR ;
+: [CHAR]      ?XCOMP TCHAR  POSTPONE TLITERAL ; IMMEDIATE
+: [COMPILE]   POSTPONE  T[COMPILE] ; IMMEDIATE
+
+: IMMEDIATE   XIMMEDIATE ;
+
+May 1, 2022, VERSION XFC99Y
+1. Installed smart equate
+2. Looking for real solution to making output files run on JS99ER.
+  - "TOO SMALL" error
+
+Jan 5 2022
+1. removed WORD types from the TI99XC7.hsf.  Use external file only ITCTYPES.HSF
+2. END.  directive now limits PROG-SIZE in the file header to HEX 2000 bytes.
+
+
+
+
+
+

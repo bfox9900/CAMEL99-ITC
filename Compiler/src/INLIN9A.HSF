@@ -1,0 +1,123 @@
+\ inline.hsf  a simple speedup for ITC FORTH July 2017  B Fox
+
+\ Premis:
+\ An indirect threaded code (ITC) system can spend up to 50% of its time 
+\ running the Forth thread interperpreter, typically called NEXT.
+\ The ITC NEXT routine is three instructions on the TMS9900.
+\ The Forth Kernel contains many words called primitives, that are coded in Assembler.
+\ Many of these primitives are only 1 or 2 instructions.
+
+
+\ ASM[  ]ASM
+\ Inline assembler can be added to your code with ASM[  ]ASM
+\ This allows Assembler to be used without taking name space.
+
+\ CODE[  ]
+\ CODE[ is used in a CODE word definition to take code primitives
+\ and write them inline.  Using CODE[ ] is the fastest but takes space
+\ for the name of the word and the Forth header.
+
+\ INLINE[  ]
+\ INLINE[  ] copies the code from a primitive and compiles it in a new definition
+\ but removes the call to NEXT at the end of each primitive.
+\ This effectively doubles the speed of definitons using INLINE[
+
+
+\ EXAMPLES
+
+\ : DUP@   ASM[ TOS PUSH,  *TOS TOS MOV,  ]ASM  ;
+\ CODE DUPC@  CODE[ DUP C@ ]  NEXT,  END-CODE
+
+\ If you only need a code fragment once it is better to use INLINE[ ]
+\ : MYWORD  BEGIN  INLINE[ DUP @ ] WHILE ( blah blah)  REPEAT  ;
+
+\ Change History:
+\ Feb 26 2018  made INLINE,(t) SMARTER. It now recogonizes code words, constants and variables
+\              It converts variable and constants into TOS PUSH, TOS <xxx> LI, macros.
+
+\ MODIFIED for XFC99 cross-compiler usage.
+
+CROSS-COMPILING
+
+HEX 045A CONSTANT B*R10   \ code for CAMEL99 NEXT (B *R10)
+
+\ ==============
+\ TEST for CODE word
+\ CFA of a code word contains the address of the next cell
+
+: ?TCODE ( cfa -- ? ) DUP T@ CELL-  - 0= ;  \ works only for ITC
+                                            \ needed CSWAP for TI endian
+
+\ Compile MACHINE code until NEXT, routine.
+\ Abort if NEXT is not found after 128 bytes. This is an arbitrary size
+\ but most Forth code words are much smaller than 128 bytes.
+
+HEX
+: CODE,  ( xt --)  \ Read code word from kernel, compile into target memory
+           >BODY 80   ( -- addr len)
+           BOUNDS ( -- IPend IPstart)
+           BEGIN
+              DUP T@ 'NEXT' <>  \ the instruction is not 'NEXT'
+           WHILE
+             DUP T@  ( -- IP instruction)
+             T,       \ compile instruction
+             TCELL +  \ advance IP
+             2DUP < ABORT" NEXT not found"
+           REPEAT
+           2DROP
+;
+
+\ compile assembler code to push arguments into TOS register ie: R4
+HEX
+: DUP,       ( cfa -- )  R6 DECT,  R4 *R6 MOV, ;
+: PUSH_VAR,  ( cfa -- )  DUP,  R4 SWAP >BODY LI, ;
+: PUSH_CON,  ( cfa -- )  DUP,  R4 SWAP >BODY T@ LI, ;
+: PUSH_LIT,  ( cfa -- )  DUP,  0204 T,  ( n) T, ;
+
+: INLINE,(t)  ( $addr -- ) \ compile code for $addr word
+           <TFIND> DUP 0= ABORT" INLINE, can't find"
+           NFA>CFA
+           DUP ?TCODE      IF CODE,             ELSE
+           DUP T@ 'DOVAR = IF PUSH_VAR,         ELSE
+           DUP T@ 'DOCON = IF PUSH_CON,         ELSE
+                           TRUE ABORT" unknown word type"
+           THEN THEN THEN ;
+
+
+FORWARD: '>CODE    \ we will need to resolve in the high level code
+
+
+\ Move from Forth to machine code
+ : >CODE
+           THERE TCELL + T,       \ compile a pointer to the next cell
+           THERE TCELL + T, ;     \ which is the CFA of the inline code pointing to the next cell...
+
+\ return from in-line machine to back to FORTH
+: >FORTH   0209 T, THERE 2 CELLS + T,   \ asm macro: LI IP,THERE+4
+           045A T,  ;                   \ B *R10   (Forth next)
+
+: ASM[     >CODE
+           CROSS-ASSEMBLING
+           T[ ; IMMEDIATE \ switch OFF cross-compiler and go to interpreter mode
+
+: ]ASM     >FORTH
+           TARGET-COMPILING
+           ]T ; IMMEDIATE    \ switch ON cross-compiler
+
+CREATE WORDBUF2   33 ALLOT
+
+: CODE[    ( <codeword> -- ) \ compile code words inline
+           BEGIN
+             BL PARSE WORDBUF2 PLACE
+             WORDBUF2 CHAR+ C@ [CHAR] ] <>
+           WHILE
+             WORDBUF2 INLINE,(t)
+           REPEAT ;
+
+\ inline a string of code words all at once
+\ usage: : TEST   INLINE[ OVER + SWAP DUP = or ]  ;
+: INLINE[  ( <codeword> -- ) >CODE  CODE[   >FORTH ;  IMMEDIATE
+
+
+
+
