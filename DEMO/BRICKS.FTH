@@ -59,7 +59,7 @@ DECIMAL
 : ?RLINE      SHADOW? IF   4 OR SWAP VC! EXIT   THEN  2DROP ;
 
 : EMPTY? ( X Y -- ?)
-      2DUP AT-XY          \ place cursor and retain in vcol & vrow variables
+      2DUP AT-XY                \ place cursor
       >VPOS V@ SPLIT  ( -- c c) \ read 2 chars at once then split
       40 < SWAP 40 < ( -- ? ?) AND
 ;
@@ -74,7 +74,7 @@ DECIMAL
     1025 0
     DO
     \ find empty screen location
-     30 RND 23 RND EMPTY?
+      30 RND 23 RND EMPTY?
       IF
         7 RND 8* 40 + BRICK
         Right ?RLINE
