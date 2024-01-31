@@ -150,9 +150,9 @@ CR
 \ create a a dummy record
 : DUMMYREC  ( -- )  
     REC# @ UINT>$ [REC ID#] PLACE 
-    S" Brian"    [REC NAME] PLACE
-    S" Fox"      [REC FAMILY] PLACE
-    S" 116 Settlement Park Ave." [REC ADDRESS] PLACE
+    S" Howard"    [REC NAME] PLACE
+    S" Smith"      [REC FAMILY] PLACE
+    S" 213 Lincoln Park Ave." [REC ADDRESS] PLACE
     S" Markham"  [REC CITY] PLACE
     S" Ontario"  [REC PROV] PLACE
     S" Canada"   [REC COUNTRY] PLACE
