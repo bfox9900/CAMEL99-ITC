@@ -7,10 +7,14 @@ NEEDS ]PDT      FROM DSK1.GRAFIX
 \ ****************************************
 \ * PETSCII C64 Patterns at 127
 \ ****************************************
-DECIMAL 127 ]PDT VP !  \ set pattern table start address
+
+\ Use the characters at ASCII 127 and above
+
+\ set VDP pointer, VP,  to pattern table start address
+DECIMAL 127 ]PDT VP !  
 
 HEX
-VDP ( compile data to VDP RAM )
+VDP ( forces data to compile to VDP RAM )
 DATA 3C66,6E6E,6062,3C00    \ PAT0
 DATA 183C,667E,6666,6600    \
 DATA 7C66,667C,6666,7C00    \
