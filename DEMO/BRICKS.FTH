@@ -59,8 +59,8 @@ DECIMAL
 : ?RLINE      SHADOW? IF   4 OR SWAP VC! EXIT   THEN  2DROP ;
 
 : EMPTY? ( X Y -- ?)
-      AT-XY          \ place cursor and retain in vcol & vrow variables
-      VPOS V@ SPLIT  ( -- c c) \ read 2 chars at once then split
+      2DUP AT-XY          \ place cursor and retain in vcol & vrow variables
+      >VPOS V@ SPLIT  ( -- c c) \ read 2 chars at once then split
       40 < SWAP 40 < ( -- ? ?) AND
 ;
 
