@@ -1,29 +1,37 @@
- # FORTH Cross-Compiler, FCC99.EXE for ITC or DTC 
+ # *NEW* FCC99d.EXE for ITC or DTC Builds
 
-This folder contains the source code for FCC99D.EXE and the executable file.
+**  APOLOGY in ADVANCE **
+This repository is not a mirror image of the file system needed to compile the system. 
+Documentation on re-building CAMEL99 FORTH is below.
 
-It is here for your reference. The hope is that the source code will explain how this cross compiler was built.
-The cross-compiler was created with HsForth which is an old commercial system for DOS written by the late Jim Kalihan (R.I.P.) founder of Harvard Softworks.
+Review the source code INCLUDE statements to understand the DOS directory structure 
+needed to match the INCLUDE statements in the CAMEL99 FORTH source coode.
 
-The cross compiler program is in the bin folder as a Zip file. 
-It is called FCC99D.EXE when you unzip it. It is a heavily extended Forth system. 
+This folder contains the source code for FCC99d.EXE cross-compiler in bin folder
 
-You can you use FCC99D.EXE IN DOSBOX as follows
+The cross-compiler source code is here for your reference. There are ample comments in the code so the hope is that the source code will explain how this cross compiler was built. The cross-compiler was created with HsForth which is an old commercial system for DOS written by the late Jim Kalihan (R.I.P.) founder of Harvard Softworks.
+
+#### Use FCC99E.EXE IN DOSBOX as follows:
 
 Create a CAMEL99 folder as the root directory for yourself and un-zip the file  
-FCC99.ZIP into that folder.
+FCC99E.ZIP into that folder.
 
-You should then have FCC99D.EXE in your CAMEL99 folder
+This will give you the cross-compiler FCC99E.EXE in your CAMEL99 folder
 
 Create a folder \CC9900
 Copy the folder SRC.ITC to \CC9900  creating  \CC9900\SRC.ITC
 
-At your ROOT folder that you made in the first step:
-type:
-c:\ FCC99D FLOAD CC9900\SRC.ITC\FORTHITC.MAK <enter>
+At your ROOT folder that you made in the first step type:
 
-The build process is controlled by the .MAK file which is a script 
-written in Forth, NOT a file for the make utility program. 
+```
+c:\ FCC99E FLOAD CC9900\SRC.ITC\FORTHITC.MAK  <enter>
+```
+(This not a "make" file, but just Forth language that is interpreted)
 
-Some SOURCE code files also contain INCLUDE statements with explicit
-directories. It's not pretty (it's ugly) but I got it to work. 
+FCC99E will search the current directory and also look in the CAMEL99\LIB directory 
+if you create \LIB in CAMEL99
+
+Source code that is not in CAMEL99 folder or the \LIB folder must explicitly 
+spelled out in the file path in your source code.
+
+If you need help look me on atariage.com  @theBF 
