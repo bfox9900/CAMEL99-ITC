@@ -28,12 +28,12 @@ INCLUDE DSK1.COMPARE
 \ resolve a table entry to a name string
 \ 10% faster using the text macro
  \ : NAME    S" @ EXECUTE" EVALUATE ; IMMEDIATE  
-\ ** CHANGED TO USE PERFORM. In Camel99 **
+\ ** CHANGED TO USE PERFORM. Faster @ EXECUTE In Camel99 **
 
  \ swap adjacent table entries
  : SWP       >R R@ @ R@ CELL+ @ SWAP R@ CELL+ ! R> ! ;
 
- : PAIR      DUP PERFORM ROT CELL+ PERFORM ;    \ two adjacent names
+ : PAIR      DUP PERFORM ROT CELL+ PERFORM ; \ two adjacent names
 
  : ARRANGE   DUP PAIR COMPARE 0> IF SWP EXIT THEN DROP ;
 
