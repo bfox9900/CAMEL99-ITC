@@ -7,7 +7,7 @@ folder is rather messy but it works.
 
 ### Disk System Organization
 The newest version of the cross-compiler is FCC99D.exe.
-It is in the FCC99D.ZIP file.
+It is in the FCC99E.ZIP file.
 
 The cross-compiler runs on MS DOS. Hey it's retro computing. I used DOSBOX.
 In DOS Box create the CC9900 folder tree as it exists in GitHub.
@@ -18,9 +18,9 @@ All paths in the source files are explicitly spelled out in the form:
 
           CC9900\SRC.ITC\HILEVEL.HSF
 
-Therefore unzip FCC99D.ZIP in a folder below CC9900.
+Therefore unzip FCC99E.ZIP in a folder below CC9900.
 Example:
-c:\forth             has FCC99D.EXE
+c:\forth             has FCC99E.EXE
 c:\forth\cc9900\SRC.ITC      contains the source files
 
 ## Standard Kernel Build V2.69
@@ -71,7 +71,7 @@ Entry=HEX 6000
 
 At the DOS prompt type:    
 ```
-C:\> FCC99D fload cc9900\src.itc\forthitc.mak
+C:\> FCC99E fload cc9900\src.itc\forthitc.mak
 ```
 
 *****************************************************
