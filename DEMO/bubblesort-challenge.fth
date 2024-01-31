@@ -22,8 +22,7 @@ INCLUDE DSK1.COMPARE
  CREATE POINTERS
    | Perl | Python | Ruby | JavaScript | Java | Fortran | C | C++ | Basic 
    HERE   | Pascal | Lisp 
-
- ( -- here ) CONSTANT PENULTIMATE
+  ( -- here ) CONSTANT PENULTIMATE
 
 \ resolve a table entry to a name string
 \ 10% faster using the text macro
@@ -31,23 +30,23 @@ INCLUDE DSK1.COMPARE
 \ ** CHANGED TO USE PERFORM. Faster @ EXECUTE In Camel99 **
 
  \ swap adjacent table entries
- : SWP       >R R@ @ R@ CELL+ @ SWAP R@ CELL+ ! R> ! ;
+ : SWP       DUP>R @  R@ CELL+ @  SWAP R@ CELL+ ! R> ! ;
 
  : PAIR      DUP PERFORM ROT CELL+ PERFORM ; \ two adjacent names
 
  : ARRANGE   DUP PAIR COMPARE 0> IF SWP EXIT THEN DROP ;
 
  \ bubbles from end of list towards the beginning.
- : BUBBLE    PENULTIMATE BEGIN 2DUP U> IF 2DROP EXIT THEN
-             DUP ARRANGE [ 1 CELLS ] LITERAL - AGAIN ;
+ : BUBBLE   PENULTIMATE BEGIN 2DUP U> IF 2DROP EXIT THEN
+            DUP ARRANGE [ 1 CELLS ] LITERAL - AGAIN ;
 
- : SORT      POINTERS BEGIN DUP PENULTIMATE U> IF DROP EXIT
-             THEN DUP BUBBLE CELL+ AGAIN ;
+ : SORT     POINTERS BEGIN DUP PENULTIMATE U> IF DROP EXIT
+            THEN DUP BUBBLE CELL+ AGAIN ;
 
- : E         DUP PERFORM TYPE SPACE CELL+ ;
+ : E        DUP PERFORM TYPE SPACE CELL+ ;
 
  \ display current table state
- : SHOW      CR POINTERS E E E E E E E E E E E DROP CR ;
- : DEMO      SHOW SORT SHOW ;
+ : SHOW     CR POINTERS E E E E E E E E E E E DROP CR ;
+ : DEMO     SHOW SORT SHOW ;
 
 \ DEMO
