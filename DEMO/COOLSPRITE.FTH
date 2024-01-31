@@ -40,28 +40,36 @@ DECIMAL
  1 CONSTANT AMMO    2 CONSTANT TURRET   3 CONSTANT TARGET
  2 CONSTANT BLACK   5 CONSTANT BLUE    16 CONSTANT WHITE
 
-\ functions to assist understanding
-: (Y-CC)/2  ( -- n)  Y @ CC @ -  2/ ;
-: (X-RR)/2  ( -- n)  X @ RR @ -  2/ ;
+\ functions to assist translation from BASIC 
+: (Y-RR)/2  ( -- n)  Y @ RR @ -  2/ ;
+: (X-CC)/2  ( -- n)  X @ CC @ -  2/ ;
+: SOUND1   ( t Hz db -- ) GEN1  DB  HZ  MS  MUTE  ;
+: ?BREAK   ?TERMINAL IF  STOPMOTION CR ." BREAK"  ABORT  THEN ;
+
 
 : RUN
 ( 100) CLEAR
 ( 110) BLUE SCREEN   10 0 AT-XY ." Camel99 Forth"
 ( 120) ABULLET [CHAR] . CHARDEF
-( 130) [CHAR] ^   WHITE  1 180 TURRET SPRITE  0 5 TURRET MOTION
+( 130) [CHAR] ^   WHITE 180  1  TURRET SPRITE   
+       5 0 TURRET MOTION
        AUTOMOTION
-( 140) BEGIN 25 0 DO
-( 150)   192 RND 1+ X !
-( 160)   255 RND 1+ Y !
-( 170)   [CHAR] A I +  WHITE   Y @ 2/  X @ 1+  TARGET SPRITE
-( 180)   GEN1 660 HZ 8 DB 50 MS MUTE
-( 190)   TARGET POSITION X ! Y !    TURRET POSITION RR ! CC !
-( 200)   [CHAR] .  WHITE  CC @ RR @ AMMO SPRITE  (X-RR)/2 (Y-CC)/2 AMMO MOTION
-( 210)   2 NOISE -14 DB 430 MS MUTE
-( 220)   GEN1 110 HZ -6 DB 120 MS
-( 230)   AMMO DELSPRITE
-( 240)   [CHAR] # 3 PATTERN
-( 250)   GEN1 220 HZ -6 DB 100 MS MUTE
-         ?TERMINAL IF STOPMOTION CR ." BREAK"  ABORT THEN
+
+( 140) BEGIN 
+        25 0 DO
+( 150)    192 RND 1+ Y !
+( 160)    255 RND 1+ X !
+( 170)    [CHAR] A I +  WHITE   X @ 1+  Y @ 2/   TARGET SPRITE
+( 180)    660 8 50 SOUND1
+( 190)    TARGET POSITION X ! Y !    TURRET POSITION  CC !  RR ! 
+( 200)    [CHAR] . WHITE RR @ CC @  AMMO SPRITE  
+          (Y-RR)/2 (X-CC)/2 AMMO MOTION
+( 210)    2 NOISE -14 DB 430 MS MUTE
+( 220)    120 110 -6 SOUND1 
+( 230)    AMMO DELSPRITE
+( 240)    [CHAR] # 3 PATTERN
+( 250)    100 220 -6 SOUND1
+          ?BREAK 
 ( 260)   LOOP
 ( 270) AGAIN ;
+
