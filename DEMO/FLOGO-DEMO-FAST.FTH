@@ -47,7 +47,7 @@ DECIMAL
   ENUM WHITE
 DROP
 
-: HUE ( fg -- ) 0 COLOR ; 
+: HUE ( fg -- ) 0 SWAP FUSE SCREEN ; 
 
 \ ===============================================
 \ TI-99 bit mapped screen coordinates

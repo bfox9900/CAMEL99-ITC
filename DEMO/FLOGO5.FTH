@@ -157,7 +157,7 @@ DECIMAL
   ENUM WHITE
 DROP
 
-: HUE ( fg -- ) 0 COLOR ; 
+: HUE ( fg -- ) 0 SWAP FUSE SCREEN ; 
 
 : WAITKEY   ( -- )   BEEP  BEGIN KEY? UNTIL  TEXT ;
 
