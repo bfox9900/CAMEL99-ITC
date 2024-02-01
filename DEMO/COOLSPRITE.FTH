@@ -1,4 +1,7 @@
 \ EXTENDED BASIC to CAMEL99 Forth demo BJFox 2019
+\ VERY literal translation from BASIC .
+\ This an example of VERY BAD Forth programming ;-) 
+
 \ Source:  Smart Programming Guide for Sprites
 \          by Craig Miller
 \          (c) 1983 by Miller Graphics
@@ -21,15 +24,14 @@
 \ 260 NEXT N
 \ 270 GOTO 140
 
+
 NEEDS .S     FROM DSK1.TOOLS
 NEEDS MOTION FROM DSK1.AUTOMOTION
 NEEDS RND    FROM DSK1.RANDOM
 NEEDS DB     FROM DSK1.SOUND
 
-VARIABLE X
-VARIABLE Y
-VARIABLE RR
-VARIABLE CC
+VARIABLE X   VARIABLE Y
+VARIABLE RR  VARIABLE CC
 
 CREATE ABULLET HEX 0000 , 0018 , 1800 , 0000 ,
 
@@ -49,9 +51,9 @@ DECIMAL
 
 : RUN
 ( 100) CLEAR
-( 110) BLUE SCREEN   10 0 AT-XY ." Camel99 Forth"
+( 110) BLUE SCREEN  10 0 AT-XY ." Camel99 Forth"
 ( 120) ABULLET [CHAR] . CHARDEF
-( 130) [CHAR] ^   WHITE 180  1  TURRET SPRITE   
+( 130) [CHAR] ^ WHITE 1 180 TURRET SPRITE   
        5 0 TURRET MOTION
        AUTOMOTION
 
