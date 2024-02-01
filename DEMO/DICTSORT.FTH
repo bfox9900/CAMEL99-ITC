@@ -49,8 +49,8 @@ VARIABLE ITEMS
 
 
 DEFER PRECEDE   \ this will be the string comparison operator
-: ASCENDING  ( -- )  ['] <$ IS PRECEDE ;
-: DESCENDING ( -- )  ['] >$ IS PRECEDE ;
+: ASCENDING  ( -- )  ['] >$ IS PRECEDE ;
+: DESCENDING ( -- )  ['] <$ IS PRECEDE ;
 
 ASCENDING   \ default sort direction
 
