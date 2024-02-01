@@ -1,9 +1,9 @@
 \ EXTENDED BASIC to CAMEL99 Forth demo BJFox 2019
 \ forth style translation from BASIC uses no VARIABLES 
 
-\ Source:  Smart Programming Guide for Sprites
-\          by Craig Miller
-\          (c) 1983 by Miller Graphics
+\ 1 ! Smart Programming Guide for Sprites
+\ 2 !      by Craig Miller
+\ 3 ! (c) 1983 by Miller Graphics
 \ 100 CALL CLEAR
 \ 110 CALL SCREEN(2)
 \ 120 CALL CHAR(46,"0000001818")
@@ -57,7 +57,7 @@ DECIMAL
 \   colr     x       y        spr# 
     WHITE  RNDX 1+  RNDY 2/  TARGET SPRITE ;    
 
-\ function computes motion vector between 2 SPRITES
+\ function computes motion vector between 2 SPRITES x,y
 : DELTA ( x y x2 y2  -- x' y')  
         ROT  - 2/  >R   \ delta Y pushed to Rstack 
         SWAP - 2/       \ delta X    
@@ -94,7 +94,7 @@ DECIMAL
             50 660 8 SOUND1
 
         \ put the AMMO sprite at the turret position 
-            [CHAR] . WHITE TURRET POSITION AMMO SPRITE  
+            [CHAR] . WHITE  TURRET POSITION AMMO SPRITE  
             SHOOT 
            
             ?BREAK 
