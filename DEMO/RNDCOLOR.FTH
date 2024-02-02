@@ -26,9 +26,6 @@ DECIMAL
      BL SET# 2 2 COLOR
      20 5 DO   I I I COLOR   LOOP ;  \ Forth has different color sets
 
-\ rather than use variables we make words with the same names
-\ that calculate the numbers we need and leave them on the stack
-
 \ These lines are interesting because they uses floating point math
 \ to compute a valid note on the musical scale. 
 \ 160 N=INT(24*RND+1)
@@ -40,7 +37,12 @@ DECIMAL
 \ we can multiply by 1.0594 and scale it with */ 
 \ I found the value 10570 gave me more accurate pitches than 10594
 : NOTE+ ( freq -- ) 10570 10000 */ 1+ ; \ compute next semitone 
+
+\ step n semitones up from 110Hz 
 : NOTE ( n -- freq) 110  SWAP 0 ?DO  NOTE+ LOOP  ;   
+
+\ rather than use variables we make words with the same names
+\ that calculate the numbers we need and leave them on the stack
 
 : N  ( -- n )    24 RND  ;  \ random number between 0 and 23 
 : CHR ( -- n )   80 RND 40 + ;  \ chars higher than ASCII 40 
