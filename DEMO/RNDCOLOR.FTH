@@ -111,21 +111,27 @@ CREATE NOTES[]   \ create a name for the data
 \ make word that indexes into the table and fetches the frequency
 : ]NOTE ( n -- freq) CELLS NOTES[] +  @ ;
 
-: Y   ( -- n )   65 RND ;       \ random number between 0 and 64 
+: n   ( -- n )   12 RND 20 + ;  \ random number between 0 and 23 
 : CHR ( -- n )   80 RND 40 + ;  \ chars higher than ASCII 40 
 : ROW ( -- n )   24 RND  ;      \ random row 0 to 23 
 : COL ( -- n )   32 RND  ;      \ random col 0 to 31 
 
 \ We can create a SOUND word from the primitives: HZ DB MS MUTE
-: SOUND  ( dur freq att --) DB  HZ  MS MUTE ;
+\ : SOUND  ( dur freq att --) DB  HZ  MS MUTE ;
+\ But there really is no point. The Forth words easy to understand.
 
 : RUN ( -- )
       CLEAR
       16 SCREEN  
       SET-COLORS
+      GEN1      \ use sound generator 1 
       BEGIN
 	   COL ROW CHR 1 HCHAR
-        GEN1 150 Y ]NOTE -2 SOUND
+
+        n ]NOTE HZ     \ set the frequency
+        -2 DB          \ set the volume (turns on sound)  
+        70 MS MUTE     \ wait and then turn off the sound 
+        64 RND MS      \ wait to put a space after the note 
         ?TERMINAL
       UNTIL
       8 SCREEN
