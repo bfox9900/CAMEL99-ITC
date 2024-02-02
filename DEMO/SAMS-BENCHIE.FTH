@@ -1,5 +1,6 @@
 \ DEMO: Compile code in CPU RAM & SAMS memory and compare speed May 2022 BFox
 
+\ NEEDS R0    FROM DSK1.ASM9900
 NEEDS FAR:  FROM DSK1.SAMSCODE
 
 INCLUDE DSK1.VALUES
