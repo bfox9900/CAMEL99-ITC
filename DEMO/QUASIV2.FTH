@@ -72,18 +72,21 @@ HEX
 : TYPE.BIG ( addr len -- ) 2DUP TYPE CR  TYPE.LOW  ;
 
 DECIMAL
+: RNDCOLOR  ( -- c) 14 RND 3 + ;
+: RNDX-VECT ( -- c) 22 RND 11 - ;
+
 : QUASI ( -- )
   AUTOMOTION
   MAX.SP MOVING   \ make all sprites auto movers
   BEGIN
      MAX.SP 0
      DO
-       [CHAR] .  16 128 0  I SPRITE
-       18 RND 8 -  15  I MOTION
-                14 RND 3 +  I SP.COLOR
+      [CHAR] .  16 128 0  I SPRITE
+      RNDX-VECT 15  I MOTION
+      RNDCOLOR  I SP.COLOR
 
-       50 MS
-        ?BREAK
+      100 MS
+      ?BREAK
      LOOP
   AGAIN ;
 
