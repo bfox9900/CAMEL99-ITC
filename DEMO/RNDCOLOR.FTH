@@ -33,15 +33,16 @@ DECIMAL
 : ROW ( -- n )   24 RND  ;
 : COL ( -- n )   32 RND  ;
 
-\ We create a SOUND word from the primitives: HZ DB MS MUTE
+\ We can create a SOUND word from the primitives: HZ DB MS MUTE
 : SOUND  ( dur freq att --) DB  HZ  MS MUTE ;
 
 : RUN ( -- )
-      16 SCREEN  CLEAR
+      CLEAR
+      16 SCREEN  
       SET-COLORS
       BEGIN
-	 COL ROW CHR 1 HCHAR
-         GEN1 150 Y -2 SOUND
+	   COL ROW CHR 1 HCHAR
+        GEN1 150 Y -2 SOUND
         ?TERMINAL
       UNTIL
       8 SCREEN
