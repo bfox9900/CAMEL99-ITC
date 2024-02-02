@@ -51,7 +51,7 @@ DECIMAL
 
 \ We can create a SOUND word from the primitives: HZ DB MS MUTE
 \ : SOUND  ( dur freq att --) DB  HZ  MS MUTE ;
-\ But there really is no point. The Forth words easy to understand.
+\ But there really is no point. The Forth words are easy to understand.
 
 : RUN ( -- )
       CLEAR
