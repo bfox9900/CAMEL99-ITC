@@ -32,7 +32,7 @@ DECIMAL
 \ These lines are interesting because they uses floating point math
 \ to compute a valid note on the musical scale. 
 \ 160 N=INT(24*RND+1)
-\ 170 Y=110*(2^(1/12))^N 
+\ 170 note=110*(2^(1/12))^N 
 
 \ Can we do this in Forth with only 16 bit integerS?
 \ ( 2^1/12 ≈1.059463 ) 
@@ -110,6 +110,16 @@ CREATE NOTES[]   \ create a name for the data
 
 \ make word that indexes into the table and fetches the frequency
 : ]NOTE ( n -- freq) CELLS NOTES[] +  @ ;
+
+: CHROMATIC  64 0 DO  I ]NOTE HZ  0 DB  250 MS  MUTE  40 MS  LOOP MUTE ; 
+
+: NOTE+ ( freq -- ) 10570 10000 */ 1+ ;
+: NOTE ( n -- freq) 110  SWAP 0 ?DO  NOTE+ LOOP  ;   
+
+
+: TEST ( freq -- ) 
+   60 0  DO  DUP  HZ  0 DB  200 MS   NOTE+   LOOP  MUTE ;
+
 
 : n   ( -- n )   12 RND 20 + ;  \ random number between 0 and 23 
 : CHR ( -- n )   80 RND 40 + ;  \ chars higher than ASCII 40 
