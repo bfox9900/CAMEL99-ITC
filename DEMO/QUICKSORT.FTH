@@ -32,35 +32,37 @@ CREATE Q   SIZE CELLS CELL+ ALLOT
 
 : <=      S" 1+ <" EVALUATE ;  IMMEDIATE
 
-: MID ( l r -- mid ) OVER - 2/ -CELL AND + ;
+: PIVOT ( l r -- addr ) OVER - 2/ -CELL AND + ;
 
 \ : EXCH    ( adr1 adr2 -- )  OVER @ OVER @ SWAP ROT ! SWAP ! ;
+
+\ EXCH as a code word is only 10% faster but 8 bytes smaller
 HEX
-CODE EXCH  ( adr1 adr2 -- ) \ exchange values of 2 variables
+ CODE EXCH  ( adr1 adr2 -- ) \ exchange values of 2 variables
   C036 , \               R0 POP,
   C210 , \       R0 **   W  MOV,    \ save contents1 in W
   C414 , \      *TOS  R0 ** MOV,    \ mem2mem: contents of TOS to address in R0
   C508 , \       W     *TOS MOV,
   C136 , \              TOS POP,
   NEXT,
-ENDCODE
+ ENDCODE
 
 DECIMAL
 : PARTITION ( l r -- l r r2 l2 )
-  2DUP MID @ >R ( r: pivot )
+  2DUP PIVOT @ >R ( r: pivot )
   2DUP
   BEGIN
-    SWAP BEGIN  DUP @  R@  < WHILE CELL+ REPEAT
-    SWAP BEGIN  R@ OVER @  < WHILE CELL- REPEAT
+    SWAP BEGIN  DUP @  R@ < WHILE CELL+ REPEAT 
+    SWAP BEGIN  R@ OVER @ < WHILE CELL- REPEAT
     2DUP <= IF 2DUP EXCH  >R CELL+ R> CELL-  THEN
     2DUP >
   UNTIL
   R> DROP ;
 
-: QSORT ( l r -- )
-  PARTITION  SWAP ROT
-  2DUP < IF RECURSE ELSE 2DROP THEN
-  2DUP < IF RECURSE ELSE 2DROP THEN ;
+: QSORT ( l r -- ) 
+ PARTITION  SWAP ROT 
+ 2DUP < IF RECURSE ELSE 2DROP THEN 
+ 2DUP < IF RECURSE ELSE 2DROP THEN ;
 
 : SORT ( array len -- )
   DUP 2 < IF 2DROP EXIT THEN  1- CELLS OVER + QSORT ;
@@ -78,7 +80,10 @@ DECIMAL
 : REVERSED ( -- ) SIZE  0 DO  SIZE I -  I ]Q !      LOOP ;
 : ASCENDING ( -- ) SIZE  0 DO     I  I ]Q !      LOOP ;
 : RANDIT   ( -- ) SIZE  0 DO  256 RND I ]Q !   LOOP ;
-: TWOIT    ( -- ) CLEARIT   99 45 ]Q !  777 SIZE 2/ ]Q ! ;  \ only 2 different records
+
+\ only 2 different records
+: TWOIT    ( -- ) CLEARIT   99 45 ]Q !  777 SIZE 2/ ]Q ! ; 
+
 : TURTLES  ( -- )
            SIZE 0
             DO
