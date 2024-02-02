@@ -13,7 +13,7 @@ MARKER REMOVE
 DECIMAL
 : PATTERN! ( data[512] -- ) 33 ]PDT 512 VWRITE  ;
 
-: HEX#, ( addr len  --) \ can be used for longstrings (128 bytes)
+: HEX#, ( addr len  --) \ can be used for longstrings (80 bytes)
         BASE @ >R  \ save radix
         HEX               \ we are converting hex numbers in the string
         BEGIN
