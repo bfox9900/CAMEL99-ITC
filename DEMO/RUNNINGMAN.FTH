@@ -1,4 +1,6 @@
-\ RUNNINGMAN animation graphics by @oddeman, code: theBF
+\ RUNNINGMAN animation 
+\ graphics by @oddeman, ATARTIAGE.COM 
+\ code: @theBF
 
 INCLUDE DSK1.TOOLS
 INCLUDE DSK1.GRAFIX
