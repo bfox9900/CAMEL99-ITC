@@ -59,12 +59,12 @@ DECIMAL
       SET-COLORS
       GEN1      \ use sound generator 1 
       BEGIN
-	   COL ROW CHR 1 HCHAR
-        N NOTE HZ      \ set the frequency
-        -2 DB          \ set the volume (turns on sound)  
-        70 MS MUTE     \ wait and then turn off the sound 
-        64 RND MS      \ wait to put a space after each note 
-        ?TERMINAL
+	     COL ROW CHR 1 HCHAR
+          N NOTE HZ      \ set the frequency
+          -2 DB          \ set the volume (turns on sound)  
+          70 MS MUTE     \ wait and then turn off the sound 
+          64 RND MS      \ wait to put a space after each note 
+          ?TERMINAL
       UNTIL
       8 SCREEN
       4 19 2 1 COLORS
