@@ -60,7 +60,6 @@ DECIMAL
       GEN1      \ use sound generator 1 
       BEGIN
 	   COL ROW CHR 1 HCHAR
-
         N NOTE HZ      \ set the frequency
         -2 DB          \ set the volume (turns on sound)  
         70 MS MUTE     \ wait and then turn off the sound 
