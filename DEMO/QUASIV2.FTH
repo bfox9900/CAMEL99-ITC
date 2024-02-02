@@ -79,10 +79,10 @@ DECIMAL
      MAX.SP 0
      DO
        [CHAR] .  16 128 0  I SPRITE
-           15  18 RND 8 -  I MOTION
-                14 RND 3 + I SP.COLOR
+       18 RND 8 -  15  I MOTION
+                14 RND 3 +  I SP.COLOR
 
-        65 MS
+       50 MS
         ?BREAK
      LOOP
   AGAIN ;
@@ -98,5 +98,7 @@ DECIMAL
      CR S" FORTH. NO STRINGS ATTACHED" TYPE.BIG CR
      QUASI
 ;
+
+
 
 RUN
