@@ -1,15 +1,12 @@
 \ Code in SAMS memory based on concept in TurboForth by Mark Wills
 \ Ported to Camel99 Forth  Oct 13, 2021, Last update Mar 2022
 
-\ *warning: does not work with DEFER and CREATE DOES> 
-
 \ Features
 \ CMAP Remembers the last bank that was paged in variable LASTBNK
 \ FAR: is a fat version of "colon" that remember SAMS bank# & SAMS CFA
-\ Compiles FARSEMIS on the SAMS side, not in RAM Dictionary
+\ - Compiles FARSEMIS on the SAMS side, not in RAM Dictionary
 \ - Saves 2 bytes in dictionary and in 2 bytes SAMS definition
 \ Compile time: SAMS memory overflow test ABORTs if you past 4k bytes
-\ - limited to upper 16 pages ie: 64K of CODE
 
 \ FAR word data structure:
 \   CELL: link
@@ -30,7 +27,6 @@ NEEDS MOV,  FROM  DSK1.ASM9900
 
 PERMANENT
 
-
 HERE
 HEX
 F0 CONSTANT _1STBANK
@@ -43,10 +39,9 @@ CSEG 0C RSHIFT        CONSTANT PASSTHRU  \ default page for CSEG
 
 VARIABLE  SAVHERE   \ temp holder for RAM Dictionary pointer
 VARIABLE  BANK#     \ active SAMS bank# for compiling
-VARIABLE  LASTBNK   \ last bank# passed to _CMAP
 
 DECIMAL
-CREATE []DP  \ DP for 0 .. 15 pages of SAMS CODE (64K)
+CREATE []DP  \ DP for 0 .. 15 pages of SAMS
       CSEG , CSEG , CSEG , CSEG  ,
       CSEG , CSEG , CSEG , CSEG  ,
       CSEG , CSEG , CSEG , CSEG  ,
@@ -60,49 +55,47 @@ CODE ]DP ( bank# -- addr )
      NEXT,
 ENDCODE
 
+: SAMSHERE  BANK# @ ]DP @ ; \ end of SAMS dictionary
+
 HEX
-CREATE _CMAP ( R1: 0..255 ) \ **SUB-ROUTINE** NOT FORTH
-      R1 LASTBNK @@ CMP,    \ already mapped?
+\ **LEAF SUB-ROUTINE**
+CREATE _CMAP ( -- ) ( R: page# -- )
+      R0 RPOP,              \ POP parameter from Rstack
+      R0 BANK# @@ CMP,      \ already mapped?
       NE IF,
-         R1 LASTBNK @@ MOV, \ update the last bank used
-         R1 SWPB,           \ swap bytes
-         R12 1E00 LI,       \ DO CMAP
+         R0 BANK# @@ MOV,   \ update the last bank used
+         R0 SWPB,           \ swap bytes
+         R12 1E00 LI,       \ set SAMS card CRU address
          0 SBO,             \ turn on the card
-         R1 CREG @@ MOV,    \ restore bank# from return stack
+         R0 CREG @@ MOV,    \ map it
          0 SBZ,             \ turn off card
       ENDIF,
       RT,
 
 CODE CMAP  ( bank# --) \ Forth word to map SAMS pages
-      TOS R1 MOV,
-     _CMAP @@ BL,
-      TOS POP,
+      TOS RPUSH,    \ need parameter on Rstack
+      _CMAP @@ BL,  \ call it
+      TOS POP,      \ refill TOS
       NEXT,
-      ENDCODE
+ENDCODE
 
-\ ***R1 must not be altered while compiling***
-CREATE FARCOL   \ run time executor for SAMS colon words.
+\ run time executor for SAMS colon words.
+CREATE FARCOL
      IP RPUSH,
-     W IP MOV,
-     RP DECT,
-     LASTBNK @@ *RP MOV,  \ Rpush the active bank
-     *IP+ R1 MOV,         \ fetch bank# from DATA FIELD -> R1, inc IP
-     _CMAP @@ BL,         \ & switch to SAMS page for this word
+     W IP MOV,            \ IP=PFA of this word
+     BANK# @@ RPUSH,      \ Rpush the currently active SAMS bank
+     *IP+ RPUSH,          \ fetch bank# in PFA & save on return stack
+     _CMAP @@ BL,         \ call _CMAP (using RSTACK parameter)
      *IP IP MOV,          \ get SAMS DP & set new IP
      NEXT,
 
 CODE FAREXIT             \ exit for SAMS word
-     R1 RPOP,            \ get bank# save by FARCOL
-     _CMAP @@ BL,        \ map it in
+     _CMAP @@ BL,        \ RSTACK has BANK#, map it in
       IP RPOP,           \ Regular FORTH EXITS
       NEXT,
-ENDCODE
 
-DECIMAL
-: CODEPAGE ( bank# -- )  \ 240 .. 256 are valid
-      DUP 256 240 WITHIN ABORT" 240..256"
-      DUP BANK# !
-;
+ENDCODE
+\ \\\\\\\\\\\\\\\\ finished with assembler //////////////////
 
 : FAR: ( -- ) \ special colon for words in FAR memory
      !CSP
@@ -113,29 +106,36 @@ DECIMAL
 
      HERE SAVHERE !     \ save "normal here"
 
-     DUP ]DP @ DP !     \ set dp to CSEG. Compiling goes here now
-     ( bank#) CMAP      \ map SAMS for compiling
+     DUP ( bank#) CMAP  \ map SAMS page for compiling
+     ]DP @ DP !         \ set Forth DP to CSEG DP. Compiling goes here now
      HIDE
      ]                  \ turn on the compiler
 ;
 
-HEX 
 : ;FAR ( -- ) \ end SAMS compilation. *NEW* compile time memory test
       POSTPONE FAREXIT    \ compiles at end of SAMS code
       POSTPONE [          \ turn compiler off
       REVEAL ?CSP
       HERE DUP BANK# @ ]DP !  \ update HERE for this bank, keep a copy
       SAVHERE @ DP !          \ restore DP to CPU RAM
-    ( HERE) [ CSEG 1FFF + ] LITERAL > ABORT" SAMS overflow"
+    ( HERE) [ CSEG 1FFF + ] LITERAL > ABORT" SAMS bank full"
 ; IMMEDIATE
 
+DECIMAL
+: CODEPAGE ( bank# -- )  \ 240 .. 256 are valid
+      DUP 256 240 WITHIN ABORT" 240..256"
+      DUP BANK# !
+;
 
-\ \\\\\\\\\\\\\\\\ finished with assembler //////////////////
-                          DETACH
+                          DETACH 
 
 HERE SWAP -
 DECIMAL CR . .( bytes)  \ free 11,566
 
-PASSTHRU CMAP  \ init the Forth memory bank# as LASTBNK
+PASSTHRU CMAP  \ init the Forth memory bank#
 HEX
 _1STBANK CODEPAGE
+
+HERE 
+FAR: HELLO   CR ." This should work"  ;FAR
+HERE SWAP - . ." bytes "

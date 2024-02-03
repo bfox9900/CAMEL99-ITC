@@ -19,7 +19,8 @@
 \ Update Nov 2022: removed array of SAMS DP variables.
 \ - Each SAMS page uses last memory cell to hold its own DP.
 \ - Can now compile code to any SAMS page.
-\ - You must use ( n) CODEPAGE FIRSTUSE the first time you use a page
+\ - You must use <1st> <last> CODEPAGES to initialize SAMS code pages 
+
 
 NEEDS DUMP      FROM DSK1.TOOLS
 NEEDS TRANSIENT FROM DSK1.TRANSIENT
@@ -44,7 +45,7 @@ HEX              3000 CONSTANT CSEG      \ CODE window in CPU RAM
      CSEG 0C RSHIFT   CONSTANT PASSTHRU  \ default page for CSEG
 
 VARIABLE  SAVHERE   \ temp holder for RAM Dictionary pointer
-VARIABLE  PREVPAGE  \ last SAMS bank# selected
+VARIABLE  BANK#     \ last SAMS bank# selected
 VARIABLE  CPAGE     \ active code page used for compiling
 
 
@@ -52,15 +53,15 @@ HEX
 \ **LEAF SUB-ROUTINE**
 CREATE _CMAP ( -- ) ( R: page# -- )
       R0 RPOP,              \ POP parameter from Rstack
-\      R0 PREVPAGE @@ CMP,      \ already mapped?
-\      NE IF,
-\         R0 PREVPAGE @@ MOV,   \ update the last bank used
+      R0 BANK# @@ CMP,      \ already mapped?
+      NE IF,
+         R0 BANK# @@ MOV,   \ update the last bank used
          R0 SWPB,           \ swap bytes
          R12 1E00 LI,       \ set SAMS card CRU address
          0 SBO,             \ turn on the card
          R0 CREG @@ MOV,    \ map it
          0 SBZ,             \ turn off card
-\      ENDIF,
+      ENDIF,
       RT,
 
 CODE CMAP  ( page# --) \ Forth word to map SAMS pages
@@ -72,17 +73,15 @@ ENDCODE
 
 \ run time executor for SAMS colon words.
 CREATE FARCOL
-     IP RPUSH,            \ save the existing IP
-     W IP MOV,            \ Set IP to PFA of this word
-     CPAGE @@ RPUSH,      \ Rpush the currently active SAMS bank
+     IP RPUSH,
+     W IP MOV,            \ IP = DATA cell of this word
+     BANK# @@ RPUSH,      \ Rpush the currently active SAMS bank
      *IP+ RPUSH,          \ RPUSH PFA, *ADVANCE IP*
      _CMAP @@ BL,         \ call _CMAP (uses RSTACK parameter)
-     *IP+ IP MOV,          \ "GOTO"  SAMS DP parameter
+     *IP+ IP MOV,         \ get SAMS DP & set new IP, *ADVANCE IP*
      NEXT,
 
 CODE FAREXIT             \ exit for SAMS word
-      R1 STWP,           \ need access USER variable DP.
-12 R1 () SAMSDP @@ MOV,  \ DP @ SAMSDP !
      _CMAP @@ BL,        \ RSTACK has old BANK#, map it in
       IP RPOP,           \ Regular FORTH EXIT
       NEXT,
@@ -109,41 +108,29 @@ ENDCODE
       POSTPONE FAREXIT    \ compiles at end of SAMS code
       POSTPONE [          \ turn compiler off
       REVEAL ?CSP
+      HERE DUP SAMSDP !   \ update HERE for this bank, keep a copy
       SAVHERE @ DP !      \ restore DP to CPU RAM
-      SAMSDP @ CSEG 0FF0 + > ABORT" SAMS bank full"
+      CSEG 0FF0 + > ABORT" SAMS page full"
 ; IMMEDIATE
 
-HEX
 : CODEPAGE ( bank# -- ) CPAGE ! ; \ select SAMS page for compiling
 
-: FIRSTUSE
-      CPAGE @ CMAP
-      CSEG 1000 FF FILL \ fill is for debugging
-      CSEG SAMSDP !     \ set the local CSEG DP variable to start of CSEG
+HEX
+\ we must initialize the SAMS memory that we want to use for CODE 
+\ ** USE THIS COMMAND ONLY ONCE OR ALL MACHINE WILL CRASH ** 
+: CODEPAGES ( 1st last -- ) 
+    1+ SWAP 
+    DO 
+       I CODEPAGE
+       I CMAP
+   \   CSEG 1000 FF FILL \ fill is for debugging
+      CSEG SAMSDP !     \ set the local CSEG DP variable to start of CSEG    
+    LOOP  
+    PASSTHRU CMAP       \ return to RAM memory page
 ;
-                       DETACH \ remove assembler 
+
+                            DETACH 
 HERE SWAP -
 DECIMAL CR . .( bytes)
 
-PASSTHRU CMAP  \ init the bank# variable to default memory page
-
-DECIMAL
-240 CODEPAGE FIRSTUSE
-HERE
-FAR: HELLO   CR ." Hello SAMS World!" CR CR  ;FAR
-HERE SWAP - .
-
-241 CODEPAGE FIRSTUSE
-FAR: NESTED1  CR ." 1 " ;FAR
-
-242 CODEPAGE FIRSTUSE
-FAR: NESTED2   NESTED1 ." 2 " ;FAR
-
-243 CODEPAGE FIRSTUSE
-FAR: NESTED3  NESTED2  ." 3 "  HELLO ;FAR
-
-244 CODEPAGE FIRSTUSE
-FAR: GO   HELLO  NESTED3  ;FAR
-
-241 CODEPAGE
-FAR: BIGONE   GO  ;FAR
+200 255 CODEPAGES 
