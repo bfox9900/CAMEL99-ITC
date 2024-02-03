@@ -21,13 +21,13 @@
 \ 10 bytes + name length
 
 NEEDS DUMP      FROM DSK1.TOOLS
-\ NEEDS TRANSIENT FROM DSK1.TRANSIENT
+NEEDS TRANSIENT FROM DSK1.TRANSIENT
 NEEDS SAMSINI   FROM DSK1.SAMSINI  \ common code for SAMS card
 
-\ TRANSIENT
+TRANSIENT
 NEEDS MOV,  FROM  DSK1.ASM9900
 
-\ PERMANENT
+PERMANENT
 
 
 HERE
@@ -96,8 +96,12 @@ CODE FAREXIT             \ exit for SAMS word
       IP RPOP,           \ Regular FORTH EXITS
       NEXT,
 ENDCODE
-\ \\\\\\\\\\\\\\\\ finished with assembler //////////////////
-\                         DETACH
+
+DECIMAL
+: CODEPAGE ( bank# -- )  \ 240 .. 256 are valid
+      DUP 256 240 WITHIN ABORT" 240..256"
+      DUP BANK# !
+;
 
 : FAR: ( -- ) \ special colon for words in FAR memory
      !CSP
@@ -114,6 +118,7 @@ ENDCODE
      ]                  \ turn on the compiler
 ;
 
+HEX 
 : ;FAR ( -- ) \ end SAMS compilation. *NEW* compile time memory test
       POSTPONE FAREXIT    \ compiles at end of SAMS code
       POSTPONE [          \ turn compiler off
@@ -123,13 +128,9 @@ ENDCODE
     ( HERE) [ CSEG 1FFF + ] LITERAL > ABORT" SAMS overflow"
 ; IMMEDIATE
 
-DECIMAL
-: CODEPAGE ( bank# -- )  \ 240 .. 256 are valid
-      DUP 256 240 WITHIN ABORT" 240..256"
-      DUP BANK# !
-;
 
-\ DETACH
+\ \\\\\\\\\\\\\\\\ finished with assembler //////////////////
+                          DETACH
 
 HERE SWAP -
 DECIMAL CR . .( bytes)  \ free 11,566

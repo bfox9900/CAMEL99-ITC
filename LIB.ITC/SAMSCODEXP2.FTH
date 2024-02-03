@@ -22,8 +22,13 @@
 \ - You must use ( n) CODEPAGE FIRSTUSE the first time you use a page
 
 NEEDS DUMP      FROM DSK1.TOOLS
+NEEDS TRANSIENT FROM DSK1.TRANSIENT
 NEEDS SAMSINI   FROM DSK1.SAMSINI  \ common code for SAMS card
-NEEDS MOV,      FROM DSK1.ASM9900
+
+TRANSIENT
+NEEDS MOV,  FROM  DSK1.ASM9900
+
+PERMANENT
 
 HERE
 HEX
@@ -116,7 +121,7 @@ HEX
       CSEG 1000 FF FILL \ fill is for debugging
       CSEG SAMSDP !     \ set the local CSEG DP variable to start of CSEG
 ;
-
+                       DETACH \ remove assembler 
 HERE SWAP -
 DECIMAL CR . .( bytes)
 
@@ -125,7 +130,7 @@ PASSTHRU CMAP  \ init the bank# variable to default memory page
 DECIMAL
 240 CODEPAGE FIRSTUSE
 HERE
-FAR: HELLO   CR ." Hello SAMS World!"  ;FAR
+FAR: HELLO   CR ." Hello SAMS World!" CR CR  ;FAR
 HERE SWAP - .
 
 241 CODEPAGE FIRSTUSE

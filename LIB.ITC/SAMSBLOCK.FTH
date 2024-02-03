@@ -1,4 +1,4 @@
-\ SAMSBLOCK lets you access any 4K page a Forth BLOCK May 2020  B Fox
+\ SAMSBLOCK lets you access any 4K page like a Forth BLOCK May 2020  B Fox
 \ *VERY FAST*
 
 \ NEEDS MOV,  FROM DSK1.LOWTOOLS

@@ -1,5 +1,13 @@
 \ BLOCK  as a method to manage SAMS pages    Jan 15 2021 Brian Fox
+\ 
 \ Jun 2022  Added 32 bit FAR address memory operators
+\ The concept: Keep two 4K "windows" in LOW RAM.
+\ BLOCK returns the window that has requested address.
+\ If SAMS page is not preset, it will be loaded into the last used window.
+\ ******************************************************
+\ **  This means you can copy data from SAMS to SAMS  **
+\ **        without a separate RAM buffer             **
+\ ******************************************************
 
 \ NEEDS .S   FROM DSK1.TOOLS
 \ NEEDS MOV, FROM DSK1.ASM9900
@@ -49,6 +57,7 @@ CODE BLOCK ( bank -- buffer)
  1 SEGMENT
 
  HEX
+\ This could be code a faster computation
 : >REAL  ( addr seg -- virtual-address) 1000 UM/MOD BLOCK + ;
 : PAGED  ( virtual-addr -- real-addr) SEG @ >REAL ;
 
