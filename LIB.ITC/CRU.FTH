@@ -1,21 +1,12 @@
 \ CRU support for CAMEL99   BJFOX 6FEB2018
 \ rewritten to take CRU address from the data stack
 
-\ NEEDS TRANSISENT FROM DSK1.TRANSIENT
-\ TRANSIENT
-\ INCLUDE DSK1.TOOLS 
-\ INCLUDE DSK1.ASM9900
-
-
-\ PERMANENT
 HERE
 DECIMAL
 12 CELLS USER 'R12  \ access R12 from Forth
 
 DECIMAL 
 24 USER 'R12  \ address of R12 for any workspace (task)
-\ Usage to set CRU address use the ! operator
-\ HEX  1E00 'R12 ! 
 
 HEX
 CODE SBO ( c -- ) \ set CRU bit to ONE
@@ -38,15 +29,29 @@ CODE TB ( c -- ?) \ test CRU bit
         NEXT,
         ENDCODE
 
-\ Traditional 8bit i/o fetch and store
-CODE CRU@  ( CRUaddr -- c)
-       C304 , \ TOS R12 MOV,  
+\ fetch store 8 bits on the CRU buss 
+CODE CRUC@ ( char -- )
        3204 , \ TOS 8 LDCR,
        0884 . \ TOS 8 SRA,
-       NEXT,
+       NEXT, 
+ENDCODE 
+
+CODE CRUC!  ( -- char)
+      06C4 , \ TOS SWPB,
+      3604 , \ TOS 8 STCR,
+      C136 , \ TOS POP,
+      NEXT,
+ENDCODE 
+
+\ Traditional 8bit "PORT" I/O fetch and store
+CODE PC@  ( CRUaddr -- c)
+     C304 , \ TOS R12 MOV,  
+     3204 , \ TOS 8 LDCR,
+     0884 . \ TOS 8 SRA,
+     NEXT,
 ENDCODE
 
-CODE CRU!  ( c CRUaddr --)
+CODE PC!  ( c CRUaddr --)
        C304 , \ TOS R12 MOV, 
        06D6 , \ *SP SWPB,
        3636 , \ *SP+ 8 STCR,
