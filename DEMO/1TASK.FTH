@@ -15,10 +15,10 @@ BEEF CONSTANT $BEEF
 
 \ fill and empty the stack 
 DECIMAL 
-: DEADS   0 0 AT-XY ." DEAD "   10 0 DO $DEAD   LOOP   500 MS ;
-: BEEFS   0 0 AT-XY ." BEEF "   10 0 DO $BEEF   LOOP   500 MS ;
-: ZEROS   0 0 AT-XY ." zero "   10 0 DO 0       LOOP   500 MS ;
-: DROPS   0 0 AT-XY ." drop "   10 0 DO DROP    LOOP   500 MS ;  
+: DEADS   0 0 AT-XY ." DEAD "   10 0 DO  PAUSE $DEAD  LOOP  500 MS ;
+: BEEFS   0 0 AT-XY ." BEEF "   10 0 DO  PAUSE $BEEF  LOOP  500 MS ;
+: ZEROS   0 0 AT-XY ." zero "   10 0 DO  PAUSE 0      LOOP  500 MS ;
+: DROPS   0 0 AT-XY ." drop "   10 0 DO  PAUSE DROP   LOOP  500 MS ;  
 
 \ show the round-robin task time in uS
 : .PULSE   TMR@ PAUSE TMR@ - ABS  213 10 */  U. ." uS" ;
