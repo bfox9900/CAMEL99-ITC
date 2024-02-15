@@ -27,8 +27,8 @@ MYSELF CONSTANT USER0      \ USER0 is the main Forth task workspace (>8300)
 DECIMAL
   16 CELLS              \ register space
   40 CELLS +            \ 40 USER VARIABLE spaces
-  20 CELLS +            \ 20 cells for parameter stack
-  20 CELLS +            \ 20 cells return stack
+  40 CELLS +            \ 20 cells for parameter stack
+  40 CELLS +            \ 20 cells return stack
   CONSTANT USIZE        \ "user area" size
 
 \ name the CPU register addresses in a task's USER VARIABLE space
@@ -92,7 +92,7 @@ HERE  02A1 ,         \ R1 STWP,             \ HERE on stack for later
 : FORK ( PID -- )
        DUP >R                               \ copy PID to RSTACK
       ( PID) USIZE 0 FILL                   \ erase new task block
-       MYSELF R@ USIZE CMOVE                \ copy myself to the new task
+       MYSELF R@ USIZE MOVE                 \ copy myself to the new task
 
        R@ RESET-STACKS
 
