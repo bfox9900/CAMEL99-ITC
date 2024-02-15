@@ -21,26 +21,26 @@ CODE MYSELF  ( -- pid)
      NEXT,
     ENDCODE
 
-MYSELF CONSTANT USER0      \ USER0 is the main Forth task workspace (>8300)
+MYSELF CONSTANT USER0   \ USER0 is the main Forth task workspace (>8300)
 
 \ calc. size of task memory block (152 bytes)
 DECIMAL
   16 CELLS              \ register space
   40 CELLS +            \ 40 USER VARIABLE spaces
-  40 CELLS +            \ 20 cells for parameter stack
-  40 CELLS +            \ 20 cells return stack
+  25 CELLS +            \ 25 cells for parameter stack
+  25 CELLS +            \ 25 cells return stack
   CONSTANT USIZE        \ "user area" size
 
 \ name the CPU register addresses in a task's USER VARIABLE space
-  12 USER 'SP             \ the task's Forth SP register ( R6)
-  14 USER 'RP             \ the task's Forth RP register ( R7)
-  18 USER 'IP             \ the task's Forth IP register ( R8)
-  20 USER 'R10            \ address of R10 (holds the NEXT routine)
+  12 USER 'SP           \ the task's Forth SP register ( R6)
+  14 USER 'RP           \ the task's Forth RP register ( R7)
+  18 USER 'IP           \ the task's Forth IP register ( R8)
+  20 USER 'R10          \ address of R10 (holds the NEXT routine)
 
 \ rename registers 13,14&15, used by RTWP to change context
-  26 USER TLINK           \ R13 = next task's wksp
-  28 USER TPC             \ R14 = next task's program counter
-  30 USER TST             \ R15 = next task's status register
+  26 USER TLINK         \ R13 = next task's wksp
+  28 USER TPC           \ R14 = next task's program counter
+  30 USER TST           \ R15 = next task's status register
 
 \ tricky machine code version so you don't need to
 \ load the assembler
