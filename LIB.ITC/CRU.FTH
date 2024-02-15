@@ -23,16 +23,19 @@ CODE SBZ ( c -- ) \ set CRU bit to ZERO
         NEXT,
         ENDCODE
 
-CODE TB ( c -- ?) \ test CRU bit 
-        0264 , 1F00 ,  \ TOS 1F00 ORI,  
-        0484 ,         \ TOS X, 
+CODE TB ( c -- ? ) \ builds instruction at runtime Why?
+        C004 ,        \ TOS R0 MOV,
+        04C4 ,        \ TOS CLR,
+        0260 , 1F00 , \ R0 1F00 ORI,
+        0480 ,        \ R0 X,
+        1601 , 0704 , \ EQ IF, TOS SETO, ENDIF,
         NEXT,
         ENDCODE
 
 \ fetch store 8 bits on the CRU buss 
 CODE CRUC@ ( char -- )
        3204 , \ TOS 8 LDCR,
-       0884 . \ TOS 8 SRA,
+       0884 , \ TOS 8 SRA,
        NEXT, 
 ENDCODE 
 
@@ -52,11 +55,11 @@ CODE PC@  ( CRUaddr -- c)
 ENDCODE
 
 CODE PC!  ( c CRUaddr --)
-       C304 , \ TOS R12 MOV, 
-       06D6 , \ *SP SWPB,
-       3636 , \ *SP+ 8 STCR,
-       C136 , \ TOS POP,
-       NEXT,
+     C304 , \ TOS R12 MOV, 
+     06D6 , \ *SP SWPB,
+     3636 , \ *SP+ 8 STCR,
+     C136 , \ TOS POP,
+     NEXT,
 ENDCODE
 
 \ DETACH 

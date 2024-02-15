@@ -86,7 +86,7 @@ DECIMAL
       RNDX-VECT 15  I MOTION
       RNDCOLOR  I SP.COLOR
 
-      100 MS
+      300 MS
       ?BREAK
      LOOP
   AGAIN ;
