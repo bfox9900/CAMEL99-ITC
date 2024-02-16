@@ -29,9 +29,9 @@ S" 30C0030C30C0030C0C03C0300C03C030" 126 CALLCHAR
 \ and the return stack for temporary storage.  
 
 \ convert x,y coordinates to VDP address, height and length 
-: VADDR   ( x1 y1 x2 y2 --  Vaddr len) 2DROP >VPOS ;
-: HEIGHT   ( x1 y1 x2 y2 -- n) DUP 3 PICK - 1+ ;
-: LENGTH   ( x1 y1 x2 y2 -- n) OVER 4 PICK -  ;
+: VADDR   ( x1 y1 x2 y2 --  Vaddr) 2DROP >VPOS ;
+: HEIGHT   ( x1 y1 x2 y2 -- x1 y1 x2 y2 n) DUP  3 PICK - 1+ ;
+: LENGTH   ( x1 y1 x2 y2 -- x1 y1 x2 y2 n) OVER 4 PICK -  ;
 
 \ resorted to 1 temp variable :-(
 VARIABLE CHR 
@@ -40,9 +40,8 @@ VARIABLE CHR
       CHR !
       HEIGHT >R   
       LENGTH >R
-      VADDR  R> 
-      R> 0  
-      DO  
+      VADDR  R>  R>  ( -- Vaddr len hgt)
+      0 DO  
           2DUP CHR @ VFILL 
           SWAP C/L @ + SWAP 
       LOOP 
