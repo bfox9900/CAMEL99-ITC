@@ -1,7 +1,10 @@
+\ https://www.theultimatebenchmark.org/#sec-13-5
 
 NEEDS ELAPSE FROM DSK1.ELAPSE
 
 \ ----------------------------------------------
+\ The 20,000 iterations took much too long on TI-99 
+\ These are reduced to 1000 iterations 
 
 DECIMAL
 : BENCHME ( XT N -- ) 
@@ -10,56 +13,48 @@ DECIMAL
   CR R> . ." ITERATIONS." CR \
 ;
 
-HERE
-: FIB2
-  0 1 ROT 0
-  DO
-   OVER + SWAP 
-  LOOP
-  DROP ;
+\ bigger data stack in Low RAM was done for recursion 
+HEX  
+: NEWSTACK  3FFE ['] SP0 >BODY !  ABORT ;
 
-: FIB2-BENCH 1000 0 DO
-    20 0 DO I FIB2 DROP LOOP
+NEWSTACK 
+
+DECIMAL
+HERE
+DECIMAL
+: FIB2
+  0 1 ROT 0 DO
+    OVER + SWAP
+  LOOP DROP ;
+
+: FIB2-BENCH 
+  1000 0 DO
+    I FIB2 DROP
   LOOP ;
 
 HERE SWAP -  . ( 70 BYTES)
 
-' FIB2-BENCH ELAPSE BENCHME 
+\   ELAPSE ' FIB2-BENCH 1 BENCHME  \ 1:48.0
 
-\ C64	DurexForth 1.6.1 (STC) 1:57.00
-\ Camel v2.69          (ITC) 1:48.00
-\ Camel V2.68          (DTC) 1:24.41
-\ W/BOUNDS             (ITC) 0:58.25
 
-\ ----------------------------------------------
-\ Other versions
-HEX  : NEWSTACK  3FFE ['] SP0 >BODY !  ABORT ;
+INCLUDE DSK1.JIT 
 
-DECIMAL
-: FIB1 ( N1 -- N2 )
-    DUP 3 < IF DROP 1 EXIT THEN
-    DUP  1- RECURSE
-    SWAP 2- RECURSE  + ;
-
-: FIB1-BENCH
-  20 0 DO
-    I FIB1 DROP
-  LOOP ;
-\ Camel V2.69  took so long I stoppped it :)
-
-NEEDS INLINE[ FROM DSK1.INLINE
-
-DECIMAL
-: FIB3
-  INLINE[ 0 1 ROT 0 ]
+JIT: FIB2
+  0 1 ROT 0 
   DO
-   INLINE[ OVER + SWAP ]
+    \ OVER + SWAP  ( much slower)
+    BOUNDS 
   LOOP
-  DROP ;
+  DROP 
+;JIT
 
-: FIB3-BENCH 1000 0 DO
-    I FIB3 DROP
-  LOOP ;
-\ with inline 1:18.65
+: FIB2-JIT
+  1000 0 DO
+    I FIB2 DROP
+  LOOP 
+;
 
-FIND FIB2-BENCH 10 BENCHME
+\  
+\ 1x = 0:43  
+\  ELAPSE  ' FIB2-JIT 10 BENCHME 
+\ with BOUNDS 10X = 3:40.8
