@@ -19,6 +19,7 @@ INCLUDE DSK1.RANDOM
 INCLUDE DSK1.UDOTR
 INCLUDE DSK1.DATABYTE
 INCLUDE DSK1.MATRIX
+INCLUDE DSK1.SOUND 
 
 : VECT+        ( x y dx dy -- x' y' ) ROT +  -ROT + SWAP ;
 
@@ -101,6 +102,18 @@ CREATE MY-XY  RNDY , RNDX ,    \ independant cursor for alpha guy
                ELSE  RNDV
                THEN ;
 
+
+VARIABLE SPEED
+
+\ ==================================
+\ sound words
+DECIMAL
+: SNDINIT     GEN4 3 NOISE MUTE
+              GEN3 1500 HZ MUTE ;
+
+: BUZZ        GEN3 1300 SPEED @ - HZ   GEN4 10 4 RND + DB ;
+: ANGRY       GEN3 1350 200 RND + HZ   GEN4  6 1 RND + DB ;
+
 : CHANGE-DIR   ( -- ) NEW-VECTORS  DIRECTION ;
 : VECTOR@      ( --  dx dy)  VECTOR 2@ ;
 
@@ -113,12 +126,13 @@ CREATE MY-XY  RNDY , RNDX ,    \ independant cursor for alpha guy
 
 : READ-CHAR ( y x -- c) >VPOS VC@ ;  \ read char without moving cursor
 : NEXT-POS  ( -- y x ) GETXY VECTOR@ VECT+ ;
-: CRAZY     ( -- )  100 RND 2 < IF  CHANGE-DIR  THEN ;
+: CRAZY     ( -- )  100 RND 2 < IF ANGRY CHANGE-DIR  THEN ;
 
-VARIABLE SPEED
+
 : MOVE-FLY  ( -- )
           ERASE-FLY
           NEXT-POS MY-XY 2!
+          BUZZ 
           .FLY  CRAZY
           SPEED @ MS    \ speed delay
 ;
@@ -143,6 +157,7 @@ VARIABLE TRYS
             TRYS OFF                   \ reset the trys counter
             BEGIN
                COLOR-FLY               \ change color while thinking
+               SILENT  
                CHANGE-DIR              \ get new direction
                1 TRYS +!               \ count the try
                TRYS @ ?TRAPPED
@@ -150,7 +165,7 @@ VARIABLE TRYS
                200 MS
                CLEAR-AHEAD?
             UNTIL
-            BLACK-FLY
+            SILENT BLACK-FLY
 ;
 
 HEX
@@ -181,6 +196,7 @@ DECIMAL
        TITLE-PAGE 1000 MS
        40 SPEED !
        NEW-MAZE
+       SNDINIT 
        BEGIN
          ALPHA-THINK
          BEGIN
