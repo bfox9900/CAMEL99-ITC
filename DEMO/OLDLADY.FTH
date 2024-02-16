@@ -19,18 +19,20 @@ VARIABLE FIRST
         IF    HERE SWALLOWED @ CELL+ !
         ELSE  HERE FIRST !
         THEN  HERE SWALLOWED @ , SWALLOWED !
-
-              0 , 0 , BL PARSE-WORD S, ; \ data structure MUST have the aside
+  \ data structure MUST have the aside
+        0 , 0 , BL PARSE-WORD S, ; 
 
 \ set the ASIDE? field of last-defined SWALLOW to true
 : ALWAYS ( -- ) SWALLOWED @ 2 CELLS + ON ;
 
 \ compile the string for the "ASIDE" portion of the song
-: ASIDE ( "aside" -- ) 0 PARSE S, ; \ STRING, ;
+: ASIDE ( "aside" -- ) 1 PARSE S, ; \ STRING, ;
 
 \ write/compile the data base
 SWALLOW fly    ALWAYS ASIDE But I don't know why she swallowed a fly, 
-SWALLOW spider ALWAYS ASIDE That wriggled and jiggled and tickled inside her;
+SWALLOW spider 
+ALWAYS ASIDE That wriggled and jiggled and tickled inside her;
+
 SWALLOW bird   ASIDE Quite absurd, she swallowed a bird;
 SWALLOW cat    ASIDE Fancy that, she swallowed a cat;
 SWALLOW dog    ASIDE What a hog, she swallowed a dog;
@@ -39,37 +41,40 @@ SWALLOW goat   ASIDE She just opened her throat, and swallowed a goat;
 SWALLOW cow    ASIDE I don't know how, she swallowed a cow;
 SWALLOW donkey ASIDE It was rather wonky, she swallowed a donkey;
 
-: ?ASIDE ( swallow-addr -- )  \ print aside if aside? is true
+: ?ASIDE ( swallow-addr -- )  
+\ print aside if aside? is true
          DUP >ASIDE?
          IF  >ASIDE CR TYPE
          ELSE DROP
          THEN ;
 
 DECIMAL
-: REASONS ( swallow-addr -- )  \ print reasons she swallowed something
-          BEGIN
-            DUP @
-          WHILE
-            DUP CR ." She swallowed the " >ANIMAL TYPE ."  to catch the "
-            @ DUP >ANIMAL TYPE ." ," DUP ?ASIDE
-            500 MS
-          REPEAT DROP ;
+: REASONS ( swallow-addr -- ) 
+\ print reasons she swallowed something
+      BEGIN
+        DUP @
+      WHILE
+        DUP CR ." She swallowed the " >ANIMAL TYPE ."  to catch the "
+        @ DUP >ANIMAL TYPE ." ," DUP ?ASIDE
+        500 MS
+      REPEAT DROP ;
  
 : VERSE ( swallow-addr -- )
-        CR ." There was an old lady who swallowed a " DUP >ANIMAL TYPE ." ," 
-        1000 MS
-        DUP >ASIDE CR TYPE  
-        1000 MS
-        REASONS
-        CR ." Perhaps she'll die!"
-        CR ." -------------------"
-        1500 MS  ;
+      CR ." There was an old lady who swallowed a " 
+      DUP >ANIMAL TYPE ." ," 
+      1000 MS
+      DUP >ASIDE CR TYPE  
+      1000 MS
+      REASONS
+      CR ." Perhaps she'll die!"
+      CR ." -------------------"
+      1500 MS  ;
 
 : SONG ( -- )
-       PAGE
-       FIRST @ BEGIN  DUP VERSE CR >NEXT DUP  0= UNTIL DROP
-       CR ." There was an old lady who swallowed a"
-       CR ." horse..."  1000 MS
-       CR
-       CR ." SHE'S DEAD, OF COURSE!" ;
+      PAGE
+      FIRST @ BEGIN  DUP VERSE CR >NEXT DUP  0= UNTIL DROP
+      CR ." There was an old lady who swallowed a"
+      CR ." horse..."  1000 MS
+      CR
+      CR ." SHE'S DEAD, OF COURSE!" ;
   
