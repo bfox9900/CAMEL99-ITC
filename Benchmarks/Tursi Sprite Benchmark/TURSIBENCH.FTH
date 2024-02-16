@@ -1,20 +1,14 @@
-\ TURSI'S TI-99 Sprite Benchmark    Updated May 26 2022 B. Fox
+\ TURSI'S TI-99 Sprite Benchmark    Updated Feb 2024 B. Fox
 \ Demonstration shows different ways to improve code speed
 
+NEEDS MOV,     FROM DSK1.ASM9900
 NEEDS MARKER   FROM DSK1.MARKER
 NEEDS LOCATE   FROM DSK1.DIRSPRIT
+NEEDS INLINE[  FROM DSK1.INLINE
 NEEDS ELAPSE   FROM DSK1.ELAPSE
 
 
 MARKER /TURSI
-DECIMAL
-: SETUP
-     GRAPHICS
-    [CHAR] *  9  0 0  0 SPRITE
-     1 MAGNIFY
-;
-
-SETUP
 
 ( vanilla Forth using DSK1.DIRSPRIT library )
 DECIMAL
@@ -75,20 +69,19 @@ DECIMAL
 \  2.0                      27
 \ V2.68                     24.0
 
-NEEDS INLINE[  FROM DSK1.INLINE
 
 ( Forth using DSK1.DIRSPRIT library Fox words )
 \ Method: compute the sprite address at compile time.
-: ]LIT      ]  POSTPONE LITERAL ;  IMMEDIATE
+: ]FOLD      ]  POSTPONE LITERAL ;  IMMEDIATE
 
 DECIMAL
 : TURSI.OPT2
        100 0
        DO
-           239 0 DO    I [ 0 SP.X ]LIT  VC!     LOOP
-           175 0 DO    I [ 0 SP.Y ]LIT  VC!      LOOP
-           0 239 DO    I [ 0 SP.X ]LIT  VC!   -1 +LOOP
-           0 175 DO    I [ 0 SP.Y ]LIT  VC!   -1 +LOOP
+           239 0 DO    I [ 0 SP.X ]FOLD  VC!     LOOP
+           175 0 DO    I [ 0 SP.Y ]FOLD  VC!      LOOP
+           0 239 DO    I [ 0 SP.X ]FOLD  VC!   -1 +LOOP
+           0 175 DO    I [ 0 SP.Y ]FOLD  VC!   -1 +LOOP
        LOOP ;
 \ itc v2.69  27.4
 
@@ -110,11 +103,9 @@ DECIMAL
 
 \ ASM BOOSTER :-) ..........................
 
-NEEDS MOV,     FROM DSK1.ASM9900
 HEX
 8C00 CONSTANT VDPWD               \ vdp ram write data PORT
 8C02 CONSTANT VDPWA               \ vdp ram read/write address PORT
-
 
 CODE MoveSprite ( Vaddr2 Vaddr1 SprAddr direction -- )
     ( R4 = direction)
@@ -137,11 +128,10 @@ CODE MoveSprite ( Vaddr2 Vaddr1 SprAddr direction -- )
     EQ UNTIL,
     TOS POP,                   \ refill TOS register R4
     NEXT,
-    ENDCODE
+ENDCODE
 
 DECIMAL
 : TURSI.BOOSTER
-    SETUP
     100
     0 DO
     \ end  start  spr dir
@@ -251,38 +241,50 @@ DECIMAL
         0 175 DO    0   I  0 LOCATE   -11 +LOOP
     LOOP ;
 
-: TITLE  PAGE 12 2 AT-XY ;
+: TITLE  PAGE 3 12 AT-XY ;
+
 : DO-TESTS 
-   TITLE ." Using Locate " TURSI.FORTH 
-   TITLE ." Using SP.X  SP.Y "  TURSI.FOX 
-   TITLE ." Using CONSTANT VDP address" TURSI.OPT 
-   TITLE ." Using constant folding"  TURSI.OPT2 
-   TITLE ." Using INLINE[] native code" TURSI.INLINE 
-   TITLE ." Using MoveSprite ASM function" TURSI.BOOSTER 
-   TITLE ." Using Forth Assembler"  TURSI.CODE 
+   TITLE ." Using LOCATE command"        BEEP TURSI.FORTH 
+   TITLE ." Using SP.X, SP.Y VDP arrays " BEEP TURSI.FOX 
+   TITLE ." Using CONSTANT VDP address" BEEP TURSI.OPT 
+   TITLE ." Using constant folding"     BEEP TURSI.OPT2 
+   TITLE ." Using INLINE[] optimizer" BEEP TURSI.INLINE 
+   TITLE ." Using MoveSprite ASM function" BEEP TURSI.BOOSTER 
+   TITLE ." Using Forth Assembler"       BEEP TURSI.CODE 
+   TITLE ." Forth LOCATE, cheating :)" BEEP TURSI.CHEAT 
+;
 
-
-
-
-   ;
+: TITLE-PAGE 
+15 SCREEN 
+PAGE ." * Tursi's Language Benchmark * "
+CR 
+CR ." This tests sprite movement speed"
+CR ." This program uses different"
+CR ." optimization techiques that can"
+CR ." be done with Camel99 Forth"
+CR
+CR ." 1. Forth with LOCATE command"
+CR ." 2. SP.X SP.Y VDP arrays"
+CR ." 3. CONSTANT for VDP address"
+CR ." 4. Constant folding SP.X SP.Y"
+CR ." 5. INLINE[  ]  optimizer" 
+CR ." 6. ASM MoveSprite function"
+CR ." 7. Optimized ASM code"
+CR ." 8. Forth LOCATE 'cheating'"
+CR
+CR ." Press a KEY to run the tests"
+KEY DROP ;
 
 
 : RUN  
-PAGE ." Tursi's Language Benchmark "
-CR ."       Camel99 Forth"
-CR 
-CR ." This tests spite movement many way "
-CR ." With LOCATE command"
-CR ." With SP.X SP.Y VDP direct access"
-CR ." Two amounts of INLINEing"
-CR ." ASM MoveSprite function"
-CR ." Optimized ASM code"
-CR ." Vanilla Forth but 'cheating'"
-CR
-CR ." Press a KEY to run the tests"
-PAGE  
-DO-TESTS 
-CR ." COMPLETED "
+    TITLE-PAGE 
+    PAGE   
+    [CHAR] *  9  0 0  0 SPRITE 
+    1 MAGNIFY 
+    DO-TESTS 
+    CR 
+    CR 
+    CR ." Done "
 ;
 
 
