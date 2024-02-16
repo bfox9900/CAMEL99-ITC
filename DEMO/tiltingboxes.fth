@@ -51,7 +51,7 @@ VARIABLE CHR
 
 
 : RUN
-    PAGE ." * Tilted Boxes Illusions *"
+    PAGE ." * Tilted Boxes Illusion *"
     6 SCREEN
     BEGIN  
 \       x  y    x  y   char      
