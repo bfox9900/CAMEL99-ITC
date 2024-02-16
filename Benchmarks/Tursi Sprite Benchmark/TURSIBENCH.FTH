@@ -284,6 +284,7 @@ KEY DROP ;
     DO-TESTS 
     CR 
     CR 
+    DELALL
     CR ." Done "
 ;
 
