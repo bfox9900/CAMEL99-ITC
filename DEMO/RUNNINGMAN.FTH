@@ -225,17 +225,18 @@ S" 0000000000000000000000000000000000000000000000000000000000000000" HEX#,
 
 
 CREATE FILMSTRIP
-FRAME0 , FRAME1 , FRAME2 , FRAME3 , FRAME4 , FRAME5 , FRAME6 , FRAME7 , FRAME8 ,
+FRAME0 , FRAME1 , FRAME2 , FRAME3 , FRAME4 , 
+FRAME5 , FRAME6 , FRAME7 , FRAME8 ,
 
 : []FIGURE ( n -- ) 9 MOD  CELLS FILMSTRIP + @ PATTERN! ;
 
 VARIABLE SPEED
 
 : STEP   ( n -- )
-        DUP []FIGURE  \ load the figure for frame n
-        DUP .FIGURE   \ show the figure
-        SPEED @ MS    \ wait...
-       /FIGURE ;      \ erase figure from display
+    DUP []FIGURE   \ load the figure for frame n
+    DUP .FIGURE    \ show the figure
+    SPEED @ TICKS  \ wait in 16ms increments 
+    /FIGURE ;      \ erase figure from display
 
 : STEPS ( n -- )
     PAGE
@@ -245,6 +246,6 @@ VARIABLE SPEED
     LOOP
     CHARSET ;
 
-80 SPEED !
+2000 SPEED !
 
 : RUN   400 STEPS ;
