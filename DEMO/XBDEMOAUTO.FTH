@@ -1,6 +1,7 @@
 \ EXTENDED BASIC DEMO ported to CAMEL99 V2
 \ Original BASIC program written by Tursi Artiage.com
 \ ** THIS VARIATION USES AUTOMOTION **
+\ Feb2024: Updated for V2.69 MOTION x,y were backwards
 
 NEEDS CHARSET  FROM DSK1.CHARSET
 NEEDS HCHAR    FROM DSK1.GRAFIX
@@ -71,23 +72,23 @@ DECIMAL
     104  9  104 130   1 SPRITE  \ treetop
     105 13  104 114   2 SPRITE  \ tree trunk
 
-    106  2  101 116   3 SPRITE  0 -3 3 MOTION \ BACK TIRE
-    108  6  100 109   4 SPRITE  0 -3 4 MOTION \ BACK CAR
-    107  6   84 109   5 SPRITE  0 -3 5 MOTION \ FRONT CAR
-    106  2   82 116   6 SPRITE  0 -3 6 MOTION \ FRONT TIRE
+    106  2  101 116   3 SPRITE   -3 0  3 MOTION \ BACK TIRE
+    108  6  100 109   4 SPRITE   -3 0  4 MOTION \ BACK CAR
+    107  6   84 109   5 SPRITE   -3 0  5 MOTION \ FRONT CAR
+    106  2   82 116   6 SPRITE   -3 0  6 MOTION \ FRONT TIRE
 
-    111 16   10  31   8 SPRITE  0 -1 8 MOTION \ cloud1
-    111 16   50  13   9 SPRITE  0 -2 9 MOTION \ cloud2
-    111 16  200  50  10 SPRITE  0  1 10 MOTION \ cloud3
+    111 16   10  31   8 SPRITE   -1 0  8 MOTION \ cloud1
+    111 16   50  13   9 SPRITE   -2 0  9 MOTION \ cloud2
+    111 16  200  50  10 SPRITE   1  0 10 MOTION \ cloud3
 
-    109  2  100  35  11 SPRITE  0 4 11 MOTION  \ bird
+    109  2  100  35  11 SPRITE   4  0 11 MOTION  \ bird
 ;
 
 : FLAP ( -- )
-         11 SP.PAT VC@ 109 =
-         IF   110 11 PATTERN
-         ELSE 109 11 PATTERN
-         THEN
+       11 SP.PAT VC@ 109 =
+       IF   110 11 PATTERN
+       ELSE 109 11 PATTERN
+       THEN
 ;
 
 DECIMAL
@@ -99,21 +100,21 @@ DECIMAL
 
 .( Scenery... )
 : ROAD  ( -- )
-         96 SET# 16 16 COLOR
-         0  15   96 64 HCHAR ;
+       96 SET# 16 16 COLOR
+       0  15   96 64 HCHAR ;
 
 : LOGRASS  ( -- ) 0 17   41   32 7 * HCHAR ;
 : HIGRASS  ( -- ) 0 13   49   32 2* HCHAR ;
 
 : FENCE
-         56 SET# 2 12 COLOR
-         73 SET# 2 12 COLOR
-         20  13 56 12 HCHAR
-         20  14 73 12 HCHAR ;
+       56 SET# 2 12 COLOR
+       73 SET# 2 12 COLOR
+       20  13 56 12 HCHAR
+       20  14 73 12 HCHAR ;
 
 : GREEN-COLORS ( -- )
-         40 SET# 13 8 COLOR
-         48 SET#  4 8 COLOR ;
+       40 SET# 13 8 COLOR
+       48 SET#  4 8 COLOR ;
 
 : .MOUNTAINS ( col row -- )
        AT-XY
@@ -132,30 +133,35 @@ DECIMAL
           7  9 2 12 COLORS ;
 
 : .SIGN  ( col row -- )
-        [CHAR] P SET# 2 12 COLOR
-        2DUP    AT-XY ." 9:::;"
-        1+ 2DUP AT-XY ." HPQR<"
-        1+      AT-XY ." ?>>>=" ;
- 
+      [CHAR] P SET# 2 12 COLOR
+       2DUP    AT-XY ." 9:::;"
+       1+ 2DUP AT-XY ." HPQR<"
+       1+      AT-XY ." ?>>>=" ;
+
+: SCENERY 
+       0 7 .MOUNTAINS  
+       ROAD   LOGRASS HIGRASS
+       SIGN-COLORS   16 11 .SIGN
+       ROCK  FENCE ;
+
 .( Main... )
 DECIMAL
 : RUN   ( -- )
-        DELALL
-        CLEAR  9 SCREEN
-        DEF-CHARS  GREEN-COLORS
-        32 SET# 8 8 COLOR
-        0 7 .MOUNTAINS  ROAD   LOGRASS HIGRASS
-        SIGN-COLORS   16 11 .SIGN
-        ROCK  FENCE
-        1 MAGNIFY
-        MAKE-SPRITES
-        AUTOMOTION
-        BEGIN ( with automotion we only need change charsacters)
-           TIRE 106 CHARDEF
-           FLAP 100 MS
-           TIRE2 106 CHARDEF
-           100 MS
-           ?TERMINAL
-        UNTIL
-        STOPMOTION
-        DEFAULTS ;
+       DELALL
+       CLEAR  9 SCREEN
+       DEF-CHARS  GREEN-COLORS
+       32 SET# 8 8 COLOR
+       SCENERY    
+       1 MAGNIFY
+       MAKE-SPRITES
+       AUTOMOTION
+( with automotion we only need change characters)
+       BEGIN 
+          TIRE 106 CHARDEF
+          FLAP 100 MS
+          TIRE2 106 CHARDEF
+          100 MS
+          ?TERMINAL
+       UNTIL
+       STOPMOTION
+       DEFAULTS ;
