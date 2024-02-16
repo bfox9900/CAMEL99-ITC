@@ -1,5 +1,5 @@
 \ monkeys.fth
-\ TESTED with verison G
+\ TESTED with verison 2.70
 
 NEEDS .S  FROM DSK1.TOOLS
 NEEDS RND FROM DSK1.RANDOM
