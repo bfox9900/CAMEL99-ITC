@@ -1,6 +1,6 @@
 \ Translate a BASIC program to FORTH  Feb 2024 Fox 
 
-\ ! TILTED BOXES ILLUSION 
+\ 1 ! TILTED BOXES ILLUSION 
 \ 100 call clear
 \ 102 call screen(6)
 \ 103 call char(33,"30C0030C30C0030C0C03C0300C03C03")
@@ -13,11 +13,8 @@
 \ 1150     next y
 \ 1160 subend
 
-
-
 NEEDS DUMP       FROM DSK1.TOOLS
 NEEDS GRAPHICS   FROM DSK1.GRAFIX
-
 
 DECIMAL
 \ this string re-defines the shape of character 126 and 127 
@@ -31,7 +28,7 @@ S" 30C0030C30C0030C0C03C0300C03C030" 126 CALLCHAR
 \ convert x,y coordinates to VDP address, height and length 
 : HEIGHT   ( x1 y1 x2 y2 -- x1 y1 x2 y2 n) DUP  3 PICK - 1+ ;
 : LENGTH   ( x1 y1 x2 y2 -- x1 y1 x2 y2 n) OVER 4 PICK -  ;
-: VADDR    ( x1 y1 x2 y2 --  Vaddr) 2DROP >VPOS ;
+: VADDR   ( x1 y1 x2 y2 --  Vaddr) 2DROP >VPOS ;
 
 \ resorted to 1 temp variable :-(
 VARIABLE CHR 
@@ -43,11 +40,10 @@ VARIABLE CHR
       VADDR  R> R>  ( -- Vaddr len hgt)
       0 DO  
           2DUP CHR @ VFILL 
-          SWAP C/L @ + SWAP \ Vaddr down 1 line 
+          SWAP C/L @ + SWAP 
       LOOP 
       2DROP
 ;  
-
 
 : RUN
     PAGE ." * Tilted Boxes Illusion *"
@@ -56,10 +52,11 @@ VARIABLE CHR
 \       x  y    x  y   char      
         6  3   16  7   127 BOX
         4 10   20 15   126 BOX
-        3000 MS 
+        2000 MS 
+
         6  3   16  7   31 BOX
         4 10   20 15   31 BOX
-        3000 MS 
+        2000 MS 
        ?TERMINAL
     UNTIL
 ;
