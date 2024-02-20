@@ -68,4 +68,46 @@ CODE PC! ( c CRUaddr --)
     NEXT,
 ENDCODE
 
+CODE LDCR ( data bits CRU-- )
+    TOS   R12 MOV,
+    *SP+   R1 MOV,  \ bits -> R1
+    *SP+   R0 MOV,  \ data -> R0
+    R1 000F ANDI,  \ instruction built in R1
+    NE IF,
+         R1 8 CI,
+          LTE IF,
+               R0 SWPB,   \ swap the data byte
+            ENDIF,
+        ENDIF,
+    R1 06 SLA,
+    R1 3000 ORI,   \ create: R0 bits LDCR,
+    R1 X,          \ execute the intruction
+    TOS POP,
+    NEXT,
+ENDCODE
+
+\ Performs the TMS9900 STCR instruction. The bit count is n1.
+\ The CRU base is set first with CRU! The returned value is n2.
+CODE STCR ( bits cru --- n )
+     C304 ,        \  TOS R12 MOV,
+     C076 ,        \ *SP+ R1 MOV,   \ bits ->R1
+     04C0 ,        \  R0 CLR,       \
+     0241 , 0F ,   \ R1 000F ANDI,
+     C081 ,        \ R1 R2 MOV,
+     0A61 ,        \ R1 06 SLA,
+     0261 , 3400 , \ R1 3400 ORI,  \ create R0 bits STCR,
+     0481 ,        \ R1 X,         \ execute the intruction
+     C082 ,        \ R2 R2 MOV,
+     1304 ,        \ NE IF,
+     0282 , 08 ,   \     R2 08 CI,
+     1501 ,        \     LTE IF,
+     06C0 ,        \          R0 SWPB,
+                   \     ENDIF,
+                   \ ENDIF,
+     C100 ,         \ R0 TOS MOV,
+     NEXT,
+     ENDCODE
+
+
+
 HERE SWAP - DECIMAL  CR . .( bytes)
