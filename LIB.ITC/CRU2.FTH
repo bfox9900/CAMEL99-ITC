@@ -40,9 +40,9 @@ CODE LDCR ( data bits CRU-- )
      C304 ,        \ TOS   R12 MOV,
      C076 ,        \ *SP+   R1 MOV,  \ bits -> R1
      C036 ,        \ *SP+   R0 MOV,  \ data -> R0
-     0241 , 0F ,   \ R1 000F ANDI,  \ instruction built in R1
-     1304 ,        \ NE IF,
-     0281 , 08 ,   \     R1 8 CI,
+     0241 , 0F ,   \ R1 000F ANDI,  \ test #bits<>zero
+     1304 ,        \ NE IF, 
+     0281 , 08 ,   \     R1 8 CI,   \ test #bits<=8  
      1501 ,        \     LTE IF,
      06C0 ,        \          R0 SWPB,   \ swap the data byte
                    \     ENDIF,
@@ -72,7 +72,7 @@ CODE STCR ( bits cru --- n )
      06C0 ,        \          R0 SWPB,
                    \     ENDIF,
                    \ ENDIF,
-     C100 ,         \ R0 TOS MOV,
+     C100 ,        \ R0 TOS MOV,
      NEXT,
      ENDCODE
 

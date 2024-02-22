@@ -15,8 +15,8 @@ DECIMAL
 : BOUNCE    ( spr# --) DUP BOUNCE.X BOUNCE.Y  ;
 
 
-: TINK    GEN1  1500 HZ  -6 DB  1000 TICKS  ;
-: BONK    GEN2  110 HZ   -4 DB  50 MS MUTE ;
+: TINK    GEN1  1500 HZ  -6 DB  1500 TICKS  ;
+: BONK    GEN2  110 HZ    0 DB  150 MS MUTE ;
 
 : TRAPX ( spr# -- )
       DUP SP.X VC@
@@ -31,7 +31,7 @@ DECIMAL
 : TRAP ( spr# -- ) DUP TRAPX TRAPY   ;
 
 DECIMAL
-: RNDV   ( -- x y)  60 RND 10 + 25 -  ;
+: RNDV   ( -- x y)   50 RND 10 + 20 -  ;
 : RNDXY  ( -- dx dy)  RNDV RNDV ;
 
 : SPRITES ( n -- ) \ makes n sprites
@@ -45,6 +45,13 @@ DECIMAL
 
 ;
 
+\ test sprite collision 
+: BUMP ( SPR# SPR# -- ) 
+  2DUP 10 COINC 
+  IF  BOUNCE BOUNCE BONK  
+  ELSE 2DROP   \ no coincidence, just drop the args
+  THEN ; 
+
 : RUN ( -- )
     2 SCREEN
     1 MAGNIFY
@@ -55,13 +62,19 @@ DECIMAL
 
     AUTOMOTION
     BEGIN
-         0 TRAP
-         0 1 7 COINC IF 0 BOUNCE 1 BOUNCE BONK THEN  1 TRAP
-         0 2 7 COINC IF 0 BOUNCE 2 BOUNCE BONK THEN  2 TRAP
-         1 2 7 COINC IF 1 BOUNCE 2 BOUNCE BONK THEN  3 TRAP
-         4 TRAP
+      \   0 TRAP
+         1 0 BUMP 
+       \  1 TRAP
+         0 6 1 DO DUP I BUMP LOOP DROP 
+       \  2 TRAP
+         1 2 BUMP 
+           3 TRAP
+         3 2 BUMP
+       \  4 TRAP
+         3 0 BUMP
+         4 2 BUMP 
+       \  5 TRAP
          ?TERMINAL
-         5 TRAP
     UNTIL
     STOPMOTION
 \    DELALL
