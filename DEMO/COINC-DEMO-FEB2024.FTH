@@ -44,17 +44,21 @@ DECIMAL
 : TRAP ( spr# -- ) DUP TRAPX TRAPY   ;
 
 DECIMAL
-: RNDV   ( -- x y)   50 RND 15 + 25 -  ;
+: RNDV   ( -- x y)   50 RND 10 + 15 -  ;
 : RNDXY  ( -- dx dy)  RNDV RNDV ;
 
-: SPRITES ( n -- ) \ makes n sprites
-    (    char   colr  x   y  sp#         X/Y  spr#   )
-    [CHAR] 0     3   10   90  0 SPRITE  RNDXY  0 MOTION   
-    [CHAR] 1     5   20   90  1 SPRITE   RNDXY  1 MOTION  
-    [CHAR] 2     7   33   90  2 SPRITE   RNDXY  2 MOTION  
-    [CHAR] 3    11   56   90  3 SPRITE  RNDXY  3 MOTION  
-    [CHAR] 4    16   125  90  4 SPRITE  RNDXY  4 MOTION  
-    [CHAR] 5     8   200  90  5 SPRITE  RNDXY  5 MOTION  
+: SPRITES ( -- ) \ makes n sprites
+    (    char   colr  x    y  sp#         X/Y  spr#   )
+    [CHAR] 0     3   10    90  0 SPRITE  RNDXY  0 MOTION   
+    [CHAR] 1     4   20    90  1 SPRITE  RNDXY  1 MOTION  
+    [CHAR] 2     5   33    90  2 SPRITE  RNDXY  2 MOTION  
+    [CHAR] 3     6   56    90  3 SPRITE  RNDXY  3 MOTION  
+    [CHAR] 4     7   125   90  4 SPRITE  RNDXY  4 MOTION  
+    [CHAR] 5     8   200   90  5 SPRITE  RNDXY  5 MOTION  
+    [CHAR] A     9   10   190  6 SPRITE  RNDXY  6 MOTION   
+    [CHAR] B    10   20   140  7 SPRITE  RNDXY  7 MOTION  
+    [CHAR] C    11   33   130  8 SPRITE  RNDXY  8 MOTION  
+    [CHAR] D    12   56   120  9 SPRITE  RNDXY  9 MOTION  
 ;
 
 \ test sprite collision 
@@ -65,20 +69,28 @@ DECIMAL
   THEN ; 
 
 : COLLISIONS 
-    0 TRAP  COINCALL IF  1 0 BUMP  2 0 BUMP THEN 
-    1 TRAP  COINCALL IF  2 1 BUMP           THEN 
-    2 TRAP  COINCALL IF  3 2 BUMP           THEN 
-    3 TRAP  COINCALL IF  0 3 BUMP           THEN 
-    4 TRAP  COINCALL IF  2 4 BUMP           THEN 
-    5 TRAP  COINCALL IF  5 4 BUMP  5 0 BUMP THEN 
+    0 TRAP  
+    1 0 BUMP  
+    1 TRAP  \ COINCALL IF  2 1 BUMP           THEN 
+    2 0 BUMP  
+    2 TRAP  \ COINCALL IF  3 2 BUMP           THEN 
+    1 2 BUMP
+    3 TRAP  \ COINCALL IF  0 3 BUMP           THEN 
+    4 TRAP  \ COINCALL IF  2 4 BUMP           THEN 
+    5 TRAP  \ COINCALL IF  5 4 BUMP  5 0 BUMP THEN 
+    6 TRAP 
+    7 TRAP
+    8 TRAP
+    9 TRAP 
 ;    
 
 : RUN ( -- )
     DELALL 
     2 SCREEN
     1 MAGNIFY
-    PAGE ." CAMEL99 Forth"
-    CR   ." Trap/Coinc Test with Automotion"
+    4 19  16 1 COLORS 
+    PAGE ." CAMEL99 Forth Sprite Automotion"
+    CR   ." Trap All. Coinc 0 1 & 2"
     CR
     SPRITES
     AUTOMOTION
@@ -88,6 +100,7 @@ DECIMAL
     UNTIL
     STOPMOTION
     DELALL
+    4 19  2 1 COLORS 
     8 SCREEN ;
 
 CR .( Type RUN to start demo)
