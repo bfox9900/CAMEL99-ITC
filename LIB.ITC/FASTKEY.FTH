@@ -4,6 +4,7 @@
 \ It takes 1.2 mS to run even if no key is pressed!
 \ This slows down cooperative multi-tasking by slowing down
 \ the context switch time while waiting for a key keypress.
+\ KEYCHECK scans the keyboard in 191 uS or 8 times faster 
 
 
 NEEDS WORDLIST FROM DSK1.SUPERTOOLS
@@ -14,7 +15,7 @@ NEEDS WORDLIST FROM DSK1.SUPERTOOLS
 FORTH DEFINITIONS ALSO ASSEMBLER
 HERE
 HEX
-CODE (KEY?) ( -- ?)      \ return TRUE if any key pressed
+CODE KEYCHECK ( -- ?)      \ return TRUE if any key pressed
       TOS PUSH,          \
       TOS CLR,           \ TOS=false
       R1 CLR,            \ Start with column 0
@@ -35,20 +36,22 @@ CODE (KEY?) ( -- ?)      \ return TRUE if any key pressed
       NEXT,              \ Return to Forth
  ENDCODE
 
-: FLUSHKEY  ( -- ) \ make sure no key is pressed
-    BEGIN
-    (KEY?) WHILE
-    REPEAT ;
+: FLUSHKEY  ( -- )  BEGIN KEYCHECK WHILE REPEAT ;
 
+HEX
 : WAITKEY   ( -- )
+    FLUSHKEY                \ wait until no key pressed
     BEGIN
         PAUSE               \ Essential for Multi-tasking with Console
         CURS @              \ fetch 2 char cursor (space & _ )
         TMR@ 1FFF < IF >< THEN VPUT  \ swap cursor bytes & write
-       (KEY?)
+        KEYCHECK
     UNTIL ;
 
-\ over-write the old version
-: NEWKEY  ( -- c)  WAITKEY  KEY ;
+\ This new key waits faster but calls ROM kscan if key pressed
+: NEWKEY  ( -- c)  WAITKEY KEY? ;
 
 HERE SWAP - DECIMAL .  .( bytes)
+
+\ test measure KEYCHECK using the 9901 timer 
+\ : TIMEIT  TMR@  KEYCHECK  TMR@ NIP - 2130 100 */ . ." uS"   ; 
