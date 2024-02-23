@@ -65,7 +65,7 @@ DECIMAL
       \   0 TRAP
          1 0 BUMP 
        \  1 TRAP
-         0 6 1 DO DUP I BUMP LOOP DROP 
+         0 2 BUMP LOOP DROP 
        \  2 TRAP
          1 2 BUMP 
            3 TRAP

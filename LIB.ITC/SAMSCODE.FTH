@@ -117,8 +117,6 @@ CODE GOTO ( addr -- )  C259 , ( *IP IP MOV,)  NEXT, ENDCODE
 
 : ;FAR ( -- ) \ end SAMS compilation. *NEW* compile time memory test
     POSTPONE FAREXIT            \ restore previous page and exit 
- \   POSTPONE GOTO  SAVHERE @ ,  \ get Forth IP back home  *CRITICAL?? 
-    
     HERE DUP ?FULL SAMSDP !     \ update HERE for this bank, keep a copy
     SAVHERE @ DP !              \ restore DP to CPU RAM
     REVEAL 

@@ -17,7 +17,7 @@ DECIMAL
 
 \ >> smart version but you don't need it << 
 \ : COLON?  ( xt -- ?) @  [ ' DOCOL @ ] LITERAL = ;
-\VARIABLE TAILCALL  \ control tail call optimizizing with this variable
+\ VARIABLE TAILCALL  \ control tail call optimizizing with this variable
                    \ TAILCALL ON  turns optimizer on
 
 \ : ;   ( -- )
