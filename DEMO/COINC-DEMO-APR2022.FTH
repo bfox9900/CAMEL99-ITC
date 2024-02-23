@@ -31,18 +31,17 @@ DECIMAL
 : TRAP ( spr# -- ) DUP TRAPX TRAPY   ;
 
 DECIMAL
-: RNDV   ( -- x y)   50 RND 10 + 20 -  ;
+: RNDV   ( -- x y)   50 RND 15 + 25 -  ;
 : RNDXY  ( -- dx dy)  RNDV RNDV ;
 
 : SPRITES ( n -- ) \ makes n sprites
-      (    char   colr  x   y  sp#         X/Y  spr#   )
-      [CHAR] 0     3   100  90  0 SPRITE  RNDXY  0 MOTION
-      [CHAR] 1     5   100  90  1 SPRITE  RNDXY  1 MOTION
-      [CHAR] 2     7   100  90  2 SPRITE  RNDXY  2 MOTION
-      [CHAR] 3    11   100  90  3 SPRITE  RNDXY  3 MOTION
-      [CHAR] 4    16   100  90  4 SPRITE  RNDXY  4 MOTION
-      [CHAR] 5     6   100  90  5 SPRITE  RNDXY  5 MOTION
-
+    (    char   colr  x   y  sp#         X/Y  spr#   )
+    [CHAR] 0     3   100  90  0 SPRITE  RNDXY  0 MOTION 100 MS 
+    [CHAR] 1     5   100  90  1 SPRITE  RNDXY  1 MOTION 100 MS
+    [CHAR] 2     7   100  90  2 SPRITE  RNDXY  2 MOTION 100 MS
+    [CHAR] 3    11   100  90  3 SPRITE  RNDXY  3 MOTION 100 MS
+    [CHAR] 4    16   100  90  4 SPRITE  RNDXY  4 MOTION 100 MS
+    [CHAR] 5     6   100  90  5 SPRITE  RNDXY  5 MOTION 100 MS
 ;
 
 \ test sprite collision 
@@ -62,18 +61,18 @@ DECIMAL
 
     AUTOMOTION
     BEGIN
-      \   0 TRAP
+         0 TRAP
          1 0 BUMP 
-       \  1 TRAP
-         0 2 BUMP LOOP DROP 
-       \  2 TRAP
+         1 TRAP
+         0 2 BUMP 
+         2 TRAP
          1 2 BUMP 
            3 TRAP
          3 2 BUMP
-       \  4 TRAP
+         4 TRAP
          3 0 BUMP
          4 2 BUMP 
-       \  5 TRAP
+         5 TRAP
          ?TERMINAL
     UNTIL
     STOPMOTION
