@@ -8,6 +8,6 @@
 : >.<   [CHAR] . HOLD ;
 : >$<   [CHAR] $ HOLD ;
 
-: U.##  ( u -- ) S>D TUCK DABS   <#  # # >.< #S #>  TYPE SPACE  ;
+: U.##  ( u -- ) S>D TUCK DABS   <# # # >.< #S #>  TYPE SPACE  ;
 
-: .$    ( n -- ) S>D  TUCK DABS  <#  # # >.< #S ROT SIGN >$<   #>  TYPE SPACE ;
+: .$    ( n -- ) S>D  TUCK DABS  <# # # >.< #S ROT SIGN >$< #> TYPE SPACE ;
