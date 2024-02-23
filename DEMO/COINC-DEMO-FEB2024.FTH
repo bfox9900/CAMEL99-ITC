@@ -26,20 +26,18 @@ DECIMAL
 
 : BOUNCE    ( spr# --) DUP BOUNCE.X BOUNCE.Y  ;
 
-: ESCAPEX ( spr# )    ;
-
 \ flag=true if x or y are outside limits 
 : XLIMIT? ( x -- ?) 239 3 WITHIN ;
 : YLIMIT? ( Y -- ?) 182 3 WITHIN ;
 
 : TRAPX ( spr# -- )
       DUP SP.X VC@
-      XLIMIT? IF  BOUNCE.X  TINK  ESCAPEX   EXIT 
+      XLIMIT? IF  BOUNCE.X  TINK   EXIT 
       THEN  DROP  ;
 
 : TRAPY ( spr# -- )
       DUP SP.Y VC@
-      YLIMIT? IF  BOUNCE.Y   TINK  EXIT 
+      YLIMIT? IF  BOUNCE.Y  TINK  EXIT 
       THEN  DROP  ;
 
 \ keep a sprite inside 4 walls 
@@ -56,7 +54,7 @@ DECIMAL
     [CHAR] 2     7   33   90  2 SPRITE   RNDXY  2 MOTION  
     [CHAR] 3    11   56   90  3 SPRITE  RNDXY  3 MOTION  
     [CHAR] 4    16   125  90  4 SPRITE  RNDXY  4 MOTION  
-    [CHAR] 5     8  200  90  5 SPRITE  RNDXY  5 MOTION  
+    [CHAR] 5     8   200  90  5 SPRITE  RNDXY  5 MOTION  
 ;
 
 \ test sprite collision 
