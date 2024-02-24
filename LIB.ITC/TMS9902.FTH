@@ -3,9 +3,11 @@
 \ Strategy for no-interrupt RS232 receive
 \ 1. Use multi-tasker to sample com port?
 \ 2. Use CODE word to read the 9902 chip
-\ 3. If character is waiting CODE word will Queue the character and check for another one.
+\ 3. If character is waiting CODE word will Queue the character 
+\    and check for another one.
 \    This will stop the multi-tasker while data is coming in but is required.
-\ 4. Consider using BLWP to call the CODE and use registers for enqueue/dequeue pointers
+\ 4. Consider using BLWP to call the CODE and use registers for 
+\    enqueue/dequeue pointers
 
 NEEDS DUMP FROM DSK1.TOOLS
 NEEDS TOS  FROM DSK1.ASM9900
