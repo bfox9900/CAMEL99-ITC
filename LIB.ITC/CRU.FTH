@@ -5,9 +5,6 @@ HERE
 DECIMAL
 12 CELLS USER 'R12  \ access R12 from Forth
 
-DECIMAL 
-24 USER 'R12  \ address of R12 for any workspace (task)
-
 HEX
 CODE SBO ( c -- ) \ set CRU bit to ONE
         0264 , 1D00 ,  \ TOS 1D00 ORI,
