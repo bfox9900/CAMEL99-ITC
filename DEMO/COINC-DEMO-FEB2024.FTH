@@ -55,10 +55,10 @@ DECIMAL
     [CHAR] 3     6   56    90  3 SPRITE  RNDXY  3 MOTION  
     [CHAR] 4     7   125   90  4 SPRITE  RNDXY  4 MOTION  
     [CHAR] 5     8   200   90  5 SPRITE  RNDXY  5 MOTION  
-    [CHAR] A     9   10   190  6 SPRITE  RNDXY  6 MOTION   
-    [CHAR] B    10   20   140  7 SPRITE  RNDXY  7 MOTION  
-    [CHAR] C    11   33   130  8 SPRITE  RNDXY  8 MOTION  
-    [CHAR] D    12   56   120  9 SPRITE  RNDXY  9 MOTION  
+\    [CHAR] A     9   10   190  6 SPRITE  RNDXY  6 MOTION   
+\    [CHAR] B    10   20   140  7 SPRITE  RNDXY  7 MOTION  
+\    [CHAR] C    11   33   130  8 SPRITE  RNDXY  8 MOTION  
+\    [CHAR] D    12   56   120  9 SPRITE  RNDXY  9 MOTION  
 ;
 
 \ test sprite collision 
@@ -70,18 +70,18 @@ DECIMAL
 
 : COLLISIONS 
     0 TRAP  
-    1 0 BUMP  
-    1 TRAP  \ COINCALL IF  2 1 BUMP           THEN 
-    2 0 BUMP  
-    2 TRAP  \ COINCALL IF  3 2 BUMP           THEN 
-    1 2 BUMP
-    3 TRAP  \ COINCALL IF  0 3 BUMP           THEN 
+     COINCALL IF 1 0 BUMP  THEN 
+    1 TRAP   
+    COINCALL IF  2 0 BUMP  THEN 
+    2 TRAP  
+    COINCALL IF  1 2 BUMP  THEN 
+    3 TRAP  
     4 TRAP  \ COINCALL IF  2 4 BUMP           THEN 
     5 TRAP  \ COINCALL IF  5 4 BUMP  5 0 BUMP THEN 
-    6 TRAP 
-    7 TRAP
-    8 TRAP
-    9 TRAP 
+ \   6 TRAP 
+ \   7 TRAP
+ \   8 TRAP
+ \   9 TRAP 
 ;    
 
 : RUN ( -- )

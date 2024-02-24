@@ -26,7 +26,6 @@ CODE  <NEXT>
 CODE X       TOS PUSH,   R15 TOS MOV,  NEXT, ENDCODE
 
 : NEXT      POSTPONE <NEXT> <BACK ; IMMEDIATE
-
 : FOR    ( n -- ) ?COMP  POSTPONE <FOR>  HERE ; IMMEDIATE
 : NEXT   ( -- )   POSTPONE <NEXT> HERE - , ;   IMMEDIATE
 
@@ -34,7 +33,7 @@ HEX
 : FORTEST  FFFF FOR NEXT ;   \ down count from FFFF to 0
 : DOTEST   FFFF 0 DO LOOP ;
 
-: FORTEST2  400  FOR  X .  NEXT ;
+: FORTEST2  400  FOR  X .  NEXT ; \ 3.0 
 : DOTEST2   400 0 DO  I .  LOOP ;
 : FTYPE    ( addr len --) 1- FOR COUNT (EMIT) NEXT DROP ;
 

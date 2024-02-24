@@ -12,18 +12,18 @@ INCLUDE DSK1.CATALOG
 HEX
 
 : WRITE-BLOCK ( blk# -- ior )
-               8 [PAB CHARS] VC!     \ # chars to write ->PAB
-                 [PAB FBUFF] V!      \ Set the VDP addr to write
-                 3 FILEOP ( -- ior)  \ call write operation
-                 (EOF) FUSE          \ fuse EOF and general file errors
+    8 [PAB CHARS] VC!     \ # chars to write ->PAB
+    [PAB FBUFF] V!      \ Set the VDP addr to write
+    3 FILEOP ( -- ior)  \ call write operation
+    (EOF) FUSE          \ fuse EOF and general file errors
 ;
 
 : WRITE-PATTERNS ( -- )
-            FF8 800                 \ PDT(end) PDT(start)
-            DO
-               I DUP .
-                WRITE-BLOCK  DUP IF CR CR ." WRITE-BLOCK Err: "  . ABORT THEN
-            FF +LOOP ;
+    FF8 800                 \ PDT(end) PDT(start)
+    DO
+      I DUP .
+      WRITE-BLOCK  DUP IF CR CR ." WRITE-BLOCK Err: "  . ABORT THEN
+    FF +LOOP ;
 
 : SAVE-FONT ( addr len -- )
            RELATIVE 100 FIXED W/O BIN CREATE-FILE ?FILERR >R
