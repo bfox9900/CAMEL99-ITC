@@ -23,7 +23,7 @@ CREATE SMT    SMT.SIZE ALLOT
 SMT TABLE4: ]VECTOR    
 
 \ init all vectors to zero
-: CLR-MOTION ( -- ) 0 ]VECTOR  SMT.SIZE  0 FILL ;
+: STOPALL ( -- ) 0 ]VECTOR  SMT.SIZE  0 FILL ;
 
 \ Vector addition of x,y with a vector dx,dy
 \ Masked to 8 bits 
