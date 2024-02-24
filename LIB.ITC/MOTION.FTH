@@ -22,9 +22,6 @@ CREATE SMT    SMT.SIZE ALLOT
 \ Use 2@ and 2! to fetch and store the motion vectors
 SMT TABLE4: ]VECTOR    
 
-\ init all vectors to zero
-: STOPALL ( -- ) 0 ]VECTOR  SMT.SIZE  0 FILL ;
-
 \ Vector addition of x,y with a vector dx,dy
 \ Masked to 8 bits 
 HEX 
@@ -60,7 +57,10 @@ HEX
 \ *NEW* Plural version defines same motion for a range of sprites
 : MOTIONS ( dy dx first last -- )  1+ SWAP DO   2DUP I MOTION   LOOP 2DROP ;
 .( .)
-CLR-MOTION  \ init-motion
+\ init all vectors to zero
+: STOPALL ( -- ) 0 ]VECTOR  SMT.SIZE  0 FILL ;
+STOPALL 
+
 DECIMAL
 HERE SWAP - . .( bytes)
 
