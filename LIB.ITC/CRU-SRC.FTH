@@ -5,9 +5,8 @@ NEEDS MOV, FROM DSK1.ASM9900
 
 HERE
 
-\ access R12 from Forth
 DECIMAL
-
+\ set R12 from Forth
 CODE R12!  ( u -- ) TOS R12 MOV, NEXT, ENDCODE
 
 HEX
