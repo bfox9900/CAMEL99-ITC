@@ -15,10 +15,11 @@ DECIMAL
       ?CSP
 ; IMMEDIATE
 
-\ >> smart version but you don't need it << 
-\ : COLON?  ( xt -- ?) @  [ ' DOCOL @ ] LITERAL = ;
+\ >> smart version but DOES NOT WORK WITH DEFER WORDS 
+
+\: COLON?  ( xt -- ?) @  [ ' DOCOL @ ] LITERAL = ;
 \ VARIABLE TAILCALL  \ control tail call optimizizing with this variable
-                   \ TAILCALL ON  turns optimizer on
+\ TAILCALL ON  turns optimizer on
 
 \ : ;   ( -- )
 \     TAILCALL @ 
@@ -31,4 +32,6 @@ DECIMAL
 \         POSTPONE ; 
 \      THEN 
 \ ; IMMEDIATE
+
+\ TAILCALL ON 
 

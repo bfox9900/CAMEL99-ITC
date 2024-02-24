@@ -10,7 +10,7 @@
 INCLUDE DSK1.TOOLS
 \ INCLUDE DSK1.3RD4TH                      \ 50% faster but 2X larger
 
-: 3RD  ( a b c -- a b c a ) 2 PICK ;       \ Changed name from Niels' THIRD
+: 3RD  ( a b c -- a b c a ) 2 PICK ;       \ Changed name from Neil's THIRD
 
 : SPLIT ( addr len char -- str1 len1 str2 len2)
          >R  2DUP  R> SCAN  2SWAP  3RD - ;
