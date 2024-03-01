@@ -93,7 +93,7 @@ CODE STCR ( #bits -- n )
      06C0 ,        \          R0 SWPB,
                    \     ENDIF,
                    \ ENDIF,
-     C100 ,         \ R0 TOS MOV,
+     C100 ,        \ R0 TOS MOV,
      NEXT,
      ENDCODE
 
