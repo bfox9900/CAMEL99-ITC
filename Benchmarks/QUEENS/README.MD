@@ -6,7 +6,6 @@ These files were found online with attributions in the files.
 
 The file 8queens-FDmag.fth is from Rosetta code and demonstrates code from Forth Dimensions Magazine, written by competetant Forth coder.
 
-
 The file Queens-fast.fth uses binary logic to solve the problem
 about 10 times faster than the Forth Dimensions version. 
 
