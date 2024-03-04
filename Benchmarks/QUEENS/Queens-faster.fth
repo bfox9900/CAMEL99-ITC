@@ -11,6 +11,7 @@ INCLUDE DSK1.3RD4TH
 VARIABLE SOLUTIONS  
 VARIABLE NODES
 
+\ Use macros to avoid extra calls 
 : THIRD ( a b c -- a b c a ) POSTPONE 3RD ;  IMMEDIATE 
 : 2OVER ( a b c d -- a b c d a b ) POSTPONE 4TH POSTPONE 4TH ; IMMEDIATE 
 
