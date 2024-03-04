@@ -6,6 +6,7 @@
 \ show how to use TRANSIENT PERMANENT and DETACH 
 \ reset ARRAY items with OFF rather than 0 SWAP ! 
 \ set ARRAY items with ON  
+\ 27% SPEED IMPROVEMENT
 
 \ Camel99 Forth HARNESS and Libary files 
 INCLUDE DSK1.WORDLISTS 
@@ -31,7 +32,7 @@ ONLY FORTH  ALSO ASSEMBLER  ALSO FORTH DEFINITIONS
  
  \ Make this array 8x faster with 2 assembler instructions 
  : 1array 
-    CREATE 0 DO 1 , LOOP   \ compile time: init array items 
+    CREATE 0 DO TRUE , LOOP   \ compile time: init array items 
 \ Runtime will be this assembler code          
     ;CODE  
         TOS 1 SLA,  \ 1 SHIFT Left is 2*  ie: CELLS
