@@ -14,4 +14,6 @@ In 8queens-Camel99.fth we substitute the Forth arrays with the ARRAYS libary fro
 
 In 8queens-assembler.fth we use the ;CODE ENDCODE structure and the Assembler to improve the speed of the original array creator as well as a using other special features of Camel99 Forth. 
 
-The file Queens-faster.fth uses the words 3RD and 4TH from the libary to speed up stack accesses deeper in the stack resulting in a 24% speed. 
+The file Queens-fast.fth uses binary operations to speed up the solution by ten times versus the Forth Dimensions solution.  
+
+The file Queens-faster.fth uses the words 3RD and 4TH from the libary to speed up stack accesses deeper in the stack resulting in a further 24% speed. 
