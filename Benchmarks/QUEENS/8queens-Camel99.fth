@@ -4,21 +4,21 @@
 \ Camel99 Forth HARNESS
 INCLUDE DSK1.UDOTR
 INCLUDE DSK1.ELAPSE 
+: ++    POSTPONE 1+! ; IMMEDIATE 
 
 \ replaced original arrays with Camel99 arrays
 INCLUDE DSK1.ARRAYS 
 
-: ++    POSTPONE 1+! ; IMMEDIATE 
 
 8 CONSTANT queens
 
 \ Nqueen solution from FD-V02N1.pdf
 \  : 1array CREATE 0 DO 1 , LOOP DOES> SWAP CELLS + ;
 
-    queens array a \ a,b & c: workspaces for solutions
- queens 2* array b
- queens 2* array c
-    queens array x \ trial solutions
+    queens ARRAY a \ a,b & c: workspaces for solutions
+ queens 2* ARRAY b
+ queens 2* ARRAY c
+    queens ARRAY x \ trial solutions
 
 : init   
   queens     0 DO 1 I a !  LOOP
@@ -69,4 +69,4 @@ VARIABLE sols
   CR 0 try 
   CR sols @ . ." solutions Found, for n = " queens . ;
 
-CR .( Type:  ELAPSE GO )  
+CR .( Type:  ELAPSE GO )  \ runs in 43 seconds 

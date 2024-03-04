@@ -57,4 +57,4 @@ VARIABLE sols
   CR 0 try 
   CR sols @ . ." solutions Found, for n = " queens . ;
 
-CR .( Type:  ELAPSE GO )  
+CR .( Type:  ELAPSE GO )  \ runs in 54.8 seconds 

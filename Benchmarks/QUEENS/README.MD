@@ -1,15 +1,16 @@
 # Eight Queens Problem
 
-These files demonstrate three very different solutions to this classic problem. 
+These files demonstrate two different solutions to this classic problem. 
 
 These files were found online with attributions in the files. 
-The file 8QUEENS.FTH seems to be an example of writing the solution by using another language as the starting point. It is large and inefficient. 
-
-I tried to speed it up using the inline optimizer in 8QUEENSOPTIMIZED.FTH but the algorythm is the problem. 
 
 The file 8queens-FDmag.fth is from Rosetta code and demonstrates code from Forth Dimensions Magazine, written by competetant Forth coder.
 
-The file Queens-fast.fth uses binary logic to solve the problem
-10 times faster than the Forth Dimensions version. 
 
-The file Queens-faster.fth uses the words 3RD and 4TH from the libary to speed up stack accesses deeper in the stack. 
+The file Queens-fast.fth uses binary logic to solve the problem
+about 10 times faster than the Forth Dimensions version. 
+
+## Use the Libary Files
+In 8queens-Camel99.fth we substitute the Forth arrays with the ARRAYS libary from Camel99 and the speed inproves by 27%. This shows how just a small amount of machine code or Assembler can make a big difference. 
+
+The file Queens-faster.fth uses the words 3RD and 4TH from the libary to speed up stack accesses deeper in the stack resulting in a 24% speed. 
