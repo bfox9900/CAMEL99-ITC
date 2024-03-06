@@ -1,8 +1,5 @@
 \ literal translation of BASIC program to Forth 
 
-\                                         ITC     DTC 
-\ V1 using variables and ARRAY           1:10    1:04
-\ V5 using index address arrays                  1:02
 INCLUDE DSK1.TOOLS 
 INCLUDE DSK1.ELAPSE 
 INCLUDE DSK1.CODEMACROS 
@@ -23,6 +20,7 @@ CREATE []A   256 CELLS ALLOT       \  100 DIM A(256)
 \ Integer Arrays that use indexed addressing
 MACRO: ]A@ ( ndx -- n)   []A ()C@,  ;MACRO
 MACRO: ]A! ( n ndx --)   []A ()C!,  ;MACRO
+
 
 : RUN 
   CR ." 7's Problem "           \ 110 PRINT "7's Problem"
