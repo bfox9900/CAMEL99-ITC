@@ -3,10 +3,11 @@
 \ V2 replaced variables with VALUES: 1:08
 \ V3 print with address loop, not indices
 
-INCLUDE DSK1.TOOLS 
-INCLUDE DSK1.ELAPSE 
-INCLUDE DSK1.ARRAYS 
-INCLUDE DSK1.VALUES 
+NEEDS DUMP FROM  DSK1.TOOLS 
+NEEDS ELAPSE FROM DSK1.ELAPSE 
+NEEDS ARRAY  FROM DSK1.ARRAYS 
+NEEDS VALUE FROM DSK1.VALUES 
+
 
 DECIMAL 
 : ?BREAK   ?TERMINAL ABORT" *BREAK*" ; 
@@ -34,9 +35,10 @@ DECIMAL
 0 VALUE [I]
 
  256 CARRAY ]A                  \ 100 DIM A(256)
+  0 ]A 256 0 FILL               \ init ]A to zero. Not automatic in Forth 
+
 : RUN 
   CR ." 7's Problem "           \ 110 PRINT "7's Problem"
-  0 ]A 256 0 FILL               \ init ]A to zero
   7 0 ]A C!                     \ 120 A(1)=7
   0 TO WIN                      \ 130 WIN=0
   1 TO POWER                    \ 140 POWER=1
@@ -62,7 +64,6 @@ DECIMAL
             INAROW 6 =          \ 260 IF INAROW<>6 THEN 300
             IF                
               TRUE TO WIN       \ 270 WIN=1
-              LEAVE 
             THEN                
         ELSE                    \ 280 GOTO 300 
             0 TO INAROW         \ 290 INAROW=0
@@ -74,11 +75,12 @@ DECIMAL
     IF                          \ 320 IF CARRY=0 THEN 340
        1 +TO NUMLEN             \ 330 NUMLEN=NUMLEN+1
     THEN 
-\ changed to use addresses not indices    
+\ changed to use addresses not indices. Saves 2 seconds    
     CR                          \ replaces PRINT 
     0 ]A NUMLEN ]A              \ 340 FOR I=NUMLEN TO 1 
     DO   
-      I C@ >DIGIT (EMIT)        \ 350 PRINT CHR$(A(I)+48);
+\       I C@ >DIGIT CEMIT        \ for TTY Forth 
+       I C@ >DIGIT (EMIT)        \ 350 PRINT CHR$(A(I)+48);
     -1 +LOOP                    \ 360 NEXT I ( STEP -1)
     CR CR                       \ 370 PRINT ::
     WIN                         \ 380 IF WIN<>1

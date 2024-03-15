@@ -62,9 +62,9 @@ DECIMAL
 	     COL ROW CHR 1 HCHAR
           N NOTE HZ        \ set the frequency
           -2 DB            \ set the volume (turns on sound)  
-          300 RND 60 + MS  \ hold note 
+          100 RND 50 + MS  \ hold note 
           MUTE             \ turn off the sound  
-          70 MS            \ put a space after each note 
+          40 MS            \ put a space after each note 
           ?TERMINAL
       UNTIL
       8 SCREEN
