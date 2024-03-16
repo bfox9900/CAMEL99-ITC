@@ -1,6 +1,6 @@
-CR .( MTASK99.FTH  CAMEL99  *DTC VERSION ONLY* Apr 2022 Brian Fox)
+CR .( MTASK99.FTH  for CAMEL99 FORTH Apr 2022 Brian Fox)
 \ SEE: Manual "CAMEL99 for TI-BASIC Programmers" for full explanation
-
+ 
 \ May 15 2017  RE-wrote for use with new Kernel that includes USER variables
 \ Jan 31 2018 -big cleanup. Simplified stack location code.
 \             - USIZE now 152 bytes
@@ -8,40 +8,40 @@ CR .( MTASK99.FTH  CAMEL99  *DTC VERSION ONLY* Apr 2022 Brian Fox)
 \             -with repeated RESTARTs.
 \ Apr 2018    Ported to V2 and used machine code. No need for assember
 \ May 17, 2018  fixed RESTART, BYE, COLD.
-\ Jun  8. 2018  replaced assembler with machine code to ease of use.
-\ Aug 2022    Added RESET-STACKS to improve RESTART 
+\ Jun  8. 2018  replaced assembler with machine code
+\ Aug 2022    Added RESET-STACKS to improve RESTART
+\ 2023        Change CMOVE to MOVE 
 
-\ Each task has a Process ID (PID)
-\ In this system we use the workspace address as the PID
+\ In this system we use the workspace address as the process ID. (PID)
 HEX
 CODE MYSELF  ( -- pid)
      0646 , \    *SP DECT,  ( make room on stack)
-    0C584 , \ TOS *SP MOV,  ( push TOS reg.)
+     C584 , \ TOS *SP MOV,  ( push TOS reg.)
      02A4 , \    TOS STWP,  (fetch the cpu WP register to Forth TOS)
      NEXT,
     ENDCODE
-
+ 
 MYSELF CONSTANT USER0   \ USER0 is the main Forth task workspace (>8300)
-
+ 
 \ calc. size of task memory block (152 bytes)
 DECIMAL
   16 CELLS              \ register space
   40 CELLS +            \ 40 USER VARIABLE spaces
-  25 CELLS +            \ 25 cells for parameter stack
-  25 CELLS +            \ 25 cells return stack
+  21 CELLS +            \ 21 cells for parameter stack
+  21 CELLS +            \ 21 cells return stack
   CONSTANT USIZE        \ "user area" size
-
+ 
 \ name the CPU register addresses in a task's USER VARIABLE space
   12 USER 'SP           \ the task's Forth SP register ( R6)
   14 USER 'RP           \ the task's Forth RP register ( R7)
   18 USER 'IP           \ the task's Forth IP register ( R8)
   20 USER 'R10          \ address of R10 (holds the NEXT routine)
-
+ 
 \ rename registers 13,14&15, used by RTWP to change context
   26 USER TLINK         \ R13 = next task's wksp
   28 USER TPC           \ R14 = next task's program counter
   30 USER TST           \ R15 = next task's status register
-
+ 
 \ tricky machine code version so you don't need to
 \ load the assembler
 \ use CREATE cuz we just need the address
@@ -53,33 +53,33 @@ HERE  02A1 ,         \ R1 STWP,             \ HERE on stack for later
       13FB ,         \ -8 $$+ JEQ,          \ if tflag=0 jmp to RTWP
       NEXT,          \ run Forth
  ( -- addr) CONSTANT 'TSTAT  \ record tstat address as constant
-
+ 
  'R10 @ CONSTANT 'NEXT      \ R10 has the address of Forth NEXT
-
+ 
 .( ..)
  DECIMAL
 \ PID = process ID.  It is the address of the task's user area memory block
 : LOCAL    ( PID uvar -- addr' ) MYSELF - + ;     \ get a task's user var.
 : SLEEP    ( PID -- ) FALSE SWAP TFLAG LOCAL ! ;  \ put PID to sleep
 : WAKE     ( PID -- ) TRUE  SWAP TFLAG LOCAL ! ;  \ wake up PID
-
+ 
 \ turn multi-tasking on or off by changing the CODE address in PAUSE
 : SINGLE   ( -- ) 'NEXT  ['] PAUSE ! ;  \ disable multi-tasking
 : MULTI    ( -- ) 'YIELD ['] PAUSE ! ;  \ enable multi-tasking.
-
+ 
 ( *** YOU  M U S T  use INIT-MULTI before multi-tasking ***)
 : INIT-MULTI ( -- )
         MYSELF TLINK !    \ Set my TLINK to my own WKSP
        'TSTAT TPC !       \ set my task PC reg. to TSTAT
         MYSELF WAKE  ;    \ mark myself awake
-
+ 
 \ FORK
 \ - copy the the calling task's USER area into a new workspace.
 \ - SET both stack addresses to the proper registers in the user area,
 \ - insert PID into the round-robin list
 \ - your program needs to allot USIZE (176) bytes somewhere.
 \ - the address of your memory block will become the PID.
-
+ 
 \          *** THESE ARE VERY SMALL TASK BLOCKS ***
 \ 20 stack items is the theoretical minimum for a Forth process
 : RESET-STACKS ( PID -- )
@@ -88,33 +88,37 @@ HERE  02A1 ,         \ R1 STWP,             \ HERE on stack for later
      ( RPaddr) 20 CELLS -                   \ calc. Pstack addr
        R> 'SP LOCAL !                       \ store in local SP register
 ;
-
+ 
 : FORK ( PID -- )
        DUP >R                               \ copy PID to RSTACK
       ( PID) USIZE 0 FILL                   \ erase new task block
        MYSELF R@ USIZE MOVE                 \ copy myself to the new task
-
+ 
        R@ RESET-STACKS
-
+ 
 \ insert this task into round-robin list of tasks
        TLINK @                 ( -- link)   \ get round-robin link
        R@ TLINK !                           \ replace with addr of new task
        R@ TLINK LOCAL !                     \ store copy in new task's tlink
        R> SLEEP ;                           \ mark this new task as asleep
-
+ 
 .( ..)
 : JOB->IP ( xt pid -- xt pid)     \ XT -> task's IP register
        DUP JOB LOCAL  OVER 'IP LOCAL ! ;
-
+ 
 : ASSIGN ( xt pid -- )
        JOB->IP  JOB LOCAL ! ; \ store the XT in the PID's JOB user var.
-
+ 
 : RESTART ( pid -- ) JOB->IP  DUP RESET-STACKS  WAKE ;
 
+\ allocate task space in heap, fork it, assign Execution, return PID
+: SPAWN  ( xt -- pid)  USIZE MALLOC DUP>R FORK  R@ ASSIGN  R> ;
+ 
 : COLD    ( -- ) SINGLE  COLD ;
 \ : BYE     ( -- ) SINGLE  BYE ;
-
+ 
 INIT-MULTI
 CR .( Multi-tasker initialized)
-
+ 
 HEX
+ 
