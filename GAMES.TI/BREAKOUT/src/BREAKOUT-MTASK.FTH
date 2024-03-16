@@ -292,10 +292,12 @@ DECIMAL
 ;
 
 DECIMAL 
+\ This was done for smooth multi-tasking. 
+\ Give time away while waiting for the human to do something.
 : JOYKEY  ( -- n) \ wait for any joystick output 
   BEGIN  
-    PAUSE 
-    0 JOYST 
+    PAUSE     \ give somebody else time to run
+    0 JOYST   \ this is only 10 lines of Assembler. FAST
     ?DUP 
   UNTIL ;
 
@@ -337,9 +339,9 @@ DECIMAL
 : RICOCHET ( points freq --)
   CLINK
   BL 'BALL @ VC! 
-  PAUSE 
+  PAUSE  \ test for joystick 
   BALL BOUNCE.Y  SCORE +!  .SCORE 
-  PAUSE 
+  PAUSE  \ and again
   REMAINING 1-! ;
 
 : BALLINPLAY
@@ -437,6 +439,18 @@ DECIMAL
   THEN 
 ;
 
+: PLAY-GAME ( -- )
+  BEGIN
+    BALL# @
+  WHILE
+    SERVING BALL MOTION 
+    START-POSITIONS
+    WAIT-FIRE 
+    BALLINPLAY 
+    ?WINNER 
+  REPEAT
+;
+
 : GO
     DECIMAL
     QUIT-ON
@@ -449,15 +463,7 @@ DECIMAL
       .PRESS-FIRE
       MULTI       
       CLS
-      BEGIN
-        BALL# @
-      WHILE
-        SERVING BALL MOTION 
-        START-POSITIONS
-        WAIT-FIRE 
-        BALLINPLAY 
-        ?WINNER 
-      REPEAT
+      PLAY-GAME 
       .REPLAY
     AGAIN 
 ;
