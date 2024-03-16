@@ -111,9 +111,6 @@ HERE  02A1 ,         \ R1 STWP,             \ HERE on stack for later
  
 : RESTART ( pid -- ) JOB->IP  DUP RESET-STACKS  WAKE ;
 
-\ allocate task space in heap, fork it, assign Execution, return PID
-: SPAWN  ( xt -- pid)  USIZE MALLOC DUP>R FORK  R@ ASSIGN  R> ;
- 
 : COLD    ( -- ) SINGLE  COLD ;
 \ : BYE     ( -- ) SINGLE  BYE ;
  
