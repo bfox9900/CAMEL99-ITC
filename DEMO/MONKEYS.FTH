@@ -1,7 +1,7 @@
 \ monkeys.fth
 \ TESTED with verison 2.70
 
-NEEDS .S  FROM DSK1.TOOLS
+\ NEEDS .S  FROM DSK1.TOOLS  \ DEBUGGING ONLY 
 NEEDS RND FROM DSK1.RANDOM
 
 DECIMAL
@@ -97,7 +97,7 @@ VARIABLE VOWELS
 : WAITKEYUP  ( -- ) BEGIN KEY? 0= UNTIL ;
 : WAITKEY    ( -- ) KEY? IF KEY DROP THEN ;
 
-: TAB        ( n --) VCOL ! ;
+: TAB        ( n --) VCOL @ 8 MOD SPACES  ;
 
 DECIMAL
 : MONKEY-LINE  ( -- )
