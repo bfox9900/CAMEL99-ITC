@@ -7,7 +7,9 @@ CODE MOVEW  ( src dst n -- ) \ n= no. of bytes to move
           \  BEGIN,
    CC31 , \     R1 *+ R0 *+ MOV,
    0644 , \     TOS DECT,
-   18FD , \  NC UNTIL,
+   16FD , \  EQ UNTIL,
    C136 , \  TOS POP,
    NEXT,
 ENDCODE
+
+

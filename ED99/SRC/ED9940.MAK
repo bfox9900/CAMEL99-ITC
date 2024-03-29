@@ -15,12 +15,12 @@ INCLUDE DSK4.ED99COMMON
 DECIMAL
 : EDSTART ( -- )
         WARM
-        CR ." ED99 Multi-file Editor V1.73"
+        CR ." ED99 Multi-file Editor V1.74 2024"
         CR ." Built on Kernel " .VER
         #CLIPS OFF
         INIT-EVARS
         DECIMAL
-        CR S" DSK1.ED99CONFIG" INCLUDED
+        CR S" ED99CONFIG" +PATH INCLUDED
         INVERTFONT
         SAMS-ON
         SETUP PROMPT: ." Ready "

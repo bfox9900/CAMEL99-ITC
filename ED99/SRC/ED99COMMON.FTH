@@ -1,6 +1,7 @@
 \ ED99 editor common code for 80 col and 40 col version  Feb 2023 Brian Fox
 \ CHANGES FOR v2.69 Oct 22.  Removed CMOVE, CMOVE>. Replaced with MOVE
 \ FEB 2023: Changed ]RECORD divisor to use 51x80 lines per SAMS PAGE
+\ Mar 2024: Replaced move16 with MOVEW. Slightly faster. 
 
 \ NEEDS .S        FROM DSK1.TOOLS
 NEEDS LOCK      FROM DSK1.MARKER
@@ -15,6 +16,7 @@ NEEDS SEARCH    FROM DSK1.SEARCH
 NEEDS VALUE     FROM DSK1.VALUES
 NEEDS DEFER     FROM DSK1.DEFER
 NEEDS LOAD-FONT FROM DSK1.LOADSAVE
+NEEDS +PATH     FROM DSK1.PLUSPATH
 
 \ utility commands
  NEEDS DIR      FROM DSK1.DIR
@@ -67,11 +69,18 @@ CODE FILL16 ( adr len char) \ fills 2 bytes per interation
 ENDCODE
 
 HEX
-CODE MOVE16 ( src dst len -- ) \ Faster: moves len/2 CELLS
-    C036 , C076 , C104 , 1306 , 0584 ,
-    0244 , FFFE , CC31 , 0644 , 15FD ,
-    C136 , NEXT,
+HEX
+CODE MOVEW  ( src dst n -- ) \ n= no. of bytes to move
+   C036 , \ *SP+ R0 MOV,
+   C076 , \ *SP+ R1 MOV,
+          \  BEGIN,
+   CC31 , \     R1 *+ R0 *+ MOV,
+   0644 , \     TOS DECT,
+   16FD , \  EQ UNTIL,
+   C136 , \  TOS POP,
+   NEXT,
 ENDCODE
+
 
 DECIMAL
 : BLANK   ( adr len -- ) BL FILL16 ;
@@ -178,7 +187,7 @@ DECIMAL
 
 : [REC#]RECORD  ( -- ) REC# ]RECORD ;
 : ERASE-REC ( addr -- )  #80 BLANK ;
-: COPY-REC  ( addr -- )  #80 MOVE16 ;
+: COPY-REC  ( addr -- )  #80 MOVEW ;
 
 \ SCREEN formatting ...
 DECIMAL
@@ -428,7 +437,7 @@ DECIMAL
 \ clip board uses blocks 161..193
 : ]CLIP    ( rec# -- addr) RECSIZE UM* 4K UM/MOD 161 + BLOCK + ;
 
-: >CLIP ( rec-addr -- ) #CLIPS 1+!  #CLIPS @ ]CLIP #80 MOVE16 ;
+: >CLIP ( rec-addr -- ) #CLIPS 1+!  #CLIPS @ ]CLIP #80 MOVEW ;
 
 : CLIP2LINE ( line# -- )
       #CLIPS @ ]CLIP [REC#]RECORD COPY-REC

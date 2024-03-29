@@ -16,7 +16,7 @@ INCLUDE DSK4.ED99COMMON
 DECIMAL
 : EDITINIT      ( -- )
         80COLS
-        CR ." ED99 Multi-file Editor V1.75 Feb2023"
+        CR ." ED99 Multi-file Editor V1.74 Mar2024"
         CR ." Built on Kernel " .VER
         1000 MS
         #CLIPS OFF  INIT-EVARS  DECIMAL
