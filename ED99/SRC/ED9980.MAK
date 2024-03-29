@@ -5,6 +5,9 @@
 \ NEEDS .S        FROM DSK1.TOOLS
 NEEDS 80COLS    FROM DSK1.80COL
 
+( must switch mode to change the screen size variables)
+   80COLS   
+
 \ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 \ LOAD the common code for 40 and 80 column versions
 
@@ -20,7 +23,7 @@ DECIMAL
         CR ." Built on Kernel " .VER
         1000 MS
         #CLIPS OFF  INIT-EVARS  DECIMAL
-        CR S" DSK1.ED99CONFIG" INCLUDED
+        CR S" ED99CONFIG" +PATH INCLUDED
         INVERTFONT    SAMS-ON
         SETUP PROMPT: ." Ready "
         ABORT ;
@@ -35,4 +38,12 @@ LOCK
 
 \ These lines will overwrite the existing binary program
   INCLUDE DSK1.SAVESYS
+: LASTCHANCE 
+  CR 
+  CR ." *WARNING* Press capital 'Y' to OVERWRITE ED9980 program" 
+  KEY [CHAR] Y <> ABORT" build aborted"
+; 
+
+LASTCHANCE 
+
 ' EDSTART SAVESYS DSK4.ED9980
