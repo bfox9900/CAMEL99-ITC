@@ -8,22 +8,22 @@ CODE BLWP  ( daddr -- )  \ "BULLWHIP" takes a 2VARIABLE as input arg.
      NEXT,               \ return to Forth 
      ENDCODE
 
-\ --------------------------------------------------------
+\ ===========================================================
 \ Example code:
  NEEDS DUMP FROM DSK1.TOOLS
  NEEDS MOV, FROM DSK1.ASM9900
  
  \ Note the use of CREATE not CODE 
  CREATE SUBPROG ( -- addr) \ NOT RUNNABLE FROM FORTH. Must call with BLWP 
-       R1 1111 LI,         \ Init some registers in foreign workspace
-       R2 2222 LI,
-       R3 3333 LI,
-       R4 4444 LI,
-       R5 5555 LI,
-       R6 6666 LI,
-       R7 7777 LI, 
-       R8 8888 LI,
-       R9 9999 LI, 
+       R1 0001 LI,         \ Init some registers in foreign workspace
+       R2 0002 LI,
+       R3 0003 LI,
+       R4 0004 LI,
+       R5 0005 LI,
+       R6 0006 LI,
+       R7 0006 LI, 
+       R8 0008 LI,
+       R9 0009 LI, 
        RTWP,         \ *** MUST END WITH RTWP, ***
 
 DECIMAL 

@@ -7,7 +7,7 @@ VARIABLE CODESIZE  50 CODESIZE !  \ maximum no. of bytes we will display
 
 : TAB   4 SPACES ;
 
-: ?NEWLINE ( -- )  OUT @ C/L @ 6 - > IF CR TAB THEN  ;
+: ?NEWLINE ( -- )  VCOL @  C/L@ 6 - > IF CR TAB THEN  ;
 
 : ?CODE    ( cfa -- ) DUP @ 2- - ABORT" Not code word" ;
 
@@ -21,8 +21,9 @@ VARIABLE CODESIZE  50 CODESIZE !  \ maximum no. of bytes we will display
         2 +LOOP ;
 
 : SEECODE ( <NAME>)
-        CR CR ." CODE " BL WORD DUP COUNT TYPE
-        DUP 4 SPACES ." ( CFA=" .#### ." )"  
+        CR 
+        CR 
+        ." CODE " BL WORD DUP COUNT TYPE 4 SPACES DUP ." ( XT=" .#### ." )"  
         FIND 0= ABORT" not found"
         CR TAB DUP ?CODE >BODY .CODE
         CR ." NEXT,"
