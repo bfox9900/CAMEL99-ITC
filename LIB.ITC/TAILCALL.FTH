@@ -1,14 +1,14 @@
 \ tail call optimizing semicolon for Camel99 Forth  Nov 27 2022 Brian Fox
 
 DECIMAL 
-: CELL-   2- ;
-: PREVXT ( -- XT)  HERE CELL- @ ; \ fetch the XT of previous compiled word
+\ fetch the XT of previous compiled word
+: PREVXT ( -- XT)  HERE 1 CELLS - @ ; 
 
 \ -; does not end with EXIT because it is branching directly to another
 \ list of tokens. That other list will end in EXIT or NEXT.
 : -;  ( -- ) \ programmer controlled
       PREVXT >BODY              \ get previous XT, compute PFA
-     -2 ALLOT                   \ erase the previous XT
+     -1 CELLS ALLOT             \ erase the previous XT
       POSTPONE BRANCH HERE - ,  \ compile BRANCH to the PFA
       POSTPONE [                \ turn off compiler
       REVEAL
