@@ -223,15 +223,15 @@ DECIMAL
         
 \ FREQ  NATURAL    FREQ  ACCIDENTAL    EN-HARMONIC
     41 BASS: E1 \ Lowest note of Bass guitar 
-    44 BASS: F1    46 BASS: F#1         : Gb0  F#1 ;
-    49 BASS: G1	 52 BASS: G#1         : Ab   G#1 ;
-    55 BASS: A1	 58 BASS: A#1         : Bb   A#1 ;	
+    44 BASS: F1   46 BASS: F#1         : Gb0  F#1 ;
+    49 BASS: G1	  52 BASS: G#1         : Ab   G#1 ;
+    55 BASS: A1	  58 BASS: A#1         : Bb   A#1 ;	
     62 BASS: B1 	 	 	 	 
-    65 BASS: C2	 69 BASS: C#2         : Db1  C#2 ;	 
-    73 BASS: D2    78 BASS: D#2         : Eb1  D#2 ;	 
+    65 BASS: C2	  69 BASS: C#2         : Db1  C#2 ;	 
+    73 BASS: D2   78 BASS: D#2         : Eb1  D#2 ;	 
     82 BASS: E2 \ Lowest Note of Guitar
-    87 BASS: F2	 93 BASS: F#2         : Gb1  F#2 ;	 
-    98 BASS: G2   104 BASS: G#2         : Ab1  G#2 ; 
+    87 BASS: F2	  93 BASS: F#2         : Gb1  F#2 ;	 
+    98 BASS: G2  104 BASS: G#2         : Ab1  G#2 ; 
 
 \ ======================[ Demonstration ]===================
 
@@ -250,7 +250,8 @@ ONLY FORTH ALSO MUSIC ALSO FORTH DEFINITIONS
       | 1/4  E5 E5  D5  D5  | C#5 C#5   1/2 B4 | 
       forte
       | 1/4  A4 A4  E5  E5  | F#5 F#5   1/2 E5 |
-      | 1/4  D5 D5  C#5 C#5 | RIT. B4  B4  1/2. A4 ||
+      | 1/4  D5 D5  C#5 C#5 |  B4  B4 
+      NORMAL 60 BPM 1/1 A4 ||
 ;  
 
 : DESCANT  ALTO
@@ -271,7 +272,8 @@ ONLY FORTH ALSO MUSIC ALSO FORTH DEFINITIONS
    |      A3  C#4  B3  A3  E4  A3    C#4 E4 |
    |      F#4 A4   G#4 F#4 E4  A3    C#4 E4 |
    |      D4  F#4  E4  D4  C#4 E4    D4 C#4 |
-   | RIT. B3  E4   F#4 G#4  A4 G#4  NORMAL 1/2 C#4 || 
+   |  B3  E4   F#4 G#4  A4 G#4  
+   NORMAL 80 BPM  1/1 C#4 || ( last note sustain)
  ;
 
 : BASSLINE  BASS
@@ -285,10 +287,8 @@ ONLY FORTH ALSO MUSIC ALSO FORTH DEFINITIONS
    | 1/4  A1 A1 D2 D2   | E2  E2  1/2 E1 |
    ff
    | 1/2  A1    C#2     | D2        A1   |
-   |      E2    A1   NORMAL   | RIT. E1   1/2.  A1 ||
+   |      E2    A1      | E1  NORMAL 60 BPM 1/1  A1 ||
 ;
-
-
 
 ' TWINKLE   TASK1 ASSIGN 
 ' DESCANT   TASK2 ASSIGN
