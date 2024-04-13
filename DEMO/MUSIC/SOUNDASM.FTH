@@ -3,9 +3,9 @@
 \ compatible with VDP Background sound player  
 \ (isrsound.fth)
 
-NEEDS DUMP  FROM DSK1.TOOLS
-NEEDS PLAY$ FROM DSK1.VDPBGSND
-NEEDS (HZ)  FROM DSK1.SOUND
+NEEDS DUMP    FROM DSK1.TOOLS
+NEEDS ISRPLAY FROM DSK1.ISRSOUND 
+NEEDS (HZ)    FROM DSK1.SOUND
 
 \ sound byte "assembler" commands compile values for the
 \ currently selected generator. (GEN1 GEN2 GEN3 GEN4)
