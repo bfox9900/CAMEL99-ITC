@@ -1,0 +1,294 @@
+\ music lexicon to control the TMS9919 with ISR timers  Apr 2024 B Fox 
+
+\ **********************************************************************
+\               Music code MUST be assigned to a task. 
+\               Music USER variables will crash console task.
+\ *********************************************************************
+ 
+NEEDS DUMP FROM DSK1.TOOLS
+NEEDS HZ   FROM DSK1.SOUND
+NEEDS MASTER FROM DSK1.MUTINGISR \ *change dsk?. to where you put this file.
+
+\ ===============  MULTI-TASKING STUFF =======================
+NEEDS MALLOC FROM DSK1.MALLOC 
+NEEDS FORK   FROM DSK1.MTASK99 
+
+NEEDS WORDLIST FROM DSK1.WORDLISTS 
+
+
+HEX 2000 H !  \ reset the heap for testing purposes 
+
+\ create a task in heap, fork it, assign Execution token & name 
+: SPAWN ( xt -- pid) USIZE MALLOC DUP>R FORK R@ ASSIGN R>  ;
+
+: TASK: ( xt -- ) ['] PAUSE SPAWN CONSTANT ;
+
+TASK: TASK1 
+TASK: TASK2
+TASK: TASK3 
+TASK: TASK4
+
+\ ===========================================================
+VOCABULARY MUSIC   
+ONLY FORTH ALSO MUSIC DEFINITIONS 
+
+DECIMAL
+\ duration control variables and values
+VARIABLE TEMPO
+
+VARIABLE TIMESIG     \ 2/4 3/4 4/4  6/4
+VARIABLE MEASURE     \ 1 muscial measure of time in ticks (1/60 SECS)
+ 
+48 USER  VOICE       \ thread local variable 
+50 USER  ON_TIME
+52 USER  OFF_TIME
+54 USER  FEEL        \ controls the on/off time ratio
+56 USER  VOLUME 
+
+: ]T  ( timer# --) CELLS MASTER + ;
+
+\ WAIT is in MUTINGISR.FTH . Waits unto a timer hits zero 
+: DELAY ( n -- ) VOICE @ ]T DUP>R !  R> WAIT  ;
+
+: ]DB ( voice -- ) CELLS MUTE4  + ;  \ 1..4 are valid 
+
+\ need to create a64 bit integer. Forth has the words to do it.
+\ convert a string to double int.   64bits)
+: >DOUBLE  ( addr len -- d ) 0 0 2SWAP >NUMBER 2DROP ;
+ 
+\ now we create a double int variable called timebase from primitive words
+S" 3600" >DOUBLE  CREATE TIMEBASE  ,  ,
+
+HEX 8400 CONSTANT SND_PORT 
+
+DECIMAL 
+\ Macro with pause for harder realtime control 
+: SND!  ( c --)  S" SND_PORT C!" EVALUATE ;  IMMEDIATE 
+
+: WHOLENOTE ( -- ticks) \ using tempo set the bpm for 1 whole note
+      TEMPO @ TIMEBASE 2@  ROT UM/MOD NIP  ( -- ticks for 1 beat )
+      TIMESIG @ * DUP  MEASURE ! ;  ( times beats in a bar= 1 measure )
+ 
+\ Music needs notes to start and end in different ways.
+\ this word adjust the on:off ratio using n
+: EXPRESSION ( note_dur n --)
+      OVER SWAP -  TUCK -   ( -- on-ms off-ms )
+      0 MAX OFF_TIME !
+      0 MAX ON_TIME ! ;  \ store times in variables
+                                 
+\ return full duration of current note
+: NOTE      ( -- ticks) ON_TIME @ OFF_TIME @ + ;
+
+: DURATION! ( ticks -- )  FEEL @ EXPRESSION ;
+ 
+: %        ( N N2  -- N%) 100 */ ;    \ calculate n2% of n
+: 50%       ( N -- N/2) POSTPONE 2/ ; IMMEDIATE 
+: 50%+      ( N -- N+50%)  DUP 50% + ; \ dotted notes have 50% more time
+
+\ === BAR LINES ===
+: | ;  ( noop at this times )
+: ||    MYSELF SLEEP  PAUSE  ;  \ DOUBLE bar line ends the music 
+
+
+: PLAY      ( fcode -- )
+            OSC @ OR  SPLIT  SND! SND!  \ send frequency 
+   VOLUME @ ATT @ OR SND!               \ send volume 
+                                        \ Note is now playing...            
+
+\ DELAY function loads timer register. ISR begins decrementing. 
+\ DELAY monitors timer register and runs PAUSE while waiting 
+            ON_TIME  @ DELAY   \ set the ISR timer, which auto mutes   
+            OFF_TIME @ DELAY   \ time between notes 
+;
+
+\ note object creator
+: NOTE:   ( freq -- )
+           CREATE          \ compile time: create a name in the dictionary
+                 HZ>CODE , \ compile the 9919 code into the note
+ 
+           DOES> @ PLAY ; \ run time:  fetch the number, play the note
+
+
+\ ================[ API ]==============================
+: SOPRANO   1 VOICE ! GEN1 ; SOPRANO 
+: ALTO      2 VOICE ! GEN2 ;
+: TENOR     3 VOICE ! GEN3 ;
+: BASS      4 VOICE ! GEN4 ;
+
+: 4/4    4 TIMESIG ! ;  4/4 
+: 3/4    3 TIMESIG ! ;
+: 2/4    2 TIMESIG ! ;
+
+: 2X    2 0  ;
+
+\ repeat bars  
+: ||:      POSTPONE 2X POSTPONE DO  ; IMMEDIATE 
+: :||      POSTPONE LOOP ; IMMEDIATE 
+
+\ dynamics 
+
+: ff        0  VOLUME ! ;
+: forte     2  VOLUME ! ;
+: mf        4  VOLUME ! ;
+: mp        6  VOLUME ! ;
+: piano     7  VOLUME ! ;
+: pp       10  VOLUME ! ;
+
+DECIMAL 
+\ FREQ  NATURAL    FREQ  ACCIDENTAL    EN-HARMONIC
+\ -------------    ----------------   ----------------
+  110 NOTE: A2     117 NOTE: A#2       : Bb2 A#2 ;
+  123 NOTE: B2
+  131 NOTE: C3     139 NOTE: C#3       : DB3 C#3 ;
+  147 NOTE: D3     156 NOTE: D#3       : Eb3 D#3 ;
+  165 NOTE: E3
+  175 NOTE: F3     185 NOTE: F#3       : Gb3 F#3 ;
+  196 NOTE: G3     208 NOTE: G#3       : Ab3 G#3 ;
+  220 NOTE: A3     233 NOTE: A#3       : Bb3 A#3 ;
+  247 NOTE: B3
+  262 NOTE: C4     277 NOTE: C#4       : Db4 C#4 ;
+  294 NOTE: D4     311 NOTE: D#4       : Eb4 D#4 ;
+  330 NOTE: E4
+  349 NOTE: F4     370 NOTE: F#4       : Gb4 F#4 ;
+  392 NOTE: G4     415 NOTE: G#4       : Ab4 G#4 ;
+  440 NOTE: A4     466 NOTE: A#4       : Bb4 A#4 ;
+  494 NOTE: B4
+  523 NOTE: C5     554 NOTE: C#5       : Db5 C#5 ;
+  587 NOTE: D5     622 NOTE: D#5       : Eb5 D#5 ;
+  659 NOTE: E5
+  698 NOTE: F5     740 NOTE: F#5       : Gb5 F#5 ;
+  784 NOTE: G5     831 NOTE: G#5       : Ab5 G#5 ;
+  880 NOTE: A5     932 NOTE: A#5       : Bb5 A#5 ;
+  988 NOTE: B5
+ 1047 NOTE: C6
+
+\ tempo control 
+: BPM       ( BPM -- )  \ set tempo in beats per minute
+            TEMPO !
+            WHOLENOTE DURATION! ;
+: RIT.      NOTE DUP 30 % + DURATION! ;
+ 
+\ musical expression  
+: NORMAL      NOTE 4 % FEEL ! ;
+: LEGATO      NOTE   0 FEEL ! ;   \ notes run together
+: STACCATO   NOTE 20 % FEEL ! ;   \ short notes
+: MARCATO     NOTE 6 % FEEL ! ;   \ march feel
+ 
+
+: 1/1      WHOLENOTE      DURATION! ;
+: 1/2      WHOLENOTE 50%  DURATION! ;
+: 1/2.     1/2  NOTE 50%+ DURATION! ;
+: 1/4      1/2  NOTE 50%  DURATION! ;
+: 1/4.     1/4  NOTE 50%+ DURATION! ;
+: 1/8      1/4  NOTE 50%  DURATION! ;
+: 1/8.     1/8  NOTE 50%+ DURATION! ;
+: 1/16     1/8  NOTE 50%  DURATION! ;
+: 1/32     1/16 NOTE 50%  DURATION! ;
+: REST     NOTE DELAY ;
+
+\    ==================[ BASS VOICE ]==================
+\ Bass voice uses the TENOR oscillator and the noise channel
+\ It also has a lower volume so you have to reduce volume of
+\ the other channels if used in combinarion 
+
+HEX
+0B CONSTANT PERIODIC \ noise bits that set control by Chan. 3
+
+DECIMAL 
+: PLAY.BASS  ( fcode -- )
+        OSC3 OR  SPLIT  SND! SND!  \ send frequency data to channel 3
+            31 ATT3 OR  SND!       \ but chan 3 is silent 
+
+      PERIODIC OSC4 OR SND!        \ select noise for output 
+      VOLUME @ ATT4 OR SND!        \ send volume 
+                                   \ BASS Note is now playing...    
+
+            ON_TIME  @ DELAY   \ set the ISR timer, which auto mutes   
+            OFF_TIME @ DELAY   \ time between notes 
+;
+
+
+DECIMAL 
+: BASS: ( freq -- )
+    CREATE  15 * HZ>CODE ,  \ calibrate freq. & pre-calculate the code 
+    DOES> @ PLAY.BASS ;
+        
+\ FREQ  NATURAL    FREQ  ACCIDENTAL    EN-HARMONIC
+    41 BASS: E1 \ Lowest note of Bass guitar 
+    44 BASS: F1    46 BASS: F#1         : Gb0  F#1 ;
+    49 BASS: G1	 52 BASS: G#1         : Ab   G#1 ;
+    55 BASS: A1	 58 BASS: A#1         : Bb   A#1 ;	
+    62 BASS: B1 	 	 	 	 
+    65 BASS: C2	 69 BASS: C#2         : Db1  C#2 ;	 
+    73 BASS: D2    78 BASS: D#2         : Eb1  D#2 ;	 
+    82 BASS: E2 \ Lowest Note of Guitar
+    87 BASS: F2	 93 BASS: F#2         : Gb1  F#2 ;	 
+    98 BASS: G2   104 BASS: G#2         : Ab1  G#2 ; 
+
+\ ======================[ Demonstration ]===================
+
+\ This system makes sense if you understand traditional music notation.
+
+ONLY FORTH ALSO MUSIC ALSO FORTH DEFINITIONS 
+
+: TWINKLE  SOPRANO
+      120 BPM  
+      4/4 NORMAL 
+      mf
+      | 1/4  A4 A4  E5  E5  | F#5 F#5   1/2 E5 |
+      | 1/4  D5 D5  C#5 C#5 | B4  B4    1/2 A4 |
+      mp 
+      | 1/4  E5 E5  D5  D5  | C#5 C#5   1/2 B4 |
+      | 1/4  E5 E5  D5  D5  | C#5 C#5   1/2 B4 | 
+      forte
+      | 1/4  A4 A4  E5  E5  | F#5 F#5   1/2 E5 |
+      | 1/4  D5 D5  C#5 C#5 | RIT. B4  B4  1/2. A4 ||
+;  
+
+: DESCANT  ALTO
+   120 BPM 
+   4/4 LEGATO 
+   mf
+   | 1/8  A3  C#4  B3  A3  E4  A3  C#4 E4 |
+   |      F#4 A4   G#4 F#4 E4  A3  C#4 E4 |
+   |      D4  F#4  E4  D4  C#4 E4  D4 C#4 |
+   |      B3  A4   B4  F#4 E4  F#4 E4 F#4 | 
+   piano 
+   |      C#4 E4   C#4 E4  D4  E4  D4  E4 |
+   |      C#4 E4   C#4 E4  D4  B3  D4  E4 |
+   mp
+   |      C#4 E4   C#4 E4  D4  E4  D4  E4 |
+   |      C#4 E4   C#4 E4  D4  B3  D4  E4 |
+   mf
+   |      A3  C#4  B3  A3  E4  A3    C#4 E4 |
+   |      F#4 A4   G#4 F#4 E4  A3    C#4 E4 |
+   |      D4  F#4  E4  D4  C#4 E4    D4 C#4 |
+   | RIT. B3  E4   F#4 G#4  A4 G#4  NORMAL 1/2 C#4 || 
+ ;
+
+: BASSLINE  BASS
+   120 BPM 
+   4/4 NORMAL 
+   forte
+   | 1/2  A1    C#2     | D2      A1     |
+   |      E2    A1      | E2      A1     |
+   mf STACCATO
+   | 1/4  A1 A1 D2 D2   | E2  E2  1/2 E2 |
+   | 1/4  A1 A1 D2 D2   | E2  E2  1/2 E1 |
+   ff
+   | 1/2  A1    C#2     | D2        A1   |
+   |      E2    A1   NORMAL   | RIT. E1   1/2.  A1 ||
+;
+
+
+
+' TWINKLE   TASK1 ASSIGN 
+' DESCANT   TASK2 ASSIGN
+' BASSLINE  TASK3 ASSIGN 
+
+MULTI 
+
+: PLAY.TWINKLE  TASK1 RESTART  TASK2 RESTART  TASK3 RESTART  ;
+
+: WITHBASS   TASK1 RESTART  TASK3 RESTART ;
+
