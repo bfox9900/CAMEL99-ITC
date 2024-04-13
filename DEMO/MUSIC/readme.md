@@ -23,7 +23,7 @@ The second part of the project was to use the CAMEL99 Forth multi-tasker
  "mute" code to the sound matching chip channel. That's all it does. 
 
  With MUTINGISR your program is free from the job of doing the counting down
- the tiem to leave a sound playing on the sound chip. Rather in this system 
+ the time to leave a sound playing on the sound chip. Rather in this system 
  your program loads the appropriate workspace register in the ISR workspace
  and then runs a "WAIT" routine that checks for the timer to hit zero.
  The magic part is that while WAIT is looping it runs PAUSE continously.
