@@ -30,7 +30,7 @@ The second part of the project was to use the CAMEL99 Forth multi-tasker
  PAUSE gives time to the next task in the multi-tasker's list of tasks.
  So the other voices in the music can do their thing. 
 
- Here is the code for WAIT. It is because it is so simple that we can
+ Here is the code for WAIT. It is because WAIT is so simple that we can
  handle real-time syncronization of the music voices. 
 
  ```
