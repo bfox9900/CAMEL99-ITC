@@ -58,10 +58,21 @@ VARIABLE MEASURE     \ 1 muscial measure of time in ticks (1/60 SECS)
 
 HEX 8400 CONSTANT SND_PORT 
 
-DECIMAL 
-\ Macro with pause for harder realtime control 
-: SND!  ( c --)  S" SND_PORT C!" EVALUATE ;  IMMEDIATE 
+\ DECIMAL 
+\ Write a byte to the sound chip with no PAUSE critical to make this work.  
+\ Macro is faster for this important function  
+\ : SND!  ( c --) POSTPONE SND_PORT POSTPONE C! ;  IMMEDIATE 
 
+\ But a code word is ~3x faster
+ HEX 
+ CODE SND!   
+    06C4 ,            \ TOS SWPB,  
+    D804 , SND_PORT , \ TOS SND_PORT @@ MOVB,  
+    C136 ,            \ TOS POP,  
+    NEXT, 
+ ENDCODE 
+
+DECIMAL 
 : WHOLENOTE ( -- ticks) \ using tempo set the bpm for 1 whole note
       TIMEBASE TEMPO @  UM/MOD NIP  ( -- ticks_for_1_beat )
       TIMESIG @ * DUP  MEASURE ! ;  ( 1_beat X beats_per_bar = 1 measure )
