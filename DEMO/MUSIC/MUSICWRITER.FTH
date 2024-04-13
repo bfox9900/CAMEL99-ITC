@@ -52,12 +52,9 @@ VARIABLE MEASURE     \ 1 muscial measure of time in ticks (1/60 SECS)
 
 : ]DB ( voice -- ) CELLS MUTE4  + ;  \ 1..4 are valid 
 
-\ need to create a64 bit integer. Forth has the words to do it.
-\ convert a string to double int.   64bits)
-: >DOUBLE  ( addr len -- d ) 0 0 2SWAP >NUMBER 2DROP ;
- 
-\ now we create a double int variable called timebase from primitive words
-S" 3600" >DOUBLE  CREATE TIMEBASE  ,  ,
+\ create a 32 bit integer for UM/MOD. 
+\ UM/MOD is the fastest division primitive in the kernel
+: TIMEBASE  ( -- d) 3600 0 ; \ Number of ticks in one minute 
 
 HEX 8400 CONSTANT SND_PORT 
 
@@ -66,8 +63,8 @@ DECIMAL
 : SND!  ( c --)  S" SND_PORT C!" EVALUATE ;  IMMEDIATE 
 
 : WHOLENOTE ( -- ticks) \ using tempo set the bpm for 1 whole note
-      TEMPO @ TIMEBASE 2@  ROT UM/MOD NIP  ( -- ticks for 1 beat )
-      TIMESIG @ * DUP  MEASURE ! ;  ( times beats in a bar= 1 measure )
+      TIMEBASE TEMPO @  UM/MOD NIP  ( -- ticks_for_1_beat )
+      TIMESIG @ * DUP  MEASURE ! ;  ( 1_beat X beats_per_bar = 1 measure )
  
 \ Music needs notes to start and end in different ways.
 \ this word adjust the on:off ratio using n
