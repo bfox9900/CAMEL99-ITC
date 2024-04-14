@@ -193,6 +193,7 @@ DECIMAL
 : 1/16     1/8  NOTE 50%  DURATION! ;
 : 1/32     1/16 NOTE 50%  DURATION! ;
 : REST     NOTE DELAY ;
+: /        1/4 REST   ;
 
 \    ==================[ BASS VOICE ]==================
 \ Bass voice uses the TENOR oscillator and the noise channel
