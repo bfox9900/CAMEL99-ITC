@@ -1,4 +1,4 @@
-\ music lexicon to control the TMS9919 with ISR timers  Apr 2024 B Fox 
+\ music lexicon to control the TMS9919 with ISR timers  Apr 2024 B Fox
 
 \ **********************************************************************
 \               Music code MUST be assigned to a task. 
@@ -129,6 +129,7 @@ DECIMAL
 
 : 2X    2 0  ;
 
+
 \ repeat bars  
 : ||:      POSTPONE 2X POSTPONE DO  ; IMMEDIATE 
 : :||      POSTPONE LOOP ; IMMEDIATE 
@@ -202,7 +203,7 @@ DECIMAL
 \    ==================[ BASS VOICE ]==================
 \ Bass voice uses the TENOR oscillator and the noise channel
 \ It also has a lower volume so you have to reduce volume of
-\ the other channels if used in combinarion 
+\ the other channels if used in combination 
 
 HEX
 0B CONSTANT PERIODIC \ noise bits that set control by Chan. 3
@@ -221,21 +222,29 @@ DECIMAL
 ;
 
 
-DECIMAL 
+DECIMAL
 : BASS: ( freq -- )
     CREATE  15 * HZ>CODE ,  \ calibrate freq. & pre-calculate the code 
     DOES> @ PLAY.BASS ;
         
 \ FREQ  NATURAL    FREQ  ACCIDENTAL    EN-HARMONIC
-    41 BASS: E1 \ Lowest note of Bass guitar 
-    44 BASS: F1   46 BASS: F#1         : Gb0  F#1 ;
-    49 BASS: G1   52 BASS: G#1         : Ab   G#1 ;
-    55 BASS: A1   58 BASS: A#1         : Bb   A#1 ;	
-    62 BASS: B1 	 	 	 	 
-    65 BASS: C2   69 BASS: C#2         : Db1  C#2 ;	 
-    73 BASS: D2   78 BASS: D#2         : Eb1  D#2 ;	 
+    41 BASS: E1 \ Lowest note of Bass guitar
+    44 BASS: F1   46 BASS: F#1         
+    : Gb0  F#1 ;
+    49 BASS: G1   52 BASS: G#1         
+    : Ab   G#1 ;
+    55 BASS: A1   58 BASS: A#1         
+    : Bb  A#1 ;     
+    
+    62 BASS: B1
+    65 BASS: C2   69 BASS: C#2
+    : Db1  C#2 ;
+    73 BASS: D2   78 BASS: D#2
+    : Eb1  D#2 ;
     82 BASS: E2 \ Lowest Note of Guitar
-    87 BASS: F2   93 BASS: F#2         : Gb1  F#2 ;	 
-    98 BASS: G2  104 BASS: G#2         : Ab1  G#2 ; 
+    87 BASS: F2   93 BASS: F#2         
+    : Gb1  F#2 ;
+    98 BASS: G2  104 BASS: G#2         
+    : Ab1  G#2 ; 
 
 ONLY FORTH ALSO MUSIC ALSO FORTH DEFINITIONS 
