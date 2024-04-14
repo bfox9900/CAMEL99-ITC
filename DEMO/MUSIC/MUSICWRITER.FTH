@@ -147,7 +147,7 @@ DECIMAL
 \ -------------    ----------------   ----------------
   110 NOTE: A2     117 NOTE: A#2       : Bb2 A#2 ;
   123 NOTE: B2
-  131 NOTE: C3     139 NOTE: C#3       : DB3 C#3 ;
+  131 NOTE: C3     139 NOTE: C#3       : Db3 C#3 ;
   147 NOTE: D3     156 NOTE: D#3       : Eb3 D#3 ;
   165 NOTE: E3
   175 NOTE: F3     185 NOTE: F#3       : Gb3 F#3 ;
@@ -192,8 +192,12 @@ DECIMAL
 : 1/8.     1/8  NOTE 50%+ DURATION! ;
 : 1/16     1/8  NOTE 50%  DURATION! ;
 : 1/32     1/16 NOTE 50%  DURATION! ;
+
 : REST     NOTE DELAY ;
-: /        1/4 REST   ;
+: /-/  WHOLENOTE REST ;
+: //   1/2 REST ;
+: /    1/4 REST ;
+
 
 \    ==================[ BASS VOICE ]==================
 \ Bass voice uses the TENOR oscillator and the noise channel
@@ -225,79 +229,13 @@ DECIMAL
 \ FREQ  NATURAL    FREQ  ACCIDENTAL    EN-HARMONIC
     41 BASS: E1 \ Lowest note of Bass guitar 
     44 BASS: F1   46 BASS: F#1         : Gb0  F#1 ;
-    49 BASS: G1	  52 BASS: G#1         : Ab   G#1 ;
-    55 BASS: A1	  58 BASS: A#1         : Bb   A#1 ;	
+    49 BASS: G1   52 BASS: G#1         : Ab   G#1 ;
+    55 BASS: A1   58 BASS: A#1         : Bb   A#1 ;	
     62 BASS: B1 	 	 	 	 
-    65 BASS: C2	  69 BASS: C#2         : Db1  C#2 ;	 
+    65 BASS: C2   69 BASS: C#2         : Db1  C#2 ;	 
     73 BASS: D2   78 BASS: D#2         : Eb1  D#2 ;	 
     82 BASS: E2 \ Lowest Note of Guitar
-    87 BASS: F2	  93 BASS: F#2         : Gb1  F#2 ;	 
+    87 BASS: F2   93 BASS: F#2         : Gb1  F#2 ;	 
     98 BASS: G2  104 BASS: G#2         : Ab1  G#2 ; 
 
-\ ======================[ Demonstration ]===================
-
-\ This system makes sense if you understand traditional music notation.
-
 ONLY FORTH ALSO MUSIC ALSO FORTH DEFINITIONS 
-
-: TWINKLE  SOPRANO
-      120 BPM  
-      4/4 NORMAL 
-      mf
-      | 1/4  A4 A4  E5  E5  | F#5 F#5   1/2 E5 |
-      | 1/4  D5 D5  C#5 C#5 | B4  B4    1/2 A4 |
-      mp 
-      | 1/4  E5 E5  D5  D5  | C#5 C#5   1/2 B4 |
-      | 1/4  E5 E5  D5  D5  | C#5 C#5   1/2 B4 | 
-      forte
-      | 1/4  A4 A4  E5  E5  | F#5 F#5   1/2 E5 |
-      | 1/4  D5 D5  C#5 C#5 |  B4  B4 
-      NORMAL 60 BPM 1/1 A4 ||
-;  
-
-: DESCANT  ALTO
-   120 BPM 
-   4/4 LEGATO 
-   mf
-   | 1/8  A3  C#4  B3  A3  E4  A3  C#4 E4 |
-   |      F#4 A4   G#4 F#4 E4  A3  C#4 E4 |
-   |      D4  F#4  E4  D4  C#4 E4  D4 C#4 |
-   |      B3  A4   B4  F#4 E4  F#4 E4 F#4 | 
-   piano 
-   |      C#4 E4   C#4 E4  D4  E4  D4  E4 |
-   |      C#4 E4   C#4 E4  D4  B3  D4  E4 |
-   mp
-   |      C#4 E4   C#4 E4  D4  E4  D4  E4 |
-   |      C#4 E4   C#4 E4  D4  B3  D4  E4 |
-   mf
-   |      A3  C#4  B3  A3  E4  A3    C#4 E4 |
-   |      F#4 A4   G#4 F#4 E4  A3    C#4 E4 |
-   |      D4  F#4  E4  D4  C#4 E4    D4 C#4 |
-   |  B3  E4   F#4 G#4  A4 G#4  
-   NORMAL 80 BPM  1/1 C#4 || ( last note sustain)
- ;
-
-: BASSLINE  BASS
-   120 BPM 
-   4/4 NORMAL 
-   forte
-   | 1/2  A1    C#2     | D2      A1     |
-   |      E2    A1      | E2      A1     |
-   mf STACCATO
-   | 1/4  A1 A1 D2 D2   | E2  E2  1/2 E2 |
-   | 1/4  A1 A1 D2 D2   | E2  E2  1/2 E1 |
-   ff
-   | 1/2  A1    C#2     | D2        A1   |
-   |      E2    A1      | E1  NORMAL 60 BPM 1/1  A1 ||
-;
-
-' TWINKLE   TASK1 ASSIGN 
-' DESCANT   TASK2 ASSIGN
-' BASSLINE  TASK3 ASSIGN 
-
-MULTI 
-
-: PLAY.TWINKLE  TASK1 RESTART  TASK2 RESTART  TASK3 RESTART  ;
-
-: WITHBASS   TASK1 RESTART  TASK3 RESTART ;
-
