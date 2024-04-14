@@ -8,7 +8,10 @@ NEEDS ISRPLAY FROM DSK1.ISRSOUND
 NEEDS (HZ)    FROM DSK1.SOUND
 
 \ sound byte "assembler" commands compile values for the
-\ currently selected generator. (GEN1 GEN2 GEN3 GEN4)
+\ currently selected generator (GEN1 GEN2 GEN3 GEN4) into VDP RAM.
+\ They use the words (HZ) and (DB) from the sound libary
+\ to mix the correct oscillator or attenuator values for 
+\ the selected channel.
 DECIMAL
 : HZ,     ( f -- )     (HZ) SPLIT VC, VC,   ;
 : DB,     ( level -- ) (DB) VC,  ;
@@ -37,13 +40,13 @@ DECIMAL
 
 \ sound assembler version
 DECIMAL
-SOUND: EXPLODE2
+SOUND: EXPLODE
 \ GEN3 controls Noise Generator Frequency
-   [[ GEN1 MUTE, GEN2 MUTE, GEN3 MUTE, 
+   [[ GEN1 MUTE, GEN2 MUTE, GEN3 MUTE,  ( we could use SILENT, here )
       7 NOISE, 0 DB,
       GEN3 999 HZ, ]] 80 MS, \ Parsec used "7". Sounds same as 999 Hz.
    GEN4                      \ control noise generator volume
-   [[  -2 DB, ]]  96 MS,
+   [[  -2 DB, ]]  96 MS,     \ Fade volume down slowly
    [[  -4 DB, ]] 112 MS,
    [[  -6 DB, ]] 128 MS,
    [[  -8 DB, ]] 144 MS,
@@ -60,6 +63,28 @@ SOUND: EXPLODE2
    [[ -30 DB, ]]   0 MS,
 ;SOUND
 
+\ Versus raw sound list format. Which one is easier to understand?
+HEX
+VCREATE EXPLODE2
+    VBYTE 7,9F,BF,DF,E7,F0,C0,07,5
+    VBYTE 1,F1,6
+    VBYTE 1,F2,7
+    VBYTE 1,F3,8
+    VBYTE 1,F4,9
+    VBYTE 1,F5,10
+    VBYTE 1,F6,11
+    VBYTE 1,F7,12
+    VBYTE 1,F8,13
+    VBYTE 1,F9,14
+    VBYTE 1,FA,15
+    VBYTE 1,FB,16
+    VBYTE 1,FC,17
+    VBYTE 1,FD,18
+    VBYTE 1,FE,30
+    VBYTE 1,FF,0
+/VEND
+
+
 
 \ create sound lists with the sound assembler
 DECIMAL
@@ -74,25 +99,4 @@ SOUND: 2BEEP
       [[ MUTE, ]] 20 MS,
       [[ 750 HZ,  0 DB, ]] 160 MS,
 ;SOUND
-
-\ raw sound list format
-HEX
-VCREATE EXPLODE
-       VBYTE 7,9F,BF,DF,E7,F0,C0,07,5
-       VBYTE 1,F1,6
-       VBYTE 1,F2,7
-       VBYTE 1,F3,8
-       VBYTE 1,F4,9
-       VBYTE 1,F5,10
-       VBYTE 1,F6,11
-       VBYTE 1,F7,12
-       VBYTE 1,F8,13
-       VBYTE 1,F9,14
-       VBYTE 1,FA,15
-       VBYTE 1,FB,16
-       VBYTE 1,FC,17
-       VBYTE 1,FD,18
-       VBYTE 1,FE,30
-       VBYTE 1,FF,0
-/VEND
 
