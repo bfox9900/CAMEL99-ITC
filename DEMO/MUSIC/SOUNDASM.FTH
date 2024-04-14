@@ -64,29 +64,27 @@ SOUND: EXPLODE
 ;SOUND
 
 \ Versus raw sound list format. Which one is easier to understand?
-HEX
-VCREATE EXPLODE2
-    VBYTE 7,9F,BF,DF,E7,F0,C0,07,5
-    VBYTE 1,F1,6
-    VBYTE 1,F2,7
-    VBYTE 1,F3,8
-    VBYTE 1,F4,9
-    VBYTE 1,F5,10
-    VBYTE 1,F6,11
-    VBYTE 1,F7,12
-    VBYTE 1,F8,13
-    VBYTE 1,F9,14
-    VBYTE 1,FA,15
-    VBYTE 1,FB,16
-    VBYTE 1,FC,17
-    VBYTE 1,FD,18
-    VBYTE 1,FE,30
-    VBYTE 1,FF,0
-/VEND
+\ HEX
+\ VCREATE EXPLODE2
+\    VBYTE 7,9F,BF,DF,E7,F0,C0,07,5
+\    VBYTE 1,F1,6
+\    VBYTE 1,F2,7
+\    VBYTE 1,F3,8
+\    VBYTE 1,F4,9
+\    VBYTE 1,F5,10
+\    VBYTE 1,F6,11
+\    VBYTE 1,F7,12
+\    VBYTE 1,F8,13
+\    VBYTE 1,F9,14
+\    VBYTE 1,FA,15
+\    VBYTE 1,FB,16
+\    VBYTE 1,FC,17
+\    VBYTE 1,FD,18
+\    VBYTE 1,FE,30
+\    VBYTE 1,FF,0
+\ /VEND
 
-
-
-\ create sound lists with the sound assembler
+\ example sound lists with the sound assembler
 DECIMAL
 SOUND: TONE
       GEN1 [[ 1000 HZ, 0 DB, ]] 1000 MS,
