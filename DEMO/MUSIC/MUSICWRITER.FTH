@@ -16,8 +16,11 @@ NEEDS FORK   FROM DSK1.MTASK99
 NEEDS WORDLIST FROM DSK1.WORDLISTS 
 
 
-HEX 2000 H !  \ reset the heap for testing purposes 
+HEX 
+: NEW-TUNES  2000 H ! ;   \ reset the heap for testing purposes 
+NEW-TUNES 
 
+DECIMAL 
 \ create a task in heap, fork it, assign Execution token & name 
 : SPAWN ( xt -- pid) USIZE MALLOC DUP>R FORK R@ ASSIGN R>  ;
 

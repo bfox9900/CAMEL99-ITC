@@ -1,6 +1,9 @@
 \ using Camel99 Forth MUSICWRITER tO try some hard music.  
 \ Apr 2024 Brian Fox 
 
+HEX 1000 VP ! 
+
+DECIMAL 
 \ Key is Ab 
 : MELODY-LINE1  
     105 BPM 
