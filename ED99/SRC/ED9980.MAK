@@ -16,20 +16,20 @@ INCLUDE DSK4.ED99COMMON
 \ /////////////////////////////////////////////////////////////
 
 \ Create the BOOT word for the editor program
+
 DECIMAL
-: EDITINIT      ( -- )
+:  EDSTART       ( -- )
+        WARM 
         80COLS
         CR ." ED99 Multi-file Editor V1.74 Mar2024"
         CR ." Built on Kernel " .VER
-        1000 MS
-        #CLIPS OFF  INIT-EVARS  DECIMAL
+        #CLIPS OFF  
+        INIT-EVARS  
+        DECIMAL
         CR S" ED99CONFIG" +PATH INCLUDED
         INVERTFONT    SAMS-ON
         SETUP PROMPT: ." Ready "
         ABORT ;
-
-: EDSTART    WARM   EDITINIT ;
-
 
   CR ." ED99 loaded. "
   HERE SWAP - DECIMAL . .( bytes used)
@@ -38,6 +38,8 @@ LOCK
 
 \ These lines will overwrite the existing binary program
   INCLUDE DSK1.SAVESYS
+
+
 : LASTCHANCE 
   CR 
   CR ." *WARNING* Press capital 'Y' to OVERWRITE ED9980 program" 

@@ -540,42 +540,44 @@ DECIMAL
 
 \ =================================================================
 \ Repeating KEY customized for ED99   V2 BFox 24JUL22
+ 
+HERE
 DECIMAL
 VARIABLE OUTKEY     \ key buffer
 VARIABLE OLDKEY     \ previous key buffer
-CREATE   DLY  10 ,  \ initial delay
-200 VALUE CSPEED    \ cursor speed can be changed in ED99CONFIG
-
+CREATE RPT  50 ,    \ initial delay
+ 
 HEX
-
+CODE 0LIMI  0300 , 0000 , NEXT, ENDCODE
+ 
+: BLINK  ( char -- ) 
+     TMR@ 1FFF > IF  DROP  CURS @  THEN VPUT 200 TICKS ;
+ 
 : RKEY?  ( -- char)
-    DLY @ >R    \ delay counter to rstack
+    0LIMI
+    RPT @ >R               \ delay counter to rstack
     BEGIN
+        83C8 ON            \ clear key buffer enables repeating 
         R> 1- DUP>R        \ dec counter
     WHILE ( not expired)
-        83C8 ON  83CA ON   \ clear key buffers
-        CSPEED TICKS          \ sets the speed of the loop
         KEY? DUP OUTKEY !
         OLDKEY @ =         \ compare to oldkey
     WHILE ( key is same)
-        2 DLY !  \ set fast repeats
+        2 RPT !            \ set repeating delay (SHORT) 
     REPEAT
-    0C DLY !     \ set initial delay
-    THEN         \ end time expired loop
+    45 RPT !               \ set long delay (initial delay)
+    THEN                   \ end time expired loop
     R> DROP
     OUTKEY @
     DUP OLDKEY !
-    OUTKEY OFF
 ;
-
-: BLINK  ( char -- )
-  TMR@ 1FFF > IF DROP  CURS @ THEN VPUT ;
 
 : RKEY ( -- char)
   'CHAR C@ >R  \ Get & push character at cursor from the record
    BEGIN
-      R@ BLINK
-      RKEY? ?DUP
+     PAUSE 
+     R@ BLINK
+     RKEY? ?DUP
    UNTIL
    R> VPUT
 ;
