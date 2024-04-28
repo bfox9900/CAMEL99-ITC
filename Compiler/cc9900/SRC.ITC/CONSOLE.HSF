@@ -8,6 +8,20 @@ HEX
            DUP C/L !           \ set chars per line
            L/SCR *  C/SCR ! ;  \ calc. chars per screen
 
+SLOWER [IF]
+   : >VPOS  ( x y -- Vaddr) C/L@ * + ; 
+
+[ELSE]
+   CODE >VPOS ( col row -- vaddr) \ compute a VDP screen address
+         R1         STWP,
+         TOS     R3  MOV,   \ this move to make best use of MPY
+         2E (R1) R3  MPY,   \ multiply by chars/line. result goes to R4 ie: TOS
+        *SP+     TOS ADD,   \ add col value to TOS
+         7E (R1) TOS ADD,   \ add Video page offset
+         NEXT,
+         ENDCODE
+[THEN]
+
 : VPOS   ( -- vaddr) VROW 2@ >VPOS ;
 : VPUT   ( char -- ) VPOS VC! ;
 : AT-XY  ( col row -- ) VROW 2! ;  \ set VDP address for Fast type
@@ -37,7 +51,9 @@ CODE LASTLN ( -- vaddr)
 \ =====================================================================
 \ *G Scrolling has been implemented in Forth using VREAD & VWRITE
 \ ** Uses un-allocated Dictionary as a temporary buffer to hold lines of text
-0 [IF]
+[CC] DECIMAL [TC]
+
+TRUE [IF]
 \ 4 line buffer is faster and has a reasonable size buffer for 80 cols.
 : SCROLL ( -- )
        PAUSE
@@ -45,46 +61,88 @@ CODE LASTLN ( -- vaddr)
        TOPLN C/SCR @  ( -- buffer Vstart len)
        BOUNDS  ( -- buffer SCRend SCRstart)
        DO
-         I  C/L@ +  OVER  C/L@  4* VREAD
-         DUP  I           C/L@  4* VWRITE
-       C/L@  4* +LOOP
+         I  C/L@ +  OVER  C/L@ 4* VREAD
+         DUP  I           C/L@ 4* VWRITE
+       C/L@ 4* +LOOP
        DROP
-       0 17 AT-XY VPOS C/L@ BL VFILL
+       0 23 2DUP >VPOS C/L@ BL VFILL AT-XY 
 ;
 
 [ELSE]
+
+0 [IF]
 \ 19% FASTER on SEVENS benchmark but uses a full screen buffer 
  
-: SCROLL ( -- ) 
+ : SCROLL ( -- ) 
    HERE 100 +  TOPLN   ( -- buffer screen)
    2DUP                ( -- buffer screen buffer screen)
-   C/L@ +  SWAP  C/SCR @ VREAD   C/SCR @ VWRITE
-   0 17 AT-XY 
-   VPOS C/L@ BL VFILL
-;
+   C/L@ +  SWAP  C/SCR @ DUP>R VREAD  R> VWRITE
+   0 23 2DUP >VPOS C/L@ BL VFILL  AT-XY 
+ ;
 
+ [ELSE]
+
+\ 10% FASTER using 8 line buffer and no loops 
+: MOVE8   ( Vaddr -- Vaddr )
+  HERE 100 + DUP>R 
+  OVER DUP C/L@ +  R> ( -- SRC buffer dst src buffer) 
+  C/L@ 8*  DUP>R VREAD  R> VWRITE ;
+
+: SCROLL
+  TOPLN
+  MOVE8  C/L@ 8* + 
+  MOVE8  C/L@ 8* + 
+  MOVE8 DROP
+  0 23 2DUP >VPOS C/L@ BL VFILL AT-XY 
+;
+  [THEN]
 [THEN]
 
 \ ======================================================================
 \ V D P   T E X T   O U T P U T
 
 [cc] HEX [tc]
-: CR     ( -- )  (CR) L/SCR = IF  SCROLL  THEN  ;
+-1 [IF] 
+
+: CR  ( -- ) 
+    VCOL OFF  
+    VROW DUP 1+! @  L/SCR = IF SCROLL THEN ;  \ 22 BYTES
+
+[ELSE]
+\ not worth the extra bytes
+ CODE (CR) ( -- ?)  \ ? means on last row of screen 
+      R1 STWP,
+      34 (R1) CLR,     \ VCOL OFF
+      32 (R1) INC,     \ vrow 1+! 
+      TOS PUSH,
+      TOS CLR, 
+      32 (R1) R0 MOV,    \ vrow @ 
+      R0 L/SCR CMPI,     \ compare to max lines on a screen  
+      GTE IF,  TOS SETO,  ENDIF, 
+      NEXT,
+ENDCODE \ 28 bytes
+
+: CR     ( -- )  (CR) IF  SCROLL  THEN  ;  \ SEVENS: 1:01.10
+
+[THEN]
+
 : (EMIT) ( char -- ) CPUT IF  CR  THEN ;
 : PAGE   ( -- ) TOPLN LASTLN OVER -  BL VFILL   0 0 AT-XY ;
-: BS     ( --)  VCOL DUP @ 1- 0 MAX  SWAP ! ;
-
-: EMIT   ( char -- )  \ handles some control characters
-          PAUSE
-          0D OVER= IF  DROP CR     EXIT THEN
-          08 OVER= IF  DROP BS     EXIT THEN
-         (EMIT) ;
+: BS     ( -- ) VCOL DUP @ 1- 0 MAX  SWAP ! ;
 
 : TYPE   ( addr cnt --)  PAUSE BOUNDS ?DO  I C@ (EMIT) LOOP ;
 T' TYPE  RESOLVES 'TYPE
 
 : SPACE  ( -- )   BL (EMIT) ;
 : SPACES ( n -- ) 0 MAX  0 ?DO  SPACE  LOOP ;
+: EMIT   ( char -- )  \ handles some control characters
+          PAUSE
+          0D OVER= IF  DROP CR     EXIT THEN
+          08 OVER= IF  DROP BS     EXIT THEN
+          BL OVER > IF DROP        EXIT THEN 
+          (EMIT) ;
+
+\ : EMIT   'EMIT PERFORM ; 
 
 [cc] cr .( Console input)
 \ ======================================================================
@@ -94,16 +152,24 @@ T' TYPE  RESOLVES 'TYPE
 \ ** If < 1FFF show the screen char. Flash rate is about 2 per second.
 
 TARGET-COMPILING
-: KEY      ( -- char)
-           BEGIN                  \ start the loop
-              PAUSE               \ Essential for Multi-tasking with Console
-              CURS @              \ fetch 2 char cursor (space & _ )
-              TMR@ 1FFF <         \ compare hardware timer to 1FFF
-              IF >< THEN VPUT     \ swap cursor bytes & write
-              KEY?                \ check the keyboard
-              ?DUP                \ DUP IF <> 0
-            UNTIL                 \ loop until a key pressed
-            BL VPUT ;             \ put the space char on screen
+: KEY    ( -- char)
+      CURS @  
+      VPOS VC@ DUP CURS C!  \ combine screen char with cursor 
+      BEGIN                 \ start the loop
+        PAUSE               \ Essential for Multi-tasking with Console
+        CURS @              \ fetch 2 char cursor (space & _ )
+        TMR@ 1FFF <         \ compare hardware timer to 1FFF
+        IF >< THEN VPUT     \ swap cursor bytes & write
+        KEY?                \ check the keyboard
+        ?DUP                \ DUP IF <> 0
+      UNTIL                 \ loop until a key pressed
+      >R 
+      VPUT              \ put the char on screen
+      CURS !            \ Restore the cursor 
+      R> 
+;
+
+\ : KEY   'KEY PERFORM ;             
 
 \ High level: input/output          (c) 31mar95 bjr
 : ACCEPT     ( caddr +n -- +n')
