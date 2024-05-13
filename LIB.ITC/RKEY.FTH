@@ -9,40 +9,40 @@ CREATE RPT  10 ,    \ initial delay
 VARIABLE SCHAR      \ screen character
 
 HEX
-: BLINK  ( char -- ) TMR@ 1FFF > IF DROP  CURS @  THEN VPUT ;
+: BLINK  ( char -- ) TMR@ 1FFF > IF DROP  CURS @  THEN VPOS VC! ;
 
 : RKEY?  ( -- char)
     RPT @ >R    \ delay counter to rstack
     SCHAR @ BLINK
+    83C8 OFF
     BEGIN
         R> 1- DUP>R        \ dec counter
     WHILE ( not expired)
-        83C8 ON  83CA ON   \ clear key buffers
-        220 TICKS          \ sets the speed of the loop
+        83C8 ON   \ clear key buffers
         KEY? DUP OUTKEY !
         OLDKEY @ =         \ compare to oldkey
     WHILE ( key is same)
-        2 RPT !  \ set fast repeats
+        220 TICKS          \ sets the speed of the loop
+        9 RPT !  \ set fast repeats
     REPEAT
-    0A RPT !     \ set long delay (initial delay)
+    80 RPT !     \ set long delay (initial delay)
     THEN         \ end time expired loop
     R> DROP
     OUTKEY @ DUP OLDKEY !
 ;
 
 : RKEY ( -- char)
-   'CHAR C@ SCHAR !
+   VPOS C@ SCHAR !
    BEGIN
       RKEY? DUP
    0= WHILE
-     PAUSE
-     DROP
-     OUTKEY OFF
+      PAUSE
+      DROP
+      OUTKEY OFF
    REPEAT
-   SCHAR @ VPUT
-
+   SCHAR @ VPOS VC!
 ;
 
 HERE SWAP - DECIMAL SPACE .
 
-\ : TEST    BEGIN  RKEY EMIT  ?TERMINAL UNTIL ;
+: TEST    BEGIN  RKEY EMIT  ?TERMINAL UNTIL ;
