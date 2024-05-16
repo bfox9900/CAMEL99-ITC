@@ -13,7 +13,7 @@ CODE COM-ACCEPT ( addr len delimit -- len)
              21 TB, EQ    \ wait for RBRL=1
           UNTIL,
           *R2 8 STCR,     \ store char @ addr
-           18   SBZ,
+           18   SBZ,      \ reset uart interrupt bit  
            R5   INC,      \ count the char
           *R2+ TOS CMPB,  \ is char the delimiter?
            EQ IF,         \ if true

@@ -83,7 +83,8 @@ CODE C@A+   TOS PUSH,    AR *+ TOS MOVB,  TOS 8 SRL, NEXT, ENDCODE
 : ATYPE   ( addr len ) SWAP A! 0 DO  C@A+ (EMIT)  LOOP ;
 : FTYPE                0 DO  COUNT (EMIT) LOOP  DROP ;
 
-: BIG$ S" The rain in spain falls mainly on the plain but not here in Canada." ;
+: BIG$ 
+ S" The rain in spain falls mainly on the plain but not here in Canada." ;
 
 DECIMAL 
 : TESTF    100 0 DO  BIG$ FTYPE  LOOP ; \ 10.26
