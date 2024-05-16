@@ -1,5 +1,6 @@
-\ GAMELANG.FTH  provides VDP string storage 
-\ and a %CHANce ;CHANCE structure 
+\ GAMELANG.FTH                       Brian Fox 2024
+\ This file is extracted from the Oregon game. 
+\ It provides some useful words for making games. 
 
 \ VDP STRING and PRINT
 \ compile stack string into VDP memory
@@ -20,6 +21,7 @@
         POSTPONE VCOUNT
         POSTPONE VTYPE ; IMMEDIATE
 
+\ Behaves like BASIC print statement. Compiles text in VDP RAM.
 : PRINT."  POSTPONE CR  POSTPONE ." ; IMMEDIATE
 
 \ Print a stack string centered on the screen
@@ -42,9 +44,11 @@
 \ G A M E  L A N G U A G E
 
 DECIMAL
-: CHOICES,  ( addr... addr[n] n -- ) 0 ?DO  COMPILE, LOOP ;  \ compile addresses
+\ compile addresses
+: CHOICES,  ( addr... addr[n] n -- ) 0 ?DO  COMPILE, LOOP ;  
 
-: 3RD     ( a b c -- a b c a ) 2 PICK ;  \ get a copy of 3rd item on the stack
+\ get a copy of 3rd item on the stack
+: 3RD     ( a b c -- a b c a ) 2 PICK ; 
 
 \ text game language extensions
 : BETWEEN ( n lo hi -- ?) 1+ WITHIN ;
