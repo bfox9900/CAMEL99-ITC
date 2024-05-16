@@ -37,20 +37,20 @@ INCLUDE DSK3.OREGON3
 \ status testers begin with a ?
 
 : ?FOOD  \ test if we have enough Food points left
-          FOOD @ 1 < IF   STARVED  ENDIF
-          FOOD @ 10 <
-          IF
-              PRINT." You need to do some hunting or by some food!!!"
-              PRINT." 1. Hunt"
-              PRINT." 2. Buy Food"
-              PRINT." Enter to go on"
-              CR
-              KEY
-              CASE
-                  [CHAR] 1 OF HUNT     ENDOF
-                  [CHAR] 2 OF BUYFOOD  ENDOF
-              ENDCASE
-          ENDIF ;
+         FOOD @ 1 < IF   STARVED  ENDIF
+         FOOD @ 10 <
+         IF
+            PRINT." You need to do some hunting or by some food!!!"
+            PRINT." 1. Hunt"
+            PRINT." 2. Buy Food"
+            PRINT." Enter to go on"
+            CR
+            KEY
+            CASE
+               [CHAR] 1 OF HUNT     ENDOF
+               [CHAR] 2 OF BUYFOOD  ENDOF
+            ENDCASE
+         ENDIF ;
 
 : ?WOUNDED
          WOUNDED @ 0 <>
@@ -61,14 +61,14 @@ INCLUDE DSK3.OREGON3
 ;
 
 : TOOLONG
-           CR PRINT." It's a terrible shame."
-           1000 MS
-           PRINT." Y'all didn't get to Oregon
-           PRINT." in time.
-           1000 MS
-           PRINT." I reckon yer lost"
-           CR CR
-           SORRY ;
+         CR PRINT." It's a terrible shame."
+         1000 MS
+         PRINT." Y'all didn't get to Oregon
+         PRINT." in time.
+         1000 MS
+         PRINT." I reckon yer lost"
+         CR CR
+         SORRY ;
 
 
 : ?TIMEOUT    DAY @ 25 > IF TOOLONG  ENDIF ;
@@ -89,29 +89,29 @@ INCLUDE DSK3.OREGON3
       ;CHANCE
 ;
 
-: HUNTER  50 %CHANCE:
-             CR PRINT." You met a hunter and he gave you a " ANIMAL
-
-          ;CHANCE
+: HUNTER 
+      50 %CHANCE:
+         CR PRINT." You met a hunter and he gave you a " ANIMAL
+      ;CHANCE
 ;
 
 : GRAZING
-         50 %CHANCE:
-             CR
-             PRINT." Good luck!"
-             PRINT." Your Oxen found some nice grazing."
-             15 RANDOM 2+  OXEN CREDIT
-         ;CHANCE
+      50 %CHANCE:
+         CR
+         PRINT." Good luck!"
+         PRINT." Your Oxen found some nice grazing."
+         15 RANDOM 2+  OXEN CREDIT
+      ;CHANCE
 ;
 
 : GOODWEATHER
-          50 %CHANCE:
-             CR
-             PRINT." The weather is good for travelling."
-             1 OXEN CREDIT
-             1 HEALTH CREDIT
-             1 CLOTHING CREDIT
-          ;CHANCE
+      50 %CHANCE:
+         CR
+         PRINT." The weather is good for travelling."
+         1 OXEN CREDIT
+         1 HEALTH CREDIT
+         1 CLOTHING CREDIT
+      ;CHANCE
 
 ;
 
@@ -120,11 +120,11 @@ CASE: LUCKY   | NATIVES  | HUNTER  | GRAZING  ;CASE
 : HAPPYDAYS   3 RANDOM LUCKY  ;
 
 : AreWeThereYet?
-         MILEAGE @ DESTINATION  >
-         IF
-            CONGRATS
-         THEN
-         PRINT." We travelled "  MILEAGE @ . ." miles."
+      MILEAGE @ DESTINATION  >
+      IF
+         CONGRATS
+      THEN
+      PRINT." We travelled "  MILEAGE @ . ." miles."
 ;
 
 : CONSUME  \  things are used up every day
@@ -136,22 +136,22 @@ CASE: LUCKY   | NATIVES  | HUNTER  | GRAZING  ;CASE
 ;
 
 : ?OXEN
-         OXEN @ 10 <
-         IF  PRINT." Yer oxen are almost dead!"
-             PRINT." Wanna stop for grazing"
-             Y/N?
-             IF ...
-                ROLL-DICE OXEN CREDIT
-                48 %CHANCE:
-                   CR PRINT." Uhoh, we got company!"
-                   HOSTILE-DECIDE
-                ELSE
-                   ROLL-DICE 5 * OXEN CREDIT
-                   PRINT." Oxen are now worth" OXEN @ DOLLARS
-                   CR
-               ;CHANCE
-             ENDIF
-        ENDIF
+      OXEN @ 10 <
+      IF PRINT." Yer oxen are almost dead!"
+         PRINT." Wanna stop for grazing"
+         Y/N?
+         IF ...
+            ROLL-DICE OXEN CREDIT
+            48 %CHANCE:
+            CR PRINT." Uhoh, we got company!"
+            HOSTILE-DECIDE
+         ELSE
+            ROLL-DICE 5 * OXEN CREDIT
+            PRINT." Oxen are now worth" OXEN @ DOLLARS
+            CR
+            ;CHANCE
+         ENDIF
+      ENDIF
 ;
 
 : TITLE-PAGE
