@@ -1,0 +1,28 @@
+\  block file to DV80 text file conversion
+\ usage
+\ $" DSK7.BLOCKS" OPEN-BLOCKS
+\ $" DSK5.MYFILE" MAKE-OUTPUT
+\  0 50  BLOCKS2FILE
+\  CLOSE-OUTPUT
+\  CLOSE-BLOCKS
+
+INCLUDE DSK1.OUTFILE
+INCLUDE DSK1.BLOCKS
+INCLUDE DSK1.UDOTR
+INCLUDE DSK1.TRAILING
+
+DECIMAL
+: LINE   ( n -- addr n)  64 *  SCR @ BLOCK + 64   ;
+: .LINE  ( n -- ) LINE -TRAILING 0 MAX TYPE ;
+: '\'    92 EMIT BL EMIT ;
+
+: WRITEBLK ( n - )
+        CR
+        DUP SCR !  '\'  S" SCR#" TYPE  4 .R
+        16 0 DO   I .LINE CR  LOOP
+        CR ;
+
+: .HEADER      CR  '\' ACTIVE COUNT TYPE ;
+
+: BLOCKS2FILE  ( from to -- )
+  .HEADER   1+ SWAP ?DO  I WRITEBLK LOOP ;
