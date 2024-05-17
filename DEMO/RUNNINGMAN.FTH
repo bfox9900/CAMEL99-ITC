@@ -239,7 +239,7 @@ VARIABLE SPEED
 
 DECIMAL 
 : STEPS ( n -- )
-    4 19 15 1 COLORS 
+    4 19 16 1 COLORS 
     2 SCREEN 
     PAGE
     0 DO
