@@ -182,4 +182,4 @@ DECIMAL
   CLS  LTRED HUE    FLOWER  
   TEXT ;
 
-
+CR .( Type DEMO )

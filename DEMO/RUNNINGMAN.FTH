@@ -237,12 +237,16 @@ VARIABLE SPEED
     SPEED @ TICKS  \ wait in 16ms increments 
     /FIGURE ;      \ erase figure from display
 
+DECIMAL 
 : STEPS ( n -- )
+    4 19 15 1 COLORS 
+    2 SCREEN 
     PAGE
     0 DO
        I STEP
        ?TERMINAL IF  LEAVE THEN
     LOOP
+    4 19 2 8 COLORS  8 SCREEN 
     CHARSET ;
 
 1800 SPEED !
