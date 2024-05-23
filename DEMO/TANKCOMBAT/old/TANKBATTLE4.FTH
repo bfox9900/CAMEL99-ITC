@@ -531,6 +531,7 @@ DECIMAL
     LOOP ;
 
 : RUN  
+  DECIMAL 
   INIT-MULTI 
   DRAW-SCREEN 
 
