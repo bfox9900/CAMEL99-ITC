@@ -200,7 +200,7 @@ DECIMAL
 
 : .SCORE   
   0 23 AT-XY ." Hunter:"  0 ]PID .KILLS 
-  2 SPACES   ." Gunner:"  1 ]PID .KILLS ;
+  2 SPACES   ." STALKER:"  1 ]PID .KILLS ;
 
 \ -------------------------------------------
 \ tank patterns for 8 compass headings 
@@ -443,7 +443,8 @@ DECIMAL
 
 : GO-AND-HIDE ( -- ) RND-HEADING  FIND-A-WALL  TURN-AROUND ;
 
-: GUNNER ( -- ) \ finds a hiding place and shoots what comes past
+: STALKER ( -- ) 
+\ finds a hiding place and shoots what comes past
     100 SPEED ! 
     GEN2 
     PANZER @ SET#  GREEN RED COLOR 
@@ -470,7 +471,7 @@ DECIMAL
 \ assign the configured tank programs to tasks
 : CREATE-TANKS 
   ['] ALPHA-HUNTER TANK0  TANK-BUILDER 
-  ['] GUNNER      TANK1  TANK-BUILDER
+  ['] STALKER      TANK1  TANK-BUILDER
   
   ['] ALPHA-TANK  TANK2  TANK-BUILDER
   ['] ALPHA-TANK  TANK3  TANK-BUILDER
@@ -548,7 +549,7 @@ DECIMAL
   2000 MS 
 
   PROMPT ." Creating Tank processes"
-  15 RESTARTS          \ the gunner and the "prey" 
+  15 RESTARTS          \ the STALKER and the "prey" 
 
 \ console task just updates the score and waits for break key 
   CLRLN 

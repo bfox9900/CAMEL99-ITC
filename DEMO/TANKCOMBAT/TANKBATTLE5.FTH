@@ -318,7 +318,8 @@ DECIMAL
 : VDP>XY     ( Vaddr -- X Y) C/L@ /MOD  ;
 : NEXT-ADDR  ( Vaddr -- Vaddr') VDP>XY FWD >VPOS ;
 
-\ radar sweep in a circle at range distance. Sprite used to see the scanner 
+\ radar sweep in a circle at range distance. 
+\ Sprite used to see the scanner 
 DECIMAL 
   S" 0000001000000000" 1 CALLCHAR 
 : >PIXXY  ( x y -- px py) 8* SWAP 8* SWAP ;
@@ -368,8 +369,8 @@ DECIMAL
   BEGIN 
     CLEAR-AHEAD? 
   WHILE  
-    ADVANCE  
     THINK  
+    ADVANCE  
   REPEAT ;
 
 \ =====================================================
