@@ -9,6 +9,8 @@ NEEDS BUFFER:    FROM DSK1.BUFFER
 NEEDS MALLOC     FROM DSK1.MALLOC
 NEEDS COMPARE    FROM DSK1.COMPARE
 NEEDS U.R        FROM DSK1.UDOTR   \ right justified printing
+NEEDS LOCK       FROM DSK1.MARKER 
+
 \ NEEDS 80COLS     FROM DSK1.80COL
 
 HERE
@@ -161,17 +163,29 @@ HEX
           HEX ;
 
 .( .)
-: MORE  ( <filename>)
-          ARG$ DV80 R/O OPEN >R
-          BEGIN
-             PAD DUP 50 R@ READ-LINE ?FILERR ( adr len flag)
-          WHILE
-             CR TYPE
-             SPACEBAR
-             ?TERMINAL ?BREAK
-          REPEAT
-          R> CLOSE
-          2DROP ;
+: MORE ( <filename>)
+    ARG$ DV80 R/O OPEN >R
+    BEGIN
+      PAD DUP 80 R@ READ-LINE ?FILERR 
+    WHILE \ cond 1
+      R@ EOF 0= 
+    WHILE \ cond 2 
+      CR TYPE
+      ?TERMINAL 0= 
+    WHILE \ cond 3
+      SPACEBAR 
+    REPEAT \ end 3 
+    CR  DROP R> CLOSE-FILE 
+    CR ." ^C " EXIT 
+    
+    THEN   \ end 2 
+    CR ." -- EOF --" 
+    CR
+    
+    THEN   \ end 1 
+    DROP 
+    R> CLOSE-FILE
+;
 
 HEX
 : TOUPPER ( char -- upperchar ) 5F AND ;
@@ -227,12 +241,12 @@ HEX
         THEN
 ;
 
-: W/O+  ( -- fam ) APPEND FAM @  ;  \ TI-99 file access mode: write/append
+\ : W/A  ( -- fam ) APPEND FAM @  ;  \ TI-99 file access mode: write/append
 
 HEX
 : APND  ( <file1> <file2> )
         ARG$  ARG$
-        DV80 W/O+ OPEN AS: #2
+        DV80 W/A OPEN AS: #2
         DV80 R/O  OPEN AS: #1
         52 MOVE-FILE
         #2 CLOSE
@@ -298,12 +312,12 @@ CR .  .( bytes used)
 CR
 
 : SHELL
-       WARM
-       TEXT
-       ." Fox Shell V1.0,  Brian Fox 2020"
-       HELP
-       WARNINGS ON
-       ABORT ;
+      WARM
+      TEXT
+      ." Fox Shell V1.0,  Brian Fox 2020"
+      HELP
+      WARNINGS ON
+      ABORT ;
 LOCK
 
 \ save as EA5 binary files.
