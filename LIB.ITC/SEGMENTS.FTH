@@ -11,7 +11,7 @@ DECIMAL
 VARIABLE SEGLINK    \ last segment defined ( nfa)
 VARIABLE SPP        \ sams page pointer
 
-\ index fetches to get read segement data structure
+\ index fetches to get read segment data structure
 CODE [2]@  ( addr -- n)  2 (TOS) TOS MOV,  NEXT, ENDCODE
 CODE [4]@  ( addr -- n)  4 (TOS) TOS MOV,  NEXT, ENDCODE
 CODE [6]@  ( addr -- n)  6 (TOS) TOS MOV,  NEXT, ENDCODE
@@ -35,7 +35,7 @@ CREATE SEG0
   CREATE
        SPP @ ,                    \ first sams PAGE used
        >PAGES  SPP @ OVER + ,     \ last sams page used
-       DUP ALLOTSAMS                  \ reserve these pages
+       DUP ALLOTSAMS              \ reserve these pages
        4096 * ,                   \ bytes allocated
            0  ,                   \ bytes used
        LATEST @ ,
