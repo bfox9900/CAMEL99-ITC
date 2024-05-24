@@ -15,11 +15,11 @@ HEX
 
 DECIMAL
 : ERASE  ( addr len -- ) 0 FILL ;
-: INITIALIZED ( u -- ) HERE OVER ERASE ALLOT ;
+: INITIALIZE ( u -- ) HERE OVER ERASE ALLOT ;
 
 : MATRIX: ( rows cols -- )
           CREATE
-              DUP , * CELLS INITIALIZED
+              DUP , * CELLS 
 
           DOES> ( row col  -- addr)
                 DUP>R @ ( row col addr #cols )
@@ -28,9 +28,9 @@ DECIMAL
 
 : BYTE-MATRIX: ( rows cols -- )
           CREATE
-             DUP , * INITIALIZED
+             DUP , * 
           DOES> ( row col  -- addr)
-             DUP>R @ ( col row rows) * +  R> + CELL+
+             DUP>R @ ( col row rows) *+  R> + CELL+
 ;
 
 
