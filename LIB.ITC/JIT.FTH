@@ -5,13 +5,16 @@
 \ This system compiles primitives from the kernel as super-instructions
 \ and compiles the execution token for the super instructions in a Forth word.
 
- NEEDS .S     FROM DSK1.TOOLS
-\ NEEDS ELAPSE FROM DSK1.ELAPSE
-NEEDS WORDLIST FROM DSK1.WORDLISTS
-
+NEEDS .S     FROM DSK1.TOOLS   \ debug
+NEEDS ELAPSE FROM DSK1.ELAPSE  \ execution timing 
 NEEDS CASE   FROM DSK1.CASE
 NEEDS LIFO:  FROM DSK1.STACKS
 NEEDS MARKER FROM DSK1.MARKER
+NEEDS WORDLIST FROM DSK1.WORDLISTS
+
+: EMPTY  S" *CLEAN* MARKER *CLEAN*" EVALUATE ;
+MARKER *CLEAN*
+EMPTY
 
 HERE
 
@@ -39,36 +42,33 @@ CODE +      A136 ,         NEXT, ENDCODE
 : THERE  ( -- addr) H @ ;  \ returns end of Target memory in HEAP
 : HALLOT ( n -- )   H +! ; \ Allocate n bytes of target memory.
 : T,     ( n -- )   THERE ! 2 HALLOT ;  \ "target compile" n into heap
-: NEW-HEAP ( -- ) 2000 2000 0 FILL   2000 H ! ; \ reset HEAP
+
+: NEWHEAP ( -- ) 2000 2000 0 FILL   2000 H ! ; \ reset HEAP
 
 045A CONSTANT 'NEXT'  \ 9900 CODE for B *R10   Camel99 Forth's NEXT code
 
 : CODE,  ( xt --)  \ Read code word from kernel, compile into target memory
-           >BODY 80 CELLS  \ 128 bytes is max size we will try to compile
-           BOUNDS    ( -- IPend IPstart)
-           BEGIN
-              DUP @ 'NEXT' <>  \ the instruction is not 'NEXT'
-           WHILE
-             DUP @  ( -- IP instruction)
-             T,     \ compile instruction
-             CELL+  \ advance IP
-             2DUP < ABORT" End of code not found"
-           REPEAT
-           2DROP
+    >BODY 80 CELLS  \ 128 bytes is max size we will try to compile
+    BOUNDS    ( -- IPend IPstart)
+    BEGIN
+        DUP @ 'NEXT' <>  \ the instruction is not 'NEXT'
+    WHILE
+        DUP @  ( -- IP instruction)
+        T,     \ compile instruction
+        CELL+  \ advance IP
+        2DUP < ABORT" End of code not found"
+    REPEAT
+    2DROP
 ;
 
 : COMPILES ( <codeword> ) POSTPONE [']  POSTPONE CODE, ; IMMEDIATE
 
-\ steal code word from the kernel and compile it to target memory
-\ These are MACHINE FORTH primitives.
+\ now we can steal code word from the kernel and compile it to target memory
 : DUP,   COMPILES DUP ;
 : DROP,  COMPILES DROP ;
 : 1-,    ( n -- n') COMPILES 1-  ; \ TOS DEC,
 
-: LIT,  \ compile time: ( n -) runtime: ( -- n) 
-         DUP,  
-         0204 T, ( n) T,  \ compile LI TOS 
-;          
+: LIT,   ( -- n) DUP,  0204 T, ( n) T, ; \ compile n as literal in TOS
 
 \ store a byte offset in odd byte of addr.
 \ Addr is the location of Jump instruction
@@ -100,102 +100,99 @@ ALSO JITS DEFINITIONS
 : DO  ( -- there) COMPILES <DO>   POSTPONE BEGIN ; IMMEDIATE
 
 : LOOP
-     0597 T,                   \ *RP INC,
-     CS> THERE  0 JNO, <BACK   \ compute offset, compile into JNO
-     COMPILES UNLOOP           \ collapse stack frame
+    0597 T,                   \ *RP INC,
+    CS> THERE  0 JNO, <BACK   \ compute offset, compile into JNO
+    COMPILES UNLOOP           \ collapse stack frame
 ; IMMEDIATE
 
 : +LOOP
-     0A5CA T,         \ TOS *RP ADD,
-     DROP,            \ don't need TOS value anymore
-     POSTPONE LOOP    \ compile loop code
+    0A5CA T,         \ TOS *RP ADD,
+    DROP,            \ don't need TOS value anymore
+    POSTPONE LOOP    \ compile loop code
 ; IMMEDIATE
 
 : AGAIN   CS> THERE 0 JMP, <BACK ; IMMEDIATE
 
 : UNTIL
-          1-,
-          DROP,
-          CS> THERE 0 JNC, <BACK ; IMMEDIATE
+    1-,
+    DROP,
+    CS> THERE 0 JNC, <BACK ; IMMEDIATE
 
 : IF    ( n -- )
-           1-,       \ If tos=0, DEC will cause a carry
-           DROP,
-           THERE >CS 0 JNC, ; IMMEDIATE
+    1-,       \ If tos=0, DEC will cause a carry
+    DROP,
+    THERE >CS 0 JNC, ; IMMEDIATE
 
-: THEN     CS> THERE OVER - RESOLVE ; IMMEDIATE
+: THEN  CS> THERE OVER - RESOLVE ; IMMEDIATE
 
-: ELSE     THERE >CS  0 JMP,
-            CS>SWAP POSTPONE THEN ; IMMEDIATE
+: ELSE  THERE >CS  0 JMP,
+        CS>SWAP POSTPONE THEN ; IMMEDIATE
 
-: WHILE   ( n -- ) POSTPONE IF CS>SWAP ; IMMEDIATE
+: WHILE  ( n -- ) POSTPONE IF CS>SWAP ; IMMEDIATE
 
-: REPEAT   POSTPONE AGAIN  POSTPONE THEN ; IMMEDIATE
+: REPEAT  POSTPONE AGAIN  POSTPONE THEN ; IMMEDIATE
 
-\ ---------------------------------------------------------
+\ --------------------------------------------------------------
 
-ONLY FORTH DEFINITIONS
+FORTH DEFINITIONS
 \ CFA of a code word contains the address of the next cell
 : CODE? ( XT -- ?)  DUP @ 2- = ;
-: NOTCODE? ( -- ?)  DUP @ 2- - ;
 
-: DATA, ( XT -- )
-        @
-        CASE ( data words )
-            ['] DOVAR    OF  >BODY   LIT, ENDOF
-            ['] DOCON    OF  EXECUTE LIT, ENDOF
-            ['] DOUSER @ OF  EXECUTE LIT, ENDOF
-            TRUE ABORT" Can't optimize word"  ( any other Forth word bombs)
-        ENDCASE
+: JITCOMPILE,  ( xt -- )
+    DUP CODE? IF  CODE,   EXIT  THEN  \ compile kernel code & exit
+    \ xt is not a code word...
+    DUP @   \ FETCH the "executor" address
+    CASE ( data words )
+        ['] DOVAR    OF  >BODY   LIT, ENDOF
+        ['] DOCON    OF  EXECUTE LIT, ENDOF
+        ['] DOUSER @ OF  EXECUTE LIT, ENDOF
+        TRUE ABORT" Can't optimize word"  ( any other Forth word bombs)
+    ENDCASE
 ;
-
-: JITCOMPILE,  ( xt -- ) DUP CODE? IF CODE,   ELSE  DATA,  THEN ;
 
 \ new interpreter loop
 \ 1. Executes Immediate words: BEGIN WHILE IF THEN etc.
 \ 2. Steals kernel code and compiles any CODE word.
-\ 2a Compiles variables, constants and user vars as literals
 \ 3. ABORTS if you try to compile a Forth word
 \ 4. Compiles literal numbers with LI instruction
 
 : <JIT> ( -- addr)
-         'SOURCE 2!  >IN OFF
-          BEGIN
-             BL WORD  DUP C@
-          WHILE
-              FIND ?DUP
-              IF ( it's a word)
-                  1+ STATE @ 0= OR
-                  IF   EXECUTE      \ IF BEGIN etc. are all immediate
-                  ELSE JITCOMPILE,  
-                  THEN
-              ELSE
-                  COUNT NUMBER? ?ERR
-                  STATE @ IF LIT, THEN  \ special number compiler
-              THEN
-              DEPTH 0< ABORT" JIT: Underflow"
-          REPEAT
-          DROP
+    'SOURCE 2!  >IN OFF
+    BEGIN
+        BL WORD  DUP C@
+    WHILE
+        FIND ?DUP
+        IF ( it's a word)
+            1+ STATE @ 0= OR
+            IF   EXECUTE      \ IF BEGIN etc. are all immediate
+            ELSE JITCOMPILE,  \ code and data are not
+            THEN
+        ELSE
+            COUNT NUMBER? ?ERR
+            STATE @ IF LIT, THEN  \ special number compiler
+        THEN
+        DEPTH 0< ABORT" JIT: Underflow"
+    REPEAT
+    DROP
 ;
 
-: JIT: ( -- ) 
-        THERE ( -- XT)   \ execution token (XT) for the NEW compiled code
-        DUP CELL+ T, 
-        :
-        ALSO JITS        \ put JITS VOCABULARY first in search order
-        ['] <JIT> 'IV !        
-        ]
+: JIT: ( -- JIT-xt)
+    ALSO JITS         \ put JITS VOCABULARY first in search order
+    ['] <JIT> 'IV !  \ switch to JIT compiler
+    :
+    THERE ( -- XT)   \ execution token (XT) for the NEW compiled code
+    DUP CELL+ T,     \ create the ITC header for a CODE word
 ;
 
 : ;JIT ( JIT-XT -- )
-        PREVIOUS          \ restore previous search order
-        ['] <INTERP> 'IV !
-        'NEXT' T,         \ compile NEXT at end of new code word
-         ,                \ compile CODE word's XT into Forth definition
-        POSTPONE ;
+    PREVIOUS          \ restore previous search order
+    ['] <INTERP> 'IV !
+    'NEXT' T,        \ compile NEXT at end of new code word
+    ,                \ compile CODE word's XT into Forth definition
+    ?CS
+    POSTPONE ;
 ; IMMEDIATE
 
-ONLY FORTH 
-
 HERE SWAP - SPACE DECIMAL . .( bytes)
+NEWHEAP
 
