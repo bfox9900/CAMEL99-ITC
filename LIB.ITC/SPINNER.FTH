@@ -13,7 +13,8 @@ CREATE SCHARS   CHAR | C, CHAR / C, CHAR - C, CHAR \ C,
     VROW 2@ 
      BEGIN  
         2DUP AT-XY  SPINCHAR VPUT 
-        100 MS 
+        60 MS 
         ?TERMINAL
     UNTIL   
 ;
+
