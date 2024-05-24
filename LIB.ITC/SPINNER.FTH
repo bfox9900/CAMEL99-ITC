@@ -1,9 +1,19 @@
-\ busy spinner
-
-CREATE SCHARS   CHAR | C, CHAR / C, CHAR - C, CHAR \ C,
+\ simplest busy spinner
 
 VARIABLE SPIN#
 
-: SPINCHAR ( -- char ) SPIN# @ 1+ 3 AND DUP SPIN# ! SCHARS + C@  ;
+CREATE SCHARS   CHAR | C, CHAR / C, CHAR - C, CHAR \ C,
 
-: SPINNER    SPINCHAR VPUT ;
+\ returns a different character when called 
+: SPINCHAR ( -- char) 
+  SPIN# @ 1+  3 AND DUP SPIN# ! SCHARS + C@  ;
+
+
+: TESTSPIN
+    VROW 2@ 
+     BEGIN  
+        2DUP AT-XY  SPINCHAR VPUT 
+        100 MS 
+        ?TERMINAL
+    UNTIL   
+;
