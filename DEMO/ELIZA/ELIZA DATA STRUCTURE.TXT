@@ -1,0 +1,59 @@
+
+The ideal data structure for Forth would be similar to a colon definition.
+This means it could contain code and data so that the appropriate thing happens 
+to the data everytime because it is compiled into the data structure. 
+
+Here is what I want it to look like:
+
+INCLUDE DSK1.TOOLS 
+
+\ started a counted string list 
+: ${   ( -- addr ) HERE  0 , !CSP ;  
+
+\ end a counted string list 
+: }$   ( addr -- addr ) 0 , ?CSP ; 
+
+\ compile a string and count it in 'addr' 
+: $, ( addr -- addr)  S, ALIGN   DUP 1+!  ; 
+
+\ parse quote delimited string, compile into memory and count it
+: $"  ( addr -- ) [CHAR] " PARSE    $, ;  IMMEDIATE 
+
+: NEXT$     COUNT + ALIGNED ; 
+: NTH$   ( addr n)  0 ?DO  NEXT$  LOOP ; 
+
+: $ARRAY:  ( addr -- )
+   CREATE     ,   
+   DOES> ( ndx -- addr len) 
+        @ DUP>R                               \ save copy of base address 
+        @ 1-                                  \ get the string count -1 (0 BASED)
+        OVER U< ABORT" $array index out of range" 
+        R> CELL+                              \ base address + cell = 1st string 
+        SWAP NTH$ COUNT 
+;      
+
+: $ARRAYSIZE  ' >BODY @  @ ;
+
+\ string array, with index protection 
+ ${ $" YOU ARE"  
+    $" YOU HAVE"
+    $" YOU'VE"     
+    $" YOU'RE"    
+    $" YOU'LL"   
+    $" YOU WOULD" 
+    $" YOU WILL" 
+    $" YOUR$"    
+    $" AM"       
+    $" WA$"    
+    $" ME"    
+    $" YOU"    
+    $" MY"   
+    $" YOUR"  
+    $" YOU"       
+ }$ $ARRAY: CONJUG
+    
+
+  ${ ( -- addr 0 )  starts a data block with the address and a zero for number of strings 
+  $"   compiles a counted string and increments the top of stack counter 
+  }$ ( --)  returns the start address and computes the size of the array 
+

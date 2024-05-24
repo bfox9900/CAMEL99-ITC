@@ -1,4 +1,4 @@
-\ FAST compare using S= from Camel Forth
+CR .( COMPARE using S= from Camel Forth) 
 HEX
 CODE S= ( addr1 addr2 len)
     C0B6 , C076 , C004 , 04C4 , 130A , 9CB1 ,
@@ -6,5 +6,5 @@ CODE S= ( addr1 addr2 len)
     NEXT,  0600 , 16F6 , NEXT,
 ENDCODE
 
-: COMPARE ( addr n addr2 n2 -- -1|0|1) S" ROT MAX S=" EVALUATE ; IMMEDIATE
+: COMPARE ( addr n addr2 n2 -- -1|0|1) S" ROT MIN S=" EVALUATE ; IMMEDIATE
 DECIMAL
