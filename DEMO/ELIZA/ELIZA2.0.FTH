@@ -1,6 +1,8 @@
 \ ELIZA in CAMEL99 Forth  simplified  May 24 2024
 
+\ **********************************************************************
 \ V2.0  replaces "list" data structures with simpler counted strings.
+\ **********************************************************************
 
 \ This implementation uses the Forth dictionary as a big case statement
 \ Eliza's KEYWORD phrases are converted to Forth words by removing the spaces.
@@ -18,6 +20,7 @@
 NEEDS DUMP      FROM DSK1.TOOLS
 NEEDS -TRAILING FROM DSK1.TRAILING
 NEEDS S=        FROM DSK1.COMPARE
+NEEDS SEARCH    FROM DSK1.SEARCH 
 NEEDS MARKER    FROM DSK1.MARKER
 
 MARKER PREAMBLE
@@ -110,97 +113,6 @@ HEX
 \ S"  This $is %a @ noisy %&*#$@ string!#@$!"  "NOISE"  STRIP CR TYPE 
 
 \
-\ ---[ list words ]---
-\
-CREATE {NIL}  0 , 0 ,                 \ nil list
-
-: CAR  ( list -- next) @ ;
-: CDR  ( list -- addr) CELL+ ;
-
-: '{  ( -- addr)  HERE ALIGN !CSP  ;  \ starts a new list
-
-: }   ( addr -- )
-     ALIGN {NIL} , ?CSP             \ end list, check stack
-    ( CAR -- ) CREATE DUP , CDR ,  ;  \ compile a tuple ie: a list
-
-: $"   ( -- )                 \ compile a linked-list string
-      HERE 0 ,               \ make space for link
-      [CHAR] $" WORD DUP C@ 1+ ALLOT ALIGN
-      HERE SWAP 2- ! DROP ;  \ fill in the link
-
-: {NEXT} ( list -- list' )  @ ;  \ get next string in a list
-: {$}    ( link -- $)  CELL+ ;
-
-: {NTH}  ( car n -- car' ) 0 ?DO  CAR  LOOP  ;
-
-: {PRINT} ( link -- ) CDR COUNT CR TYPE ;
-
-: {LEN}   ( list -- n )  \ count the no. of items in a list
-          0 >R
-          BEGIN
-            {NEXT} DUP
-            R> 1+ >R
-          0= UNTIL
-          DROP
-          R> 1- ;
-
-: {VIEW} ( list -- )  \ view a list
-          CR
-          0 >R
-          BEGIN
-             DUP @
-          WHILE
-            DUP CDR COUNT
-            DUP 4 + C/L@ > IF  CR THEN TYPE ." , "
-            CAR
-            R> 1+ >R
-          REPEAT
-          DROP
-          R> CR . ." items" ;
-
-\ USAGE:   KEYWORDS {WITH  TOUPPER  MAP}
-: {WITH   STATE @
-          IF   POSTPONE [']
-          ELSE '
-          THEN ;
-
-\ xt must be a clean string function that leaves nothing on the stack
-: MAP} ( list xt -- )  \ for view
-          >R
-          BEGIN
-            DUP @
-          WHILE
-             DUP R@ EXECUTE
-            {NEXT}
-          REPEAT
-          R> DROP
-          DROP ;
-
-VARIABLE MFLAG     \ simpler than stack juggling :-)
-VARIABLE POSITION  \ ALSO record the position keyword in $
-: {MEMBER}  ( $ {list} -- -1 | ndx ) \ is ANY member of {list} in $
-          MFLAG ON                   \ -1 flag means not found
-          SWAP COUNT NEW: TOP$ PLACE \ $ goes on string stack
-          0 >R                       \ counter on rstack
-          BEGIN
-            DUP @
-          WHILE
-            DUP {$} TOP$ POS$ DUP POSITION !
-            IF R@ MFLAG !
-               DROP {NIL}      \ drop {list}, replace with {nil}
-                               \ to end the loop
-            ELSE
-               {NEXT}
-               R> 1+ >R        \ inc the counter
-            THEN
-          REPEAT
-          DROP$                \ clean string stack
-          DROP                 \ clean data stack
-          R> DROP
-          MFLAG @  ;           \ return the mflag value
-: {SIZEOF} ( list -- n) CELL+ @ ;
-.( .)
-
 \ =========================
 \ string arrays indexed by byte count, with index protection 
 
@@ -212,6 +124,7 @@ VARIABLE POSITION  \ ALSO record the position keyword in $
 
 \ compile a string and count it in 'addr' 
 : $, ( addr -- addr)  S, ALIGN DUP 1+! ; 
+: $"   [CHAR] " PARSE  $, ; 
 
 : NEXT$     COUNT + ALIGNED ; 
 : NTH$   ( addr n)  0 ?DO  NEXT$  LOOP ; 
@@ -225,55 +138,49 @@ VARIABLE POSITION  \ ALSO record the position keyword in $
         R> CELL+                              \ base address + cell = 1st string 
         SWAP NTH$ COUNT 
 ;          
-
-
-
-
-\ =========================[ ELIZA BEGINS ] ========================
-\ ==============================================
-\  --- REFLECTIONS ---
-    ${ S" I AM"   $,
-      S" I HAVE"  $, 
-      S" I'VE"    $,
-      S" I'M"     $,
-      S" I WILL"  $,
-      S" I'D"     $,
-      S" I'LL"    $,
-      S" MINE"    $,
-      S" ARE"     $,
-      S" WERE"    $,
-      S" YOU"     $,
-      S" ME"      $,
-      S" YOUR"    $,
-      S" IS"      $,
-      S" MY"      $,
-      S" I $"      $,
-     }$ $ARRAY ]PHRASES
-
- ${ S" YOU ARE"   $, 
-    S" YOU HAVE"  $,  
-    S" YOU'VE"    $,  
-    S" YOU'RE"    $,  
-    S" YOU'LL"    $, 
-    S" YOU WOULD" $, 
-    S" YOU WILL"  $, 
-    S" YOURS"     $, 
-    S" AM"        $,  
-    S" WAS"       $, 
-    S" ME"        $,  
-    S" YOU"       $, 
-    S" MY"        $, 
-    S" YOUR"      $,  
-    S" YOU"       $,  
- }$ $ARRAY: ]CONJUGATION
     
 : $ARRAYSIZE  ' >BODY @  @ ;
 
+\ =========================[ ELIZA BEGINS ] ========================
+\  --- REFLECTIONS ---
+   ${ $" I AM"   
+      $" I HAVE"   
+      $" I'VE"    
+      $" I'M"     
+      $" I WILL"  
+      $" I'D"     
+      $" I'LL"    
+      $" MINE"    
+      $" ARE"     
+      $" WERE"    
+      $" YOU"     
+      $" ME"      
+      $" YOUR"    
+      $" IS"      
+      $" MY"      
+      $" I"      
+   }$ DUP CONSTANT []PHRASES  \ base address
+      $ARRAY: ]PHRASE         \ array word 
 
-
+ ${ $" YOU ARE"    
+    $" YOU HAVE"    
+    $" YOU'VE"      
+    $" YOU'RE"      
+    $" YOU'LL"     
+    $" YOU WOULD"  
+    $" YOU WILL"   
+    $" YOURS"      
+    $" AM"          
+    $" WAS"        
+    $" ME"          
+    $" YOU"        
+    $" MY"         
+    $" YOUR"        
+    $" YOU"         
+ }$ DUP CONSTANT []COJUGATES 
+        $ARRAY: ]CONJUGATE   
 
 \ ---[ KEYWORDS ]---
-\
 \ organize the keyword order to optimize responses
 .( .)
 DECIMAL
@@ -301,7 +208,16 @@ DECIMAL
       $" ITALIANO"  $" ESPANOL $"   $" FRANCAIS"
       $" DEUTSCH"   $" NEDERLANDS"
       $" NO"        $" WE"         $" OK"
-}$ $ARRAY: ]KEYWORD
+
+}$ DUP CONSTANT []KEYWORDS \ define the base address name 
+       $ARRAY: ]KEYWORD    \ define indexable name 
+
+
+: SEARCH[] ( search$ len array_base_address -- n)
+         BEGIN 
+;             
+   
+
 
 
 \ convert keyword# n, into a FORTH word by STRIPPING noise characters and spaces

@@ -63,10 +63,9 @@ DECIMAL
 
 \ test sprite collision 
 : BUMP ( SPR# SPR# -- ) 
-  2DUP 10 COINC 
-  IF  BOUNCE BOUNCE BONK  
-  ELSE 2DROP   \ no coincidence, just drop the args
-  THEN ; 
+  2DUP 10 COINC IF  BOUNCE BOUNCE BONK  EXIT THEN 
+  2DROP   \ no coincidence, just drop the args
+; 
 
 : COLLISIONS 
     0 TRAP  
