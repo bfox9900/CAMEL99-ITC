@@ -32,13 +32,13 @@ DECIMAL
 
 : TRAPX ( spr# -- )
       DUP SP.X VC@
-      XLIMIT? IF  BOUNCE.X  TINK   EXIT 
-      THEN  DROP  ;
+      XLIMIT? IF  BOUNCE.X  TINK EXIT THEN  
+      DROP  ;
 
 : TRAPY ( spr# -- )
       DUP SP.Y VC@
-      YLIMIT? IF  BOUNCE.Y  TINK  EXIT 
-      THEN  DROP  ;
+      YLIMIT? IF  BOUNCE.Y  TINK  EXIT THEN  
+      DROP  ;
 
 \ keep a sprite inside 4 walls 
 : TRAP ( spr# -- ) DUP TRAPX TRAPY   ;
