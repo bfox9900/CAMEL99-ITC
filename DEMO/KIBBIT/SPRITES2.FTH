@@ -1,14 +1,18 @@
 \ SPRITESII.FTH  re-think on sprite functions   May 2024 Brian Fox
 
-NEEDS HCHAR FROM DSK1.GRAFIX 
+NEEDS GRAPHICS2 FROM DSK1.GRAPHICS2 
+
+SSDT DROP   \ aborts if this constant not present 
 
 CR .( *WARNING* SPRITE args are in TI-FORTH order )
 
 HERE 
-HEX
+HEX 
+\ BASE address of Sprite descriptor table in VDP RAM, in GRAPHICS2 Mode 
+
 837B   CONSTANT VDPSTS   \ copy of vdp status register
 83D4   CONSTANT VDPR1    \ MEMORY for VDP Register 1, TI SYSTEM address
-300    CONSTANT SAT      \ sprite attribute table VDP RAM base address
+SSDT   CONSTANT SAT      \ sprite attribute table VDP RAM base address
 
 20 4*  CONSTANT SATsize  \ size of the table, 32 sprites x 4 bytes/record
 1F     CONSTANT MAX.SP   \ 32 sprites, 0 .. 31
@@ -37,16 +41,16 @@ CODE VC!++  ( char -- )
     NEXT, 
 ENDCODE 
 
+DECIMAL 
+: SPRITE ( colr char x y spr# -- )  SP.Y VC!  VC!++ VC!++ VC!++ ; 
 : LOCATE  ( x y # --) SP.Y VC!  VC!++ ;
-
 : POSITION  ( sprt# -- dx dy ) S" SP.Y V@ SPLIT" EVALUATE ; IMMEDIATE
 
-\ We don't actually need this word but it is traditional
-( we could load up the fields manually) 
+\ access the sprite desciptor table by ascii character value 
+: ]SPDTAB  ( n - Vaddr) 8* SDT + ;
 
-DECIMAL 
-: SPRITE ( colr char x y spr# -- )
-  SP.Y VC!  VC!++ VC!++ VC!++ ; 
+\ Write 8 bytes from a memory address into the sprite table 
+: SPCHAR  ( data_addr char -- ) ]SPDTAB 8 VWRITE ;
 
 \ like Extended BASIC Magnify but parameters are 1 less
 HEX
@@ -54,22 +58,26 @@ HEX
 
 \ VDP status bit set if any two sprites overlap
 : COINCALL  ( -- ? ) VDPSTS C@ 20 AND ;
+ 
+HEX
+CODE DXY   ( x y x2 y2 -- dx dy)
+C076 , \  *SP+  R1 MOV, \ x2
+6136 , \  *SP+ TOS SUB, \ y2=y2-y
+0744 , \       TOS ABS,
+6581 , \   R1  *SP SUB, \ x=x-x2
+0756 , \       *SP ABS,
+NEXT,
+ENDCODE
+ 
+\ ?=0 means no coincidence
+: COINC ( spr#1 spr#2 tol -- ?)
+        >R
+        POSITION ROT POSITION ( -- x1 y1 x2 y2 )
+        DXY  R@ <  SWAP R> < AND ;
+ 
+: COINCXY   ( dx dy sp# tol -- ? )
+        >R
+        POSITION   ( -- x1 y1 x2  y2 )
+        DXY  R@ <  SWAP R> < AND ;
 
-\ 0 in all these words means no coincidence
-: COINC  ( spr#1 spr#2 tol -- ?)
-    >R
-    POSITION ROT POSITION ( -- x1 y1 x2  y2 )
-     ROT - ABS R@ <
-    -ROT - ABS R> <  AND
-;
-
-: COINCXY ( x1 y1 sp# tol -- ? )
-    >R
-    POSITION ( -- x1 y1 x2  y2 )
-     ROT - ABS R@ <
-    -ROT - ABS R> < AND
-;
-
-HERE SWAP -
-CR
-CR .( Sprites used ) DECIMAL . .( bytes)
+HERE SWAP - CR .( Sprites2 used ) DECIMAL . .( bytes)

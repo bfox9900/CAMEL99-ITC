@@ -17,7 +17,7 @@ DECIMAL
 
 \ >> smart version but DOES NOT WORK WITH DEFER WORDS 
 
-\: COLON?  ( xt -- ?) @  [ ' DOCOL @ ] LITERAL = ;
+\ : COLON?  ( xt -- ?) @  [ ' DOCOL @ ] LITERAL = ;
 \ VARIABLE TAILCALL  \ control tail call optimizizing with this variable
 \ TAILCALL ON  turns optimizer on
 

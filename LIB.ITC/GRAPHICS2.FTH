@@ -14,14 +14,15 @@ NEEDS DUMP      FROM DSK1.TOOLS
 NEEDS MOV,      FROM DSK1.ASM9900 
 NEEDS VALUE     FROM DSK1.VALUES 
 NEEDS CHARSET   FROM DSK1.CHARSET 
-NEEDS ARRAY     FROM DSK1.ARRAYS 
+\ NEEDS ARRAY     FROM DSK1.ARRAYS 
 NEEDS 4TH       FROM DSK1.3RD4TH \ fast access to deep stack items 
 
-HEX 
+HERE 
 \ 
 \ text mode so we can return to the Forth console 
 \ KERNEL version does not init all registers 
 \
+HEX 
 83D4 CONSTANT VDPR1
 CREATE 40COL
 \    CNT     0     1     2     3     4     5     6     7
@@ -63,7 +64,7 @@ HEX
 8800 CONSTANT VDPRD        \ vdp ram read data port 
 8C00 CONSTANT VDPWD        \ vdp ram write data port
 
-\ : VOR   ( c Vaddr -- ) DUP>R VC@  OR  R> VC! ;  
+\ : VOR   ( c Vaddr -- ) DUP>R VC@  OR  R> VC! ;  \ 10 BYTES
 CODE VOR ( c Vaddr -- )
         VRMODE @@ BL,     \ set read address, disables Interrupts 
         W CLR,
@@ -76,9 +77,9 @@ CODE VOR ( c Vaddr -- )
         TOS POP, 
         2 LIMI, 
         NEXT,
-ENDCODE            
+ENDCODE           \ 28 bytes
 
-\ : VAND  ( c Vaddr -- ) S" DUP>R VC@ AND  R> VC!" EVALUATE ; IMMEDIATE 
+\ : VAND    ( c Vaddr -- ) S" DUP>R VC@ AND  R> VC!" EVALUATE ; IMMEDIATE 
 \ : VERASE  ( c Vaddr -- ) >R INVERT R> VAND ; 
 
 CODE VERASE ( c Vaddr -- )
@@ -95,9 +96,12 @@ CODE VERASE ( c Vaddr -- )
         NEXT,
 ENDCODE 
 
+: VXOR   ( c Vaddr -- ) DUP>R VC@  XOR  R> VC! ;  
+
 \ PENCIL and ERASER are "execution tokens"
 ' VOR    CONSTANT PENCIL
 ' VERASE CONSTANT ERASER 
+' VXOR   CONSTANT BRUSH
 
 VARIABLE STYLUS   \ usage:  PENCIL STYLUS !   ERASER STYLUS !
 
@@ -116,7 +120,7 @@ VARIABLE STYLUS   \ usage:  PENCIL STYLUS !   ERASER STYLUS !
     6 2 VWTR            \ Screen image = 6*>400 = 1800
     07F 3 VWTR          \ Color table at >0000
     7 4 VWTR            \ PATTERN table= VR4*>800 = 2000 
-    70 5 VWTR           \ sprite attribute table: VR5*>80  = >3800 
+    70 5 VWTR           \ sprite attribute table: VR5*> $70 * $80  = >3800 
      7 6 VWTR           \ sprite pattern table: VR6 * >800 = >3800 
     F1 7 VWTR           \ screen background colour white on transparent 
     0E0 DUP VDPR1 C! 1 VWTR   \ set mode, copy into memory for system  
@@ -180,15 +184,15 @@ DECIMAL
 
 HEX
 \ manual tail call optimizer. Improves LINE by 1.5% 
-CODE GOTO   C259 ,  ( *IP IP MOV,)  NEXT, ENDCODE
-: -;  ( -- ) 
-      HERE 2- @ >BODY       \ get previous XT, compute data field
-      -2 ALLOT              \ erase the previous XT
-      POSTPONE GOTO  ,      \ compile the address for GOTO
-      POSTPONE [            \ turn off compiler
-      REVEAL
-      ?CSP
-; IMMEDIATE
+\ CODE GOTO   C259 ,  ( *IP IP MOV,)  NEXT, ENDCODE
+\ : -;  ( -- ) 
+\      HERE 2- @ >BODY       \ get previous XT, compute data field
+\      -2 ALLOT              \ erase the previous XT
+\      POSTPONE GOTO  ,      \ compile the address for GOTO
+\      POSTPONE [            \ turn off compiler
+\      REVEAL
+\      ?CSP
+\ ; IMMEDIATE
 
 : LINE ( x1 y1 x2 y2 -- )
 \ ANS version of Dr. Ting's recursive line R.I.P.
@@ -198,8 +202,8 @@ CODE GOTO   C259 ,  ( *IP IP MOV,)  NEXT, ENDCODE
     4DUP  ROT + 1+ 2/ >R 
     + 1+ 2/ R>
     2DUP 2ROT 
-    RECURSE RECURSE -;
- 
+    RECURSE RECURSE ;
+
 0 VALUE x
 0 VALUE y 
 
@@ -209,4 +213,5 @@ CODE GOTO   C259 ,  ( *IP IP MOV,)  NEXT, ENDCODE
 \ no safety net !! 
 : HLINE ( x y len ) >R MOVETO R>  0 DO  x I +  y  PLOT  LOOP ; 
 : VLINE ( x y len ) >R MOVETO R>  0 DO  y  x I +  PLOT  LOOP ; 
+HERE SWAP - DECIMAL  CR . .( bytes)    
 
