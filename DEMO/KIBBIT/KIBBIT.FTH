@@ -91,7 +91,7 @@ DECIMAL
       [CHAR] E OF  USE-ERASER    ENDOF 
       [CHAR] T OF  USE-ROLLER    ENDOF 
       [CHAR] U OF  USE-ARROW     ENDOF  \ pen up 
-      [CHAR] C OF  INIT_KIBBIT   ENDOF 
+      [CHAR] C OF  INIT_KIBBIT USE-ARROW  ENDOF 
     ENDCASE   
 ;
 
