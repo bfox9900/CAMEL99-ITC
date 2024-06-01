@@ -1,4 +1,5 @@
-\ SPRITES2.FTH  works with GRAPHICS1 or GRAPHICS2    May 29 2024 BFox 
+CR .( SPRITES2.FTH  **needs GRAPHICS1 or GRAPHICS2*) \  May 29 2024 BFox 
+CR .( * SPRITE ARGS are reversed *)
 
 HERE 
 HEX 
@@ -6,7 +7,14 @@ HEX
 837B CONSTANT VDPSTS  \ copy of vdp status register
 
 \ write to VDP current address, address increments automatically
-\ : VC!++  ( char -- ) 8C00 C! ; \ moved to GRAPHICS2
+HEX
+CODE VC!++
+    0300 , 0 ,    \ 0 limi, 
+    06C4 ,        \ TOS SWPB,
+    C804 , 8C00 , \ TOS 8C00 @@ MOV,
+    C136 ,        \ TOS POP,
+    NEXT,
+ENDCODE
 
 \ A Sprite is controlled by a record of four bytes in VDP RAM.  
 \ In Forth they are like "byte" variables but in VDP RAM.
