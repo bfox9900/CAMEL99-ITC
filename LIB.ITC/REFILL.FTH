@@ -10,9 +10,9 @@ DECIMAL
       SOURCE-ID @
       IF
          2 FILEOP ?FILERR
-         RP0 100 - DUP FGET  >IN OFF
+         TIB DUP FGET 
       ELSE
-         TIB DUP 120 ACCEPT
+         TIB DUP 80 ACCEPT
       THEN
-      DUP 0 <>
+      DUP 0>
 ;

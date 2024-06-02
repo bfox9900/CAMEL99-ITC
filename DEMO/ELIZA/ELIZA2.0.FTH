@@ -184,7 +184,7 @@ HEX
 \ organize the keyword order to optimize responses
 .( .)
 DECIMAL
-    ${ $" SHIT"      $" SHUTUP"
+   ${ $" SHIT"      $" SHUTUP"
       $" DICK"      $" FUCK"      $" ASS"  $" BASTARD"
       $" ROBOT"     $" COMPUTER"
       $" CONSOLE"   $" SORRY"      $" ALWAYS"
@@ -198,14 +198,14 @@ DECIMAL
       $" I DON'T"   $" I FEEL"     $" ARE YOU"   $" I CAN'T"
       $" I AM"      $" I'M"
       $" YOUR"      $" I WANT"     $" MY"
-      $" HI $"       $" MAYBE"      $" I NEED"
-      $" THINK"     $" YOU $"       $" YES"
+      $" HI $"      $" MAYBE"      $" I NEED"
+      $" THINK"     $" YOU $"      $" YES"
       $" I HAVE"    $" I'VE"       $" REALLY"
       $" WHAT"      $" HOW"
       $" WHO"       $" WHERE"      $" WHEN"      $" WHY"
       $" JE"        $" ICH"
       $" SPRECHEN"  $" SPREKEN"    $" HABLA"     $" PARLEZ"
-      $" ITALIANO"  $" ESPANOL $"   $" FRANCAIS"
+      $" ITALIANO"  $" ESPANOL $"  $" FRANCAIS"
       $" DEUTSCH"   $" NEDERLANDS"
       $" NO"        $" WE"         $" OK"
 
@@ -214,7 +214,18 @@ DECIMAL
 
 
 : SEARCH[] ( search$ len array_base_address -- n)
-         BEGIN 
+      NEXT$  >R  
+      BEGIN
+        R@ C@
+      WHILE   
+        
+      
+
+
+
+
+
+
 ;             
    
 
