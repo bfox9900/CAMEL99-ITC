@@ -232,12 +232,11 @@ CREATE TANKS ( -- addr)
 \   7 CONSTANT NW
 
 \ select a pattern with a heading 
-: ]TANK  ( heading -- Pattern-addr) CELLS  TANKS + @  ; 
+: ]TANK  ( heading -- Pattern-addr) CELLS TANKS + @  ; 
 
 : TANK-SHAPE ( heading -- ) \ set pattern based on HEADING variable
   \ RAM address   VDP address   bytes 
-      ]TANK      PANZER @ ]PDT   8  VWRITE ;
-
+    ]TANK        PANZER @ ]PDT   8  VWRITE ;
 
 
 \ double constant array of vectors, rotating clockwise like headings 
@@ -261,6 +260,7 @@ CREATE VECTORS  ( -- addr)
 DECIMAL 
 : DIRECTION  ( heading  -- ) 
    ?HEADING 
+   PAUSE 
    DUP HEADING !        \ remember the new heading       
    DUP ]VECTOR  DXDY!   \ set tank's vectors for this heading 
        TANK-SHAPE       \ set the graphic for this heading 
@@ -296,8 +296,9 @@ DECIMAL
         I 4* DB 
     LOOP 
     DROP  
-    -28 DB 60 MS
-    SILENT 
+   -26 DB 60 MS 
+   SILENT 
+
 ;
 
 \ add coordinates to a vector 
@@ -331,14 +332,15 @@ DECIMAL
 ;
 
 : DECAY1 ( n -- )
-    -10 DB DUP MS 
-    -18 DB DUP MS 
-    -22 DB DUP MS 
-    -26 DB     MS 
-     MUTE  ;
+    -10 DB DUP TICKS
+    -18 DB DUP TICKS 
+    -22 DB DUP TICKS 
+    -26 DB     TICKS 
+    MUTE
+;
 
-: BOINK          900 HZ   9 DECAY1 ; 
-: BONK           120 HZ   9 DECAY1 ;
+: BOINK       900 HZ  500 DECAY1   ; 
+: BONK        120 HZ  500 DECAY1   ;
 
 \ SCAN is a fast word to find a character 
 : SCANFOR ( Caddr -- n)  COUNT ROT SCAN NIP ;
@@ -366,13 +368,14 @@ DECIMAL
         ADVANCE  
         THINK    \ this can RUN anything 
       REPEAT 
-      GEN2 BONK  
+      BONK MUTE 
       RND-HEADING 
     AGAIN 
 ;
 
 : ALPHA-TANK ( --) 
     100 SPEED !  
+    GEN2 MUTE 
     PANZER @ SET# GRAY RED COLOR 
     ['] PAUSE BRAIN ! 
     ALPHA-MIND  
@@ -383,15 +386,17 @@ DECIMAL
 : FREEZE  ( -- ) 2500 RND 500 + MS ;
 
 : RABBIT-THOUGHTS 
-    7  %CHANCE IF GO-LEFT      THEN 
-    7  %CHANCE IF GO-RIGHT     THEN 
-    1  %CHANCE IF TURN-AROUND THEN 
-    2  %CHANCE IF FREEZE       THEN 
-    5  %CHANCE IF 50 RND 5 + SPEED ! THEN  
+    MUTE 
+    7  %CHANCE IF GO-LEFT            EXIT THEN 
+    7  %CHANCE IF GO-RIGHT           EXIT THEN 
+    1  %CHANCE IF TURN-AROUND        EXIT THEN 
+    2  %CHANCE IF FREEZE             EXIT THEN 
+    5  %CHANCE IF 50 RND 5 + SPEED ! EXIT THEN 
 ; 
 
 : RABBIT-TANK ( --) 
     100 SPEED !  
+    GEN3 MUTE 
     PANZER @ SET# BLUE RED COLOR 
     15 12 XY.TANK 
     ['] RABBIT-THOUGHTS BRAIN ! 
@@ -410,7 +415,7 @@ DECIMAL
 
 : ALPHA-HUNTER ( --)
     95 SPEED ! 
-    GEN2 ( set the sound generator for this task )
+    GEN1 MUTE ( set the sound generator for this task )
     15 12 XY! 
     RND-HEADING  
     PANZER @ SET# BLACK RED COLOR 
@@ -425,11 +430,11 @@ DECIMAL
       
       DUP BKG =  IF DROP ADVANCE        ELSE 
                  \ default actions     
-                    BOINK  GEN2 MUTE 
+                    BOINK  MUTE 
                     RND-HEADING 
                     DROP
       THEN THEN 
-      GEN2 MUTE 
+      MUTE 
     AGAIN 
 ;
 
@@ -446,7 +451,7 @@ DECIMAL
 : STALKER ( -- ) 
 \ finds a hiding place and shoots what comes past
     100 SPEED ! 
-    GEN2 
+    GEN2 MUTE 
     PANZER @ SET#  GREEN RED COLOR 
     15 12 XY.TANK
     GO-AND-HIDE 
@@ -456,7 +461,7 @@ DECIMAL
       DUP ENEMY? 
       IF  DESTROY  KILLS 1+!
       ELSE DROP  
-      THEN GEN2 MUTE 
+      THEN MUTE 
 
       \ every so often move to a new location
       10000 RND 5 < IF GO-AND-HIDE THEN   
@@ -470,8 +475,8 @@ DECIMAL
 
 \ assign the configured tank programs to tasks
 : CREATE-TANKS 
-  ['] ALPHA-HUNTER TANK0  TANK-BUILDER 
-  ['] STALKER      TANK1  TANK-BUILDER
+  ['] ALPHA-HUNTER TANK0 TANK-BUILDER 
+  ['] STALKER      TANK1 TANK-BUILDER
   
   ['] ALPHA-TANK  TANK2  TANK-BUILDER
   ['] ALPHA-TANK  TANK3  TANK-BUILDER
@@ -508,10 +513,10 @@ HEX
 83D6 CONSTANT ALWAYS   \ :-) screen time-out timer
 
 DECIMAL
-: PROMPT  0 23 AT-XY ;
+: PROMPT  0 23 AT-XY  VPOS C/L@  BL VFILL ;
 
 \ scan each task to see if it is still awake
-: #LIVE ( -- n) 
+: .#LIVE ( -- n) 
   0  
   16 0 DO  
     PAUSE 
@@ -524,51 +529,58 @@ DECIMAL
 
 DECIMAL 
 : RESTARTS ( n -- ) 
-    1 DO  
+  2+  2 DO    \ skip first 2 tanks, hunter and stalker 
       PAUSE  
       I ]PID  RESTART  
-      500 MS 
-      #LIVE 
+      800 MS 
+      .#LIVE 
     LOOP ;
 
-: RUN  
-  DECIMAL 
-  INIT-MULTI 
-  DRAW-SCREEN 
-
-  HERE                 \ task table will use memory at HERE 
+: BUILD-TANKS     
+ HERE                 \ task table will use memory at HERE 
   NEW-HEAP 
   16 TASKS TO TASK-TBL \ Spawn 16 tasks. Assign HERE to task table
                             
   CREATE-TANKS 
 
-  TANK0 PID RESTART    \ start the hunter first
   MULTI  
-  PROMPT ." Hunter tank activated"
+  PROMPT ." Creating Tank processes"
+  12 RESTARTS          \ the "prey" 
+  3000 MS 
 
+  PROMPT ." Stalker tank activated"
+  TANK1 PID RESTART .#LIVE 
   2000 MS 
 
-  PROMPT ." Creating Tank processes"
-  15 RESTARTS          \ the STALKER and the "prey" 
+  PROMPT ." Hunter tank activated"
+  TANK0 PID RESTART .#LIVE   \ start the hunter first
+  2000 MS
+; 
 
-\ console task just updates the score and waits for break key 
-  CLRLN 
+: RUN  
   BEGIN 
-    ALWAYS ON 
-    .SCORE  
-     PAUSE 
-    ?TERMINAL #LIVE 1 = OR
-  UNTIL
-  800 MS 
-  BEEP CLRLN 0 23 AT-XY  ." Simulation completed"
-  SINGLE 
-  SILENT  
-  KEY DROP
-  PAGE ABORT  
+    DECIMAL 
+    INIT-MULTI  DRAW-SCREEN  BUILD-TANKS    
+    \ console task updates the score and waits for break key 
+    CLRLN 
+    BEGIN 
+      ALWAYS ON 
+      .SCORE  
+      PAUSE 
+      ?TERMINAL .#LIVE 1 = OR
+    UNTIL
+    800 MS 
+    BEEP CLRLN 0 23 AT-XY  ." Simulation completed"
+    2000 MS 
+    SINGLE SILENT  
+    PROMPT ." Exit simulation?" 
+    KEY [CHAR] Y =
+  UNTIL 
+  BYE
 ;
 
-: STARTER   
-  WARM  GRAPHICS  RUN   ABORT ;
+\ this words starts the binary program 
+: STARTER     WARM  GRAPHICS  RUN   ABORT ;
 
   LOCK
   INCLUDE DSK1.SAVESYS 
