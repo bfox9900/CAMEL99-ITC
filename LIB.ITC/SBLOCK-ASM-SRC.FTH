@@ -7,79 +7,83 @@ NEEDS ELAPSE FROM DSK1.ELAPSE
 NEEDS SAMSINI  FROM DSK1.SAMSINI
 
 HERE
-\ ==========================================
-\ BLOCK is the entire SAMS manager
+VARIABLE SEG \ holds first page of active segment 
+
+:  SEGMENT  ( n -- ) 4 LSHIFT SEG ! ;
+
+1 SEGMENT   \ set SAMS to be in 64K above console memory. 
+
+
 HEX
-VARIABLE USE
-CREATE BLK#S       0 ,    0 ,      \ SAMS page in the buffer
+VARIABLE USE                       \ holds the last window used 
+CREATE PAGES       0 ,    0 ,      \ SAMS page#s in the RAM
 CREATE WINDOWS  2000 , 3000 ,      \ windows in Low CPU RAM
 
-CODE BLOCK+ ( offset page# -- real_addr)
-         R0  BLK#S LI,     \ handle 0 search
-         R0 ** TOS CMP,
-          EQ IF,
-                TOS 2000 LI,
-                *SP+ TOS ADD, 
-                NEXT,      \ Return to Forth
-          ENDIF,
+\ >REAL converts a virtual segment address to a real address
+CODE >REAL ( virtual -- real_addr)
+\ this does  4096 /MOD       
+      TOS R5 MOV,      \ dup 
+      R5 0FFF ANDI,    \ MOD 4096
+      R5 PUSH,         \ push REMAINDER 
+      TOS 0C SRL,      \ divide by 4096
+      SEG @@ TOS ADD,  \ add start page of active segment 
 
-                R0 INCT,   \ handle 1 search
-         R0 ** TOS CMP,
-          EQ IF,
-                TOS 3000 LI,
-                *SP+ TOS ADD, 
-                NEXT,     \ Return to Forth
-          ENDIF,
+\ tests to see if SAMS is already paged in       
+      R0  PAGES LI,     \ WINDOW 0 search
+      R0 ** TOS CMP,
+      EQ IF,
+            TOS 2000 LI,  \ set window 0
+            *SP+ TOS ADD, \ add the offset 
+            NEXT,         \ Return to Forth
+      ENDIF,
 
-         W    0001 LI,
-         USE @@  W XOR,
-         W  USE @@ MOV,
-         W       1 SLA,   \ W 2* is index
-     TOS BLK#S (W) MOV,   \ store the bank#
+            R0 INCT,       \ WINDOW 1 search
+      R0 ** TOS CMP,
+      EQ IF,
+            TOS 3000 LI,   \ set window 1
+            *SP+ TOS ADD,  \ add the offset 
+            NEXT,          \ Return to Forth
+      ENDIF,
+\ page is not in memory ... 
+\ toggle the last window used 
+      W    0001 LI,
+      USE @@  W XOR,
+      W  USE @@ MOV,   \ update the use variable 
+      W       1 SLA,   \ W 2* is index into PAGES
+  TOS PAGES (W) MOV,   \ store the PAGE we will use in PAGES
 
-    WINDOWS (W) R1 MOV,   \ get the window to use
-          R1    0B SRL,   \ divide by 2048
-          R1  4000 AI,    \ convert to SAMS register address
-          R12 1E00 LI,    \ cru address of SAMS
-                 0 SBO,   \ SAMS card on
-              TOS  SWPB,  \ swap bytes on bank value
-         TOS R1 ** MOV,   \ load bank into register
-                 0 SBZ,   \ SAMS card off
+\ compute SAMS register to use 
+ WINDOWS (W) R1 MOV,   \ get the window to use
+       R1    0B SRL,   \ divide by 2048
+       R1  4000 AI,    \ convert to SAMS register address
 
-   WINDOWS (W) TOS MOV,   \ return buffer on TOS
+\ turn on the SAMS card        
+       R12 1E00 LI,    \ set cru address of SAMS card
+              0 SBO,   \ SAMS card on
+\ map in the new page 
+           TOS  SWPB,  \ swap bytes on bank value
+      TOS R1 ** MOV,   \ load bank into register
+              0 SBZ,   \ SAMS card off
 
-          *SP+ TOS ADD, 
-                   NEXT,
+WINDOWS (W) TOS MOV,   \ return buffer on TOS
+
+       *SP+ TOS ADD,   \ add the offset  
+                NEXT,
 ENDCODE
  
-VARIABLE SEG  1 SEG ! 
+\ "long" memory store and fetch 
+: !L    ( n virtual --) >REAL ! ;
+: C!L   ( c virtual --) >REAL C! ;
+: @L    ( virtual -- n) >REAL @ ;
+: C@L   ( virtaul -- c) >REAL C@ ;
 
-CODE >SEGMENT ( virtual -- offset page#)
-      TOS PUSH, 
-      SEG @@ TOS MOV,     \ segment# to R0
-      TOS 4 SLA,          \ page# segment starts
-      *SP R5 MOV,        \ low cell to R5 
-      
-      R5  R0 MOV,         \ dup in R0
-      R0  0C SRL,         \ divide by 2048
-      R0 TOS ADD,        \ bank# = R0 + tos 
-      
-      R5 0FFF ANDI,     \ page offset masked to 12 bits 
-      R5 *SP MOV,       \ put back on stack 
-      NEXT, 
-ENDCODE 
-: >REAL ( virtual -- offset page#) >SEGMENT BLOCK+ ;
+\ test code 
+HEX 
+2000 CONSTANT 4K 
+-1 CONSTANT 64K 
+DECIMAL 
+\ write 32K cells to RAM address
+: 32KRAM     32768 0 DO  I  3000  !  2 +LOOP ;  \ 4.43 
 
-: !L    ( virtual -- ) >REAL ! ;
-
-DECIMAL
-: TEST  
-   65535 0 
-   DO 
-     [CHAR] %  I !L
-   LOOP ;
-
-\ seg @ 1000 um/mod 45 secs 
-\ seg @ 4k/mod  41 secs 
-\ >SEGMENT      37.1 secs
-\ BLOCK+        35.58 
+\ write 32K cells to SAMS virtual address
+: 32KSAMS    32768 0 DO  I  3000 !L  2 +LOOP ;  \ 7.88
