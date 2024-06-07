@@ -9,7 +9,8 @@ DECIMAL
 
 : BIG.TYPE ( addr len -- )
     8 0 DO  CR                       ( str len)
-        2DUP BOUNDS ?DO
+        2DUP BOUNDS 
+        ?DO
             I C@ DUP LETTER !
             ]PDT J +  VC@            \ PDT char, byte# J from VDP RAM
             2 7 DO                   \ from bit# 7 to 2

@@ -28,6 +28,13 @@ NEEDS BIG.TYPE  FROM DSK2.BIG.TYPE
 
 MARKER /ELIZA  \ remove everthing but the library files 
 
+\ ==============================================
+\ WIL BADEN'S MACRO maker R.I.P. 
+: SLITERAL ( ca u --) POSTPONE (S")  S,  ; IMMEDIATE
+: MACRO  
+  :   CHAR PARSE  POSTPONE SLITERAL  POSTPONE EVALUATE POSTPONE ;  IMMEDIATE 
+;
+
 \ ======[ punctuation characters ]======
 DECIMAL
 CHAR ~ CONSTANT '~'   \ strings that end with '~' reflect the users input
@@ -125,7 +132,7 @@ CREATE TEMP$  ( -- adr) 80 ALLOT
       2DROP
       TEMP$ COUNT ;
 
-S"  This $is %a @ noisy %&*#$@ string!#@$!"  NOISE$  STRIP CR TYPE 
+\ S"  This $is %a @ noisy %&*#$@ string!#@$!"  NOISE$  STRIP CR TYPE 
 
 \
 \ string arrays indexed by byte count, with index protection 
@@ -266,8 +273,8 @@ VARIABLE NDX
 ;        
 
 \ worst case search=2.96 seconds 
-S"  MPs 'wittingly' helped foreign Liberals too slow to respond"  
-INPUT$ PLACE 
+: A$ S"  MPs 'wittingly' helped SHUTUP Liberals ARE YOU too slow to"  ; 
+A$ INPUT$ PLACE 
 
 : TEST   INPUT$ FIND-KEYWORD 0= ABORT" not found" CR  ]KEYWORD TYPE ;
 
@@ -291,12 +298,6 @@ INPUT$ PLACE
       DUP 0< ABORT" >ACTION ndx err"
       ]KEYWORD NOISE$ STRIP COUNT ;
 
-\ ==============================================
-\ WIL BADEN'S MACRO maker R.I.P. 
-: SLITERAL ( ca u --) POSTPONE (S")  S,  ; IMMEDIATE
-: MACRO  
-  :   CHAR PARSE  POSTPONE SLITERAL  POSTPONE EVALUATE POSTPONE ;  IMMEDIATE 
-;
 
 \ ==============================================
 \        --- REPLIES SUPPORT CODE ---

@@ -32,9 +32,9 @@ CODE >REAL ( virtual -- real_addr)
       R0  PAGES LI,     \ WINDOW 0 search
       R0 ** TOS CMP,
       EQ IF,
-            TOS 2000 LI,  \ set window 0
-            *SP+ TOS ADD, \ add the offset 
-            NEXT,         \ Return to Forth
+            TOS 2000 LI,   \ set window 0
+            *SP+ TOS ADD,  \ add the offset 
+            NEXT,          \ Return to Forth
       ENDIF,
 
             R0 INCT,       \ WINDOW 1 search
