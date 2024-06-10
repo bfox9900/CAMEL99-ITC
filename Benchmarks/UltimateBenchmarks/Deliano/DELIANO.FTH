@@ -2,7 +2,7 @@
 \ Ein Benchmark für 8bit Mikrocontroller, angeregt in Vierte Dimension 03/93
 \ von Rafael Deliano
 \ A-ONE (Apple 1 Clone) mit 65C02	TaliForth 2 (STC)   Deliano 0:29.0  1x
-\ Z79Forth (Hitachi HD63C09 3 Mhz)	                	Deliano 7:53.0	50x
+\ Z79Forth (Hitachi HD63C09 3 Mhz)	                	Deliano 7:53.0	50x = 0:9.63 for 1X 
 \                                                           = 0:09.46 1x
 \ TI-99                         Camel99 Forth (ITC)   Deliano 0:26.5  1x
 \                                         v2.69B              0:26.2  1x
@@ -26,3 +26,5 @@ HEX
         DUP 0100 AND
      UNTIL DROP
    LOOP ;
+
+INCLUDE DSK1.JIT 
