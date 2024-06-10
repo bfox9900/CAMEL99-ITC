@@ -40,6 +40,6 @@ VARIABLE NODES
   . ." QUEENS: " SOLUTIONS @ . ." SOLUTIONS, " NODES @ . ." NODES" ;
 
 CR .( Type: ELAPSE 8 QUEENS ) 
-CR .( and be amazed)  
+CR .( and be amazed)  ( 5.55 seconds )
 
 
