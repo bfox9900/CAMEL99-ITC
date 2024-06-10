@@ -1,13 +1,9 @@
 \ literal translation of BASIC program to Forth 
 
-\                             V2.73        ITC     DTC 
-\ V1 literal translation from BASIC       1:20.9  1:04
+\                             V2.73        ITC   
+\ V1 literal translation from BASIC       1:20.9  
 \      "          "   with fast scroll    1:02.8
 \ compiled basic                          1:40.0
-
-\ V2 replaced variables with VALUES:      1:08    1:01
-\ V3 print with address loop, not indices         1:00  
-\ V4 Fast scroll & all above                      0:57 
 
 INCLUDE DSK1.TOOLS 
 INCLUDE DSK1.ELAPSE 
