@@ -3,8 +3,9 @@
 \ C64	DurexForth 1.6.1 (STC)                	Integer	Calc        0:37.0
 \ Rockwell R1200-14, 2Mhz 65F12	RSC-Forth	    Integer Calc	      0:31.0
 \ Amstrad 6128+ Z80A 4Mhz	Uniforth	          Integer Calc	      0:17.0
-\ TI99 Camel99 Forth (ITC)                    Integer Calc        0:14.7
-\       with FAST @ and !                                         0:14.63
+\ TI99 Camel99 Forth (ITC)                    Integer Calc        0:14.76
+\  with inline optimizing                                         0:10.85 
+
 \                    (DTC)                                        0:12.4
 \    (DTC)   with inline next                                     0:11.90
 \    (DTC)   with inline next & hispeed PRIMS                     0:11.76
@@ -38,3 +39,19 @@ VARIABLE INTRESULT
 ;
 
 \ ELAPSE DOINT
+
+INCLUDE DSK1.INLINE
+
+: DOINT2 
+  INLINE[ 1 DUP INTRESULT DUP >R ! ]
+  BEGIN
+    INLINE[ DUP INTMAX < ]
+  WHILE
+    INLINE[ DUP NEGATE R@ +! 1+    DUP R@ +! 1+ ]
+    INLINE[ R@ @ OVER ] *  INLINE[ R@ ! 1+ ]
+    INLINE[ R@ @ OVER ] /  INLINE[ R@ ! 1+ ]
+  REPEAT
+  R> DROP DROP
+;
+
+

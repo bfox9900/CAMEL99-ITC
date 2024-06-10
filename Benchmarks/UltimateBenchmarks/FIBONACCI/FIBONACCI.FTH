@@ -1,4 +1,5 @@
 \ https://www.theultimatebenchmark.org/#sec-13-5
+\ demonstrates 3 levels optimizing 
 
 NEEDS ELAPSE FROM DSK1.ELAPSE
 
@@ -22,19 +23,18 @@ NEWSTACK
 DECIMAL
 HERE
 DECIMAL
-: FIB2
+: FIB
   0 1 ROT 0 DO
     OVER + SWAP
   LOOP DROP ;
 
-: FIB2-BENCH 
+: FIB-BENCH 
   1000 0 DO
-    I FIB2 DROP
+    I FIB DROP
   LOOP ;
 
 HERE SWAP -  . ( 70 BYTES)
-
-\   ELAPSE ' FIB2-BENCH 1 BENCHME  \ 1:48.0
+\   ELAPSE FIB-BENCH  1:48.0
 
 
 INCLUDE DSK1.JIT 
@@ -42,19 +42,28 @@ INCLUDE DSK1.JIT
 JIT: FIB2
   0 1 ROT 0 
   DO
-    \ OVER + SWAP  ( much slower)
-    BOUNDS 
+    OVER + SWAP 
   LOOP
   DROP 
 ;JIT
 
-: FIB2-JIT
+: FIB-JIT
   1000 0 DO
     I FIB2 DROP
   LOOP 
 ;
+\   ELAPSE FIB-JIT 0:42.55
 
-\  
-\ 1x = 0:43  
-\  ELAPSE  ' FIB2-JIT 10 BENCHME 
-\ with BOUNDS 10X = 3:40.8
+\ inline the function so everthing is compiled as native code 
+JIT: FIB3-JIT
+  1000 0 DO
+    I 0 1 ROT 0 
+    DO
+      OVER + SWAP 
+    LOOP
+    DROP 
+    DROP 
+  LOOP 
+;JIT
+\   ELAPSE FIB-JIT 0:42.36  
+\ *ALMOST NO IMPROVEMENT WITH OUTER LOOP OPTIMIZED 
