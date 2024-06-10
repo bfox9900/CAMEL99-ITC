@@ -70,7 +70,7 @@ DECIMAL
 \ V2.68                     24.0
 
 
-( Forth using DSK1.DIRSPRIT library Fox words )
+( Forth using DSK1.DIRSPRIT library words )
 \ Method: compute the sprite address at compile time.
 : ]FOLD      ]  POSTPONE LITERAL ;  IMMEDIATE
 
@@ -243,7 +243,7 @@ DECIMAL
 
 : TITLE  PAGE 3 12 AT-XY   ;  \ resets timer 
 : RESET  BEEP  TICKER OFF ;
-: .TIME   5 13 AT-XY  .ELAPSE 2000 MS ;
+: .TIME   5 13 AT-XY  .ELAPSED 2000 MS ;
 
 : DO-TESTS 
    TITLE ." Using LOCATE command"          RESET TURSI.FORTH   .TIME
