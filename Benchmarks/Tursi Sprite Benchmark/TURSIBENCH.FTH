@@ -241,17 +241,19 @@ DECIMAL
         0 175 DO    0   I  0 LOCATE   -11 +LOOP
     LOOP ;
 
-: TITLE  PAGE 3 12 AT-XY ;
+: TITLE  PAGE 3 12 AT-XY   ;  \ resets timer 
+: RESET  BEEP  TICKER OFF ;
+: .TIME   5 13 AT-XY  .ELAPSE 2000 MS ;
 
 : DO-TESTS 
-   TITLE ." Using LOCATE command"        BEEP TURSI.FORTH 
-   TITLE ." Using SP.X, SP.Y VDP arrays " BEEP TURSI.FOX 
-   TITLE ." Using CONSTANT VDP address" BEEP TURSI.OPT 
-   TITLE ." Using constant folding"     BEEP TURSI.OPT2 
-   TITLE ." Using INLINE[] optimizer" BEEP TURSI.INLINE 
-   TITLE ." Using MoveSprite ASM function" BEEP TURSI.BOOSTER 
-   TITLE ." Using Forth Assembler"       BEEP TURSI.CODE 
-   TITLE ." Forth LOCATE, cheating :)" BEEP TURSI.CHEAT 
+   TITLE ." Using LOCATE command"          RESET TURSI.FORTH   .TIME
+   TITLE ." Using SP.X, SP.Y VDP arrays "  RESET TURSI.FOX     .TIME 
+   TITLE ." Using CONSTANT VDP address"    RESET TURSI.OPT     .TIME
+   TITLE ." Using constant folding"        RESET TURSI.OPT2    .TIME
+   TITLE ." Using INLINE[] optimizer"      RESET TURSI.INLINE  .TIME
+   TITLE ." Using MoveSprite ASM function" RESET TURSI.BOOSTER .TIME
+   TITLE ." Using Forth Assembler"         RESET TURSI.CODE    .TIME
+   TITLE ." Forth LOCATE, cheating :)"     RESET TURSI.CHEAT   .TIME 
 ;
 
 : TITLE-PAGE 
