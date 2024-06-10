@@ -32,7 +32,7 @@ VARIABLE NDX   ( transfers loop index out of DO LOOP )
     DO    
         I NDX !                 \ copy I for later 
         I ]A C@ 7 *  CARRY @ +  \ 210 A(I)=A(I)*7+CARRY
-\ We avoid some math with divide & mod
+\ We avoid some math with divide & mod ( UM/MOD ) function 
         0 10 UM/MOD  CARRY !    \ 220 CARRY=INT(A(I)/10)
         I ]A C!                 \ 230 A(I)=A(I)-CARRY*10
         I ]A C@ 7 =             \ 240 IF A(I)<>7 THEN 290
