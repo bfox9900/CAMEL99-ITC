@@ -15,7 +15,7 @@ VARIABLE CARRY
 VARIABLE INAROW 
 VARIABLE NDX   ( transfers loop index out of DO LOOP )
 
- 256 CARRAY ]A                  \  100 DIM A(256)
+ 256 CARRAY ]A                  \ 100 DIM A(256)
 : RUN 
   CR ." 7's Problem "           \ 110 PRINT "7's Problem"
   0 ]A 256 0 FILL               \ init ]A to zero
