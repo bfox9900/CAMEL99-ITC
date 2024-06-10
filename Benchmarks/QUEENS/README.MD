@@ -16,4 +16,4 @@ In 8queens-assembler.fth we use the ;CODE ENDCODE structure and the Assembler to
 
 The file Queens-fast.fth uses binary operations to speed up the solution by ten times versus the Forth Dimensions solution.  
 
-The file Queens-faster.fth uses the words 3RD and 4TH from the libary to speed up stack accesses deeper in the stack resulting in a further 24% speed. 
+The file Queens-faster.fth uses the words 3RD and 4TH from the libary to speed up stack accesses deeper in the stack resulting in a further 24% speed improvement. 
