@@ -4,7 +4,8 @@
 \ Camel99 DTC     104     103    67.3
 \ TurboForth      107
 \ Camel99 ITC     120     117    75.6
-\ FbForth 2.0:13  174
+\ FbForth 3.0     174
+
 NEEDS ELAPSE FROM DSK1.ELAPSE
 
 DECIMAL
