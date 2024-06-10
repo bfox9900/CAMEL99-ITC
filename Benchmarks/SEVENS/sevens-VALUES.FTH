@@ -1,9 +1,12 @@
 \ literal translation of BASIC program to Forth 
-\                                          ITC     DTC 
-\ V1 using variables and ARRAY:           1:10    1:04
-\ V2 replaced variables with VALUES:      1:08    1:01
-\ V3 print with address loop, not indices         1:00  
-\ V4 Fast scroll & all above                      0:57 
+
+\ *V2.73 Camel99 uses a smaller but slower VDP driver. 
+
+\                                   v2.73  ITC      DTC 
+\ V1 using variables and ARRAY:           1:20.9   1:04
+\ V2 replaced variables with VALUES:      1:19.8   1:01
+\ V3 print with address loop, not indices          1:00  
+\ V4 Fast scroll & all above                       0:57 
 
 INCLUDE DSK1.TOOLS 
 INCLUDE DSK1.ELAPSE 
@@ -12,6 +15,9 @@ INCLUDE DSK1.VALUES
 
 DECIMAL 
 : ?BREAK   ?TERMINAL ABORT" *BREAK*" ; 
+
+\ Scroll ends up being the slowest part of the benchmark.
+\ Uncomment the screen I/O code below to a faster driver 
 \ .......................................................
 \ SCROLL entire screen in one block with VMBR and VMBW
 \ : SCROLL ( -- )

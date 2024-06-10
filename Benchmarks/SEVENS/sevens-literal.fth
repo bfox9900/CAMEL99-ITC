@@ -1,8 +1,34 @@
 \ literal translation of BASIC program to Forth 
 
+\                             V2.73        ITC     DTC 
+\ V1 literal translation from BASIC       1:20.9  1:04
+\      "          "   with fast scroll    1:02.8
+\ compiled basic                          1:40.0
+
+\ V2 replaced variables with VALUES:      1:08    1:01
+\ V3 print with address loop, not indices         1:00  
+\ V4 Fast scroll & all above                      0:57 
+
 INCLUDE DSK1.TOOLS 
 INCLUDE DSK1.ELAPSE 
 INCLUDE DSK1.ARRAYS 
+
+\ Scroll ends up being the slowest part of the benchmark.
+\ Uncomment the screen I/O code below to a faster driver 
+\ .......................................................
+
+\ SCROLL entire screen in one block with VMBR and VMBW
+\ : SCROLL ( -- )
+\  HERE 100 + DUP>R  VTOP @  ( --  buffer dst) ( r: BUFFER)
+\  DUP C/L@ + R>             ( -- buffer dst src buffer)  
+\  [ C/SCR @ C/L @ - ] LITERAL DUP>R VREAD  R> VWRITE 
+\  0 23 2DUP >VPOS C/L@ BL VFILL  \ erase bottom line
+\  AT-XY ;                        \ set cursor  
+
+\ this code is the same as the kernel, but with faster scroll 
+\ : CR     (  -- )     VCOL OFF  VROW ++@  L/SCR = IF SCROLL THEN ;
+\ : (EMIT) ( char -- ) VPOS VC!  VCOL ++@ C/L@ = IF CR THEN ;
+\ .......................................................
 
 DECIMAL 
 : ?BREAK   ?TERMINAL ABORT" *BREAK*" ; 
