@@ -1,5 +1,7 @@
 \ VDP STRING LIB DEMO code
 
+NEEDS VDIM FROM DSK1.VDPSTRINGS 
+
 \ create string variables. Assignment at compile time
 DECIMAL
  80 VDIM A$    A$ :=" This is A$ in VDP RAM :-)"
