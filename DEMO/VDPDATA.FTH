@@ -1,60 +1,56 @@
 \ Forth DATA in VDP memory
+\ Conclusion:  
+\   Keeping text data in VDP RAM is almost as good as CPU RAM
 
+NEEDS .S     FROM DSK1.TOOLS 
 NEEDS ELAPSE FROM DSK1.ELAPSE
 NEEDS VHERE  FROM DSK1.VDPMEM  ( VHERE VALLOT  VC,  V, VCOUNT VCREATE )
 
 \ VDP RAM const and var
-: VCONST ( n -- ) CREATE  VHERE ,    V,  DOES> @ V@ ;
-: VVAR   ( -- )   CREATE  VHERE ,  0 V,  DOES> @ ;
-
-\ make the same construct for vars and const in CPU RAM ( apples to apples)
-: CONST           CREATE       ,        DOES> @ ;
-: VAR             CREATE     0 ,        DOES> @ ;
+: CONST ( n -- )  CREATE  VHERE ,    V,  DOES> @ V@ ;
+: VAR   ( -- )    CREATE  VHERE ,  0 V,  DOES> @ ;
 
 \ compile stack string into VDP memory
 : VS,     ( $adr len-- )  VHERE OVER CHAR+  VALLOT VPLACE ;
+
+\ compile string into VDP RAM upto quote
+: VS"       ( <text>" ) 
+      ?COMP 
+      VHERE               \ get address of free VDP ram
+      [CHAR] " PARSE VS,  \ parse the string, compile to VDP ram 
+      POSTPONE LITERAL    \ compile the VDP address as a literal 
+      POSTPONE VCOUNT ;   \ compile VCOUNT 
+IMMEDIATE 
 
 \ Print a VDP stack string
 : VDPTYPE   ( vdp_addr len -- ) BOUNDS ?DO   I VC@ (EMIT)  LOOP ;
 
 \ Compile a VDP string, that types itself
-: V."   ( <text> )
-        ?COMP                     \ Abort if not compiling
-        VHERE                     \ free memory location in VDP RAM
-        [CHAR] " PARSE VS,        \ compile <text> into VDP RAM upto quote
-
-       \ Compile this code after the string so it prints itself
-        ( vhere) POSTPONE LITERAL
-        POSTPONE VCOUNT
-        POSTPONE VDPTYPE ; IMMEDIATE
+: V."   ( -- ) ?COMP  POSTPONE VS"   POSTPONE VDPTYPE ; IMMEDIATE
+\ --- 
 
 \ TESTS
+: V$   
+ VS" This string is in VDP RAM. It returns a Vaddr and length" ;
+: R$  
+  S" This string is in CPU RAM. It returns an addr and length" ;
+
 DECIMAL
-VAR X
-VAR Y
+VARIABLE X  VARIABLE Y
 : INT-TEST
       99  X !
       10000 0
       DO
           X @  Y !     \ transfer x -> y (RAM->RAM)
-      LOOP ;
+      LOOP ; \ 2.38 SECS
 
-VVAR VX
-VVAR VY
+VAR VX  VAR VY
 : VINT-TEST
       99 VX !
       10000 0
       DO
          VX V@ VY V!   \ transfer vx -> vy (VDP ->VDP )
-      LOOP ;
+      LOOP ; \ 6.23 SECS 
 
-HEX
-994A CONST FTI
-994A VCONST VTI
-
-DECIMAL
-: CONST-TEST  10000 0  DO  FTI DROP LOOP ;
-: VCONST-TEST 10000 0  DO  VTI DROP LOOP ;
-
-: TEXT-TEST  PAGE 60 0 DO ." Testing 1 2 3 "  LOOP ;
-: VTEXT-TEST PAGE 60 0 DO V." Testing 1 2 3 " LOOP ;
+: TEXT-TEST  PAGE 60 0 DO  R$ TYPE     LOOP ; \ 6.68 
+: VTEXT-TEST PAGE 60 0 DO  V$ VDPTYPE  LOOP ; \ 6.91 
