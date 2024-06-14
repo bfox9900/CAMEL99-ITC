@@ -9,19 +9,22 @@
 \ 5. How to make stack diagrams to document inputs/outputs
 \ 6. You don't need HCHAR to write to the screen <wink>
 
-NEEDS COLOR  FROM DSK1.GRAFIX 
-
 DECIMAL
-CHAR *  CONSTANT '*'
-CHAR !  CONSTANT '!'
+ASCII * CONSTANT '*'
+ASCII ! CONSTANT '!'
 768 1-  CONSTANT N  \ chars per screen - 1
+
+\ compute the correct color set number for any ASCII char 
+: SET#  ( ascii -- color_set) 8 / ; 
+
+\ cause a delay in milliseconds (or so)
+: MS    ( msdelay -- ) 0 DO  9 0 DO LOOP LOOP ;
 
 : GRAPHICS-STUFF ( -- )
     GRAPHICS
-    1 SCREEN 
-\   colorset FG BG      
-    '*' SET# 13  1 COLOR
-    '!' SET# 7   1 COLOR
+\   FG BG  colorset    
+    13  1  '*' SET# COLOR
+    7   1  '!' SET# COLOR
 ;
 
 \ thething uses VDP SINGLE BYTE WRITE (VSBW)
@@ -31,8 +34,8 @@ CHAR !  CONSTANT '!'
     PAGE
     N 0   \ loop from 0 to screen size - 1 
     DO    \ I becomes the VDP screen address 
-       '!'  I     VC!      \ write directly to VDP screen memory 
-       '*'  N I - VC!      \ write to bottom of screen
+       '!'  I     VSBW      \ write directly to VDP screen memory 
+       '*'  N I - VSBW      \ write to bottom of screen
         25 MS
         ?TERMINAL ABORT" *BREAK*" 
     LOOP
@@ -44,6 +47,7 @@ CHAR !  CONSTANT '!'
     BEGIN 
       THE-THING 
     AGAIN 
+    TEXT 
 ;
 
 CR ." **Type RUN to start"
