@@ -26,7 +26,7 @@ INCLUDE DSK1.ELAPSE
          R> SWAP ! ;
 
 : INSERTIONSORT ( array len -- )
-         1 ?DO
+         1 DO
              DUP I CELLS + INSERT
          LOOP
          DROP ;
@@ -47,8 +47,8 @@ SIZE CELLS  MALLOC CONSTANT Q[]
 
 
 : CLEARIT  ( -- ) 0 ]Q SIZE CELLS ERASE ;     \ all the same data
-: REVERSED ( -- ) SIZE  0 DO  SIZE I -  I ]Q !      LOOP ;
-: ASCENDING ( -- ) SIZE  0 DO     I  I ]Q !      LOOP ;
+: REVERSED ( -- ) SIZE  0 DO  SIZE I -  I ]Q ! LOOP ; \ 6:53.0 MINS!!
+: ASCENDING ( -- ) SIZE  0 DO     I  I ]Q !    LOOP ;
 : RANDIT   ( -- ) SIZE  0 DO  256 RND I ]Q !   LOOP ;
 : TWOIT    ( -- ) CLEARIT   99 45 ]Q !  777 SIZE 2/ ]Q ! ;  \ only 2 different records
 : TURTLES  ( -- )

@@ -1,4 +1,4 @@
-\ Demo from TI-BASIC USER'S REFERENCE GUIDE
+\ Demo from TI-BASIC USER'S REFERENCE GUIDE translated to FbForth 
 
 \ 100 REM  Random Color Dots
 \ 110 RANDOMIZE
@@ -15,16 +15,13 @@
 \ 220 CALL HCHAR(ROW,COL,CHAR)
 \ 230 GOTO 160
 
-\ Random Color Dots
-NEEDS RND      FROM DSK1.RANDOM
-NEEDS HZ       FROM DSK1.SOUND
-NEEDS COLOR    FROM DSK1.GRAFIX
-NEEDS CHARSET  FROM DSK1.CHARSET
 
 DECIMAL
 : SET-COLORS ( -- )
-     BL SET# 2 2 COLOR
-     20 5 DO   I I I COLOR   LOOP ;  \ Forth has different color sets
+    4  1 1 COLOR      \ set space character to transparent
+    20 5 DO   
+        I I I COLOR   \ **Forth has different color set numbers
+    LOOP ;  
 
 \ These lines are interesting because they use floating point math
 \ to compute a valid note on the musical scale. 
@@ -39,7 +36,7 @@ DECIMAL
 : NOTE+ ( freq -- ) 10570 10000 */ 1+ ; \ compute next semitone 
 
 \ step n semitones up from 110Hz 
-: NOTE ( n -- freq) 110  SWAP 0 ?DO  NOTE+ LOOP  ;   
+: NOTE ( n -- freq) 110  SWAP 0 DO  NOTE+ LOOP  ;   
 
 \ rather than use variables we make words with the same names
 \ that calculate the numbers we need and leave them on the stack
@@ -49,26 +46,25 @@ DECIMAL
 : ROW ( -- n )   24 RND  ;      \ random row 0 to 23 
 : COL ( -- n )   32 RND  ;      \ random col 0 to 31 
 
-\ We can create a SOUND word from the primitives: HZ DB MS MUTE
-\ : SOUND  ( dur freq att --) DB  HZ  MS MUTE ;
-\ But there really is no point. The Forth words are easy to understand.
+: MS   0 DO  9 0 DO LOOP LOOP ;
 
+: MUTE  0 15 1 SOUND ;
+
+HEX 11 CONSTANT BLK/BLK 
+
+DECIMAL 
 : RUN ( -- )
-      CLEAR
-      16 SCREEN  
+      GRAPHICS 
+      BLK/BLK SCREEN  
       SET-COLORS
-      GEN1      \ use sound generator 1 
       BEGIN
-	     COL ROW CHR 1 HCHAR
-          N NOTE HZ        \ set the frequency
-          -2 DB            \ set the volume (turns on sound)  
-          100 RND 50 + MS  \ hold note 
-          MUTE             \ turn off the sound  
-          40 MS            \ put a space after each note 
-          ?TERMINAL
+	    COL ROW 1 CHR HCHAR
+        N NOTE 2 1 SOUND 
+        100 RND 50 + MS  \ hold note 
+        MUTE             \ turn off the note  
+        40 MS            \ put a space after each note 
+        ?TERMINAL
       UNTIL
-      8 SCREEN
-      4 19 2 1 COLORS
-      CHARSET ;
+      COLD ;
 
 
