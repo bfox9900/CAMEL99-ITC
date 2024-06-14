@@ -32,7 +32,6 @@
              REPEAT  
              1+ ;
 
-
 : COMMENT-STRIP ( addr len -- addr 'len) -LEADING -COMMENT -TRAILING  ;
 
 S"      X=X+1 # This is the comment"  COMMENT-STRIP CR CR TYPE CR
