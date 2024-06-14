@@ -24,9 +24,9 @@ CHAR !  CONSTANT '!'
     '!' SET# 7   1 COLOR
 ;
 
-\ thething uses VDP SINGLE BYTE WRITE (VSBW)
+\ thething uses VC! ( vdp character store)
 \ to write a character to the screen
-\ The stack diagram for VSBW is ( char VDPaddr --)
+\ The stack diagram for VC! is ( char VDPaddr --)
 : THE-THING ( -- )
     PAGE
     N 0   \ loop from 0 to screen size - 1 
