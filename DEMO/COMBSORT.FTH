@@ -105,8 +105,7 @@ DECIMAL
       LOOP
       SORTED @
    UNTIL
-   R> 2DROP ;  \ 5:01.33 size=1000
-
+   R> 2DROP ;  \ 5:52.11  size=1000  :-) 
 
 : COMBTEST 
    CR ." Combsort 1000 integers ..."
@@ -121,3 +120,4 @@ DECIMAL
    Q[] SIZE  BUBBLE
    CR .ELAPSED
 ;
+
