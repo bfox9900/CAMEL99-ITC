@@ -8,53 +8,21 @@ INCLUDE DSK1.TOOLS
 INCLUDE DSK1.RANDOM
 INCLUDE DSK1.ELAPSE
 INCLUDE DSK1.VALUES
-INCLUDE DSK1.ARRAYS
 
-0 VALUE GAP
-VARIABLE SFLAG
+VARIABLE SORTED 
 
 DECIMAL
 1000 VALUE  SIZE
 
-SIZE 4 + ARRAY ]Q
+CREATE Q[]  SIZE 4 +  CELLS  ALLOT 
 
-: XCHG  ( adr1 adr2 -- )
-        S" OVER @ OVER @ SWAP ROT !  SWAP !" EVALUATE ; IMMEDIATE
-
-\ : EXCHANGE ( A1 A2 -- ) \ leo wong. Touch slower than mine :)
-\        S" 2DUP 2>R  @ SWAP @  R> !  R> ! "  EVALUATE ; IMMEDIATE
-
-\ usage:   X Y XCHG  \ moves contents from X->Y & Y->X
-\ makes sort 6% faster than the Forth macro on 1000 item reversed sort
-\  CODE XCHG   ( adr1 adr2 -- ) \ exchange values of 2 variables
-\             *SP+  R0 MOV,    \ pop adr1 into R0
-\             R0 ** W  MOV,    \ adr1 @  W  !
-\           *TOS R0 ** MOV,    \ mem2me m move  adr2 to adr1
-\              W  *TOS MOV,    \ move value adr1 to adr2
-\                  TOS POP,
-\                    NEXT,
-\ ENDCODE
-
-: BUBBLE ( n -- )  \ for comparison
-    BEGIN
-      SFLAG ON
-      DUP 0
-      DO
-       I 1+ ]Q @   I ]Q @ <     \ test the values
-       IF
-          I 1+ ]Q   I ]Q  XCHG  \ exchange if needed
-          SFLAG OFF
-       THEN
-      LOOP
-      SFLAG @
-   UNTIL
-   DROP ;  \ 5:01.33 size=1000
+: ]Q   ( n -- addr ) CELLS Q[] + ;
 
 \ testing harness
 : ERASE   0 FILL ;
 
 \ load the array with different kinds of mixed up data
-: CLEARIT   ( -- ) 0 ]Q SIZE CELLS ERASE ;     \ all the same data
+: CLEARIT   ( -- ) Q[] SIZE CELLS ERASE ;     \ all the same data
 : REVERSED  ( -- ) SIZE  0 DO  SIZE I -  I ]Q !  LOOP ;
 : ASCEND    ( -- ) SIZE  0 DO       I    I ]Q !  LOOP ;
 : RANDIT    ( -- ) SIZE  0 DO  SIZE RND  I ]Q !  LOOP ;
@@ -69,23 +37,87 @@ SIZE 4 + ARRAY ]Q
 \ use this to print the array
 : .Q  ( -- ) CR  SIZE  0 DO  I ]Q @ U. ?BREAK LOOP ;
 
-\ GAP calculation makes the sort faster
-\ 100/135 is the fastest GAP ratio I have found. (versus 10/13)
-: /1.3 ( N -- N ) S" 100 135 */  1 MAX " EVALUATE ; IMMEDIATE
 
-: COMBSORT ( n -- )
-    DUP 1+ TO GAP
+\ =========================== SORTING ==============================
+: XCHG  ( addr1 addr2 -- ) 2DUP @ SWAP @  ROT ! SWAP ! ; 
+
+\ === EXPERIMENTS FOR XCHG === 
+\ : XCHG  ( adr1 adr2 -- )
+\        S" OVER @ OVER @ SWAP ROT !  SWAP !" EVALUATE ; IMMEDIATE
+
+\ : EXCHANGE ( A1 A2 -- ) \ leo wong. Touch slower than mine :)
+\        S" 2DUP 2>R  @ SWAP @  R> !  R> ! "  EVALUATE ; IMMEDIATE
+
+\ usage:   X Y XCHG  \ moves contents from X->Y & Y->X
+\ makes sort 6% faster than the Forth macro on 1000 item reversed sort
+\  CODE XCHG   ( adr1 adr2 -- ) \ exchange values of 2 variables
+\             *SP+  R0 MOV,    \ pop adr1 into R0
+\             R0 ** W  MOV,    \ adr1 @  W  !
+\           *TOS R0 ** MOV,    \ mem2me m move  adr2 to adr1
+\              W  *TOS MOV,    \ move value adr1 to adr2
+\                  TOS POP,
+\                    NEXT,
+\ ENDCODE
+\ =========================
+
+DECIMAL 
+0 VALUE  GAP
+
+\ divide by 1.35 using Forth's scaling operator
+\ found this ratio to be the fastest
+: 1.35/  ( n -- n' ) 100 135 */ ;
+
+: COMBSORT ( addr n -- )
+    DUP>R  TO GAP                    \ save n on Rstack and in GAP 
     BEGIN
-        GAP  /1.3  TO GAP            \ additional line
-        SFLAG ON
-        DUP GAP -  0
-        DO
-         I GAP + ]Q @   I ]Q @ <     \ test the values
+      GAP 1.35/  TO GAP              \ re-compute the gap
+      SORTED ON
+      R@ ( -- n) GAP -  0           \ n-gap is loop limit
+      DO ( -- addr )
+         DUP I CELLS +  DUP GAP CELLS +  ( -- addr1 addr2 )
+         OVER @ OVER @ >             \ compare the contents of cells 
          IF
-            I GAP + ]Q   I ]Q  XCHG  \ exchange if needed
-            SFLAG OFF
+            XCHG                     \ Exchange the data in the cells
+            SORTED OFF               \ flag we are not sorted
+         ELSE 
+           2DROP 
          THEN
-        LOOP
-        SFLAG @  GAP 1 = AND     \ additional conditional
+      LOOP
+      SORTED @  GAP 0=  AND          \ test for complete
    UNTIL
-   DROP ;
+   R> 2DROP
+;                                    \ 13 seconds 
+
+: BUBBLE ( addr n -- ) \ for comparison
+    >R
+    BEGIN
+      SORTED ON
+      R@ 0
+      DO
+         DUP I CELLS +  DUP CELL+    \ addresses for adjacent cells 
+         OVER @ OVER @ >             \ compare the contents of cells 
+         IF
+           XCHG 
+           SORTED OFF
+         ELSE 
+           2DROP    
+         THEN
+      LOOP
+      SORTED @
+   UNTIL
+   R> 2DROP ;  \ 5:01.33 size=1000
+
+
+: COMBTEST 
+   CR ." Combsort 1000 integers ..."
+   REVERSED  TICKER OFF  
+   Q[] SIZE COMBSORT  
+   CR .ELAPSED 
+;
+
+: BUBBLETEST 
+   CR ." Bubble sort 1000 integers ..."
+   REVERSED  TICKER OFF 
+   Q[] SIZE  BUBBLE
+   CR .ELAPSED
+;
