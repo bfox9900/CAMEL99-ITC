@@ -1,16 +1,39 @@
 \ combsort.fth  taken from byte April 1991.  coded bfox Sept 94
-\ PORTED to CAMEL99 Forth 2017
+\ PORTED to CAMEL99 Forth 2017, Updated June 2024 
 
-\ Approximately 10X faster than BUBBLE Sort except when list is
-\ already sorted.
+\ Combsort is 27X faster than BUBBLE Sort on 1000 out of order integers
+\ Bubble Sort is faster when list is already sorted
 
+\ camel forth harness ...
 INCLUDE DSK1.TOOLS
 INCLUDE DSK1.RANDOM
 INCLUDE DSK1.ELAPSE
 INCLUDE DSK1.VALUES
 
+
+\ turboforth harness ...
+\ : ?TERMINAL   KEY? 2 = ;
+\ : ON   TRUE SWAP ! ;
+\ : OFF  false swap ! ;
+\ : DUP>R   COMPILE DUP COMPILE >R  ; IMMEDIATE 
+\ ------------------------------
+
+\ FbForth harness ... 
+\ : R@   COMPILE R ; IMMEDIATE 
+\ : ON  -1 SWAP ! ;
+\ : OFF  0 SWAP ! ;
+\ : DUP>R   COMPILE DUP  COMPILE >R ; IMMEDIATE 
+\ : VARIABLE   0 VARIABLE ;
+\ : VALUE       CONSTANT ;
+\ : TO   ?COMP  [COMPILE] '  COMPILE !  ;  IMMEDIATE 
+\ : CREATE  0 VARIABLE ;
+\ : CELLS  STATE @ IF COMPILE 2* ELSE 2* ENDIF ; IMMEDIATE 
+\ : CELL+  STATE @ IF COMPILE 2+ ELSE 2+ ENDIF ; IMMEDIATE 
+
+\ Camel Forth code begins ....
 VARIABLE SORTED 
 
+\ SIZE can be changed to adjust the array size 
 DECIMAL
 1000 VALUE  SIZE
 
@@ -35,29 +58,21 @@ CREATE Q[]  SIZE 4 +  CELLS  ALLOT
       2 +LOOP ;
 
 \ use this to print the array
+: ?BREAK   ?TERMINAL ABORT" *Break*"  ;
+
 : .Q  ( -- ) CR  SIZE  0 DO  I ]Q @ U. ?BREAK LOOP ;
 
 
 \ =========================== SORTING ==============================
 : XCHG  ( addr1 addr2 -- ) 2DUP @ SWAP @  ROT ! SWAP ! ; 
 
-\ === EXPERIMENTS FOR XCHG === 
-\ : XCHG  ( adr1 adr2 -- )
+\ === ALTERNATES FOR XCHG === 
+\ : XCHG  ( adr1 adr2 -- ) \ my 1st version 
 \        S" OVER @ OVER @ SWAP ROT !  SWAP !" EVALUATE ; IMMEDIATE
 
-\ : EXCHANGE ( A1 A2 -- ) \ leo wong. Touch slower than mine :)
+\ : EXCHANGE ( A1 A2 -- ) \ Leo Wong
 \        S" 2DUP 2>R  @ SWAP @  R> !  R> ! "  EVALUATE ; IMMEDIATE
 
-\ usage:   X Y XCHG  \ moves contents from X->Y & Y->X
-\ makes sort 6% faster than the Forth macro on 1000 item reversed sort
-\  CODE XCHG   ( adr1 adr2 -- ) \ exchange values of 2 variables
-\             *SP+  R0 MOV,    \ pop adr1 into R0
-\             R0 ** W  MOV,    \ adr1 @  W  !
-\           *TOS R0 ** MOV,    \ mem2me m move  adr2 to adr1
-\              W  *TOS MOV,    \ move value adr1 to adr2
-\                  TOS POP,
-\                    NEXT,
-\ ENDCODE
 \ =========================
 
 DECIMAL 
@@ -105,8 +120,14 @@ DECIMAL
       LOOP
       SORTED @
    UNTIL
-   R> 2DROP ;  \ 5:52.11  size=1000  :-) 
+   R> 2DROP ;  \ 5:52.11  size=1000  :-) S
 
+\ Usage examples: 
+\ REVERSED  Q[] SIZE COMBSORT 
+\ TURTLES   Q[] SIZE COMBSORT 
+\ CLEARIT   Q[] SIZE BUBBLE  
+
+\ Camel Forth timed tests 
 : COMBTEST 
    CR ." Combsort 1000 integers ..."
    REVERSED  TICKER OFF  
