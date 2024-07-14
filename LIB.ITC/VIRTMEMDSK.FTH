@@ -40,11 +40,14 @@ VARIABLE LASTLINE
 : CLEARBLOCKS ( start end -- )
     1+ SWAP 
     ?DO
-       I DUP . CLEAR
+       I CLEAR 
+       [CHAR] . EMIT 
     LOOP
     FLUSH
     LASTLINE OFF
 ;
+
+: PURGE   0 MAXBLK CLEARBLOCKS ;
 
 \ Load DV80 file into virtual memory file as 80 byte records 
 \ count # of lines (LASTLINE)
@@ -65,7 +68,7 @@ DECIMAL
     LASTLINE @ >LASTBLOCK
 ;
 
-: RECORD$   RECORD RECSIZE -TRAILING 1 MAX ;
+: RECORD$  ( -- addr len) RECORD RECSIZE -TRAILING 1 MAX ;
 
 \ test code
 : VIEW ( -- )
