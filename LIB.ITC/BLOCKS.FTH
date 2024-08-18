@@ -12,6 +12,7 @@ CR .( blocks.fth  for CAMEL99 Forth  Mar2023  BJFox)
 \            Buffers now allocated with H (heap)
 \            ?BLKFILE renamed to ?EXISTS.   
 
+\ NEEDS DUMP       FROM DSK1.TOOLS
 NEEDS OPEN-FILE  FROM DSK1.ANSFILES
 
 HERE
@@ -19,7 +20,7 @@ DECIMAL
 4               CONSTANT #BUFF    \ active buffers 7 max 
 1024            CONSTANT B/BUF
 B/BUF 2 CELLS + CONSTANT BLKSIZE  \ 1K + 4 byte header
-128             CONSTANT B/SEC     \ bytes per sector on TI disk
+128             CONSTANT B/SEC    \ bytes per sector on TI disk
 
 \ use heap pointer for buffer allocations 
 HEX
@@ -45,6 +46,8 @@ HEX
 
 \ MASK: TOS 7FFF ANDI, 
 CODE MASK   ( n -- n)  0244 , 7FFF ,   NEXT, ENDCODE
+\ optimzer: and saves 12 bytes
+CODE DUP@   ( addr -- addr n) 0646 , C584 , C114 , NEXT, ENDCODE 
 
 \ move file pointer to start of block (One BLOCK= 8 sectors)
 : SEEK   ( blk# -- ) ?BLOCKS  8* BHNDL @ REPOSITION-FILE ?BLKERR ;
@@ -63,7 +66,8 @@ CODE MASK   ( n -- n)  0244 , 7FFF ,   NEXT, ENDCODE
 
 .( .)
 HEX
-: UPDATE ( -- ) PREV @ @   8000 OR  PREV @ ! ;
+: UPDATE ( -- ) PREV @ DUP@ 8000 OR  SWAP ! ;
+
 : +BUF   ( addr-- addr') BLKSIZE + DUP LIMIT = IF  DROP FIRST  THEN ;
 
 : BUFFER ( n -- addr ) 
@@ -79,16 +83,16 @@ HEX
    R> CELL+ ;         \ return the buffer address
 
 : BLOCK   ( block# --- addr )
-   ?BLOCKS
+   ?BLOCKS 
    >R
-   PREV @ DUP @  R@ - MASK
+   PREV @ DUP@  R@ - MASK
    IF
       BEGIN
-      +BUF DUP PREV @ =
-      IF
-         DROP R@ BUFFER  R@ RBLK 2- \ CELL-
-      THEN
-      DUP @ R@ -  MASK
+         +BUF DUP PREV @ =
+         IF
+            DROP R@ BUFFER  R@ RBLK 2- \ ie: CELL-
+         THEN
+         DUP@ R@ -  MASK
       WHILE REPEAT
       DUP PREV !
       DUP USE @ =
@@ -104,9 +108,9 @@ HEX
    FIRST  ( -- buffer)
    #BUFF 0
    DO
-      DUP @ 0< \ updated?
+      DUP@ 0< \ updated?
       IF           
-         DUP @ MASK  OVER 2DUP !
+         DUP@ MASK  OVER 2DUP !
          CELL+ SWAP WBLK
       THEN ( buffer) +BUF  
    LOOP
@@ -121,10 +125,12 @@ DECIMAL
 
 : ?EXISTS ( addr len --) 
    R/O OPEN-FILE ABORT" File not found" CLOSE-FILE DROP ;
+   
 .( .)
 : OPEN-BLOCKS ( file$ len -- )
    2DUP DF128 ?EXISTS
    EMPTY-BUFFERS
+   BHNDL OFF 
    2DUP R/W OPEN-FILE ?FILERR BHNDL !
    ACTIVE PLACE ; \ if successful store file name
 
@@ -141,11 +147,15 @@ HEX
    FIRST CELL+ B/BUF BL FILL
    DUP HIGHBLK !
    1+ 0 DO  FIRST CELL+ (WBLK)  LOOP CLOSE-BLOCKS ;
+
 .( .)
+
 DECIMAL
 \ added LOAD so we can compile code from BLOCKS
    VARIABLE SCR    64 CONSTANT B/L
+
 : LINE ( n -- addr) B/L *  SCR @ BLOCK + ;
+
 : LOAD ( n -- )
    SCR !
    16 0 DO
