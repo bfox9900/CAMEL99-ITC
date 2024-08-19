@@ -76,7 +76,7 @@ CODE CEMIT ( c -- )  \ 'com-emit"
          16 SBO,        \ set RTS
 \        BEGIN,  28 TB, EQ  UNTIL,  \ wait for CTS line
 \  ******************************
-         BEGIN,  22 TB, EQ  UNTIL,   \ wait XBRE empty
+         BEGIN,  22 TB, EQ  UNTIL,   \ wait TXRE empty
          TOS SWPB,      \ put byte on the other side
          TOS 8 LDCR,    \ send 8 bits
          16 SBZ,        \ reset RTS

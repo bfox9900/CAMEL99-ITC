@@ -10,15 +10,15 @@
 
 CROSS-COMPILING
 CR .( branch cross-compilers if then else etc...)
-: AHEAD    ( -- addr) THERE     0 T, ;
-: <BACK    ( addr --) THERE  -    T, ;
+ : FWD>     ( -- addr) THERE    0 T, ;
+ : <BACK    ( addr --) THERE  -   T, ;
 
 : THEN          THERE OVER - SWAP T! ; IMMEDIATE
 : BEGIN         THERE  ; IMMEDIATE
-: IF            TCOMPILE ?BRANCH  AHEAD ; IMMEDIATE
-: ELSE          TCOMPILE  BRANCH  AHEAD SWAP [COMPILE] THEN  ; IMMEDIATE
-: UNTIL         TCOMPILE ?BRANCH  <BACK ; IMMEDIATE
-: AGAIN         TCOMPILE  BRANCH  <BACK ; IMMEDIATE
+: IF            TCOMPILE ?BRANCH FWD> ; IMMEDIATE
+: ELSE          TCOMPILE  BRANCH FWD> SWAP [COMPILE] THEN  ; IMMEDIATE
+: UNTIL         TCOMPILE ?BRANCH <BACK ; IMMEDIATE
+: AGAIN         TCOMPILE  BRANCH <BACK ; IMMEDIATE
 : WHILE         [COMPILE] IF  SWAP  ; IMMEDIATE
 : REPEAT        [COMPILE] AGAIN [COMPILE] THEN ; IMMEDIATE
 
@@ -49,14 +49,26 @@ host: :                             \ this is the CROSS compiler's ':'
 
 ?stk
 
+
 host: ;                            \ this the CROSS-compiler's ';'
                 TREVEAL            \ un-smudge the word so it can be found in the dictionary
-                'EXIT cfa,
+                TCOMPILE EXIT 
                 ?CSP               \ check is stack is the same place as when we started the definition
                 T[                 \ reset XSTATE (TARGET STATE) to interpreting
 ;host   immediate
 
-?stk
+\ tail call optimizing semi-colon. 
+\ Programmer discretion for when a word ends with another high-level Forth word. 
+\ >>>DOES NOT WORK<<<
+ [CC]
+ host: -;  ( -- ) \ programmer controlled
+      TREVEAL
+      THERE 2- @ cell+           \ get previous XT, compute PFA
+     -2 TALLOT                    \ erase the previous XT
+      TCOMPILE BRANCH THERE - T,
+      ?CSP
+      T[                          \ turn off compiler
+;host  IMMEDIATE
 
 \ ========================================================================
 \ F I N A L   T A R G E T -  C O M P I L I N G   C O L O N  &  S E M I - C O L O N
@@ -67,4 +79,3 @@ host: ;                            \ this the CROSS-compiler's ';'
 SYNONYM x:   :                     \ "TARGET-compiling colon"
 SYNONYM ;x   ;  IMMEDIATE          \ "TARGET-compiling semi-colon"
 
-\ .XMEM                            \ show the cross compiler memory. It should be empty.

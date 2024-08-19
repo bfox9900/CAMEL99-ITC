@@ -1,6 +1,9 @@
 \ MAKE CAMEL99 ITC Forth                            Mar 2022 Brian Fox
 \ *** NOT A "MAKE" FILE  This is just more Forth 
 
+\ *** THIS KERNEL IN LOW RAM RUNS BUT WILL NOT LOAD CODE ***
+\   MORE WORK REQUIRED 
+
 \ **********************************************************************
 \      compiler switches to control the system build
 \ **********************************************************************
@@ -34,13 +37,13 @@ EMEM TIBSIZE -  EQU 'TIB     \ Terminal input buffer just below
 \ ======================================================================
 \             *** TARGET MEMORY LOCATION ***
 
--1  \ true= standard kernel ;  false=non-standard kernel
+0  \ true= standard kernel ;  false=non-standard kernel
 [IF]
     A000 VALUE CODESEG
     2000 VALUE HEAPSEG
 [ELSE]
-		6000 VALUE CODESEG  \ 6000 is the supercart RAM
-		2000 VALUE HEAPSEG  \ initial HEAP address when kernel boots
+		2000 VALUE CODESEG  \ 6000 is the supercart RAM
+		0000 VALUE HEAPSEG  \ initial HEAP address when kernel boots
 [THEN]
 
 \ *******************************************************************

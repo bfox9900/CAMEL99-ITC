@@ -1,4 +1,11 @@
-\ DSRLNKB.HSF for FCC99e cross-compiler/Assembler  27FEB2024
+CR .( DSRLNKB.HSF for FCC99e cross-compiler/Assembler  27FEB2024)
+CR 
+CR
+\ ******************************************************************                            
+\                     *** VERY IMPORTANT *** 
+\ Feb 2024 save GPL workspace R15, set to 8C02 and restore after 
+\          calling DSR. This allows ISR RS232 to work reliably
+\ *******************************************************************
 
 \ PASSES error code back to Forth workspace, TOS register
 
@@ -11,11 +18,6 @@
 \ - ADD GPl error byte to error code on Forth TOS
 \ - saved 44 bytes!!    
 
-\ ******************************************************************                            
-\                     *** VERY IMPORTANT *** 
-\ Feb 2024 save GPL workspace R15, set to 8C02 and restore after 
-\          calling DSR. This allows ISR RS232 to work reliably
-\ *******************************************************************
 
 [CC] HEX
 \ we need more labels than I normally use for Forth style CODE Words

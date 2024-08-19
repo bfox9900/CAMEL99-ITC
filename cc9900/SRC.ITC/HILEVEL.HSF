@@ -36,6 +36,7 @@
 \ Jan 2022     create FORTHITC.MAK to build the project
 \ Oct 2022     Added META vocabulary
 \ Dec 2022     Changed FGET to return stack string ( buffer -- addr len)
+\ May 2024     Reduced ASM code in CONSOLE driver. Kernal is 118 bytes smaller. 
 
 TARGET-COMPILING
 \ ======================================================================
@@ -49,8 +50,13 @@ TARGET-COMPILING
   'TIB  CONSTANT TIB    \ tib grows up towards RP0. Never more that
 
 \ Utility constants
-      0 CONSTANT FALSE
-     -1 CONSTANT TRUE
+     0 CONSTANT FALSE
+    -1 CONSTANT TRUE
+
+\ These are 3% faster but 4 bytes bigger each 
+\ CODE FALSE   TOS PUSH,  TOS CLR,  NEXT, ENDCODE  
+\ CODE TRUE    TOS PUSH,  TOS SETO, NEXT, ENDCODE 
+
       0 CONSTANT 0 
       1 CONSTANT 1
      20 CONSTANT BL
@@ -81,7 +87,7 @@ TARGET-COMPILING
 \     40 USER 'SOURCE   \ uses 2 locations 
 
       46 USER TPAD      \ holds offset from HERE for TASK PADs
-\     7E USER VPG       \ declared in TI99 VDP driver code TI99IO.HSF
+      7E USER VPG       \ Each task can have it's own video page 
 
 \ ======================================================================
 \ V A R I A B L E S
@@ -181,13 +187,20 @@ ENDCODE
 \ S T A C K   P R I M I T I V E S
 [CC] cr .( Stack primitives ...)  [tc]
 
-: TUCK  ( w1 w2 --  w2 w1 w2 ) SWAP OVER ;
+: TUCK  ( w1 w2 --  w2 w1 w2 ) SWAP OVER ; \ 4 bytes, Go Forth!
+
+\ CODE TUCK ( w1 w2 --  w2 w1 w2 )
+\              SP DECT, 
+\      2 (SP) *SP MOV, 
+\       TOS 2 (SP) MOV,     \ 10 bytes 
+\      NEXT,
+\ ENDCODE       
 
 \ double Rstack Forth2012
 CODE 2>R    ( d -- ) ( r-- n n)
       RP -4 ADDI,          \ 14
-      TOS 2 (RP) MOV,      \ 22
-      *SP+   *RP MOV,       \ 26
+      TOS    *RP MOV,      \ 22
+      *SP+ 2 (RP) MOV,     \ 26
       TOS POP,             \ 22
       NEXT,              \ = 84
 ENDCODE
@@ -195,8 +208,8 @@ ENDCODE
 CODE 2R>     ( -- d )
       TOS PUSH,            \ 28
       SP DECT,             \ 10
-      *SP  RPOP,            \ 26
       TOS RPOP,            \ 22
+      *SP  RPOP,            \ 26
       NEXT,              \ = 88
 ENDCODE
 
@@ -254,7 +267,7 @@ ENDCODE  \ 2 bytes bigger than Forth
 
 : */MOD  ( n1 n2 n3 -- n4 n5) >R UM* R> M/MOD ;
 : S>D    ( n -- d)  DUP 0< ;
-: M+     ( d n -- d) S>D  D+ ;    \ * change from V2.67
+: M+     ( d n -- d) S>D  D+ ;    \ * removed S>D AUG2024 
 : /MOD   ( n1 n2 -- n3 n4) >R S>D R> M/MOD ;
 : /      ( n n -- n)   /MOD NIP  ;
 : MOD    ( n n -- n)   /MOD DROP ;
@@ -359,12 +372,12 @@ CODE DIGIT?   ( char -- n f )
       HI IF,             \ > 9 ?
           TOS -7 ADDI,
           TOS 9 CMPI,
-          @@1 JL,         \ less than 9, jump out
+          @@1 JL,        \ less than 9, jump out
       ENDIF,
-      TOS 2A (R1) CMP, \ USER var 2A (BASE)
-      @@2 JHE,       \ tos>base, jump out
-      TOS *SP MOV,   \ replace char with no.
-      TOS SETO,      \ set flag to true
+      TOS 2A (R1) CMP,   \ USER var 2A (BASE)
+      @@2 JHE,           \ tos>base, jump out
+      TOS *SP MOV,       \ replace char with no.
+      TOS SETO,          \ set flag to true
       NEXT,
 ( error out here)
 @@1: @@2: TOS CLR,
@@ -375,15 +388,22 @@ CODE DIGIT?   ( char -- n f )
 
 : UD*      ( ud1 u2 -- ud3) DUP>R * SWAP R> UM* ROT + ;
 
+\ simplified with double while construct B. Fox 
 : >NUMBER  ( ud adr u -- ud' adr' u' )
       BEGIN
-        DUP WHILE
-      OVER C@ DIGIT?
-      0= IF DROP EXIT  THEN
-            >R 2SWAP BASE@ UD*
-            R> M+ 2SWAP
-            1 /STRING
-      REPEAT ;
+        DUP 
+      WHILE
+        OVER C@ DIGIT?
+      WHILE
+           >R 
+           2SWAP 
+           BASE@ UD*  R> M+ 
+           2SWAP
+           1 /STRING
+      REPEAT
+      DROP 
+      THEN
+;
 
 \ *G This is smaller than original ?NUMBER but ***FLAG LOGIC IS REVERSED***
 : NUMBER?  ( addr len -- n ?)      \ ?=0 is good conversion
@@ -425,11 +445,11 @@ CODE >DIGIT  ( n -- c)   \ ASM is 9 bytes, 4X faster
 : <#     ( --) PAD HP ! ;
 
 -1 [if]
-   : HOLD   ( char -- )  HP DUP 1-! @ C! ;
+   : HOLD   ( char -- ) HP DUP 1-! @ C! ;
 
 [else]  \ this took a while to get right :)
  CODE HOLD  ( char -- )
- \ *G HOLD is CODE. 6 bytes bigger, 4..9% faster number output than Forth version.
+ \ *G HOLD is CODE. 4..9% faster number output than Forth version.
       R1 STWP,        \ get workspace pointer
       26 (R1) DEC,    \ DEC address in HP user variable
       26 (R1) R1 MOV, \ put the address into R1
@@ -437,7 +457,7 @@ CODE >DIGIT  ( n -- c)   \ ASM is 9 bytes, 4X faster
       TOS *R1 MOVB,   \ store char in address in R1
       TOS POP,
       NEXT,
-      ENDCODE
+      ENDCODE  \ 16 bytes 
 [then]
 
 : #      ( u -- ud2 ) 0 BASE@ UM/MOD >R  BASE@ UM/MOD SWAP >DIGIT HOLD R> ;
@@ -451,7 +471,7 @@ CODE >DIGIT  ( n -- c)   \ ASM is 9 bytes, 4X faster
 
 TTYI/O 
 [if]   [cc] include cc9900\src.itc\TTY-IOf.HSF
-[else] [cc] include cc9900\src.itc\CONSOLE.HSF
+[else] [cc] include cc9900\src.itc\CONSOLE2.HSF
 [then]
 
 \ ======================================================================
@@ -605,8 +625,8 @@ CODE HASH  ( string wid-pfa -- thread-addr )
 \ ** wordlist where definitions will be added
 
 : <FIND>  ( caddr --  caddr  0  if not found)
-\                    xt    1  if immediate,
-\                    xt   -1  if "normal"
+\                      xt    1  if immediate,
+\                      xt   -1  if "normal"
       CONTEXT @ ( HASH) @ (FIND) ;
 
 VARIABLE 'FIND   \ *G vector for the action of find
@@ -664,9 +684,9 @@ VDPI/O
 : TEXT    ( -- )
       F0 DUP 83D4 C!
       ( -- F0) 01 VWTR
-      0  2 VWTR  \ set VDP screen page
-      VTOP OFF  \ topline VDP offset
-      VPG  OFF  \ VDP screen page offset
+      0  2 VWTR   \ set VDP screen page
+      VTOP OFF    \ topline VDP offset
+      VPG  OFF    \ VDP screen page offset
       17  7 VWTR  \ sets FG & BG color
       28 C/L!
       0 0 AT-XY
@@ -696,7 +716,7 @@ TARGET-COMPILING
       IF
         R@ FIND ( xt ?) NIP ( ?)
         IF
-          SPACE  R@ COUNT 1F AND TYPE  ."  isn't unique "
+          SPACE  R@ COUNT 1F AND TYPE  ."  redefined "
         THEN
       THEN
       R> DUP LATEST !     \ HERE is NFA of last word defined
@@ -761,17 +781,27 @@ CODE COLD
       *R10 B,          \ run Forth NEXT (inner interpreter)
 ENDCODE
 
-\ *G MOVED TO DSK1.SYSTEM ** loads on Forth startup
-\ *G : CODE      ( -- )  HEADER  HERE 2+ , !CSP ;
-\ *G : NEXT,     ( -- )  045A , ;  \ B *R10
-\ *G : ENDCODE   ( -- )  ?CSP  ;
-\ *G ;CODE is moved to DSK1.SYSTEM ***
+CODE BYE   ( -- )
+      83C4 @@ CLR,        \ clear interrupt vector
+      0000 @@ BLWP,       \ ROM reset vector is at 0000
+ENDCODE
+
+\ These are defined in DSK1.SYSTEM file
+\ : CODE      ( -- )  HEADER  HERE 2+ , !CSP ;
+\ : NEXT,     ( -- )  045A , ;  \ B *R10
+\ : ENDCODE   ( -- )  ?CSP  ;
+
+\ : ;CODE
+\   COMPILE (;CODE)
+\   ?CSP COMPILE [
+\   REVEAL
+\ ; IMMEDIATE
 
 
 \ *new* Added VER string for easy updates
 [CC] CODESEG 6000 =
-[IF]    [TC] : .VER   ." V2.72 25Apr24 SuperCart" ;
-[ELSE]  [TC] : .VER   ." V2.72 25Apr24" ;
+[IF]    [TC] : .VER   ." V2.75 19AUG24 SuperCart" ;
+[ELSE]  [TC] : .VER   ." V2.75 19AUG24" ;
 [THEN]
 
 [CC]
@@ -849,7 +879,6 @@ TARGET-COMPILING
 : LOADSYS
       WARM
       S" DSK1.START" INCLUDED
- \     HALT 
       CR QUIT ;
 
 \ =====================================================================

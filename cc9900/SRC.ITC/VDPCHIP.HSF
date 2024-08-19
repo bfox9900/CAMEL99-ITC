@@ -146,7 +146,6 @@ CODE VWTR   ( c reg -- )          \ Usage: 5 7 VWTR
          ENDCODE
 
 \ FAST user variable for screen driver
-CROSS-ASSEMBLING
 CODE C/L@   ( -- n )        \ this is used 8 times in the KERNEL. Saves 24 bytes
          TOS         PUSH,  \ and is 50% faster than C/L @
          TOS         STWP,

@@ -65,7 +65,7 @@ CODE [PAB   ( -- adr) TOS PUSH,  ^PAB @@ TOS MOV,  NEXT, ENDCODE
 : FSTAT ( -- c)  9 FILEOP DROP [PAB STAT] VC@ ;
 
 : FGET  ( buffer -- len ) \ read PABbuffer->CPU ram, returns length
-         [PAB FBUFF] V@ SWAP [PAB CHARS] VC@  DUP>R  VREAD R> ;
+        [PAB FBUFF] V@ SWAP [PAB CHARS] VC@  DUP>R  VREAD R> ;
 
 \ *G INCLUDED can bootstrap the system on startup. It is nestable.
 \ ** Saves all state info and allocates a new PAB in VDP RAM
@@ -76,7 +76,7 @@ CODE [PAB   ( -- adr) TOS PUSH,  ^PAB @@ TOS MOV,  NEXT, ENDCODE
         CR ." Loading: " 2DUP TYPE
         SOURCE-ID @ >IN @ 2>R           \ save source-ID, input pointer
         PSZ NEGATE ^PAB +!              \ make new PAB, on pab stack
-        ( $ len ) 50 14 FOPEN ?FILERR   \ OPEN as DV80 INPUT
+        ( $ len ) 50 14 FOPEN ?FILERR   \ OPEN as 80 FIXED DV80 INPUT
         SOURCE-ID 1+!                   \ incr. source ID (1st file is 1)
         LINES OFF                       \ reset the line counter
         BEGIN

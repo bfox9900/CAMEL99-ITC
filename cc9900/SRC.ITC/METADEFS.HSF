@@ -14,9 +14,12 @@ CR .( compiling META Definitions )
 : [CHAR]      ?XCOMP TCHAR  POSTPONE TLITERAL ; IMMEDIATE
 : [COMPILE]   POSTPONE  T[COMPILE] ; IMMEDIATE
 
-\ : ,           T,  ; \ interpreting use only 
-\ : C,          TC, ; \ interpreting use only  
+\ : CREATE      POSTPONE TCREATE:  ;  IMMEDIATE 
+\ : ,        POSTPONE T,  ; IMMEDIATE 
+\ : C,       POSTPONE TC, ; IMMEDIATE 
 
+: TRUE   -1 ; IMMEDIATE 
+: FALSE   0 ; IMMEDIATE 
 
 SYNONYM IMMEDIATE XIMMEDIATE   FORTH IMMEDIATE
 

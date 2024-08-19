@@ -31,7 +31,7 @@
 \ *G Overview:
 \ ** This implementation creates an Indirect Threaded Code System with the
 \ ** Top of stack (TOS) cached in Register 4 for a speed increase.
-\ **cWe have also tried to use less space where possible. Some primitives
+\ ** We have also tried to use less space where possible. Some primitives
 \ ** are smaller in Assembly language but some are smaller in Forth.
 \ ** We chose smaller is better except where performance would really suffer.
 
@@ -128,8 +128,8 @@ TALIGN
 NEW-JMPTABLE
 XSTATE OFF
 
-l: _exit    IP RPOP,        \ >8388
-l: _next                      \ Forth ITC NEXT routine (>838A)
+l: _exit    IP RPOP,         \ >8388
+l: _next                     \ Forth ITC NEXT routine (>838A)
 @@9:        *IP+ W  MOV,     \ move CFA into Working register & incr IP
             *W+  R5 MOV,     \ move contents of CFA to R5 & INCR W
             *R5  B,          \ branch to the address in R5
@@ -138,6 +138,8 @@ l: _enter   IP RPUSH,       \ push IP register onto the return stack
             W IP MOV,       \ move PFA into Forth IP register
             @@9 JMP,
 
+\ This code is for the most critical primitives.
+\ They are copied into 16 bit RAM to run at full CPU speed. 
 l: _?branch \ Faster way to avoid penalty of TOS refill
             TOS DEC,        \ After DEC if tos=0, this will cause a carry flag                     10
             TOS POP,        \ refill TOS changes L> A> EQ flags, BUT does not change carry flag    22
@@ -258,12 +260,12 @@ T' DODOES RESOLVES 'DODOES    \ 'DODOES is used by the cross-compiler
 
 \ =============[ Forth code primitives begin ] ====================
 
-CODE EXECUTE ( xt -- )
-            TOS W MOV,
+CODE PERFORM  ( xt -- )
+            *TOS W MOV,
             @@1 JMP,
-+CODE PERFORM ( 'xt -- )     \ fetch the XT from an address
-            *TOS W MOV,      \ move the execution token in TOS into temp
-@@1:        TOS POP,        \ refill TOS
++CODE EXECUTE ( 'xt -- )     \ fetch the XT from an address
+            TOS W MOV,       \ move the execution token in TOS into temp
+@@1:        TOS POP,         \ refill TOS
             *W+ R5 MOV,      \ move contents of the XT (the address of the doer routine) to R5
             *R5 B,           \ branch to the address of the DOER routine
              ENDCODE
@@ -282,7 +284,7 @@ CR .( MEMORY FETCH & STORE)
 
 CODE !      ( n addr -- )
             *SP+ *TOS MOV,   \ 20
-            TOS POP,        \ 22
+            TOS POP,         \ 22
              NEXT,           \ 42
              ENDCODE
 
@@ -315,9 +317,9 @@ CODE C!     ( c addr -- )
 
 CODE COUNT  ( addr -- addr' u)
             TOS PUSH,             \ make a copy of addr
-            *SP INC,              \ inc. past the count byte
+            *SP INC,              \ inc. addr past the count byte
 l: _C@      *TOS TOS MOVB,        \ put C@ inline to save space
-            TOS 8 SRL,            \ **BUG FIX**  used to be SRA :-(
+            TOS 8 SRL,            \ **BUG FIX** used to be SRA :-(
             NEXT,
             ENDCODE
 
@@ -447,7 +449,7 @@ CODE -ROT   ( n1 n2 n3 --  n2 n3 n1)
             ENDCODE
 
 \ byte/word conversions
-CODE ><     ( n -- n )            \ swap bytes in n
+CODE ><     ( n -- n )           \ swap bytes in n
             TOS SWPB,            \ handy and only 1 instruction
             NEXT,
             ENDCODE
@@ -459,12 +461,12 @@ CODE 2DROP  ( n n -- )
             NEXT,            \ = 38
             ENDCODE
 
-\ 40% faster & same size as DROP DROP inline 
- CODE 2DUP  ( n1 n2 -- n1 n2 n1 n2 )
+\ 3 instructions 62 clocks vs 6 instructions 100 clocks for OVER OVER 
+CODE 2DUP  ( n1 n2 -- n1 n2 n1 n2 )
             SP -4 ADDI,       \  14   make room for 2 cells
             4 (SP) *SP MOV,   \  26   n1->*SP
             TOS  2 (SP) MOV,  \  22   n2 -> next stack location
-            NEXT,            \   62   3 instructions 12 bytes
+            NEXT,            \   62   
             ENDCODE
 
 CODE 2SWAP  ( n1 n2 n3 n4-- n3 n4 n1 n2)
@@ -503,9 +505,9 @@ CODE 4TH
 CR .( LOGICAL OPERATIONS)
 
 CODE AND    ( w w -- w )
-            *SP INV,                  \ thanks to Mark Wills!   14
-            *SP+ TOS SZC,             \ RTFM for TMS9900 BF     20
-            NEXT,                                           \ =34
+            *SP INV,                  \ thanks to Mark Wills!   10
+            *SP+ TOS SZC,             \ RTFM for TMS9900 BF     22
+            NEXT,                                            \ =32
             ENDCODE
 
 CODE OR     ( w w -- w )  *SP+ TOS OR,   NEXT, ENDCODE
@@ -570,8 +572,8 @@ CODE -       ( u1 u2 -- u )
 CODE D+   ( lo hi lo' hi' -- d)
             *SP+    R0  MOV,
             *SP+    TOS ADD,  \ add hi #s
-            R0     *SP ADD,  \ add lo #s
-            OC IF,           \ carry set?
+            R0     *SP  ADD,  \ add lo #s
+            OC IF,            \ carry set?
                TOS INC,       \ incr hi
             ENDIF,
             NEXT,
@@ -597,15 +599,15 @@ CODE ALIGNED ( n -- n)
 CR .( MULTIPLY AND DIVIDE)
 
 CODE UM*    ( n n -- d)     \ 2 cells in -- 2 cells out
-            *SP  TOS MPY,    \ 52+4=56
+            *SP TOS MPY,    \ 52+4=56
             R5  *SP MOV,    \ 18
             NEXT,           \ 74
             ENDCODE
 
 CODE *      ( n n -- n)      \ same size as  : *  UM* DROP ; but faster
             *SP+ R3 MOV,     \ 22
-            TOS R3 MPY,     \ 52  cool trick ! result goes to R4
-            NEXT,           \ 74
+            TOS R3 MPY,      \ 52  cool trick ! result goes to R4
+            NEXT,          \ = 74
             ENDCODE
 
 CODE UM/MOD ( ud u1 -- u2 u3 ) \ numerator(32bits), divisor -- rem,quot
@@ -816,7 +818,7 @@ CODE MOVE   ( src dst n -- )   \ forward character move
             TOS POP,
             NEXT,
             ENDCODE
-
+0 [IF]
 CODE FILL   ( addr cnt char -- )
             *SP+ R0 MOV,      \ pop cnt->R0                   22
             *SP+ R1 MOV,      \ pop addr->R1                  22
@@ -828,6 +830,21 @@ CODE FILL   ( addr cnt char -- )
             TOS POP,          \ refill the TOS register       22
             NEXT,             \                             =116
             ENDCODE
+[ELSE]            
+CODE FILL   ( addr cnt char -- )
+            *SP+ R0 MOV,      \ pop cnt->R0                   22
+            *SP+ R1 MOV,      \ pop addr->R1                  22
+            TOS SWPB,         \                               10
+            BEGIN,
+              R0 DEC,         \ decr. count                   10
+            OC WHILE, 
+              TOS *R1+ MOVB,  \ char is in TOS                20
+            REPEAT, 
+            TOS POP,          \ refill the TOS register       22
+            NEXT,             \                             =116
+            ENDCODE
+[THEN]
+
 0 [IF]
 CODE ERASE ( addr cnt  -- )  \ 2x faster than 0 FILL
            *SP+ R1 MOV,

@@ -133,11 +133,11 @@ NEW-JMPTABLE
 XSTATE OFF
 
 l: _exit    IP RPOP,        \ >8388
-l: _next                      \ Forth ITC NEXT routine (>838A)
-@@9:        *IP+ W  MOV,     \ move CFA into Working register & incr IP
-            *W   R5 MOV,     \ move contents of CFA to R5 & INCR W
-            *R5  B,          \ branch to the address in R5
-
+l: _next                     \ Forth ITC NEXT routine (>838A)
+@@9:        *IP+ W  MOV,     \ move CFA into Working register & incr IP 22
+            *W   R5 MOV,     \ move contents of CFA to R5 & INCR W      18
+            *R5  B,          \ branch to the address in R5              12
+                                                                    \   52
 l: _enter   IP RPUSH,       \ push IP register onto the return stack
             W INCT,
             W IP MOV,       \ move PFA into Forth IP register
@@ -221,7 +221,8 @@ T' DOVAR  RESOLVES 'DOVAR     \ 'DOVAR is used by the cross-compiler
 
 TCREATE: DOCON   ( -- n )     \ Executor that executes a "CONSTANT"
             TOS PUSH,
-            2 (W) TOS MOV,    \ Fetch contents of PFA->TOS
+            W INCT,           \ cfa->pfa
+           *W TOS MOV,        \ contents of PFA -> TOS
             NEXT,
             ENDCODE
 T' DOCON RESOLVES 'DOCON     \ 'DOCON is used by the cross-compiler
@@ -253,6 +254,7 @@ T' DOUSER  RESOLVES 'DOUSER  \ 'DOUSER is used by the cross-compiler
 
 TCREATE: DODOES  ( -- a-addr)
             TOS PUSH,       \ save TOS reg on data stack      28
+            W INCT,  
             W TOS MOV,      \ put defined word's PFA in TOS   14
             IP RPUSH,       \ push old IP onto return stack   28
             R11 IP MOV,     \ R11 has the new PFA -> IP       14
