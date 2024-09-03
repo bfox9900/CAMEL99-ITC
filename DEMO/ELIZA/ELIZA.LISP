@@ -52,7 +52,8 @@
     (I am not interested in names))
 
    (((?* ?x) sorry (?* ?y))
-    (Please don't apologize) (Apologies are not necessary)
+    (Please don't apologize)
+    (Apologies are not necessary)
     (What feelings do you have when you apologize))
 
    (((?* ?x) I remember (?* ?y))
@@ -74,7 +75,8 @@
     (Really-- if ?y))
 
    (((?* ?x) I dreamt (?* ?y))
-    (Really-- ?y) (Have you ever fantasized ?y while you were awake?)
+    (Really-- ?y) 
+    (Have you ever fantasized ?y while you were awake?)
     (Have you dreamt ?y before?))
 
    (((?* ?x) dream about (?* ?y))
@@ -126,7 +128,8 @@
     (Why do you tell me you were ?y now?))
 
    (((?* ?x) was I (?* ?y))
-    (What if you were ?y ?) (Do you thin you were ?y)
+    (What if you were ?y ?) 
+    (Do you think you were ?y)
     (What would it mean if you were ?y))
 
    (((?* ?x) I am (?* ?y))
@@ -153,7 +156,9 @@
     (Does that reason seem to explain anything else?))
 
    (((?* ?x) were you (?* ?y))
-    (Perhaps I was ?y) (What do you think?) (What if I had been ?y))
+    (Perhaps I was ?y) 
+    (What do you think?) 
+    (What if I had been ?y))
 
    (((?* ?x) I can't (?* ?y))
     (Maybe you could ?y now) (What if you could ?y ?))
@@ -173,10 +178,13 @@
     (Perhaps I will ?y in good time))
 
    (((?* ?x) yes (?* ?y))
-    (You seem quite positive) (You are sure) (I understand))
+    (You seem quite positive) 
+    (You are sure) 
+    (I understand))
 
    (((?* ?x) no (?* ?y))
-    (Why not?) (You are being a bit negative)
+    (Why not?) 
+    (You are being a bit negative)
     (Are you saying "NO" just to be negative?))
 
    (((?* ?x) someone (?* ?y))

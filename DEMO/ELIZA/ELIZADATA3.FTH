@@ -263,6 +263,19 @@
 : ROBOTS   ROBOT ;
 : MACHINE  ROBOT ;
 
+    { :: CR ." Do you often think of " <ROGERIAN?> ; 
+      :: CR ." Does thinking of " <ROGERIAN> ." bring anything else to mind?" ;
+      :: CR ." What else do you remember?" ;
+      :: CR ." Why do you recall" <ROGERIAN> ." right now?" ;
+      :: CR ." What in the present situation reminds you of " <ROGERIAN?> ;
+      :: CR ." What is the connection between me and " <ROGERIAN?> ;
+    } REPLY: IREMEMBER
+
+    { :: CR ." Did you think I would forget " <ROGERIAN?> ;
+      :: CR ." Why do you think I should recall " <ROGERIAN?> ." now" ;
+      :: CR ." What about " <ROGERIAN?> ." You mentioned " <ROGERIAN> ;
+    } REPLY: DOYOUREMEBER 
+
     { :: CR ." How do you do ... Please state your problem." ;
       :: CR ." Hello again :-)" ;
     } REPLY: HELLO

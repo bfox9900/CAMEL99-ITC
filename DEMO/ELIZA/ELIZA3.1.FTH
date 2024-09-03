@@ -286,6 +286,9 @@ DECIMAL
     S" OK"     KEY, 
     S" TI-99"  KEY, 
     S" HI"     KEY,
+    S" I REMEMBER" KEY,
+    S" DO YOU REMEMBER" KEY, 
+
 
 \ foreign language cue words       
     S" FRANCAIS" KEY,    
