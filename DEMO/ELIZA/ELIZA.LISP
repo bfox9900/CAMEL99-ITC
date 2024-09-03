@@ -31,7 +31,8 @@
     (let* ((input (read-line-no-punct))
            (response (flatten (use-eliza-rules input))))
       (print-with-spaces response)
-      (if (pat-match '((?* ?x) good bye (?* ?y)) response) (return)))))
+      (if (pat-match '((?* ?x) good bye (?* ?y)) response) 
+      (return)))))
 
 ;;;(defun print-with-spaces (list)
 ;;;  (mapc #'(lambda (x) (prin1 x) (princ " ")) list))
@@ -65,9 +66,12 @@
     (Did you think I would forget ?y ?)
     (Why do you think I should recall ?y now)
     (What about ?y) (You mentioned ?y))
+
    (((?* ?x) if (?* ?y))
-    (Do you really think its likely that ?y) (Do you wish that ?y)
-    (What do you think about ?y) (Really-- if ?y))
+    (Do you really think its likely that ?y) 
+    (Do you wish that ?y)
+    (What do you think about ?y) 
+    (Really-- if ?y))
 
    (((?* ?x) I dreamt (?* ?y))
     (Really-- ?y) (Have you ever fantasized ?y while you were awake?)
@@ -202,8 +206,10 @@
     (good bye and good luck))
 
    (((?* ?x))
-    (Very interesting) (I am not sure I understand you fully)
-    (What does that suggest to you?) (Please continue) (Go on)
+    (Very interesting) 
+    (I am not sure I understand you fully)
+    (What does that suggest to you?) 
+    (Please continue) (Go on)
     (Do you feel strongly about discussing such things?))))
 
 ;;; ==============================

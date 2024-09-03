@@ -337,7 +337,6 @@ VARIABLE ROGERIAN      \ set if Rogerian answer is needed
 
 : $ACCEPT ( $addr -- ) DUP  1+ 80 ACCEPT  SWAP C!  ;
 
-
 : LISTEN   ( -- $ )
            BEGIN
              CR BEEP ." >"  INPUT$ DUP $ACCEPT
@@ -383,7 +382,6 @@ VARIABLE ROGERIAN      \ set if Rogerian answer is needed
 
 DECIMAL
 
-\ everthing is handled by {MEMBER} which scans $ for any MEMBER of the list
 : ANALYZE   ( $ -- 0 | ndx) KEYWORDS {MEMBER} ;
 
 \ =======================================================
