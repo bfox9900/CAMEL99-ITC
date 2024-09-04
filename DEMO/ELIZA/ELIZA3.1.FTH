@@ -49,7 +49,7 @@ CREATE TEMP$   81 ALLOT
 \ : LASTCHAR ( $ -- c)  COUNT + 1- C@ ;            \ get last char in a string
 : BETWEEN  ( n min max -- ?)  1+ WITHIN ;        \ is n between or equal-to 
 \ : +PLACE      ( addr n $ -- ) 2DUP 2>R  COUNT +  SWAP MOVE 2R> C+! ;
-
+: ERASE   0 FILL ;
 : >=      ( n n -- ? ) 1- > ;
 : <=      ( n n -- ? ) 1+ < ;
 
@@ -65,6 +65,7 @@ DECIMAL
 \ string splitter at character position 
 \ 
 : 3RD   ( a b c -- a b c a ) 2 PICK ;
+
 : SPLIT ( addr len char -- str1 len1 str2 len2)
         >R  2DUP  R> SCAN  2SWAP  3RD - ;
 
@@ -81,6 +82,7 @@ HEX
 : UPPER    ( c -- c ) DUP LOWER? IF  05F AND THEN ;
 : LOWER    ( c -- c ) DUP UPPER? IF  020 OR  THEN ;
 
+DECIMAL 
 : TOUPPER ( addr len -- addr len ) \  convert STACK$ to uppercase in place
     2DUP  BOUNDS DO  I C@ UPPER I C!  LOOP ;
 
@@ -101,17 +103,27 @@ HEX
 : NOISE$ ( -- addr len) S" , .?!'@#$[]%^&*()_+-{}:<>" ;
 : PUNCTUATION$ ( -- addr len) S" ,.?!'@#$[]%^&*()_+-{}:<>" ;
 
+DECIMAL 
 : STRIP  ( source len noise len -- Temp$ len)
-      TEMP$ OFF 
+      TEMP$ 80 ERASE 
       2SWAP BOUNDS \ loop over the source string 
       DO   
          2DUP I C@ MEMBER? 0=  
-         IF I C@ TEMP$  APPEND-CHAR THEN
+         IF
+            I C@ TEMP$ APPEND-CHAR 
+         THEN
       LOOP 
       2DROP
       TEMP$ COUNT ;
 
-\ S"  This $is %a @ noisy %&*#$@ string!#@$!"  NOISE$  STRIP CR TYPE 
+\ : T$ S"  This $is %a @ noisy %&*#$@ string!#@$!" ;
+\ T$  NOISE$  STRIP CR TYPE 
+
+\ FLATTEN converts a string into a FORTH word by STRIPPING noise 
+\ characters and spaces
+\ Example: I CAN'T -> ICANT
+\ output is a stack string for EVALUATE to use
+: FLATTEN  ( addr len -- addr len ) NOISE$ STRIP ;
 
 \
 \ forth word array. Code becomes data 
@@ -165,7 +177,9 @@ VARIABLE STK  \ can't use CSP because it is used by the colon compiler
       :: S" YOUR" ;   \ 13
       :: S" MY" ;     \ 14
       :: S" I" ;      \ 15 
-   }  TOKENS: ]PHRASE  
+      :: S" WAS" ;
+   }  DUP CONSTANT #PHRASES 
+      TOKENS: ]PHRASE  
 
  {  :: S" YOU ARE"  ;  \ 1 
     :: S" YOU HAVE" ;  \ 2  
@@ -182,20 +196,20 @@ VARIABLE STK  \ can't use CSP because it is used by the colon compiler
     :: S" MY" ;        \ 13 
     :: S" YOUR" ;      \ 14 
     :: S" YOU" ;       \ 15 
-
+    :: S" WERE" ;
  }   TOKENS: ]CONJUGATE   
-
-' ]PHRASE >BODY @ CONSTANT #PHRASES 
 
 \ : .PHRASES  
 \  CR 
-\   #PHRASES  0
-\   DO  I ]PHRASE TYPE ." , "  LOOP 
+\   #PHRASES   0
+\   DO 
+\     CR I ]PHRASE TYPE ." , "  I ]CONJUGATE TYPE  
+\   LOOP 
 \ ;
 
 : FIND-PHRASE ( addr len -- n | -1)
    -1  -ROT        \ not found flag under string 
-   #PHRASES  0
+   #PHRASES 0
    DO 
       2DUP I ]PHRASE COMPARE 0=
       IF ROT DROP  \ remove not found flag 
@@ -218,85 +232,88 @@ VARIABLE STK  \ can't use CSP because it is used by the colon compiler
 VARIABLE #KEYWORDS 
 
 16 CONSTANT $WIDTH 
-$WIDTH 64 * CONSTANT KEY_SIZE 
+$WIDTH 70 * CONSTANT KEY_SIZE 
 
-CREATE []KEYWORDS   []KEYWORDS KEY_SIZE 0 FILL   KEY_SIZE ALLOT  
+CREATE []KEYWORDS   []KEYWORDS  KEY_SIZE ALLOT  
+[]KEYWORDS KEY_SIZE ERASE \ ERASE the ar
 
 : ]KEYWORD ( n -- addr) $WIDTH * []KEYWORDS + ; 
-
 : KEY,  ( addr u --) #KEYWORDS @ ]KEYWORD PLACE  #KEYWORDS 1+! ;
+: KEY"  [CHAR] " PARSE KEY, ; 
 
 DECIMAL
-    S" SHIT"    KEY,  
-    S" SHUTUP"  KEY, 
-    S" DICK"    KEY,    
-    S" FUCK"    KEY, 
-    S" ASS"     KEY,     
-    S" BASTARD" KEY, 
-    S" ROBOT"     KEY,
-    S" ROBOTS"    KEY, 
-    S" MACHINE"   KEY, 
-    S" COMPUTER"  KEY, 
-    S" CONSOLE"   KEY, 
-    S" SORRY"     KEY,   
-    S" ALWAYS"    KEY,
-    S" FRIEND"    KEY,
-    S" BYE"       KEY,
-    S" GOODBYE"   KEY,
-    S" CAUSE"     KEY,
-    S" DREAM"     KEY,
-    S" DREAMT"    KEY, 
-    S" HELLO"     KEY,
-    S" HELL"      KEY,
-    S" ALIKE"     KEY,
-    S" CAN YOU"   KEY,
-    S" CAN I"     KEY,
-    S" YOU ARE"   KEY,
-    S" YOU'RE"    KEY, 
-    S" NAME"      KEY,
-    S" WHY DON'T YOU" KEY, 
-    S" WHY CAN'T I"  KEY,
-    S" I DON'T"   KEY,
-    S" I FEEL"    KEY,
-    S" ARE YOU"   KEY,
-    S" I CAN'T"   KEY,
-    S" I AM"      KEY,
-    S" I'M"       KEY,
-    S" YOUR"      KEY,
-    S" I WANT"    KEY,
-    S" MY"        KEY,
-    S" MAYBE"     KEY,
-    S" I NEED"    KEY,
-    S" I THINK"     KEY,
-    S" YOU"       KEY,
-    S" YES"       KEY,
-    S" I HAVE"    KEY,
-    S" I'VE"      KEY,
-    S" REALLY" KEY,
+    KEY" SHIT"       
+    KEY" SHUTUP"    
+    KEY" DICK"         
+    KEY" FUCK"      
+    KEY" ASSHOLE"           
+    KEY" BASTARD"   
+    KEY" TI-99"    
+    KEY" ROBOT"      
+    KEY" ROBOTS"      
+    KEY" MACHINE"     
+    KEY" COMPUTER"    
+    KEY" CONSOLE"     
+    KEY" SORRY"         
+    KEY" ALWAY"     
+    KEY" FRIEND"     
+    KEY" BYE"        
+    KEY" GOODBYE"    
+    KEY" CAUSE"      
+    KEY" DREAM"      
+    KEY" DREAMT"      
+    KEY" HELLO"      
+    KEY" HELL "       
+    KEY" ALIKE"      
+    KEY" CAN YOU"    
+    KEY" CAN I"      
+    KEY" YOU ARE"    
+    KEY" YOU'RE"      
+    KEY" NAME"       
+    KEY" WHY DON'T YOU"   
+    KEY" WHY CAN'T I"   
+    KEY" I REMEMBER"  
+    KEY" DO YOU REMEMBER"   
+    KEY" I DON'T"    
+    KEY" I FEEL"     
+    KEY" ARE YOU"    
+    KEY" I CAN'T"    
+    KEY" I AM"       
+    KEY" I'M"        
+    KEY" YOUR"       
+    KEY" I WANT"     
+    KEY" MY"         
+    KEY" MAYBE"      
+    KEY" I NEED"     
+    KEY" I THINK"   
+    KEY" THINK"    
+    KEY" YOU"        
+    KEY" YES"        
+    KEY" I HAVE"     
+    KEY" I'VE"       
+    KEY" REALLY"  
 
-    S" WHAT"   KEY,
-    S" HOW"    KEY,
-    S" WHO"    KEY,
-    S" $POS"  KEY,
-    S" WHEN"   KEY,
-    S" WHY"    KEY,
+    KEY" WHAT"    
+    KEY" HOW"     
+    KEY" WHO"     
+    KEY" WHERE"  
+    KEY" WHEN"    
+    KEY" WHY"     
     
-    S" NO"     KEY,
-    S" WE"     KEY,
-    S" OK"     KEY, 
-    S" TI-99"  KEY, 
-    S" HI"     KEY,
-    S" I REMEMBER" KEY,
-    S" DO YOU REMEMBER" KEY, 
-
-
-\ foreign language cue words       
-    S" FRANCAIS" KEY,    
-    S" ITALIANO" KEY,    
-    S" ESPANOL" KEY,   
-    S" DEUTSCH" KEY,    
-    S" NEDERLANDS" KEY, 
-    S" BONJOUR" KEY, 
+    KEY" NO"      
+    KEY" WE"      
+    KEY" OK"       
+    KEY" HI"      
+ \ this word conflicts with IF in Forth. :-) Need a vocabulary
+ \   KEY" IF"   
+\
+ \ foreign language cue words       
+    KEY" FRANCAIS"      
+    KEY" ITALIANO"      
+    KEY" ESPANOL"     
+    KEY" DEUTSCH"      
+    KEY" NEDERLANDS"   
+    KEY" BONJOUR"   
 
 \ debugging ..............
 \ : PRINT$  COUNT TYPE ;
@@ -304,6 +321,11 @@ DECIMAL
 \   CR #KEYWORDS @ 0  
 \   DO I ]KEYWORD PRINT$ ." , "  LOOP ;
 
+\ parse out words delimited by char and keep remainder on data stack 
+: /WORD ( addr len char --   remainder len 1word len )
+      SPLIT 2SWAP 1 /STRING 2SWAP ;
+
+: 1WORD  BL /WORD ;
 
 \ after a search, compute the position of string1 in string2 
 : $POS  ( a1 n1 a2 n2 -- n) NIP OVER SWAP - ;
@@ -314,30 +336,32 @@ VARIABLE KWORD#
 VARIABLE POSITION 
 
 : FIND-KEYWORD ( addr len -- ?)
-   KWORD# ON   POSITION OFF 
-   TOUPPER
+   KWORD# ON 
+   POSITION OFF  
    #KEYWORDS @ 0
-   DO 
-      2DUP I ]KEYWORD COUNT SEARCH  ( --- a n a n ?) 
-      IF $POS POSITION !  \ compute string position & store  
-         I KWORD# ! 
-         LEAVE 
+   DO \ I .  ( debug)
+      2DUP I ]KEYWORD COUNT SEARCH ( --- a n a n ?) 
+      IF   I KWORD# !  
+           2 PICK OVER - POSITION ! 
+           2DROP
+           LEAVE 
       THEN 
       2DROP 
    LOOP 
-   2DROP
+   2DROP 
    KWORD# @ 
 ;
 
 : KEYWORD$   ( -- $addr) KWORD# @ ]KEYWORD ;
+
+\ : A$ S" This rain in spain, is mainly on the TI-99" ;
+\  S" POOPY DIAPER" FIND-KEYWORD 
+\  CR CR .S
+
 \ : .KEYWORD   KEYWORD$ COUNT TYPE ;
 
-
-\ FLATTEN converts a string into a FORTH word by STRIPPING noise 
-\ characters and spaces
-\ Example: I CAN'T -> ICANT
-\ output is a stack string for EVALUATE to use
-: FLATTEN  ( addr len -- addr len ) NOISE$ STRIP ;
+: ANALYZE  ( addr len --) 
+  PUNCTUATION$ STRIP   TOUPPER  FIND-KEYWORD ;      
 
 
 \ ==============================================
@@ -381,18 +405,6 @@ MACRO []XT    " CELLS R@ + 2 CELLS +"   \ address of Array of Xts
       :: CR ." Do you feel strongly about discussing such things?" ;
     } REPLY: TAPDANCE
 
-\ bad words list
-    { :: CR ." Hey now."  CR ." We don't use that kind of language here." ;
-      :: CR ." I told you to watch your language!" ;
-      :: CR ." That's enough! I don't have to listen to this!" ;
-    } REPLY: SHIT 
-
-\ all these words cause SHIT to happen :-)
- : FUCK     SHIT ;
- : ASS      SHIT ;
- : BASTARD  SHIT ;
- : HELL     SHIT ;
- : DICK     SHIT ;
 
 .( .)
 \ USER  text input 
@@ -406,20 +418,15 @@ MACRO []XT    " CELLS R@ + 2 CELLS +"   \ address of Array of Xts
         WHILE 
             2DROP 
         REPEAT 
-        TOUPPER TRIM 
         2DUP INPUT$ PLACE 
 ;
            
-\ cut input string at POSITION, found by FIND-KEYWORD + length of the keyword phrase.
+\ cut input string at POSITION, found by FIND-KEYWORD + length 
+\ of the keyword phrase.
 \ return everything after the keyword phrase
  : /TAIL  ( addr len -- adr len) 
-        POSITION @  KEYWORD$ LEN +  /STRING ;
+      POSITION @  KEYWORD$ LEN +  /STRING 0 MAX ;
 
-\ parse out words delimited by char and keep remainder on data stack 
-: /WORD ( addr len char --   remainder len 1word len )
-        SPLIT 2SWAP 1 /STRING 2SWAP ;
-
-: 1WORD  BL /WORD ;
 
 \ conjugate any phrases in the ]PHRASE table 
 : ?CONJUGATE ( addr len -- addr len | addr' len) 
@@ -444,9 +451,11 @@ MACRO []XT    " CELLS R@ + 2 CELLS +"   \ address of Array of Xts
 : '.'  [CHAR] . EMIT ;
 : '"'  [CHAR] " EMIT ;
 
-: <ROGERIAN>   INPUT$ COUNT /TAIL PUNCTUATION$ STRIP  /CONJUGATE  ;
-: <ROGERIAN?>  <ROGERIAN> '?' ;
+: <ROGERIAN>  ( -- ) 
+  INPUT$ COUNT /TAIL DUP 1 < IF 2DROP EXIT THEN 
+  PUNCTUATION$ STRIP  /CONJUGATE  ;
 
+: <ROGERIAN?>  <ROGERIAN> '?' ;
 
 DECIMAL
 : END_SESSION
@@ -464,6 +473,20 @@ DECIMAL
 : GOODBYE   END_SESSION ;
 : BYE       END_SESSION ;
 
+\ bad words list
+    { :: CR ." Hey now."  CR ." We don't use that kind of language here." ;
+      :: CR ." I told you to watch your language!" ;
+      :: CR ." That's enough! I don't have to listen to this!"
+               1000 MS END_SESSION ;
+    } REPLY: SHIT 
+
+\ all these words cause SHIT to happen :-)
+ : FUCK     SHIT ;
+ : ASS      SHIT ;
+ : BASTARD  SHIT ;
+ : HELL     SHIT ;
+ : DICK     SHIT ;
+
 : SHUTUP    CR CR ." That's rude!"  1000 MS BYE ;
 
 : CONSOLE   CR
@@ -471,13 +494,6 @@ DECIMAL
             CR ." CAMEL99 FORTH"
             CR  QUIT ;
 
-
-\ **************************************************
-\ Eliza replies are separate file for easier editing
-
- S" DSK2.ELIZADATA3" INCLUDED
-
-\ **************************************************
 : REPLY   ( n -- )  \ n = keyword index
       CR
       DUP -1 =
@@ -488,6 +504,13 @@ DECIMAL
       ELSE ( keyword found)
          ( n) ]KEYWORD COUNT FLATTEN EVALUATE 
       THEN ;
+
+\ **************************************************
+\ Eliza replies are separate file for easier editing
+
+ S" DSK2.ELIZADATA3" INCLUDED
+
+\ **************************************************
 .( .)
 DECIMAL
 : CENTER.TYPE  ( addr len -- ) C/L@ OVER - 2/ SPACES TYPE ;
@@ -510,12 +533,14 @@ DECIMAL
       .OPENING 
       GREETING
       BEGIN
-        LISTEN FIND-KEYWORD REPLY
+        LISTEN ANALYZE REPLY
       AGAIN ;
 
-: START  WARM  ELIZA ;
+: START    WARM ELIZA ;
 
 \ Save as binary program 
 LOCK 
+
 INCLUDE DSK1.SAVESYS
-' START SAVESYS DSK2.ELIZA3
+
+' START SAVESYS DSK2.ELIZA

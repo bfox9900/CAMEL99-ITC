@@ -5,7 +5,7 @@
  HEX 2000 DP !   ( put this data in low ram )
 
 \
-    { :: CR ." Don't you believe that i can " <ROGERIAN?> ;
+    { :: CR ." Don't you believe that I can " <ROGERIAN?> ;
       :: CR ." Perhaps you would like to be able to " <ROGERIAN?> ;
       :: CR ." You want me to be able to " <ROGERIAN?> ;
     } REPLY: CANYOU
@@ -14,8 +14,8 @@
       :: CR ." Do you want to be able to " <ROGERIAN?> ;
     } REPLY: CANI
 
-    { :: CR ." What makes you think i am " <ROGERIAN?> ;
-      :: CR ." Does it please you to believe that i am " <ROGERIAN?> ;
+    { :: CR ." What makes you think I am " <ROGERIAN?> ;
+      :: CR ." Does it please you to believe that I am " <ROGERIAN?> ;
       :: CR ." Perhaps you would like to be " <ROGERIAN> '.' ;
       :: CR ." Do you sometimes wish you were " <ROGERIAN?> ;
     } REPLY: YOUARE
@@ -31,6 +31,13 @@
       :: CR ." Hey!!" 
          CR ." I am your doctor. Nothing more." ;
      } REPLY: WE
+
+
+\    { :: CR ." Do you really think its likely that you " <ROGERIAN?> ;
+\      :: CR ." Do you wish that you " <ROGERIAN?> ;
+\      :: CR ." What do you think when you say " CR '"' <ROGERIAN?> '"' ; 
+\      :: CR ." Really-- if you " <ROGERIAN?> ; 
+\    } REPLY: IFI 
 
 
     { :: CR ." You really don't " <ROGERIAN?> ;
@@ -91,29 +98,41 @@
        :: CR ." You don't trust me yet do you?" ;
      } REPLY: REALLY
 
+    { :: CR ." Do you often think of " <ROGERIAN?> ; 
+      :: CR ." Does thinking of " <ROGERIAN> ." bring anything else to mind?" ;
+      :: CR ." What else do you remember?" ;
+      :: CR ." Why do you recall " <ROGERIAN> ." right now?" ;
+      :: CR ." What in the present situation reminds you of " <ROGERIAN?> ;
+      :: CR ." What is the connection between me and " <ROGERIAN?> ;
+    } REPLY: IREMEMBER
 
-     { :: CR ." We were discussing you -- not me." ;
+    { :: CR ." Did you think I would forget " <ROGERIAN?> ;
+      :: CR ." Why do you think I should recall " <ROGERIAN?> ." now" ;
+      :: CR ." What about " <ROGERIAN?> ." You mentioned " <ROGERIAN> ;
+    } REPLY: DOYOUREMEBER 
+
+    { :: CR ." We were discussing you -- not me." ;
        :: CR ." Let's keep talking about your issues." ;
        :: CR ." You're not really talking about me, are you?" ;
-     } REPLY: YOU
+    } REPLY: YOU
 
-     { :: CR ." What would it mean if you got " <ROGERIAN?>   ;
-       :: CR ." Why do you want " <ROGERIAN?> ;
-       :: CR ." Suppose you soon got " <ROGERIAN?> ;
-       :: CR ." What if you never got " <ROGERIAN?> ;
-       :: CR ." Sometimes i think i want " <ROGERIAN> '.' ;
-       :: CR ." Doesn't everybody?" ;
-     } REPLY: IWANT
+    { :: CR ." What would it mean if you got " <ROGERIAN?>   ;
+      :: CR ." Why do you want " <ROGERIAN?> ;
+      :: CR ." Suppose you soon got " <ROGERIAN?> ;
+      :: CR ." What if you never got " <ROGERIAN?> ;
+      :: CR ." Sometimes i think i want " <ROGERIAN> '.' ;
+      :: CR ." Doesn't everybody?" ;
+    } REPLY: IWANT
 
-     { :: CR ." Why do you ask?" ;
-       :: CR ." Does that question interest you?" ;
-       :: CR ." What answer would please you the most?" ;
-       :: CR ." What do you think?" ;
-       :: CR ." Are such questions on your mind often?" ;
-       :: CR ." What is it you really want to know?" ;
-       :: CR ." Have you asked anyone else this question?" ;
-       :: CR ." Have you asked such questions before?" ;
-       :: CR ." What else comes to mind when you ask that?" ;
+    { :: CR ." Why do you ask?" ;
+      :: CR ." Does that question interest you?" ;
+      :: CR ." What answer would please you the most?" ;
+      :: CR ." What do you think?" ;
+      :: CR ." Are such questions on your mind often?" ;
+      :: CR ." What is it you really want to know?" ;
+      :: CR ." Have you asked anyone else this question?" ;
+      :: CR ." Have you asked such questions before?" ;
+      :: CR ." What else comes to mind when you ask that?" ;
     } REPLY: WHAT
 
 \ all questions give the same answers
@@ -184,6 +203,8 @@
       :: CR ." Do you ever doubt that you " <ROGERIAN?> ;
     } REPLY: ITHINK
 
+: THINK   ITHINK ;
+
 
 { :: CR ." In what way?" ;
 :: CR ." What resemblance do you see?" ;
@@ -220,7 +241,6 @@
    } REPLY: COMPUTER
 
    { :: CR ." What is OK about it?" ;
-
      :: CR ." Alright then." 
         CR ." Tell me about your mother" ;
 
@@ -262,19 +282,6 @@
 
 : ROBOTS   ROBOT ;
 : MACHINE  ROBOT ;
-
-    { :: CR ." Do you often think of " <ROGERIAN?> ; 
-      :: CR ." Does thinking of " <ROGERIAN> ." bring anything else to mind?" ;
-      :: CR ." What else do you remember?" ;
-      :: CR ." Why do you recall" <ROGERIAN> ." right now?" ;
-      :: CR ." What in the present situation reminds you of " <ROGERIAN?> ;
-      :: CR ." What is the connection between me and " <ROGERIAN?> ;
-    } REPLY: IREMEMBER
-
-    { :: CR ." Did you think I would forget " <ROGERIAN?> ;
-      :: CR ." Why do you think I should recall " <ROGERIAN?> ." now" ;
-      :: CR ." What about " <ROGERIAN?> ." You mentioned " <ROGERIAN> ;
-    } REPLY: DOYOUREMEBER 
 
     { :: CR ." How do you do ... Please state your problem." ;
       :: CR ." Hello again :-)" ;
