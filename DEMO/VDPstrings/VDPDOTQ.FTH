@@ -1,7 +1,7 @@
 \ VDP STRING with ." OVER-RIDE    2023 Brian Fox 
 
 \ This version of ." puts all the text in VDP ram.
-\ This save dictionary space for code. 
+\ This saves dictionary space for code. 
 
 \ *WARNING* the VDP RAM is not save by SAVESYS, or SUPERSAVE 
 
