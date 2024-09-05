@@ -251,3 +251,5 @@ DECIMAL
     : Ab1  G#2 ; 
 
 ONLY FORTH ALSO MUSIC ALSO FORTH DEFINITIONS 
+CR .( Starting multi-tasking ...)
+MULTI 
