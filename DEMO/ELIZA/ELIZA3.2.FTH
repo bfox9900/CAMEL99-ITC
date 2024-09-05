@@ -409,19 +409,19 @@ DECIMAL
     } REPLY: SHIT 
 
 \ all these words cause SHIT to happen :-)
-    KEY" SHUTUP"    
+    KEY" SHUTUP"  : SHUTUP    CR CR ." That's rude!"  1000 MS BYE ;
     KEY" DICK"    : DICK     SHIT ;
     KEY" FUCK"    : FUCK     SHIT ;
     KEY" ASSHOLE" : ASS      SHIT ;
     KEY" BASTARD" : BASTARD  SHIT ;
     KEY" HELL"    : HELL     SHIT ;
 
-: SHUTUP    CR CR ." That's rude!"  1000 MS BYE ;
-
-: CONSOLE   CR
-            CR ." Exiting ELIZA ..."
-            CR ." CAMEL99 FORTH"
-            CR  QUIT ;
+    KEY" CONSOLE" 
+    : CONSOLE   
+    CR
+    CR ." Exiting ELIZA ..."
+    CR ." CAMEL99 FORTH"
+    CR  QUIT ;
 
 : REPLY   ( n -- )  \ n = keyword index
       CR

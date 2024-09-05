@@ -5,7 +5,6 @@
  HEX 2000 DP !   ( put this data in low ram )
 DECIMAL
  
-    KEY" CONSOLE"     
     KEY" CAUSE"      
     KEY" DREAM"      
     KEY" DREAMT"      
@@ -344,8 +343,8 @@ DECIMAL
       :: CR ." Hello again :-)" ;
     } REPLY: HELLO
 
-     KEY" HI"       : HI     HELLO ;
-     KEY" BONJOUR"  : BONJOUR  HELLO ;
+    KEY" HI"       : HI     HELLO ;
+    KEY" BONJOUR"  : BONJOUR  HELLO ;
 
 HERE H !     \ record allocation of low RAM 
 JOB @ DP !   \ restore dictionary back into high RAM 
