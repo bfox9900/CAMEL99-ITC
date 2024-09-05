@@ -12,9 +12,11 @@ NEEDS VHERE FROM DSK1.VDPMEM
 
 \ Print a VDP stack string
 : VTYPE   ( vdp_addr len -- ) BOUNDS ?DO   I VC@ EMIT   LOOP ;
+: (V.")    VCOUNT VTYPE ;
+
 
 \ Compile a VDP string, that types itself.
-\ ### Overides regular ." word ###
+\ ### Over-rides regular ." word ###
 : ."   ( <text> )
         ?COMP                 \ for compiling only
 \ Do these compile time actions "immediately"
@@ -22,8 +24,7 @@ NEEDS VHERE FROM DSK1.VDPMEM
 
 \ later, when we run the word, do these things
         POSTPONE LITERAL
-        POSTPONE VCOUNT
-        POSTPONE VTYPE ; IMMEDIATE
+        POSTPONE (V.") ; IMMEDIATE
 
 \ DEMO
 \ : .MSG1  CR ." This text is stored in VDP RAM" ;        
