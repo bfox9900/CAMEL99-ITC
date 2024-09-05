@@ -40,13 +40,16 @@ VARIABLE #TASKS
  
 DECIMAL
  
-CR .( Commands to RUN  the demo)
+CR .( Commands for this Demo)
+CR 
 CR .( type: DECIMAL 38 TASKS)
 CR .( 38 is the maximum number using LOW RAM)
 CR
 CR .( MULTI to start tasker)
+CR 
 CR .( .TASKS  to see task list)
 CR .(  X ?  to see X increment)
+CR
 CR .( MONITOR  to see round-robin time)
 CR .( Hold FCTN 4 to stop MONITOR)
  
