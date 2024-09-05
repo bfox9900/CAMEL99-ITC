@@ -28,6 +28,5 @@ NEEDS VHERE FROM DSK1.VDPMEM
 
 \ DEMO
 \ : .MSG1  CR ." This text is stored in VDP RAM" ;        
-
 \ : TEST  100 0 DO  .MSG1  LOOP ;
 
