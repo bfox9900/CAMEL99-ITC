@@ -294,3 +294,5 @@ DECIMAL
       MERGE-SORT 1500 MS
       QUICK-SORT
       WAIT-KEY ;
+
+CR .( type RUN to start)
