@@ -1,21 +1,30 @@
 # Eliza In Forth
 
-This version of the classic Lisp demonstration is a little less sophisticated than the original. A future version may allow programming the responses in Forth allowing for more interesting responses like "In what way is 'X'  like 'Y'?" .  These were part of the original Lisp version and make the chatbot seem more life-like.
+This version of the classic Lisp demonstration in version 3 
+has been re-written to use the Forth colon definition rather
+than strings, as is commonly done in other languages.
+A small DSL (domain specific language) was created to allow
+the creation of key words and replies that was closer to the
+power of LISP. 
 
-##Instructions
-the file ELIZADATA must be on your system on DSK2.
-To put convert the PC file to TI-99 you can use the TI-99 Edit program.
+I was motivated to change the program after looking at the
+LISP version of Eliza where you can see LISP's powerful
+use of "code" as data. 
 
-1. Paste the file ELIZADATA.FTH  into the Editor/Assembler Editor program.
-2. Save the file as DSK2.ELIZADATA
+For example:
+```
+(((?* ?x) dream about (?* ?y))
+    (How do you feel about ?y in reality?))
+'''
+Here we see the ?y inserted into the reply text seamlessly.
+This creates a much more natural reply than simply appending
+the subject text to the end of a reply phrase. 
 
-##Overview
-This implementation creates simple string list syntax in Forth to help manage the replies. A simple string stack provides simple dynamic string creation but the program could have been written without it.
+The equivalent code in this DSL would be:
+```
+KEY" DREAM ABOUT"
+{  ::  CR ." How do you feel about " <rogerian> ." in reality?" ;
+} REPLY: DREAMABOUT 
+```
 
-By parsing the user text the program scans for keywords and key phrases. The matched text is converted into a Forth word by removing spaces and punctuation.  Armed with a valid Forth word we simply pass it to EVALUATE to kick off Eliza's response.
-
-Lists of responses are created and then compiled as a Forth word with the word REPLY: <name>
-
-Using the list structure for keywords, phrases and conjugations coupled with directly executing Forth "REPLYs" makes modification quite simple.
-
-The file ELIZADATA.FTH contains the source code for the replies. They are separated from the program for ease of editing.
+With a little effort this could be further simplfied. 

@@ -70,5 +70,7 @@ SIZE CELLS  MALLOC CONSTANT Q[]
 \ use this to print the array (use FNCT 4 to break out (ALT 4 on PC)
 : .Q   ( -- ) CR  SIZE  0 DO  I ]Q @ U. ?BREAK  LOOP ;
 
-: GO   Q[] SIZE COMBSORT ;  
+REVERSED 
+
+: GO   Q[] SIZE COMBSORT ;  \ 18.6 seconds 
 
