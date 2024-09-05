@@ -2,7 +2,7 @@
 
 \ Concept taken from: 
 \ "Projects in MACHINE INTELLIGENCE for you HOME COMPUTER"
-\ David L. Heiserman, (c) 1982 TAB Books 
+\  David L. Heiserman, (c) 1982 TAB Books 
 
 
 INCLUDE DSK1.TOOLS
