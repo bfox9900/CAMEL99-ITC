@@ -1,4 +1,4 @@
-\  SMPTE Style Color Bars TI-99 CAMEL Forth
+\  SMPTE Style Color Bars TI-99 CAMEL Forth Brian Fox 
 
 \ INCLUDE DSK1.TOOLS   ( for debugging only)
 NEEDS HCHAR   FROM DSK1.GRAFIX
