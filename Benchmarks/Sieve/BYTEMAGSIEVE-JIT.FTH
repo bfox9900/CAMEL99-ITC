@@ -43,3 +43,5 @@ JIT: DO-PRIME
    10 0 DO  DO-PRIME  CR SPACE . S" Primes" VTYPE  LOOP
    CR S" Done!" VTYPE 
 ;
+
+\ ELAPSE PRIMES 

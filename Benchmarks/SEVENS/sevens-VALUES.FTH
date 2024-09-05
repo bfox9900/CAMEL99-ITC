@@ -1,4 +1,5 @@
-\ literal translation of BASIC program to Forth 
+\ literal translation of a BASIC version of the sevens problem Brian Fox
+\ Original BASIC program from Atariage.com  
 
 \ *V2.73 Camel99 uses a smaller but slower VDP driver. 
 
@@ -20,16 +21,17 @@ DECIMAL
 \ Uncomment the screen I/O code below to a faster driver 
 \ .......................................................
 \ SCROLL entire screen in one block with VMBR and VMBW
-\ : SCROLL ( -- )
-\  HERE 100 + DUP>R  VTOP @  ( --  buffer dst) ( r: BUFFER)
-\  DUP C/L@ + R>             ( -- buffer dst src buffer)  
-\  [ C/SCR @ C/L @ - ] LITERAL DUP>R VREAD  R> VWRITE 
-\  0 23 2DUP >VPOS C/L@ BL VFILL  \ erase bottom line
-\  AT-XY ;                        \ set cursor  
+ : SCROLL ( -- )
+  HERE 100 + DUP>R  VTOP @  ( --  buffer dst) ( r: BUFFER)
+  DUP C/L@ + R>             ( -- buffer dst src buffer)  
+  [ C/SCR @ C/L @ - ] LITERAL DUP>R VREAD  R> VWRITE 
+  0 23 2DUP >VPOS C/L@ BL VFILL  \ erase bottom line
+  AT-XY ;                        \ set cursor  
 
 \ this code is the same as the kernel, but with faster scroll 
-\ : CR  ( -- ) VCOL OFF   VROW DUP 1+! @ L/SCR = IF SCROLL THEN ;  
-\ : (EMIT) ( char -- ) CPUT IF  CR  THEN ;
+: CR     (  -- ) VCOL OFF  VROW ++@  L/SCR = IF SCROLL THEN ;
+: (EMIT) ( char -- ) VPOS VC!  VCOL ++@ C/L@ = IF CR THEN ;
+
 \ .......................................................
 
 \ define all data before use
@@ -80,11 +82,11 @@ DECIMAL
     IF                          \ 320 IF CARRY=0 THEN 340
        1 +TO NUMLEN             \ 330 NUMLEN=NUMLEN+1
     THEN 
-\ changed to use addresses not indices    
+  
     CR                          \ replaces PRINT 
-    0  NUMLEN                   \ 340 FOR I=NUMLEN TO 1 
+    0  NUMLEN                  \ 340 FOR I=NUMLEN TO 1 
     DO   
-      I ]A C@ >DIGIT (EMIT)     \ 350 PRINT CHR$(A(I)+48);
+       I ]A C@ >DIGIT (EMIT)    \ 350 PRINT CHR$(A(I)+48);
     -1 +LOOP                    \ 360 NEXT I ( STEP -1)
     CR CR                       \ 370 PRINT ::
     WIN                         \ 380 IF WIN<>1
