@@ -1,4 +1,9 @@
-\ alpha intelligence demonstration using characters
+\ alpha intelligence demonstration using characters Brian Fox 
+
+\ Concept taken from: 
+\ "Projects in MACHINE INTELLIGENCE for you HOME COMPUTER"
+\ David L. Heiserman, (c) 1982 TAB Books 
+
 
 INCLUDE DSK1.TOOLS
 INCLUDE DSK1.GRAFIX
@@ -118,7 +123,7 @@ DECIMAL
               CLEAR-AHEAD?
               IF   MOVE-MAN
               ELSE ALPHA-THINK
-              THEN \ SPEED @ MS    \ delay
+              THEN  SPEED @ MS  \ delay
               KEY?
            UNTIL
            ?BREAK
