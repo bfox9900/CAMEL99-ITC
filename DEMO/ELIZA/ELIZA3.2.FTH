@@ -241,80 +241,6 @@ CREATE []KEYWORDS   []KEYWORDS  KEY_SIZE ALLOT
 : KEY,  ( addr u --) #KEYWORDS @ ]KEYWORD PLACE  #KEYWORDS 1+! ;
 : KEY"  [CHAR] " PARSE KEY, ; 
 
-DECIMAL
-    KEY" SHIT"       
-    KEY" SHUTUP"    
-    KEY" DICK"         
-    KEY" FUCK"      
-    KEY" ASSHOLE"           
-    KEY" BASTARD"   
-    KEY" TI-99"    
-    KEY" ROBOT"      
-    KEY" ROBOTS"      
-    KEY" MACHINE"     
-    KEY" COMPUTER"    
-    KEY" CONSOLE"     
-    KEY" SORRY"         
-    KEY" ALWAY"     
-    KEY" FRIEND"     
-    KEY" BYE"        
-    KEY" GOODBYE"    
-    KEY" CAUSE"      
-    KEY" DREAM"      
-    KEY" DREAMT"      
-    KEY" HELLO"      
-    KEY" HELL "       
-    KEY" ALIKE"      
-    KEY" CAN YOU"    
-    KEY" CAN I"      
-    KEY" YOU ARE"    
-    KEY" YOU'RE"      
-    KEY" NAME"       
-    KEY" WHY DON'T YOU"   
-    KEY" WHY CAN'T I"   
-    KEY" I REMEMBER"  
-    KEY" DO YOU REMEMBER"   
-    KEY" I DON'T"    
-    KEY" I FEEL"     
-    KEY" ARE YOU"    
-    KEY" I CAN'T"    
-    KEY" I AM"       
-    KEY" I'M"        
-    KEY" YOUR"       
-    KEY" I WANT"     
-    KEY" MY"         
-    KEY" MAYBE"      
-    KEY" I NEED"     
-    KEY" I THINK"   
-    KEY" THINK"    
-    KEY" YOU"        
-    KEY" YES"        
-    KEY" I HAVE"     
-    KEY" I'VE"       
-    KEY" REALLY"  
-
-    KEY" WHAT"    
-    KEY" HOW"     
-    KEY" WHO"     
-    KEY" WHERE"  
-    KEY" WHEN"    
-    KEY" WHY"     
-    
-    KEY" NO"      
-    KEY" WE"      
-    KEY" OK"       
-    KEY" HI"      
- \ this word conflicts with IF in Forth. :-) Need a vocabulary
- \   KEY" IF"   
-\
- \ foreign language cue words       
-    KEY" FRANCAIS"      
-    KEY" ITALIANO"      
-    KEY" ESPANOL"     
-    KEY" DEUTSCH"      
-    KEY" NEDERLANDS"   
-    KEY" BONJOUR"   
-
 \ debugging ..............
 \ : PRINT$  COUNT TYPE ;
 \ : .KEYWORDS  ( -- )
@@ -451,11 +377,11 @@ MACRO []XT    " CELLS R@ + 2 CELLS +"   \ address of Array of Xts
 : '.'  [CHAR] . EMIT ;
 : '"'  [CHAR] " EMIT ;
 
-: <ROGERIAN>  ( -- ) 
+: <TOPIC>  ( -- ) 
   INPUT$ COUNT /TAIL DUP 1 < IF 2DROP EXIT THEN 
   PUNCTUATION$ STRIP  /CONJUGATE  ;
 
-: <ROGERIAN?>  <ROGERIAN> '?' ;
+: <TOPIC?>  <TOPIC> '?' ;
 
 DECIMAL
 : END_SESSION
@@ -470,10 +396,12 @@ DECIMAL
       CR ." :-)"   2000 MS 
       BYE ;
 
-: GOODBYE   END_SESSION ;
-: BYE       END_SESSION ;
+ \   Keyword       Forth word that is called     
+    KEY" BYE"      : BYE       END_SESSION ;
+    KEY" GOODBYE"  : GOODBYE   END_SESSION ;
 
 \ bad words list
+    KEY" SHIT"       
     { :: CR ." Hey now."  CR ." We don't use that kind of language here." ;
       :: CR ." I told you to watch your language!" ;
       :: CR ." That's enough! I don't have to listen to this!"
@@ -481,11 +409,12 @@ DECIMAL
     } REPLY: SHIT 
 
 \ all these words cause SHIT to happen :-)
- : FUCK     SHIT ;
- : ASS      SHIT ;
- : BASTARD  SHIT ;
- : HELL     SHIT ;
- : DICK     SHIT ;
+    KEY" SHUTUP"    
+    KEY" DICK"    : DICK     SHIT ;
+    KEY" FUCK"    : FUCK     SHIT ;
+    KEY" ASSHOLE" : ASS      SHIT ;
+    KEY" BASTARD" : BASTARD  SHIT ;
+    KEY" HELL"    : HELL     SHIT ;
 
 : SHUTUP    CR CR ." That's rude!"  1000 MS BYE ;
 

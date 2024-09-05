@@ -23,8 +23,16 @@ the subject text to the end of a reply phrase.
 The equivalent code in this DSL would be:
 ```
 KEY" DREAM ABOUT"
-{  ::  CR ." How do you feel about " <rogerian> ." in reality?" ;
-} REPLY: DREAMABOUT 
-```
+: DREAMABOUT  CR ." How do you feel about " <TOPIC> ." in reality?" ;
 
-With a little effort this could be further simplfied. 
+```
+Where the word KEY" puts the string into a searchable array.
+The colon definition is the "flattened" version of the string
+When the phrase "dream about" is found in the input text, it is
+flattened, converted to upper case and fed to the Forth interpreter. 
+
+<TOPIC> inserts the text that was parsed after the key phrase.
+the rest of the definition is nothing but standard Forth. 
+
+With a little more effort we could make and operator the creates
+a dictionary entry of the flattened phrase automagically. 
