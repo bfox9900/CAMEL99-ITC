@@ -25,7 +25,7 @@ DECIMAL
     } REPLY: YOUARE
 
 \ anytime we need new keywords with the same replies
-\ we just make a synonym Forth word.
+\ we just make a KEY and a new Forth word that calls the old word
       KEY" YOU'RE"  : YOURE  YOUARE ;
 
     KEY" WE"      
