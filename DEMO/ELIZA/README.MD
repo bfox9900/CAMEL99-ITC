@@ -15,7 +15,7 @@ For example:
 ```
 (((?* ?x) dream about (?* ?y))
     (How do you feel about ?y in reality?))
-'''
+```
 Here we see the ?y inserted into the reply text seamlessly.
 This creates a much more natural reply than simply appending
 the subject text to the end of a reply phrase. 
