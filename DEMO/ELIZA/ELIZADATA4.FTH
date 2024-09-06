@@ -320,6 +320,60 @@ DECIMAL
     KEY" HI"       : HI     HELLO ;
     KEY" BONJOUR"  : BONJOUR  HELLO ;
 
+DECIMAL
+: END_SESSION
+      CR 
+      CR ." OK. Thanks for chatting."
+      CR ." Bye bye!"  700 MS
+      CR ." ...Oh and by the way..."
+      1000 MS
+      CR
+      CR ." My bill is $400.00." 500 MS 
+      CR ." (I accept Paypal)"  300 MS 
+      CR ." :-)"   2000 MS 
+      BYE ;
+
+ \   Keyword       Forth word that is called     
+    KEY" BYE"      : BYE       END_SESSION ;
+    KEY" GOODBYE"  : GOODBYE   END_SESSION ;
+
+\ bad words list
+    KEY" SHIT"       
+   { :: CR ." Hey now."  CR ." We don't use that kind of language here." ;
+     :: CR ." I told you to watch your language!" ;
+     :: CR ." That's enough! I don't have to listen to this!"
+              1000 MS END_SESSION ;
+   } REPLY: SHIT 
+
+\ all these words cause SHIT to happen :-)
+    KEY" SHUTUP"  : SHUTUP   CR CR ." That's rude!"  1000 MS BYE ;
+    KEY" DICK"    : DICK     SHIT ;
+    KEY" FUCK"    : FUCK     SHIT ;
+    KEY" ASSHOLE" : ASS      SHIT ;
+    KEY" BASTARD" : BASTARD  SHIT ;
+    KEY" HELL"    : HELL     SHIT ;
+
+    KEY" CONSOLE" : CONSOLE   
+                    CR
+                    CR ." Exiting ELIZA ..."
+                    CR ." CAMEL99 FORTH"
+                    CR  QUIT ;
+
+\ =======================================================
+\ A minimal set of key words are needed to compile the program
+
+\ Replies for unknown token
+    { :: CR ." What does that suggest to you?" ;
+      :: CR ." I see." ;
+      :: CR ." I'm not sure I understand you fully." ;
+      :: CR ." Topic shift: How is your love life?" ;
+      :: CR ." Can you expand on that a bit?" ;
+      :: CR ." Go on ..." ;
+      :: CR ." Very interesting. Tell me more." ;
+      :: CR ." Are you being honest?" ;
+      :: CR ." Do you feel strongly about discussing such things?" ;
+    } REPLY: TAPDANCE
+
 HERE H !     \ record allocation of low RAM 
 JOB @ DP !   \ restore dictionary back into high RAM 
 
