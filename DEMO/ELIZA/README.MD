@@ -34,5 +34,5 @@ flattened, converted to upper case and fed to the Forth interpreter.
 <TOPIC> inserts the text that was parsed after the key phrase.
 the rest of the definition is nothing but standard Forth. 
 
-With a little more effort we could make and operator the creates
+With a little more effort we could make an operator the creates
 a dictionary entry of the flattened phrase automagically. 
