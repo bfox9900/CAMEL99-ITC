@@ -20,6 +20,7 @@ NEEDS -TRAILING FROM DSK1.TRAILING
 NEEDS S=        FROM DSK1.COMPARE
 NEEDS SEARCH    FROM DSK1.SEARCH 
 NEEDS BIG.TYPE  FROM DSK2.BIGTYPE
+NEEDS LOCK      FROM DSK1.MARKER 
 
 NEEDS VOCABULARY FROM DSK1.WORDLISTS 
 
@@ -367,13 +368,71 @@ MACRO []XT    " CELLS R@ + 2 CELLS +"   \ address of Array of Xts
 
 : <TOPIC?>  <TOPIC> '?' ;
 
+ONLY FORTH ALSO ELIZA DEFINITIONS 
+\ 
+\ Replies for unknown KEYWORD
+\
+    { :: CR ." What does that suggest to you?" ;
+      :: CR ." I see." ;
+      :: CR ." I'm not sure I understand you fully." ;
+      :: CR ." Topic shift: How is your love life?" ;
+      :: CR ." Can you expand on that a bit?" ;
+      :: CR ." Go on ..." ;
+      :: CR ." Very interesting. Tell me more." ;
+      :: CR ." Are you being honest?" ;
+      :: CR ." Do you feel strongly about discussing such things?" ;
+    } REPLY: TAPDANCE
+
 \ **************************************************
 \ Eliza replies are separate file for easier editing
-
+\ They compile into LOW RAM and take almost all 8K 
  S" DSK2.ELIZADATA4" INCLUDED
 
 \ **************************************************
 
+\ A few more reply type words
+DECIMAL
+: END_SESSION
+      CR 
+      CR ." OK. Thanks for chatting."
+      CR ." Bye bye!"  700 MS
+      CR ." ...Oh and by the way..."
+      1000 MS
+      CR
+      CR ." My bill is $400.00." 500 MS 
+      CR ." (I accept Paypal)"  300 MS 
+      CR ." :-)"   2000 MS 
+      BYE ;
+
+ \   Keyword       Forth word that is called     
+    KEY" BYE"      : BYE       END_SESSION ;
+    KEY" GOODBYE"  : GOODBYE   END_SESSION ;
+
+\ bad words list
+    KEY" SHIT"       
+   { :: CR ." Hey now."  CR ." We don't use that kind of language here." ;
+     :: CR ." I told you to watch your language!" ;
+     :: CR ." That's enough! I don't have to listen to this!"
+              1000 MS END_SESSION ;
+   } REPLY: SHIT 
+
+\ all these words cause SHIT to happen :-)
+    KEY" SHUTUP"  : SHUTUP   CR CR ." That's rude!"  1000 MS BYE ;
+    KEY" DICK"    : DICK     SHIT ;
+    KEY" FUCK"    : FUCK     SHIT ;
+    KEY" ASSHOLE" : ASS      SHIT ;
+    KEY" BASTARD" : BASTARD  SHIT ;
+    KEY" HELL"    : HELL     SHIT ;
+
+    KEY" CONSOLE" : CONSOLE   
+                    CR
+                    CR ." Exiting ELIZA ..."
+                    CR ." CAMEL99 FORTH"
+                    CR  QUIT ;
+
+\ =================== end of replies =================================
+
+ONLY FORTH ALSO ELIZA ALSO FORTH DEFINITIONS 
 
 : REPLY   ( n -- )  \ n = keyword index
       CR
@@ -410,7 +469,7 @@ DECIMAL
       AGAIN ;
 
 : START    WARM INIT-WORDLISTS 
-   ONLY FORTH DEFINITIIONS ALSO ELIZA 
+   ONLY FORTH DEFINITIONS ALSO ELIZA 
    PSCHOLOGIST ;
 
 \ Save as binary program 
