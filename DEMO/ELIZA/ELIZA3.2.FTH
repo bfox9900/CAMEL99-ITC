@@ -424,6 +424,7 @@ DECIMAL
     KEY" BASTARD" : BASTARD  SHIT ;
     KEY" HELL"    : HELL     SHIT ;
 
+\ programmer's trap door into Forth :-) ;
     KEY" CONSOLE" : CONSOLE   
                     CR
                     CR ." Exiting ELIZA ..."
