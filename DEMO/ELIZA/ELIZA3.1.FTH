@@ -255,7 +255,7 @@ DECIMAL
     KEY" COMPUTER"    
     KEY" CONSOLE"     
     KEY" SORRY"         
-    KEY" ALWAY"     
+    KEY" ALWAYS"     
     KEY" FRIEND"     
     KEY" BYE"        
     KEY" GOODBYE"    

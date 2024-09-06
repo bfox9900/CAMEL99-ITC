@@ -107,9 +107,9 @@
     } REPLY: IREMEMBER
 
     { :: CR ." Did you think I would forget " <ROGERIAN?> ;
-      :: CR ." Why do you think I should recall " <ROGERIAN?> ." now" ;
+      :: CR ." Why do you think I should recall " <ROGERIAN> ." now?" ;
       :: CR ." What about " <ROGERIAN?> ." You mentioned " <ROGERIAN> ;
-    } REPLY: DOYOUREMEBER 
+    } REPLY: DOYOUREMEMBER 
 
     { :: CR ." We were discussing you -- not me." ;
        :: CR ." Let's keep talking about your issues." ;
@@ -173,7 +173,8 @@
       :: CR ." Are you disturbed by your dreams?" ;
     } REPLY: DREAM
     : DREAMT  DREAM ;
-
+    
+    KEY" MAYBE" 
     { :: CR ." You don't seem quite certain." ;
       :: CR ." Why the uncertain tone?" ;
       :: CR ." Can't you be more positivE?" ;
@@ -241,11 +242,11 @@
    } REPLY: COMPUTER
 
    { :: CR ." What is OK about it?" ;
-     :: CR ." Alright then." 
+     :: CR ." Alright then." ;
         CR ." Tell me about your mother" ;
 
       :: CR ." Is that all you have to say?" ;
-      :: CR ." You are just agreeing with me now" 
+      :: CR ." You are just agreeing with me now" ;
       :: CR ." You need to open up to make this work." ;
     } REPLY: OK
 

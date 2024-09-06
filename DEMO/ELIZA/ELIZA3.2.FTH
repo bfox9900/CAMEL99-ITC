@@ -19,11 +19,11 @@
 NEEDS -TRAILING FROM DSK1.TRAILING
 NEEDS S=        FROM DSK1.COMPARE
 NEEDS SEARCH    FROM DSK1.SEARCH 
-NEEDS MARKER    FROM DSK1.MARKER
-
 NEEDS BIG.TYPE  FROM DSK2.BIGTYPE
 
-MARKER /ELIZA  \ remove everthing but the library files 
+NEEDS VOCABULARY FROM DSK1.WORDLISTS 
+
+VOCABULARY ELIZA  \ remove everthing but the library files 
 
 \ ==============================================
 \ WIL BADEN'S MACRO maker R.I.P. 
@@ -162,41 +162,41 @@ VARIABLE STK  \ can't use CSP because it is used by the colon compiler
 \ and length of the string when TOKEN does the PERFORM function 
 
 \ EXAMPLE:  7 ]PHRASE  will conjugate with 7 ]CONJUGATE 
-   {  :: S" I AM" ;   \ 1
-      :: S" I HAVE" ; \ 2 
-      :: S" I'VE" ;   \ 3 
-      :: S" I'M" ;    \ 4 
-      :: S" I WILL" ; \ 5 
-      :: S" I'D" ;    \ 6
-      :: S" I'LL" ;   \ 7  
-      :: S" MINE" ;   \ 8  
-      :: S" ARE" ;    \ 9 
-      :: S" WERE" ;   \ 10
-      :: S" YOU" ;    \ 11
-      :: S" ME" ;     \ 12
-      :: S" YOUR" ;   \ 13
-      :: S" MY" ;     \ 14
-      :: S" I" ;      \ 15 
-      :: S" WAS" ;
+   {  :: S" I AM" ;   \ 0
+      :: S" I HAVE" ; \ 1 
+      :: S" I'VE" ;   \ 2 
+      :: S" I'M" ;    \ 3 
+      :: S" I WILL" ; \ 4 
+      :: S" I'D" ;    \ 5
+      :: S" I'LL" ;   \ 6  
+      :: S" MINE" ;   \ 7  
+      :: S" ARE" ;    \ 8 
+      :: S" WERE" ;   \ 9
+      :: S" YOU" ;    \ 10
+      :: S" ME" ;     \ 11
+      :: S" YOUR" ;   \ 12
+      :: S" MY" ;     \ 13
+      :: S" I" ;      \ 14 
+      :: S" WAS" ;    \ 15
    }  DUP CONSTANT #PHRASES 
       TOKENS: ]PHRASE  
 
- {  :: S" YOU ARE"  ;  \ 1 
-    :: S" YOU HAVE" ;  \ 2  
-    :: S" YOU'VE" ;    \ 3  
+ {  :: S" YOU ARE"  ;  \ 0 
+    :: S" YOU HAVE" ;  \ 1  
+    :: S" YOU'VE" ;    \ 2  
     :: S" YOU'RE" ;    \ 4  
-    :: S" YOU'LL" ;    \ 5 
-    :: S" YOU WOULD" ; \ 6
-    :: S" YOU WILL" ;  \ 7
-    :: S" YOURS" ;     \ 8  
-    :: S" AM" ;        \ 9  
-    :: S" WAS" ;       \ 10 
-    :: S" ME" ;        \ 11 
-    :: S" YOU" ;       \ 12  
-    :: S" MY" ;        \ 13 
-    :: S" YOUR" ;      \ 14 
-    :: S" YOU" ;       \ 15 
-    :: S" WERE" ;
+    :: S" YOU'LL" ;    \ 5
+    :: S" YOU WOULD" ; \ 5
+    :: S" YOU WILL" ;  \ 6
+    :: S" YOURS" ;     \ 7  
+    :: S" AM" ;        \ 8  
+    :: S" WAS" ;       \ 9 
+    :: S" ME" ;        \ 10 
+    :: S" YOU" ;       \ 11
+    :: S" MY" ;        \ 12 
+    :: S" YOUR" ;      \ 13 
+    :: S" YOU" ;       \ 14 
+    :: S" WERE" ;      \ 15
  }   TOKENS: ]CONJUGATE   
 
 \ : .PHRASES  
@@ -378,7 +378,7 @@ MACRO []XT    " CELLS R@ + 2 CELLS +"   \ address of Array of Xts
 : '"'  [CHAR] " EMIT ;
 
 : <TOPIC>  ( -- ) 
-  INPUT$ COUNT /TAIL DUP 1 < IF 2DROP EXIT THEN 
+  INPUT$ COUNT /TAIL DUP 0= IF 2DROP EXIT THEN 
   PUNCTUATION$ STRIP  /CONJUGATE  ;
 
 : <TOPIC?>  <TOPIC> '?' ;
@@ -402,34 +402,31 @@ DECIMAL
 
 \ bad words list
     KEY" SHIT"       
-    { :: CR ." Hey now."  CR ." We don't use that kind of language here." ;
-      :: CR ." I told you to watch your language!" ;
-      :: CR ." That's enough! I don't have to listen to this!"
-               1000 MS END_SESSION ;
-    } REPLY: SHIT 
+   { :: CR ." Hey now."  CR ." We don't use that kind of language here." ;
+     :: CR ." I told you to watch your language!" ;
+     :: CR ." That's enough! I don't have to listen to this!"
+              1000 MS END_SESSION ;
+   } REPLY: SHIT 
 
 \ all these words cause SHIT to happen :-)
-    KEY" SHUTUP"  : SHUTUP    CR CR ." That's rude!"  1000 MS BYE ;
+    KEY" SHUTUP"  : SHUTUP   CR CR ." That's rude!"  1000 MS BYE ;
     KEY" DICK"    : DICK     SHIT ;
     KEY" FUCK"    : FUCK     SHIT ;
     KEY" ASSHOLE" : ASS      SHIT ;
     KEY" BASTARD" : BASTARD  SHIT ;
     KEY" HELL"    : HELL     SHIT ;
 
-    KEY" CONSOLE" 
-    : CONSOLE   
-    CR
-    CR ." Exiting ELIZA ..."
-    CR ." CAMEL99 FORTH"
-    CR  QUIT ;
+    KEY" CONSOLE" : CONSOLE   
+                    CR
+                    CR ." Exiting ELIZA ..."
+                    CR ." CAMEL99 FORTH"
+                    CR  QUIT ;
 
 : REPLY   ( n -- )  \ n = keyword index
       CR
       DUP -1 =
       IF  ( no matching keyword)
-         DROP
-         TAPDANCE
-
+         DROP  TAPDANCE
       ELSE ( keyword found)
          ( n) ]KEYWORD COUNT FLATTEN EVALUATE 
       THEN ;
@@ -437,7 +434,7 @@ DECIMAL
 \ **************************************************
 \ Eliza replies are separate file for easier editing
 
- S" DSK2.ELIZADATA3" INCLUDED
+ S" DSK2.ELIZADATA4" INCLUDED
 
 \ **************************************************
 .( .)
@@ -448,7 +445,7 @@ DECIMAL
       TEXT  
       WHT BLK SCREEN 
       S"  Eliza" BIG.TYPE 
-      CR S" by Brian Fox 2024" CENTER.TYPE 
+      CR S" V3.2 by Brian Fox 2024" CENTER.TYPE 
       CR 
 ;
 
@@ -457,7 +454,7 @@ DECIMAL
       CR ." Hi! My name is Eliza."
       CR ." Can I help you?" ;
 
-: ELIZA    ( -- )
+: PSCHOLOGIST    ( -- )
       DECIMAL
       .OPENING 
       GREETING
@@ -465,9 +462,12 @@ DECIMAL
         LISTEN ANALYZE REPLY
       AGAIN ;
 
-: START    WARM ELIZA ;
+: START    WARM INIT-WORDLISTS 
+   ONLY FORTH DEFINITIIONS ALSO ELIZA 
+   PSCHOLOGIST ;
 
 \ Save as binary program 
+
 LOCK 
 
 INCLUDE DSK1.SAVESYS
