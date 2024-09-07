@@ -280,7 +280,8 @@ VARIABLE POSITION
 \ When the counter >= #items the counter wraps back to 0 
 \ Base address of the defining word's data structure 
 \ is held on the return stack.
-\ These macros give us access to those fields transparently 
+
+\ These macros give us access to the REPLY fields transparently 
 MACRO #items  " R@ @ "          \ a constant 
 MACRO last    " R@ 2+ "         \ a variable 
 MACRO []XT    " CELLS R@ + 2 CELLS +"   \ address of Array of Xts 
