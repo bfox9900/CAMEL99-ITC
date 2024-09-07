@@ -41,9 +41,7 @@ CREATE TEMP$   81 ALLOT  \ used by STRIP to remove chars
 \ utility words ............
 \
 : LEN      ( $ -- length)  C@ ;
-\ : LASTCHAR ( $ -- c)  COUNT + 1- C@ ;            \ get last char in a string
-: BETWEEN  ( n min max -- ?)  1+ WITHIN ;        \ is n between or equal-to 
-\ : +PLACE      ( addr n $ -- ) 2DUP 2>R  COUNT +  SWAP MOVE 2R> C+! ;
+: BETWEEN  ( n min max -- ?)  1+ WITHIN ;  \ is n between or equal-to 
 : ERASE   0 FILL ;
 : >=      ( n n -- ? ) 1- > ;
 : <=      ( n n -- ? ) 1+ < ;
