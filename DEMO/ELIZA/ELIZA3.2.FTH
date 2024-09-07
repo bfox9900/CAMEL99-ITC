@@ -24,7 +24,7 @@ NEEDS LOCK      FROM DSK1.MARKER
 
 NEEDS VOCABULARY FROM DSK1.WORDLISTS 
 
-VOCABULARY ELIZA  \ remove everthing but the library files 
+VOCABULARY ELIZA  \ used to hold reponse code 
 
 \ ==============================================
 \ WIL BADEN'S MACRO maker R.I.P. 
