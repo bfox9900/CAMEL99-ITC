@@ -213,13 +213,6 @@ VARIABLE STK  \ can't use CSP because it is used by the colon compiler
    2DROP
 ;
 
-
-\ : CONJUGATE  ( addr len -- addr' len) 
-\   FIND-PHRASE DUP 0< ABORT" Can't conjugate" 
-\   ]CONJUGATE 
-\ ;
-
-
 \  KEYWORDS .....
 \ keywords are stored in a fixed width array for faster lookups 
 VARIABLE #KEYWORDS 
