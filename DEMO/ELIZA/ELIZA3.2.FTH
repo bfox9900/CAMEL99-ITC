@@ -33,15 +33,9 @@ VOCABULARY ELIZA  \ used to hold response code
   :   CHAR PARSE  POSTPONE SLITERAL  POSTPONE EVALUATE POSTPONE ;  IMMEDIATE 
 ;
 
-\ ======[ punctuation characters ]======
-DECIMAL
-CHAR ~ CONSTANT '~'   \ strings that end with '~' reflect the users input
-CHAR , CONSTANT ','
-CHAR . CONSTANT '.'
-
 \ working memory for string processing
 CREATE INPUT$  81 ALLOT  \ holds the "clean" reply from the patient
-CREATE TEMP$   81 ALLOT 
+CREATE TEMP$   81 ALLOT  \ used by STRIP to remove chars 
 
 \
 \ utility words ............
