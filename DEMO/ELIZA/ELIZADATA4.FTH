@@ -38,10 +38,10 @@ DECIMAL
      } REPLY: WE
 
     KEY" IF 
-    { :: CR ." Do you really think its likely that you " <TOPIC?> ;
-      :: CR ." Do you wish that you " <TOPIC?> ;
-      :: CR ." What do you think when you say " CR '"' <TOPIC?> '"' ; 
-      :: CR ." Really-- if you " <TOPIC?> ; 
+    { :: CR ." Do you really think its likely that " <TOPIC?> ;
+      :: CR ." Do you wish that " <TOPIC?> ;
+      :: CR ." What do you think of when you say " CR '"' <TOPIC?> '"' ; 
+      :: CR ." Really-- if " <TOPIC?> ; 
     } REPLY: IF 
 
     KEY" I DON'T"    
@@ -224,7 +224,7 @@ DECIMAL
 
     KEY" I THINK"   
     { :: CR ." Can you think of a specific example?" ;
-      :: CR ." What made you think about <TOPIC?>" ;
+      :: CR ." What made you think about" <TOPIC?> ;
       :: CR ." Really, You think " <TOPIC> ." always?" ;
       :: CR ." Do you really think so?" ;
       :: CR ." But are you sure about that?" ;
