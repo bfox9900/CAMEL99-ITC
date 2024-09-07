@@ -240,7 +240,11 @@ CREATE []KEYWORDS   []KEYWORDS  KEY_SIZE ALLOT
 
 : ]KEYWORD ( n -- addr) $WIDTH * []KEYWORDS + ; 
 : KEY,  ( addr u --) #KEYWORDS @ ]KEYWORD PLACE  #KEYWORDS 1+! ;
-: KEY"  [CHAR] " PARSE KEY, ; 
+
+\ KEY" removes punctuation from the stored string because the
+\ analyzer removes it as well. 
+\ But you can use it in the source code for human readability 
+: KEY"  [CHAR] " PARSE  PUNCTUATION$ STRIP  KEY, ; 
 
 \ debugging ..............
 \ : PRINT$  COUNT TYPE ;
@@ -280,15 +284,6 @@ VARIABLE POSITION
 ;
 
 : KEYWORD$   ( -- $addr) KWORD# @ ]KEYWORD ;
-
-\ : A$ S" This rain in spain, is mainly on the TI-99" ;
-\  S" POOPY DIAPER" FIND-KEYWORD 
-\  CR CR .S
-
-\ : .KEYWORD   KEYWORD$ COUNT TYPE ;
-
-: ANALYZE  ( addr len --) 
-  PUNCTUATION$ STRIP   TOUPPER  FIND-KEYWORD ;      
 
 
 \ ==============================================
@@ -336,7 +331,7 @@ MACRO []XT    " CELLS R@ + 2 CELLS +"   \ address of Array of Xts
 \ of the keyword phrase.
 \ return everything after the keyword phrase
  : /TAIL  ( addr len -- adr len) 
-      POSITION @  KEYWORD$ LEN +  /STRING 0 MAX ;
+      POSITION @  KEYWORD$ LEN + 1+ /STRING 0 MAX ;
 
 
 \ conjugate any phrases in the ]PHRASE table 
@@ -368,6 +363,13 @@ MACRO []XT    " CELLS R@ + 2 CELLS +"   \ address of Array of Xts
 
 : <TOPIC?>  <TOPIC> '?' ;
 
+: ANALYZE  ( addr len --) 
+  PUNCTUATION$ STRIP   TOUPPER  FIND-KEYWORD ;      
+
+
+\ ALL THE REPLY CODE IS KEPT IN THE ELIZA VOCABULARY
+\ THIS PREVENTS A NAME COLLISION WITH THE 'IF' KEYWORD 
+
 ONLY FORTH ALSO ELIZA DEFINITIONS 
 \ 
 \ Replies for unknown KEYWORD
@@ -383,12 +385,6 @@ ONLY FORTH ALSO ELIZA DEFINITIONS
       :: CR ." Do you feel strongly about discussing such things?" ;
     } REPLY: TAPDANCE
 
-\ **************************************************
-\ Eliza replies are separate file for easier editing
-\ They compile into LOW RAM and take almost all 8K 
- S" DSK2.ELIZADATA4" INCLUDED
-
-\ **************************************************
 
 \ A few more reply type words
 DECIMAL
@@ -407,7 +403,7 @@ DECIMAL
  \   Keyword       Forth word that is called     
     KEY" BYE"      : BYE       END_SESSION ;
     KEY" GOODBYE"  : GOODBYE   END_SESSION ;
-
+    
 \ bad words list
     KEY" SHIT"       
    { :: CR ." Hey now."  CR ." We don't use that kind of language here." ;
@@ -424,6 +420,12 @@ DECIMAL
     KEY" BASTARD" : BASTARD  SHIT ;
     KEY" HELL"    : HELL     SHIT ;
 
+\ **************************************************
+\ Eliza replies are separate file for easier editing
+\ They compile into LOW RAM and take almost all 8K 
+ S" DSK2.ELIZADATA4" INCLUDED
+
+\ **************************************************
 \ programmer's trap door into Forth :-) 
     KEY" CONSOLE" : CONSOLE   
                     CR
@@ -478,5 +480,4 @@ DECIMAL
 LOCK 
 
 INCLUDE DSK1.SAVESYS
-
 ' START SAVESYS DSK2.ELIZA

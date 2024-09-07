@@ -63,9 +63,9 @@ DECIMAL
      :: CR ." Many people have "  <TOPIC> '.' ;
    } REPLY: IHAVE
 
-    KEY" I'VE"  : IVE   IHAVE ;
+    KEY" IVE"  : IVE   IHAVE ;
 
-    KEY" WHY DON'T YOU"   
+    KEY" WHY DONT YOU"   
     { :: CR ." Do you really believe I don't " <TOPIC?> ;
       :: CR ." Perhaps in good time I will " <TOPIC>  '.' ;
       :: CR ." Do you want me to "  <TOPIC?> ;
@@ -317,7 +317,7 @@ DECIMAL
       :: CR ." Hello again :-)" ;
     } REPLY: HELLO
 
-    KEY" HI"       : HI     HELLO ;
+    KEY" HI "      : HI     HELLO ;
     KEY" BONJOUR"  : BONJOUR  HELLO ;
 
 
