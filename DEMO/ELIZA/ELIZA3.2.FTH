@@ -244,7 +244,7 @@ CREATE []KEYWORDS   []KEYWORDS  KEY_SIZE ALLOT
 : 1WORD  BL /WORD ;
 
 \ after a search, compute the position of string1 in string2 
-: $POS  ( a1 n1 a2 n2 -- n) NIP OVER SWAP - ;
+\ : $POS  ( a1 n1 a2 n2 -- a1 n1 n) 2 PICK OVER - ;
 
 \ find first keyword in input string arg and store index 
 \ and position in variables for use later 
@@ -273,7 +273,7 @@ VARIABLE POSITION
 
 \ ==============================================
 \        --- REPLIES SUPPORT CODE ---
-\ A REPLY:  Contains the number text messages, a counter 
+\ A REPLY:  Contains the number reply definitions, a counter 
 \ and the base address of the XTs of the code that runs. 
 \ The local counter is incremented after every invocation
 \ When a reply is executed it PERFORMs the xt at the counter. 
