@@ -1,5 +1,6 @@
-\ multicolor.fth   for Camel99 Forth    2024 Brian Fox 
-\ based on code from TI-Forth  
+\ multicolor.fth   for Camel99 Forth   Sept 2024 Brian Fox 
+\ Setup code based on TI-Forth and 
+\ code words derived from FbForth 3 by Lee Stewart 
 
 NEEDS CHARSET FROM DSK1.CHARSET 
 HERE 
@@ -117,7 +118,7 @@ DROP
 : MM.PLOT  ( x y -- ) MCOLOR @ -ROT  MCHAR ;
 
 : XY@      ( -- x y) VROW 2@ ; 
-: HLINE    ( n x y --) AT-XY 0 DO MCOLOR @ XY@ MCHAR  VCOL 1+! LOOP ;
-: VLINE    ( n x y --) AT-XY 0 DO MCOLOR @ XY@ MCHAR  VROW 1+!  LOOP ; 
+: HLINE    ( n x y --) AT-XY 0 ?DO MCOLOR @ XY@ MCHAR  VCOL 1+! LOOP ;
+: VLINE    ( n x y --) AT-XY 0 ?DO MCOLOR @ XY@ MCHAR  VROW 1+! LOOP ; 
 
 HERE SWAP - DECIMAL . .( bytes)
