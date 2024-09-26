@@ -44,6 +44,7 @@ HEX
 : MULTICOLOR      
     HIDESCREEN
     MINIT 
+    CLEAR 
     SPRITE_ATTR  80   0 VFILL    \ erase sprite table 
     SPRITE_TAB   20 0F4 VFILL    \   
     20 C/L!  
@@ -53,7 +54,6 @@ HEX
     4  6 VWTR 
     11 7 VWTR
     0EB SETVDP2 
-    CLEAR 
 ;
 
 \ After MULTI mode, we need to restore character pattern in VDP
@@ -119,5 +119,27 @@ DROP
 : XY@      ( -- x y) VROW 2@ ; 
 : HLINE    ( n x y --) AT-XY 0 DO MCOLOR @ XY@ MCHAR  VCOL 1+! LOOP ;
 : VLINE    ( n x y --) AT-XY 0 DO MCOLOR @ XY@ MCHAR  VROW 1+!  LOOP ; 
+
+
+DECIMAL 
+\ Text macros make LINE clearer but run full speed 
+: 2ROT ( d1 d2 d3 -- d2 d3 d1) 
+       S" 2>R 2SWAP 2R> 2SWAP" EVALUATE ; IMMEDIATE 
+: 4DUP ( a b c d -- a b c d a b c d) 
+       S" 3 PICK 3 PICK 3 PICK 3 PICK" EVALUATE ; IMMEDIATE 
+
+: LINE ( x1 y1 x2 y2 -- )
+\ ANS version of Dr. Ting's recursive line.  R.I.P.
+    4DUP  ROT - ABS >R - ABS R>          \ compute dx dy 
+    MAX 2 < IF  2DROP MM.PLOT  EXIT THEN \ nothing do, get out  
+
+    4DUP ROT 
+    + 1+ 2/ >R    \ compute mid points 
+    + 1+ 2/ R>           
+    2DUP 2ROT RECURSE RECURSE ;
+
+: MOVETO ( x y -- )  S" AT-XY" EVALUATE ; IMMEDIATE ( ALIAS)
+: LINETO  ( x y -- ) 2DUP XY@ LINE MOVETO ;
+
 
 HERE SWAP - DECIMAL . .( bytes)
