@@ -1,6 +1,5 @@
-\ multicolor.fth   for Camel99 Forth   Sept 2024 Brian Fox 
-\ Setup code based on TI-Forth and 
-\ code words derived from FbForth 3 by Lee Stewart 
+\ multicolor.fth   for Camel99 Forth    2024 Brian Fox 
+\ based on code from TI-Forth  
 
 NEEDS CHARSET FROM DSK1.CHARSET 
 HERE 
@@ -74,12 +73,12 @@ CODE >NAME ( col row -- Vaddr)
     NEXT,
 ENDCODE         
 
-CODE ]PATTERN ( row char -- Vaddr) \ address of color byte
-    0A34 ,          \ TOS  3 SLA,    \ char offset 8*
-    0224 , PDT ,    \ TOS PDT AI,    \ add the base address 
+CODE ]PATTERN ( row char -- Vaddr)  \ address of color byte
+    0A34 ,          \ TOS  3 SLA,   \ char index 8*
+    0224 , PDT ,    \ TOS PDT AI,   \ add the base address 
     C0B6 ,          \ *SP+ R2 MOV,  \ row -> R2 
-    0242 , 0007 ,   \ R2  7  ANDI, \ byte offset for row's color   
-    A102 ,          \ R2  TOS ADD,           
+    0242 , 0007 ,   \ R2  7  ANDI,  \ row 8 MOD (faster with AND)
+    A102 ,          \ R2  TOS ADD,  \ add pattern offset         
     NEXT,
 ENDCODE        
 
@@ -118,7 +117,7 @@ DROP
 : MM.PLOT  ( x y -- ) MCOLOR @ -ROT  MCHAR ;
 
 : XY@      ( -- x y) VROW 2@ ; 
-: HLINE    ( n x y --) AT-XY 0 ?DO MCOLOR @ XY@ MCHAR  VCOL 1+! LOOP ;
-: VLINE    ( n x y --) AT-XY 0 ?DO MCOLOR @ XY@ MCHAR  VROW 1+! LOOP ; 
+: HLINE    ( n x y --) AT-XY 0 DO MCOLOR @ XY@ MCHAR  VCOL 1+! LOOP ;
+: VLINE    ( n x y --) AT-XY 0 DO MCOLOR @ XY@ MCHAR  VROW 1+!  LOOP ; 
 
 HERE SWAP - DECIMAL . .( bytes)
