@@ -117,9 +117,8 @@ DROP
 : MM.PLOT  ( x y -- ) MCOLOR @ -ROT  MCHAR ;
 
 : XY@      ( -- x y) VROW 2@ ; 
-: HLINE    ( n x y --) AT-XY 0 DO MCOLOR @ XY@ MCHAR  VCOL 1+! LOOP ;
-: VLINE    ( n x y --) AT-XY 0 DO MCOLOR @ XY@ MCHAR  VROW 1+!  LOOP ; 
-
+: HLINE    ( n x y --) AT-XY 0 DO  MCOLOR @ XY@ MCHAR  VCOL 1+!  LOOP ;
+: VLINE    ( n x y --) AT-XY 0 DO  MCOLOR @ XY@ MCHAR  VROW 1+!  LOOP ; 
 
 DECIMAL 
 \ Text macros make LINE clearer but run full speed 
@@ -138,7 +137,7 @@ DECIMAL
     + 1+ 2/ R>           
     2DUP 2ROT RECURSE RECURSE ;
 
-: MOVETO ( x y -- )  S" AT-XY" EVALUATE ; IMMEDIATE ( ALIAS)
+: MOVETO ( x y -- )  S" AT-XY" EVALUATE ; IMMEDIATE ( alias)
 : LINETO  ( x y -- ) 2DUP XY@ LINE MOVETO ;
 
 
