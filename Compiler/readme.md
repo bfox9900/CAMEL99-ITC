@@ -19,14 +19,14 @@ FCC99E.ZIP into that folder.
 This will give you the cross-compiler FCC99E.EXE in your CAMEL99 folder
 
 Create a folder \CC9900
-Copy the folder SRC.ITC to \CC9900  creating  \CC9900\SRC.ITC
+Copy the folder SRC.ITC to \CC9900  creating  \CC9900\SRC.ITC 
 
 At your ROOT folder that you made in the first step type:
 
 ```
 c:\ FCC99E FLOAD CC9900\SRC.ITC\FORTHITC.MAK  <enter>
 ```
-(This not a "make" file, but just Forth language that is interpreted)
+(This not a "make" file, but Forth language that is interpreted)
 
 FCC99E will search the current directory and also look in the CAMEL99\LIB directory 
 if you create \LIB in CAMEL99
@@ -34,4 +34,4 @@ if you create \LIB in CAMEL99
 Source code that is not in CAMEL99 folder or the \LIB folder must explicitly 
 spelled out in the file path in your source code.
 
-If you need help look me on atariage.com  @theBF 
+If you need help look me up on atariage.com  @theBF 
