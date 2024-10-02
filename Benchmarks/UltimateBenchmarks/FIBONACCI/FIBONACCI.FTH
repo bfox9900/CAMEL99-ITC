@@ -33,9 +33,21 @@ DECIMAL
     I FIB DROP
   LOOP ;
 
+: FIB-CHEAT 
+  0 1 ROT 0 DO
+      BOUNDS  \ bounds is a code word for OVER + SWAP 
+  LOOP DROP ;
+
+: FIB-BENCH-CHEAT
+  1000 0 DO
+    I FIB-CHEAT DROP
+  LOOP ;
+;
+
+
 HERE SWAP -  . ( 70 BYTES)
 \   ELAPSE FIB-BENCH  1:48.0
-
+\   ELAPSE FIB-BENCH-CHEAT  1:48.0
 
 INCLUDE DSK1.JIT 
 

@@ -63,55 +63,15 @@ HEX
 
 \ MCHAR for Camel99 Forth   Sept 14 2024 Brian fox 
 \ Derived from code by Lee Stewart 
-HEX 
-CODE >NAME ( col row -- Vaddr)
-    C076 , \ *SP+ R1 MOV, 
-    0911 , \  R1   1 SRL,  \ 2/ 
-    0914 , \  TOS  1 SRL,  \ 2/  
-    0A54 , \  TOS  5 SLA,  \ 32* 
-    A101 , \  R1 TOS ADD, 
-    NEXT,
-ENDCODE         
-
-: >NAME  2/ SWAP 2/ SWAP >VPOS ;
-
-CODE ]PATTERN ( row char -- Vaddr)  \ address of color byte
-    0A34 ,          \ TOS  3 SLA,   \ char index 8*
-    0224 , PDT ,    \ TOS PDT AI,   \ add the base address 
-    C0B6 ,          \ *SP+ R2 MOV,  \ row -> R2 
-    0242 , 0007 ,   \ R2  7  ANDI,  \ row 8 MOD (faster with AND)
-    A102 ,          \ R2  TOS ADD,  \ add pattern offset         
-    NEXT,
-ENDCODE      
-
+: >NAME    ( row col -- Vaddr ) 2/ SWAP 2/ SWAP >VPOS ;
 : ]PATTERN ( row char -- Vaddr)  8* PDT +  SWAP 7 AND + ;
 
 HEX 
-CODE NYBBLES ( color Vaddr colorbyte -- colorbyte')   
-                                        \ colorbyte in TOS 
-    C0B6 ,          \ *SP+ R2 MOV,      \ Vaddr to R2
-    C0F6 ,          \ *SP+ R3 MOV,      \ color to R3 
-    0243 , 000F ,   \ R3  0F ANDI,      \ insure color is legal
-    0242 , 0001 ,   \ R2  1  ANDI, 
-    1303 ,          \ NE IF, 
-    0244 , 00F0 ,   \        TOS F0 ANDI,  
-    1003 ,          \ ELSE,
-    0244 , 000F ,   \        TOS 0F ANDI,
-    0A43 ,          \         R3  4 SLA, 
-                    \ ENDIF, 
-    A103 ,          \ R3 TOS ADD, 
-    NEXT,
-ENDCODE        
-
- : NYBBLES ( color Vaddr colorbyte -- colorbyte')   
+: NYBBLES ( color Vaddr colorbyte -- colorbyte')   
     SWAP 1 AND 
-    IF 
-       F0 AND 
-    ELSE 
-       0F AND 
-       SWAP 4 LSHIFT
-    THEN  +  
- ;
+    IF   F0 AND  
+    ELSE 0F AND  SWAP 4 LSHIFT 
+    THEN +  ;
 
 : MCHAR  ( color col row --)
     2DUP >NAME VC@ ]PATTERN DUP>R VC@  NYBBLES  R> VC! ;
@@ -142,16 +102,16 @@ DECIMAL
 \ : 4DUP ( a b c d -- a b c d a b c d) 
 \       S" 3 PICK 3 PICK 3 PICK 3 PICK" EVALUATE ; IMMEDIATE 
 
-HEX 
-CODE 4DUP ( a b c d -- a b c d a b c d)
+ HEX 
+ CODE 4DUP ( a b c d -- a b c d a b c d)
    C046 ,          \ SP  R1 MOV,  \ dup stack pointer    \  14
    0646 , C584 ,   \ TOS PUSH,    ( -- a b c d d)        \  28
    0226 , FFFA ,   \ SP -6 AI,    \ make some room       \  12
    C5B1 ,          \ R1 *+ *SP MOV,                      \  28
    C9B1 , 0002 ,   \ R1 *+ 2 (SP) MOV,                   \  30
-   C9B1 , 0004 ,   \  R1 *+ 4 (SP) MOV,                  \  30
+   C9B1 , 0004 ,   \ R1 *+ 4 (SP) MOV,                   \  30
    NEXT,                                           \ TOTAL 142
-ENDCODE     
+ ENDCODE     
 
 DECIMAL 
 : LINE ( x1 y1 x2 y2 -- )
