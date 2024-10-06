@@ -1,0 +1,124 @@
+\ ===========================================================================
+\  TMS9900  F O R T H   V I R T U A L   M A C H I N E  sub-routine threaded
+\ ===========================================================================
+
+\ Define the FORTH virtual machine registers in terms of the TARGET machine registers
+
+CROSS-ASSEMBLING
+
+\ extend the Cross-Assembler
+XASSEMBLER DEFINITIONS
+: TOS     R4  ;        \ TOP of stack is cached in R4
+: SP      R6  ;        \ data stack pointer
+: RP      R7  ;        \ return stack pointer
+
+: NEXT    R10 ;        \ Forth's "NEXT" routine address cached in R10
+
+\ Named registers defined in all the addressing modes
+: *TOS          *R4  ;
+: *TOS+         *R4+ ;
+: (TOS)         (R4) ;
+
+: *SP           *R6  ;
+: *SP+          *R6+ ;
+: (SP)          (R6) ;
+
+: *RP           *R7  ;
+: *RP+          *R7+ ;
+: (RP)          (R7) ;
+
+: *W            *R8  ;
+: *W+           *R8+ ;
+: (W)           (R8) ;
+
+: *IP           *R9  ;
+: *IP+          *R9+ ;
+: (IP)          (R9) ;
+
+: *NEXT         *R10 ;   \ we only use indirect addressing for this one
+
+
+\ Create MACROs for Forth operations to simplify the code
+
+: RP++         RP INCT, ;
+: RP--         RP DECT, ;
+
+: SP++         SP INCT, ;
+: SP--         SP DECT, ;
+
+\ PUSH & POP on both stacks
+: PUSH,         ( src -- )  SP DECT,  *SP   MOV, ;    \ 10+18 = 28  cycles
+: POP,          ( dst -- )  *SP+      SWAP  MOV, ;    \ 22 cycles
+
+: DUP,   TOS PUSH, ;
+: DROP,  TOS POP,  ;
+
+: RPUSH,        ( src -- ) RP DECT,  *RP   MOV,  ;  \ 6 bytes
+: RPOP,         ( dst -- ) *RP+      SWAP  MOV,  ;  \ 2 bytes
+
+\ ========================================================================
+\ N E S T E D   S U B - R O U T I N E   M A C R O
+\ "Psuedo-instruction" to implements a CALL sub-routine mechanism on the
+\ Forth return stack using the Branch & Link instruction.
+\ You use CALL, exactly the same as you would use BL, but you can nest
+\ sub-routine calls with CALL,
+
+\ Return from CALL is done with psuedo instruction RT, just like BL,
+
+\ See Xassembler   : RT,    *R11 B, ;             \ 12 cycles
+
+: CALL,         ( dst -- )
+                R11 RPUSH,       \ save R11 on forth return stack                 28
+         ( addr | reg) BL,       \ branch & link saves the PC in R11             +16 =  44 to call
+                 R11 RPOP, ;     \ R11 RPOP, is laid down by CALL, in the caller. 22+12= 34 to return
+                                 \ We have to lay it in the code after BL so
+                                 \ when we return from the Branch&link, R11 is
+                                 \ restored to the original value from the rstack
+\ ==========================================================================
+\ F O R T H  RETURN 
+\ On the TMS9900 it takes 2 instructions, 8 bytes to return from a nest sub-routine 
+
+\   R11 ROP,
+\   *R11 B,   
+
+To save space with a small speed hit we will cached the address of this
+code in R10 and  return becomes: 
+
+\  *R10  B,  
+
+The sub-routine will reside in scratchpad RAM 
+
+
+\ =========================================================================
+\ This is that actual code that runs at the end of CAMEL99 code words
+\ It is equivalent to "return" for a Forth system
+
+: RETURN   ( -- ) *NEXT B, ;   \ 4 bytes, 12 cycles
+
+\ ==========================================================================
+\ RESOLVE NEXT, a deferred word
+
+\ NEXT, is a deferred word in the cross-assembler so you can create different
+\ threading mechanisms with the Cross-assembler easily.
+
+\ We must assign an Execution token to "NEXT," so all the subsequent
+\ CODE: words in 9900CODE.HSF will compile the correct code.
+
+ ' RETURN IS NEXT,          \ meaning: Find execution address of JMP-NEXT
+                            \          and put into NEXT,
+
+
+\ ==========================================================================
+\ You can improve the speed of next by writing it inline after a code word.
+\ It takes 4 extra bytes per word so use it wisely.
+\ The speed up is not big
+
+: ILNEXT,
+    R11 ROP,
+   *R11 B,   
+;   
+
+\ debugging macro.   Stops machine code in place
+: BREAK    $$ JMP, ;
+
+\ cr .( Press enter to continue  )  KEY 13 <> [IF] cr ." ABORTED" ABORT [THEN]

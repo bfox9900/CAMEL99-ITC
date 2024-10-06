@@ -1,5 +1,11 @@
 Forth CROSS-COMPILER LOG AND TO-DO
-Jan 2024 Added src code folder on github and touched up readme
+Oct 1 2024
+Began work on sub-routine threaded Forth with inlining. 
+This needs a way to save multiple 8K TI-99 program files. 
+I will port the code from Camel99 Forth to HsForth. 
+
+Jan 2024 
+Added src code folder on github and touched up readme
 
 
 Mar 2023 
