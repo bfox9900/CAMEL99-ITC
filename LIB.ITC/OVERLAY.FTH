@@ -1,6 +1,5 @@
 CR .( OVERLAY.FTH saves dictionary as binary images  Jun 2022 B Fox)
  \ creates a binary program E/A 5 format.
-\ Makes as many files as needed to save the system
 
 NEEDS LOCK      FROM DSK1.MARKER
 NEEDS LOAD-FILE FROM DSK1.LOADSAVE  \ we use SAVE-FILE from this library
