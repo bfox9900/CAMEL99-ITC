@@ -3,6 +3,8 @@
 \ V2 replaced variables with VALUES: 1:08
 \ V3 print with address loop, not indices
 
+\ T= 1:01.16
+
 NEEDS DUMP FROM  DSK1.TOOLS 
 NEEDS ELAPSE FROM DSK1.ELAPSE 
 NEEDS ARRAY  FROM DSK1.ARRAYS 
@@ -13,16 +15,16 @@ DECIMAL
 : ?BREAK   ?TERMINAL ABORT" *BREAK*" ; 
 \ .......................................................
 \ SCROLL entire screen in one block with VMBR and VMBW
-\ : SCROLL ( -- )
-\  HERE 100 + DUP>R  VTOP @  ( --  buffer dst) ( r: BUFFER)
-\  DUP C/L@ + R>             ( -- buffer dst src buffer)  
-\  [ C/SCR @ C/L @ - ] LITERAL DUP>R VREAD  R> VWRITE 
-\  0 23 2DUP >VPOS C/L@ BL VFILL  \ erase bottom line
-\  AT-XY ;                        \ set cursor  
+ : SCROLL ( -- )
+  HERE 100 + DUP>R  VTOP @  ( --  buffer dst) ( r: BUFFER)
+  DUP C/L@ + R>             ( -- buffer dst src buffer)  
+  [ C/SCR @ C/L @ - ] LITERAL DUP>R VREAD  R> VWRITE 
+  0 23 2DUP >VPOS C/L@ BL VFILL  \ erase bottom line
+  AT-XY ;                        \ set cursor  
 
 \ this code is the same as the kernel, but with faster scroll 
-\ : CR  ( -- ) VCOL OFF   VROW DUP 1+! @ L/SCR = IF SCROLL THEN ;  
-\ : (EMIT) ( char -- ) CPUT IF  CR  THEN ;
+: CR     (  -- ) VCOL OFF  VROW ++@  L/SCR = IF SCROLL THEN ;
+: (EMIT) ( char -- ) VPOS VC!  VCOL ++@ C/L@ = IF CR THEN ;
 \ .......................................................
 
 \ define all data before use
@@ -77,7 +79,7 @@ DECIMAL
     THEN 
 \ changed to use addresses not indices. Saves 2 seconds    
     CR                          \ replaces PRINT 
-    0 ]A NUMLEN ]A              \ 340 FOR I=NUMLEN TO 1 
+    0 ]A  NUMLEN ]A             \ 340 FOR I=NUMLEN TO 1 
     DO   
 \       I C@ >DIGIT CEMIT        \ for TTY Forth 
        I C@ >DIGIT (EMIT)        \ 350 PRINT CHR$(A(I)+48);
