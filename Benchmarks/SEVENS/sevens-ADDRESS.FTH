@@ -34,7 +34,6 @@ DECIMAL
 0 VALUE CARRY 
 0 VALUE INAROW 
 0 VALUE NDX   ( transfers loop index out of DO LOOP )
-0 VALUE [I]
 
  256 CARRAY ]A                  \ 100 DIM A(256)
   0 ]A 256 0 FILL               \ init ]A to zero. Not automatic in Forth 

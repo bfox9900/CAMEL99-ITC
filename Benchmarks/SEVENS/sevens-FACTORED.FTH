@@ -14,7 +14,7 @@ DECIMAL
 : ERASE ( addr len -- )  0 FILL ;
 
 \ define all data before use
-0 VALUE WIN 
+\ 0 VALUE WIN   \ replaced with flag on data stack 
 0 VALUE POWER 
 0 VALUE NUMLEN 
 0 VALUE CARRY 
@@ -65,7 +65,7 @@ DECIMAL
 
     0  NUMLEN                   \ 340 FOR I=NUMLEN TO 1 
     DO   
-       I ]A C@ >DIGIT EMIT      \ 350 PRINT CHR$(A(I)+48);
+       I ]A C@ >DIGIT (EMIT)    \ 350 PRINT CHR$(A(I)+48);
     -1 +LOOP                    \ 360 NEXT I ( STEP -1)
 ; 
 

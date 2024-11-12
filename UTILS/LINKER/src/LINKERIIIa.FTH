@@ -1,9 +1,15 @@
 CR .( TI-99 EA3 object file LINKER, Dec 21 2021 B Fox)
 \ Dec 2021 improved linking speed by 33%
- 
+\ NOV 2024 replaced Eaker case with :case BREAK; 
+\          Speed up is only 3% 
+
 INCLUDE DSK1.TOOLS
+
 NEEDS WORDLIST FROM DSK1.WORDLISTS
 ONLY FORTH DEFINITIONS
+
+: :CASE  ( n --) POSTPONE OVER=  POSTPONE IF  POSTPONE DROP ; IMMEDIATE
+: BREAK; ( -- )  POSTPONE EXIT  POSTPONE THEN ; IMMEDIATE
  
 \ NEEDS .S        FROM DSK1.TOOLS
 NEEDS +TO       FROM DSK1.VALUES
@@ -117,49 +123,48 @@ CREATE PROGNAME  10 ALLOT
 
 \ Since Assembler Labels are stored as Forth constants
 \ we can find them and 'execute' them to return their memory address
-CREATE LABEL$ 6 ALLOT 
 : LABEL-EVAL ( -- n)
-   GETLABEL LABEL$ PLACE      \ store label at HERE as counted string
-   LABEL$ FIND-LABEL EXECUTE  \ run the word, generate address
+   GETLABEL HERE PLACE      \ store label at HERE as counted string
+   HERE FIND-LABEL EXECUTE  \ run the word generate address
 ;
  
+: TAG-INTERPRET ( c )
+          [CHAR] B :CASE  PARSE# HEAP,          BREAK;
+          [CHAR] A :CASE  PARSE# RELOCATE H !   BREAK;
+          [CHAR] C :CASE  PARSE# RELOCATE HEAP, BREAK;
+          [CHAR] 5 :CASE  PARSE# RELOCATE DODEF BREAK;
+ 
+          [CHAR] 3 :CASE  PARSE# RELOCATE 
+                       LABEL-EVAL SWAP !        BREAK;
+ 
+ 
+          [CHAR] 4 :CASE  PARSE# 
+                       LABEL-EVAL SWAP !        BREAK;
+ 
+          [CHAR] 6 :CASE  PARSE# DODEF          BREAK;
+ 
+          [CHAR] 9 :CASE  PARSE# H !            BREAK;
+
+          [CHAR] F :CASE  DROP 0                BREAK; \ CHECKSUM ignored
+          [CHAR] 0 :CASE  PROG-ID               BREAK;
+          [CHAR] : :CASE  .TOOLVER              BREAK;
+          [CHAR] 7 :CASE  4 /STRING             BREAK;
+          [CHAR] 8 :CASE  4 /STRING             BREAK;
+ 
+          [CHAR] D :CASE  [CHAR] D ?TAG         BREAK;
+          [CHAR] E :CASE  [CHAR] E ?TAG         BREAK;
+          [CHAR] 1 :CASE  PARSE# TO ORIGIN      BREAK;
+          [CHAR] 2 :CASE  0 TO ORIGIN           BREAK; \ ??
+                         ( DEFAULT:)  DROP 
+; 
 
 \ See E/A manual page 309 for meanings of object file tags.
 : ParseObject ( add len -- )
     BEGIN
         DUP ( len<>0)
     WHILE
-        OVER C@ ( tag) 
-        CASE
-          [CHAR] B OF  PARSE# HEAP,          ENDOF
-          [CHAR] A OF  PARSE# RELOCATE H !   ENDOF
-          [CHAR] C OF  PARSE# RELOCATE HEAP, ENDOF
-          [CHAR] 5 OF  PARSE# RELOCATE DODEF ENDOF
- 
-          [CHAR] 3 OF  PARSE# RELOCATE 
-                       LABEL-EVAL SWAP !     ENDOF
- 
- 
-          [CHAR] 4 OF  PARSE# 
-                       LABEL-EVAL SWAP !     ENDOF
- 
-          [CHAR] 6 OF  PARSE# DODEF          ENDOF
- 
-          [CHAR] 9 OF  PARSE# H !            ENDOF
-
-          [CHAR] F OF  DROP 0                ENDOF \ CHECKSUM ignored
-          [CHAR] 0 OF  PROG-ID               ENDOF
-          [CHAR] : OF  .TOOLVER              ENDOF
-          [CHAR] 7 OF  4 /STRING             ENDOF
-          [CHAR] 8 OF  4 /STRING             ENDOF
- 
-          [CHAR] D OF  [CHAR] D ?TAG         ENDOF
-          [CHAR] E OF  [CHAR] E ?TAG         ENDOF
-          [CHAR] 1 OF  PARSE# TO ORIGIN      ENDOF
-          [CHAR] 2 OF  0 TO ORIGIN           ENDOF \ ??
-            ( DEFAULT: DROP the character)
-        ENDCASE
-        1 /STRING  0 MAX  \ advance to next char
+        OVER C@ TAG-INTERPRET
+        1 /STRING 0 MAX  \ advance to next char
     REPEAT
     2DROP ;
  
@@ -223,7 +228,7 @@ ENDCODE
  
 ONLY FORTH DEFINITIONS ALSO DEFS
 : HELP
-  PAGE ." Camel99 Linker III  Jan 30 2024"
+  PAGE ." Camel99 Linker IV  Nov12 2024"
   CR
   CR ." Usage: "
   CR ." NEW  clear HEAP mem. & DEFS words"

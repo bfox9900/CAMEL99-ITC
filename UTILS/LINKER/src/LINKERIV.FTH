@@ -1,10 +1,13 @@
 CR .( TI-99 EA3 object file LINKER, Dec 21 2021 B Fox)
 \ Dec 2021 improved linking speed by 33%
- 
+\ NOV 2024 replaced Eaker case with Vector table
+
 INCLUDE DSK1.TOOLS
+
 NEEDS WORDLIST FROM DSK1.WORDLISTS
 ONLY FORTH DEFINITIONS
- 
+
+
 \ NEEDS .S        FROM DSK1.TOOLS
 NEEDS +TO       FROM DSK1.VALUES
 NEEDS CASE      FROM DSK1.CASE
@@ -117,49 +120,53 @@ CREATE PROGNAME  10 ALLOT
 
 \ Since Assembler Labels are stored as Forth constants
 \ we can find them and 'execute' them to return their memory address
-CREATE LABEL$ 6 ALLOT 
 : LABEL-EVAL ( -- n)
-   GETLABEL LABEL$ PLACE      \ store label at HERE as counted string
-   LABEL$ FIND-LABEL EXECUTE  \ run the word, generate address
+   GETLABEL HERE PLACE      \ store label at HERE as counted string
+   HERE FIND-LABEL EXECUTE  \ run the word generate address
 ;
  
+: TAG-0    PROG-ID ;
+: TAG-1    PARSE# TO ORIGIN ;
+: TAG-2    0 TO ORIGIN ;
+: TAG-3    PARSE# RELOCATE  LABEL-EVAL SWAP ! ;
+: TAG-4    PARSE# LABEL-EVAL SWAP ! ;
+: TAG-5    PARSE# RELOCATE DODEF ;
+: TAG-6    PARSE# DODEF  ;
+: TAG-7    4 /STRING  ;
+: TAG-8    4 /STRING  ;
+: TAG-9    PARSE# H !  ;
+: TAG-:    .TOOLVER  ; 
+: TAG-A    PARSE# RELOCATE H ! ;
+: TAG-B    PARSE# HEAP, ;
+: TAG-C    PARSE# RELOCATE HEAP, ;
+: TAG-D    [CHAR] D ?TAG ;
+: TAG-E    [CHAR] E ?TAG ;
+: TAG-F    DROP 0 ;
+
+: NOOP ;
+
+: CASE:  ( -- <name> ) CREATE  ;
+: ;CASE   ( n -- )  DOES> SWAP CELLS + PERFORM ;
+
+CASE: TAG-TABLE ( c --)
+  ] ( turn on compiler)
+    TAG-0  TAG-1  TAG-2  TAG-3    
+    TAG-4  TAG-5  TAG-6  TAG-7 
+    TAG-8  TAG-9  TAG-:  NOOP   ( 59)
+    NOOP   NOOP   NOOP   NOOP   ( 63)
+    NOOP   TAG-A  TAG-B  TAG-C  ( 67)
+    TAG-D  TAG-E  TAG-F         ( 71)
+  [ ( turn off compiler)
+;CASE 
 
 \ See E/A manual page 309 for meanings of object file tags.
 : ParseObject ( add len -- )
     BEGIN
         DUP ( len<>0)
     WHILE
-        OVER C@ ( tag) 
-        CASE
-          [CHAR] B OF  PARSE# HEAP,          ENDOF
-          [CHAR] A OF  PARSE# RELOCATE H !   ENDOF
-          [CHAR] C OF  PARSE# RELOCATE HEAP, ENDOF
-          [CHAR] 5 OF  PARSE# RELOCATE DODEF ENDOF
- 
-          [CHAR] 3 OF  PARSE# RELOCATE 
-                       LABEL-EVAL SWAP !     ENDOF
- 
- 
-          [CHAR] 4 OF  PARSE# 
-                       LABEL-EVAL SWAP !     ENDOF
- 
-          [CHAR] 6 OF  PARSE# DODEF          ENDOF
- 
-          [CHAR] 9 OF  PARSE# H !            ENDOF
-
-          [CHAR] F OF  DROP 0                ENDOF \ CHECKSUM ignored
-          [CHAR] 0 OF  PROG-ID               ENDOF
-          [CHAR] : OF  .TOOLVER              ENDOF
-          [CHAR] 7 OF  4 /STRING             ENDOF
-          [CHAR] 8 OF  4 /STRING             ENDOF
- 
-          [CHAR] D OF  [CHAR] D ?TAG         ENDOF
-          [CHAR] E OF  [CHAR] E ?TAG         ENDOF
-          [CHAR] 1 OF  PARSE# TO ORIGIN      ENDOF
-          [CHAR] 2 OF  0 TO ORIGIN           ENDOF \ ??
-            ( DEFAULT: DROP the character)
-        ENDCASE
-        1 /STRING  0 MAX  \ advance to next char
+        OVER C@  [CHAR] 0 -  TAG-TABLE
+        1 /STRING 0 MAX  \ advance to next char
+        0 SKIP 
     REPEAT
     2DROP ;
  
@@ -223,7 +230,7 @@ ENDCODE
  
 ONLY FORTH DEFINITIONS ALSO DEFS
 : HELP
-  PAGE ." Camel99 Linker III  Jan 30 2024"
+  PAGE ." Camel99 Linker IV  Nov12 2024"
   CR
   CR ." Usage: "
   CR ." NEW  clear HEAP mem. & DEFS words"

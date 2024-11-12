@@ -88,6 +88,7 @@ DROP
 \ ***************************
 DECIMAL
 : CLINK ( freq -- )
+    PAUSE 
     GEN1 HZ
      0 DB 600 TICKS
      6 DB 400 TICKS
@@ -95,6 +96,7 @@ DECIMAL
     MUTE ;
 
 : BONK  ( -- )
+    PAUSE 
     GEN1 110 HZ 
      0 DB 1000 TICKS
      6 DB 2000 TICKS
@@ -243,18 +245,18 @@ DECIMAL
   DUP 'BALL ! ;
 
 : UNDERBALL ( pix piy -- c) BALLADDR VC@ ;
-: BOUNCE.X  ( spr# --) VECT.X  DUP @ NEGATE SWAP ! ( BALL SP.MOVE) ;
-: BOUNCE.Y  ( spr# --) VECT.Y  DUP @ NEGATE SWAP ! ( BALL SP.MOVE) ;
+: BOUNCE.X  ( spr# --) VECT.X  DUP @ NEGATE SWAP ! ;
+: BOUNCE.Y  ( spr# --) VECT.Y  DUP @ NEGATE SWAP ! ;
 : FALLING?  BALL VECT.Y @ 0> ;
 : RISING?   BALL VECT.Y @ 0< ;
 
 : OFFSET ( -- n)  
   PADDLE SP.X VC@  
-  BALL SP.X VC@ - 2 /  -1 1 CLIP ;    
+  BALL  SP.X VC@ - 2 /  -1 1 CLIP ;    
 
  DECIMAL 
 \ clipped for sprite column boundaries
-: VC+!  ( n Vaddr --) DUP>R  VC@ +  17 223 CLIP  R> VC! ;
+: VC+!  ( n Vaddr --) DUP>R  VC@ +  17 223 CLIP  R> PAUSE VC! ;
 : PADDLE+!   PADDLE SP.X VC+!  ;
 
 
@@ -262,9 +264,9 @@ DECIMAL
 \ ball movement and collision detection
 \ ***************************************
 
-: PADDLE?  ( -- ?) BALL PADDLE 8 COINC ;
+: PADDLE?  ( -- ?) BALL PADDLE 8 COINC PAUSE ;
 
-: BALL.MOVE    SPEED @ TICKS  BALL SP.MOVE ;
+: BALL.MOVE    SPEED @ TICKS  BALL PAUSE SP.MOVE  ;
 
 : MOVES  0 ?DO  BALL.MOVE LOOP ;
 
@@ -301,7 +303,7 @@ DECIMAL
     ?DUP 
   UNTIL ;
 
-: WAIT-FIRE    BEGIN  JOYKEY 1 = UNTIL ;
+: WAIT-FIRE ( -- ) BEGIN  JOYKEY 1 = UNTIL ;
   
 : .REPLAY 
   DELALL 
@@ -311,7 +313,7 @@ DECIMAL
   400 MS 
 ;
 
-: ERASELN  ( -- ) >VPOS 28 BL VFILL ;
+: ERASELN  ( x y -- ) >VPOS 28 BL VFILL ;
 
 : SCORE-MULTIPLIER
     SCORE @ 1
@@ -339,9 +341,7 @@ DECIMAL
 : RICOCHET ( points freq --)
   CLINK
   BL 'BALL @ VC! 
-  PAUSE  \ test for joystick 
   BALL BOUNCE.Y  SCORE +!  .SCORE 
-  PAUSE  \ and again
   REMAINING 1-! ;
 
 : BALLINPLAY
@@ -369,14 +369,14 @@ DECIMAL
 : CLS      ( -- ) 24 13 DO  2 I ERASELN  LOOP ; 
 
 : SETUP ( -- ) 
-  SINGLE
+  SINGLE              \ turn off multi-tasking 
   CLEAR
   DEF-NUMBERS  DEF-SHAPES  
   SETCOLORS  SCORE OFF 
   2 MAGNIFY 
   10 BALLS 
   28 6 * REMAINING !  \ # blocks to WIN
-  ;
+;
 
 : .PRESS-FIRE
     6 22 AT-XY ." PRESS FIRE TO SERVE" 
@@ -385,20 +385,23 @@ DECIMAL
 
 : .CREDITS 
    5 14 AT-XY ." RAINBOW BUSTER VER 3.2"
-   9 15 AT-XY ."   FOR TI-99"
-   6 16 AT-XY ." BY BRIAN FOX 2023" 
+  11 16 AT-XY ." FOR TI-99"
+   7 18 AT-XY ." BY BRIAN FOX 2023" 
    4 23 AT-XY ." PRESS A KEY TO CONTINUE"
    KEY DROP 
 ;    
 
 : SET-SPEED 
+    BEGIN 
+     SPEED OFF 
      KEY 
      CASE 
       [CHAR] 1 OF  300 SPEED !  ENDOF 
-      [CHAR] 2 OF  200 SPEED !  ENDOF 
-      [CHAR] 3 OF   60 SPEED !  ENDOF 
-                   200 SPEED ! ( default to medium)
-     ENDCASE 
+      [CHAR] 2 OF  150 SPEED !  ENDOF 
+      [CHAR] 3 OF   50 SPEED !  ENDOF 
+                  HONK
+     ENDCASE
+     SPEED @ UNTIL  
 ;
 
 : LEVEL-MENU 
@@ -407,26 +410,25 @@ DECIMAL
    9 16 AT-XY ." 1 BEGINNER"
    9 17 AT-XY ." 2 GAMER"
    9 18 AT-XY ." 3 OLYMPIC"
-  11 19 AT-XY  SET-SPEED
+  11 19 AT-XY  
+  SET-SPEED
   CLS
 ;
 
 \ ********************************************
 \ Joystick control runs as a background task
 \ ********************************************
-        
-: PADDLE-MOVER 
+:NONAME ( -- xt)
     BEGIN 
-      JOYKEY 
+      JOYKEY           \ JOYKEY calls pause while waiting
       CASE
         2 OF  -2 PADDLE+!  ENDOF
         4 OF   2 PADDLE+!  ENDOF 
       ENDCASE
-      SPEED @ 2* TICKS 
-    AGAIN    \ never stops because it is a separate task 
-; 
-
-' PADDLE-MOVER CONSTANT PADDLE-TASK
+\ SLOW down the paddle or it's too fast      
+      SPEED @ 2* TICKS \ TICKS calls pause to share time
+    AGAIN              \ never stops because it is a separate task 
+; CONSTANT PADDLE-TASK \ record XT of the code in this constant 
 
 : ?WINNER 
   REMAINING @ 0= 
