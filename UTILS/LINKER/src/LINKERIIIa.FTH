@@ -23,9 +23,10 @@ MARKER /LINKER  \ remove LINKER
  
 HERE
 VOCABULARY DEFS
- 
- 
-ONLY FORTH DEFINITIONS
+ONLY FORTH ALSO DEFS DEFINITIONS 
+
+ONLY FORTH DEFINITIONS 
+
 DECIMAL
 0 VALUE #1  \ a file handle
  
@@ -52,7 +53,8 @@ HEX
     $2000 H !
     HEAP $2000 FF FILL  \ erase low ram
     HEAP TO BASE-MEM
-    ['] DEFS  >BODY OFF  ;  \ remove all DEFS words
+    ['] DEFS >BODY OFF   \ remove all DEFS words
+;  
  
 \ string utilities
 : CHOP   ( addr len n --  addr' len' addr2 len2 )
@@ -103,9 +105,10 @@ CREATE PROGNAME  10 ALLOT
 
 \ Since Assembler Labels are stored as Forth constants
 \ we can find them and 'execute' them to return their memory address
+CREATE LBLBUFF 10 ALLOT 
 : LABEL-EVAL ( -- n)
-   GETLABEL HERE PLACE      \ store label at HERE as counted string
-   HERE FIND-LABEL EXECUTE  \ run the word generate address
+   GETLABEL LBLBUFF PLACE      \ store label as counted string
+   LBLBUFF FIND-LABEL EXECUTE  \ run the word generate address
 ;
  
 : TAG-INTERPRET ( c )
@@ -149,6 +152,7 @@ CREATE PROGNAME  10 ALLOT
     2DROP ;
  
 DECIMAL
+CREATE LNBUFF 127 ALLOT 
 : EA3LOAD ( caddr len -- )
     CR ." Linking " 2DUP TYPE
     SOURCE-ID @ >IN @ 2>R           \ save source-ID, input pointer
@@ -227,6 +231,7 @@ ONLY FORTH DEFINITIONS
 ;
  
 HELP
+
 NEW
 CR ." Linker is RESET"
  
@@ -239,7 +244,7 @@ HEX
     INIT-WORDLISTS 
     E4 7 VWTR 
     HELP 
-    ALSO DEFS 
+\    ALSO DEFS 
     CR ORDER 
     ABORT ; 
 
