@@ -3,15 +3,14 @@ CR .( TI-99 EA3 object file LINKER, Dec 21 2021 B Fox)
 \ NOV 2024 replaced Eaker case with :case BREAK; 
 \          Speed up is only 3% 
 
-INCLUDE DSK1.TOOLS
-
+ 
 NEEDS WORDLIST FROM DSK1.WORDLISTS
 ONLY FORTH DEFINITIONS
 
 : :CASE  ( n --) POSTPONE OVER=  POSTPONE IF  POSTPONE DROP ; IMMEDIATE
 : BREAK; ( -- )  POSTPONE EXIT  POSTPONE THEN ; IMMEDIATE
  
-\ NEEDS .S        FROM DSK1.TOOLS
+NEEDS .S        FROM DSK1.TOOLS
 NEEDS +TO       FROM DSK1.VALUES
 NEEDS CASE      FROM DSK1.CASE
 NEEDS -TRAILING FROM DSK1.TRAILING
@@ -39,29 +38,10 @@ A000  VALUE ORIGIN    \ Where the code will be loaded by AORG
 : ?BREAK  ( -- ) ?TERMINAL ABORT" *BREAK*" ;
 : SPACEBAR ( -- ) KEY? BL = IF  KEY DROP  THEN ;
  
-\ add words so we don't need to include tools
-HEX
-: .ID     ( NFAaddr --) COUNT 1F AND TYPE ;
  
 DECIMAL
 .( ..)
-: WORDS   ( -- )
-    0 >R  ( word counter on Rstack)
-    CONTEXT @ DUP CR .WID CR
-    @
-    BEGIN DUP
-    WHILE
-        ?BREAK  SPACEBAR
-        DUP ( -- nfa) .ID SPACE
-        R> 1+ >R
-        NFA>LFA @
-    REPEAT
-    DROP
-    CR R>
-    BASE @ >R
-    DECIMAL . SPACE ." words"
-    R> BASE ! ;
- 
+
 \ heap memory management
 : HEAP   ( -- addr) H @ ;  \ current heap pointer
 : HALLOT ( n -- )  H +! ;  \ move heap pointer
@@ -226,7 +206,7 @@ ENDCODE
 : EXT-SUB:  ( def --) CODE  06A0 , ( addr)  ,  NEXT,  ;  \ BL @def
 : EXT-PROG: ( def --) CODE  0420 , ( vector) ,  NEXT,  ; \ BLWP @def
  
-ONLY FORTH DEFINITIONS ALSO DEFS
+ONLY FORTH DEFINITIONS 
 : HELP
   PAGE ." Camel99 Linker IV  Nov12 2024"
   CR
@@ -251,6 +231,19 @@ NEW
 CR ." Linker is RESET"
  
 CR HERE SWAP - DECIMAL . .( bytes)
- 
- 
+
+ONLY FORTH DEFINITIONS  
+HEX 
+: GO   
+    WARM
+    INIT-WORDLISTS 
+    E4 7 VWTR 
+    HELP 
+    ALSO DEFS 
+    CR ORDER 
+    ABORT ; 
+
+LOCK 
+INCLUDE DSK1.SAVESYS
+' GO SAVESYS DSK2.LINKEXE 
  
