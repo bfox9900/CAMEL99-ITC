@@ -16,31 +16,36 @@ CODE 2OVER   ( a b c d --  a b c d a b)
       C126 , 0006 , \ 6 (SP) TOS MOV,                  \ 22
       C5A6 , 0008 , \ 8 (SP) *SP MOV,                  \ 26  
       NEXT,                                         \ =  76 
-ENDCODE          
+ENDCODE         
+
+: 2NIP     2SWAP 2DROP ;
 
 DECIMAL 
 : SEARCH  ( caddr1 u1 caddr2 u2 -- caddr3 u3 flag)
+   2OVER                \ retain a copy of 1st string 
    BEGIN 
      DUP
    WHILE 
-     2OVER  4TH OVER  COMPARE 
+     2OVER 4TH OVER COMPARE 
    WHILE 
      1 /STRING  
    REPEAT
-   2SWAP 2DROP TRUE EXIT
+   2NIP 2NIP TRUE EXIT   \ string found 
    THEN
-   2DROP FALSE ; 
+   2DROP 2DROP FALSE ;   \ string not found 
 
 \ test string in LOW RAM
  
-: MEN  S" MEN" ;
-: AID  S" AID" ;
+: MEN$  S" MEN" ;
+: AID$  S" AID" ;
 : C$   S" COUNTRY" ;
+: F$   S" NO MATCH" ;
 
-HEX 2000 2000 CHAR # FILL 
 
-: A$ S" NOW IS THE TIME FOR ALL GOOD MEN TO COME TO THE AID OF THEIR COUNTRY." ;
- A$ 3F01 PLACE 
+: A$ 
+ S" NOW IS THE TIME FOR ALL GOOD MEN TO COME TO THE AID OF THEIR COUNTRY." ;
+ 
 
-AID 2000 2000 ELAPSE SEARCH 
+\ HEX 2000 2000 CHAR # FILL 
+\  2000 2000 AID  ELAPSE SEARCH 
 
