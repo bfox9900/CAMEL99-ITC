@@ -1,12 +1,13 @@
-\ FOR NEXT  demonstration  No real advantage over DO LOOP on 9900 CPU
+\ FOR NEXT  demonstration  Small advantage over DO LOOP on 9900 CPU
 
-INCLUDE DSK1.TOOLS        \ debugging tool
-INCLUDE DSK1.ASM9900
-INCLUDE DSK1.ELAPSE       \ used for timing
+NEEDS .S        FROM DSK1.TOOLS        \ debugging tool
+NEEDS MOV,      FROM DSK1.ASM9900
+NEEDS ELAPSE    FROM DSK1.ELAPSE       \ used for timing
 
-CODE  <NEXT>
-       *RP DEC,                 \ decr top of R-stack
+ CODE  <NEXT>
+       *RP DEC,                  \ decr top of R-stack
         OC IF,
+\ Jump back 
             *IP IP ADD,          \ add offset (+ or -) to current IP
              NEXT,
         ENDIF,
@@ -15,6 +16,7 @@ CODE  <NEXT>
         RP INCT,                  \ remove loop counter from Rstack
         NEXT,
         ENDCODE
+
 
 : FOR    ( n -- ) ?COMP  POSTPONE >R HERE ; IMMEDIATE
 : NEXT   ( -- )   POSTPONE <NEXT> HERE - , ;   IMMEDIATE

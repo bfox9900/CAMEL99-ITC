@@ -3,52 +3,39 @@
 
         DEF START       * These DEFs will appear in linker's DEF words
 
-        REF VFILL,VMBW  * External: DSK2.VDPLIB,OBJ
+        REF VMBW,VFILL  * External: DSK2.VDPLIB,OBJ DSK2.CLS,OBJ
  
 *
 * EQUATES
 * 
 WRKSP   EQU  >8300       * Workspace shared with Forth
-BL      EQU  >2000       * 'blank" is space character 
-BREAK   EQU  >0020       * address of break key detector 
-
 
 **********************
 * CODE SECTION 
 *
-START   LWPI WRKSP
-        LIMI 0
+START   LIMI 0
+        MOV R11,R8 
 
 *
 * clear the screen 
-*
-PAGE    LI R0,0     * screen VDP address 
-        LI R1,BL    * space character 
-        LI R2,960   * bytes in 40 column screen 
-        BL @VFILL   * call video fill routine 
-
-        BL @DELAY 
-
+*      
+        CLR  R0            * Set the VDP address to zero
+        LI   R1,>2000      * Set high byte to 32 (>20)
+        LI   R2,>3C0       * bytes in the 40 column screen
+        BL   @VFILL        
 *
 * write the message 
 *
         LI R0,0
         LI R1,MSG1+1
         LI R2,12
-        BL @VMBW 
+        BL @VMBW       * ref from dsk2.vdplib,obj  
 
-WAIT    BL @BREAK 
+        LI R0,>FFFF 
+WAIT    DEC R0 
         JNE WAIT 
-        B *R10 
-
-*
-* small delay sub-routine 
-*
-DELAY   LI R4,>FFFF
-
-LOOP1   DEC R4 
-        JNE LOOP1 
-        RT
+        MOV R8,R11 
+        B *R11
 
 ****************
 * DATA SECTION 

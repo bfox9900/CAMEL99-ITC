@@ -1,0 +1,17 @@
+* sub-routine for CAMEL99 EA3LOADER  2021 FOX
+
+        DEF  CLS         * Clear the screen in 40 column mode.
+        REF  VFILL       * DSK2.VDPLIB,OBJ must be loaded first 
+
+* clear the screen in 40 column mode 
+CLS     LIMI 0
+        CLR  R0            * Set the VDP address to zero
+        LI   R1,>2000      * Set high byte to 32 (>20)
+        LI   R2,>3C0       * bytes in the 40 column screen
+
+        MOV R11,R8     \ save linkage (where's my stack?!!)
+        BL   @VFILL  
+        MOV R8,R11     \ restore linkage 
+        RT 
+        END
+

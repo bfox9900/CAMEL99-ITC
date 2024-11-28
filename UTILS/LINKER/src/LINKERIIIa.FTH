@@ -12,18 +12,20 @@ ONLY FORTH DEFINITIONS
  
 NEEDS .S        FROM DSK1.TOOLS
 NEEDS +TO       FROM DSK1.VALUES
-NEEDS CASE      FROM DSK1.CASE
 NEEDS -TRAILING FROM DSK1.TRAILING
 NEEDS ELAPSE    FROM DSK1.ELAPSE
 NEEDS 3RD       FROM DSK1.3RD4TH
 \ NEEDS LIFO:     FROM DSK1.STACKS
 NEEDS MARKER    FROM DSK1.MARKER
+NEEDS DIR       FROM DSK1.DIR
  
 MARKER /LINKER  \ remove LINKER
  
 HERE
 VOCABULARY DEFS
 ONLY FORTH ALSO DEFS DEFINITIONS 
+
+: *END* ;  \ first word in DEFS wordlist 
 
 ONLY FORTH DEFINITIONS 
 
@@ -53,23 +55,23 @@ HEX
     $2000 H !
     HEAP $2000 FF FILL  \ erase low ram
     HEAP TO BASE-MEM
-    ['] DEFS >BODY OFF   \ remove all DEFS words
-;  
- 
+    ['] DEFS >BODY OFF 
+    ORGDP @ DP ! 
+;    
+
 \ string utilities
 : CHOP   ( addr len n --  addr' len' addr2 len2 )
-    S" 3RD OVER 2>R  1- /STRING  2R>"  EVALUATE ; IMMEDIATE
+    3RD OVER 2>R  1- /STRING  2R> ;
  
-: /TAG     ( addr len -- addr' len') \ cut tag character
-    S" 1 /STRING" EVALUATE  ;  IMMEDIATE
- 
-: ?#ERROR    ABORT" Bad number" ;
+: ?#ERROR  IF CR SOURCE TYPE CR  ABORT" Bad number" THEN ;
  
 : PARSE# ( addr len -- n )
-    /TAG  4 CHOP NUMBER? ?#ERROR ;
+    1 /STRING    \ remove tag character
+\  BUG fix: Remove trailing spaces before NUMBER? 
+    4 CHOP -TRAILING 0 MAX NUMBER? ?#ERROR ; 
  
 : GETLABEL  ( addr len -- addr' len' label len)
-    /TAG  6 CHOP  -TRAILING 0 MAX ;
+    1 /STRING   6 CHOP  -TRAILING 0 MAX ;
  
 : DODEF ( addr len n -- )
     >R         ( -- addr' len') ( r: -- ref_addr)
@@ -85,7 +87,7 @@ CREATE PROGNAME  10 ALLOT
     8 CHOP  PROGNAME PLACE ;
  
 : .TOOLVER  ( addr len -- addr 0)
-    /TAG  40 CHOP -TRAILING CR TYPE  DROP 0 ;
+   1 /STRING  40 CHOP -TRAILING CR TYPE  DROP 0 ;
  
 : ?TAG    CR ." Unsupported TAG -> "  EMIT ABORT ;
  
@@ -105,10 +107,9 @@ CREATE PROGNAME  10 ALLOT
 
 \ Since Assembler Labels are stored as Forth constants
 \ we can find them and 'execute' them to return their memory address
-CREATE LBLBUFF 10 ALLOT 
+\ CREATE LBLBUFF 10 ALLOT 
 : LABEL-EVAL ( -- n)
-   GETLABEL LBLBUFF PLACE      \ store label as counted string
-   LBLBUFF FIND-LABEL EXECUTE  \ run the word generate address
+   GETLABEL EXECUTE  \ run the word generate address
 ;
  
 : TAG-INTERPRET ( c )
@@ -118,7 +119,7 @@ CREATE LBLBUFF 10 ALLOT
           [CHAR] 5 :CASE  PARSE# RELOCATE DODEF BREAK;
  
           [CHAR] 3 :CASE  PARSE# RELOCATE 
-                       LABEL-EVAL SWAP !        BREAK;
+                          LABEL-EVAL SWAP !     BREAK;
  
  
           [CHAR] 4 :CASE  PARSE# 
@@ -153,19 +154,23 @@ CREATE LBLBUFF 10 ALLOT
  
 DECIMAL
 CREATE LNBUFF 127 ALLOT 
+: OPEN-DV80 
+    PSZ NEGATE ^PAB +!              \ make new PAB, on pab stack
+    80 04 FOPEN ?FILERR             \ OPEN as DISPLAY FIXED 80 INPUT
+    SOURCE-ID 1+!                   \ incr. source ID (1st file is 1)
+    LINES OFF                       \ reset the line counter
+;
+
 : EA3LOAD ( caddr len -- )
     CR ." Linking " 2DUP TYPE
     SOURCE-ID @ >IN @ 2>R           \ save source-ID, input pointer
-    PSZ NEGATE ^PAB +!              \ make new PAB, on pab stack
-    ( $ len ) 80 04 FOPEN ?FILERR   \ OPEN as DISPLAY FIXED 80 INPUT
-    SOURCE-ID 1+!                   \ incr. source ID (1st file is 1)
-    LINES OFF                       \ reset the line counter
+    ( $ len ) OPEN-DV80 
     BEGIN
         2 FILEOP 0=                   \ file read operation
     WHILE
-        HERE 200 + DUP FGET ( addr n) \ read line to temp mem buffer
-        ParseObject                   \ interpret line of object code
-        LINES 1+!                     \ count the line
+        PAD 200 + DUP FGET ( addr n) \ read line to temp mem buffer
+        ParseObject                  \ interpret line of object code
+        LINES 1+!                    \ count the line
     REPEAT
     PSZ ^PAB +!                     \ remove PAB from pab stack
     2R> >IN !  SOURCE-ID !          \ restore >IN, SOURCE-ID
@@ -174,17 +179,15 @@ CREATE LNBUFF 127 ALLOT
 : ?PATH ( addr len -- addr len)
        2DUP [CHAR] . SCAN NIP 0= ABORT" Path expected" ;
  
-: .BYTES  ( addr -- ) HEAP SWAP -  . ." bytes of code" ;
+: .BYTES  ( addr -- ) HEAP $2000 -  . ." bytes used" ;
  
 : LINK ( <PATH> )
        TICKER OFF
        BASE @ >R
        HEX
-       ONLY FORTH ALSO DEFS DEFINITIONS
- 
-       HEAP
        PARSE-NAME ?PATH  EA3LOAD
        CR DEFS WORDS
+       CR LINES ?  ." lines of object code"
        CR DECIMAL .BYTES
        .ELAPSED
  
@@ -230,9 +233,9 @@ ONLY FORTH DEFINITIONS
   CR
 ;
  
-HELP
+\ HELP
 
-NEW
+\ NEW
 CR ." Linker is RESET"
  
 CR HERE SWAP - DECIMAL . .( bytes)
@@ -242,13 +245,16 @@ HEX
 : GO   
     WARM
     INIT-WORDLISTS 
+    ONLY FORTH ALSO DEFS DEFINITIONS 
     E4 7 VWTR 
+    NEW 
     HELP 
-\    ALSO DEFS 
     CR ORDER 
+    
     ABORT ; 
 
 LOCK 
 INCLUDE DSK1.SAVESYS
 ' GO SAVESYS DSK2.LINKEXE 
+ 
  

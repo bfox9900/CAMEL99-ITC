@@ -7,7 +7,7 @@
    : CHAR PARSE  POSTPONE SLITERAL  POSTPONE EVALUATE POSTPONE ;
    IMMEDIATE ;
    
-
+\ Interesting but 5x SLOWER than using DO LOOP or Camel99 FORNEXT 
 MACRO FOR " ( +U -- )  BEGIN ?DUP WHILE 1- >R"
 MACRO NEXT " ( -- )    R> REPEAT"
 MACRO FEXIT  " ( -- )  R> DROP EXIT"
