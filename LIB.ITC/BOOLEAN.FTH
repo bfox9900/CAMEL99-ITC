@@ -18,8 +18,8 @@ HEX
 \ Note: 28% in this usage with UM/MOD.( 5 instructions vs /MOD has 29 
 : BITFLD  ( bit# bits[] -- bit#' addr) SWAP 0 BITS/CELL UM/MOD CELLS ROT + ;
 
-\ : BITMASK ( bit# -- n )  1 SWAP LSHIFT ;  \ use for BIG endian 
-: BITMASK ( bit# -- n )  1 SWAP LSHIFT >< ; \ For TMS9900
+ : BITMASK ( bit# -- n )  1 SWAP LSHIFT ;  \ for little endian CPU (x86)
+\ : BITMASK ( bit# -- n )  1 SWAP LSHIFT >< ; \ For Big endian TMS9900
 
 \ API
 : BIT@ ( bit# bits[] -- ?) BITFLD @ SWAP RSHIFT 0001 AND ;  \ return 1 bit
@@ -27,14 +27,15 @@ HEX
 : BRST ( bit# bits[] -- )  BITFLD SWAP BITMASK INVERT OVER @ AND SWAP ! ;
 : BTOG ( bit# bits[] -- )  BITFLD SWAP BITMASK        OVER @ XOR SWAP ! ;
 
+\ DEMO CODE 
 \ DECIMAL
-\ 1024 CONSTANT size \ # of bits we want
-\ size BITS: ]X      \ make array X of size bits
+ 1024 CONSTANT size \ # of bits we want
+ size BITS: ]X      \ make array X of size bits
 
 \ set and reset each bit using the BSET BRST BIT@ words.
-\ : FILLBITS   ." Setting all bits..." size 0 DO  I ]X BSET   LOOP ;
-\ : CLRBITS    ." Erasing..."          size 0 DO  I ]X BRST   LOOP ;
-\ : EVENBITS    CLRBITS ." Setting even bits..." size 0 DO  I ]X BSET   2 +LOOP ;
-\ : TOGGLEBITS  ." Toggling..." size 0 DO  I ]X BTOG  LOOP ;
-\ : SHOWBITS   CR  size 0 DO  I ]X BIT@ (.) TYPE LOOP ;
-\ : BITS.  ( n -- )    CR   0 DO  I ]X BIT@ (.) TYPE LOOP ;
+ : FILLBITS   ." Setting all bits..." size 0 DO  I ]X BSET   LOOP ;
+ : CLRBITS    ." Erasing..."          size 0 DO  I ]X BRST   LOOP ;
+ : EVENBITS    CLRBITS ." Setting even bits..." size 0 DO  I ]X BSET   2 +LOOP ;
+ : TOGGLEBITS  ." Toggling..." size 0 DO  I ]X BTOG  LOOP ;
+ : SHOWBITS   CR  size 0 DO  I ]X BIT@ (.) TYPE LOOP ;
+ : BITS.  ( n -- )    CR   0 DO  I ]X BIT@ (.) TYPE LOOP ;
