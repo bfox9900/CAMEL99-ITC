@@ -16,22 +16,11 @@ DECIMAL
 : THUMP   GEN2  150 HZ  0 DB  ;
 
 \ Add PAUSE to I/O functions for smooth multi-tasking
-: BOUNCE.X  ( spr# -- ) PAUSE  ]SMT.X  DUP VC@ NEGATE  SWAP VC! ;
-: BOUNCE.Y  ( spr# -- ) PAUSE  ]SMT.Y  DUP VC@ NEGATE  SWAP VC! ;
+: BOUNCE.X  ( spr# -- ) ]SMT.X  DUP VC@ NEGATE  SWAP VC! PAUSE ;
+: BOUNCE.Y  ( spr# -- ) ]SMT.Y  DUP VC@ NEGATE  SWAP VC! PAUSE ;
 
 : BOUNCE    ( spr# -- ) DUP BOUNCE.X BOUNCE.Y  ; \ multi-task version
 
-: COLLISION ( spr1 spr2 -- )
-        PAUSE
-        2DUP 9 COINC  \ VDP I/O
-        IF   THUMP
-    ( spr2)  BOUNCE
-    ( spr1)  BOUNCE
-             GEN2 MUTE
-             EXIT
-        THEN
-        2DROP
-;
 
 DECIMAL
 : RNDV ( -- x y) 60 RND 30 - ;
@@ -49,36 +38,47 @@ DECIMAL
 HEX 2000 CONSTANT TASK1
 
 \ ADD pause to I/O functions for smooth multi-tasking
-: TINK  ( -- ) PAUSE GEN1 1600 HZ -6 DB  ; \ sound chip I/O
+: TINK  ( -- )  GEN1 1600 HZ -6 DB  PAUSE ; \ sound chip I/O
 
 : TRAPX ( spr# -- )
-      PAUSE
-      DUP SP.X VC@ \ VDP I/O
-      239 0 WITHIN IF  BOUNCE.X  TINK  EXIT THEN
-      DROP ;
+      DUP SP.X VC@ 230 4 WITHIN 
+      IF  BOUNCE.X  TINK   EXIT THEN 
+      DROP  PAUSE ;
 
 : TRAPY ( spr# -- )
-      PAUSE
-      DUP SP.Y VC@ \ VDP I/O
-      185 0 WITHIN IF  BOUNCE.Y  TINK  EXIT THEN
-      DROP ;
+      DUP SP.Y VC@ 
+      170 4 WITHIN 
+      IF   BOUNCE.Y  TINK   EXIT THEN
+      DROP  PAUSE ;
 
 \ Now it's multi-task friendly
 : SP.TRAP ( spr#)  DUP TRAPX TRAPY  ;
-\ : SP.TRAP ( spr#) PAUSE  0 OVER AT-XY SP.Y V@ . ;
 
 
-\ SPRITE-TRAP is a what the TRAPPER task does.
+: COLLISION ( spr1 spr2 -- )
+        2DUP 9 COINC  \ VDP I/O
+        IF   
+    ( spr2)  BOUNCE 
+    ( spr1)  BOUNCE 
+             THUMP 400 TICKS 
+             GEN2 MUTE
+             EXIT
+        THEN
+        2DROP
+;
+
+\ COLLIDER TASK test collisions for all sprites 
 \ Notice it's an endless loop
 DECIMAL
-: SPRITE-TRAP ( spr# -- )
+: COLLIDER ( spr# -- )
     HEX
     BEGIN
-      PAUSE
-       0 1 COLLISION
-       0 5 COLLISION
-       1 5 COLLISION
-
+      6 0 DO 
+        6 0 DO 
+             I J COLLISION 
+             PAUSE
+        LOOP 
+      LOOP 
     AGAIN
 ;
 
@@ -92,8 +92,9 @@ DECIMAL
     0 23 AT-XY ." A B and F collide"
     6 DUP SPRITES MOVEALL
    TASK1 DUP USIZE 0 FILL  FORK
-  ['] SPRITE-TRAP  TASK1 ASSIGN
-    MULTI  TASK1 WAKE
+    ['] COLLIDER TASK1 ASSIGN
+    MULTI 
+\    TASK1 WAKE
     AUTOMOTION
     BEGIN
        0 SP.TRAP
@@ -102,8 +103,7 @@ DECIMAL
        3 SP.TRAP
        4 SP.TRAP
        5 SP.TRAP
-       GEN1 MUTE
-       MUTE
+       SILENT 
        ?TERMINAL
    UNTIL
    SINGLE
