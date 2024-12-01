@@ -68,18 +68,23 @@ HEX 2000 CONSTANT TASK1
 ;
 
 \ COLLIDER TASK test collisions for all sprites 
+: ?BUMP ( SPR# SPR# -- ) 
+  PAUSE 
+  2DUP 10 COINC IF  BOUNCE BOUNCE THUMP  EXIT THEN 
+  2DROP   \ no coincidence, just drop the args
+; 
+
+
 \ Notice it's an endless loop
 DECIMAL
-: COLLIDER ( spr# -- )
-    HEX
-    BEGIN
-      6 0 DO 
-        6 0 DO 
-             I J COLLISION 
-             PAUSE
-        LOOP 
-      LOOP 
-    AGAIN
+: COLLIDER 
+   BEGIN
+    COINCALL IF  1 0 ?BUMP  THEN PAUSE 
+    COINCALL IF  2 0 ?BUMP  THEN PAUSE 
+    COINCALL IF  3 0 ?BUMP  THEN PAUSE 
+    COINCALL IF  4 0 ?BUMP  THEN PAUSE 
+    COINCALL IF  5 0 ?BUMP  THEN PAUSE 
+   AGAIN 
 ;
 
 : RUN ( -- )
@@ -91,11 +96,13 @@ DECIMAL
     CR
     0 23 AT-XY ." A B and F collide"
     6 DUP SPRITES MOVEALL
+
    TASK1 DUP USIZE 0 FILL  FORK
     ['] COLLIDER TASK1 ASSIGN
     MULTI 
-\    TASK1 WAKE
+    TASK1 WAKE
     AUTOMOTION
+\ console task "traps" sprites inside screen     
     BEGIN
        0 SP.TRAP
        1 SP.TRAP
@@ -104,7 +111,7 @@ DECIMAL
        4 SP.TRAP
        5 SP.TRAP
        SILENT 
-       ?TERMINAL
+       ?TERMINAL 
    UNTIL
    SINGLE
    STOPMOTION

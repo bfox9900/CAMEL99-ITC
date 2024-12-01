@@ -10,10 +10,10 @@ DECIMAL
     SOPRANO 
      
   ||: 4/4 NORMAL 
-       1/4 F4  1/8. Ab4 1/8 F4 1/16 F4 1/8 Bb4 F4 Eb4          |
-    |  1/4 F4  1/8. C5  1/8 F4 1/16 F5 1/8 Db5 C4 Ab4          |
-    |  F4  C5  F5  1/16 F4 1/8 Eb4 1/16 Eb4 1/8 C4 G4 LEGATO |
-    |  1/2 F4 / / :||   
+       1/4 F3  1/8. Ab3 1/8 F3 1/16 F3 1/8 Bb3 F3 Eb3          |
+    |  1/4 F3  1/8. C4  1/8 F3 1/16 F4 1/8 Db4 C4 Ab3          |
+    |  F3  C4  F4  1/16 F3 1/8 Eb3 1/16 Eb3 1/8 C3 G3 LEGATO   |
+    |  1/2 F3 / / :||   
     
   ||
 ;
