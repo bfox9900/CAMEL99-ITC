@@ -38,7 +38,7 @@ NEW-TUNES
    |      F#4 A4   G#4 F#4 E4  A3    C#4 E4 |
    |      D4  F#4  E4  D4  C#4 E4    D4 C#4 |
    |  B3  E4   F#4 G#4  A4 G#4  
-   NORMAL 80 BPM  1/1 C#4 || ( last note sustain)
+   NORMAL 90 BPM 1/1 C#4 || ( last note sustain)
  ;
 
 : BASSLINE  BASS

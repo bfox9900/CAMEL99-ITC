@@ -10,6 +10,7 @@ NEEDS VHERE  FROM DSK1.VDPMEM
 \ .............................................
 \ ISR sound list player 
 HEX
+ 83CE CONSTANT ISRTMR  \ countdown timer byte, used by ISR player 
  83C2 CONSTANT AMSQ      \ interrupt DISABLE bits
 \ AMSQ bit meaning:
 \ 80 all interrupts disabled
@@ -38,7 +39,7 @@ HEX
             0LIMI                     \ interrupts off
             83CC !                    \ Vaddr -> sound table
             AMSQ C@  5 AND AMSQ C!    \ enable sound interrupts
-            01 83CE C!                \ trigger sound list processing
+            01 ISRTMR C!              \ trigger sound list processing
             83FD C@  01 OR 83FD C!    \ set "VRAM is source" flag
             2LIMI ;                   \ interrupts on
 
@@ -58,7 +59,6 @@ DECIMAL
 HEX
 : MUTE,   -30 DB, ;
 : SILENT, ( -- )  9F VC,  BF VC,  DF VC,  FF VC, ;
-
 
 \ noise channel selects generator 4 by default
 : NOISE,  ( n -- )  0F AND  GEN4 OSC @ OR  VC,  ;
@@ -86,12 +86,18 @@ DECIMAL
 \
 \ *********************************************
 \
+
+\ colon defs can build macros of sound words 
+\ If you want a sound word to stop all previous sound
+\ use the SILENCE, macro at the beginning. 
+: SILENCE,  GEN1 MUTE, GEN2 MUTE, GEN3 MUTE, GEN4 MUTE, ;
+
 \ sound assembler version of PARSEC explosion 
 DECIMAL
 SOUND: EXPLODE
 \ GEN3 controls Noise Generator Frequency
    \ Parsec used "7". Sounds same as 999 Hz.
-   $[ GEN1 MUTE, GEN2 MUTE, GEN3 MUTE, 7 NOISE, 0 DB, GEN3 999 HZ, ], 80 MS, 
+   $[ SILENCE, 7 NOISE, 0 DB, GEN3 999 HZ, ], 80 MS, 
    GEN4                   
    $[  -2 DB, ],  96 MS,  \ Fade NOISE volume down slowly
    $[  -4 DB, ], 112 MS,
@@ -115,7 +121,7 @@ SOUND: EXPLODE
 \ HEX
 \ VCREATE EXPLODE2
 \    VBYTE 7,9F,BF,DF,E7,F0,C0,07,5
-\    VBYTE 1,F1,6
+\    VBYTE 1,F1,6 
 \    VBYTE 1,F2,7
 \    VBYTE 1,F3,8
 \    VBYTE 1,F4,9
@@ -147,5 +153,5 @@ SOUND: 2BEEP
       $[ -30 DB, ], 0 MS,
 ;SOUND
 
-\ ********************************
-\  SAVE VDP MEMORY 
+\ this stops all sound from the ISR generator 
+SOUND: SILENCE   $[  SILENCE, ], 0 MS,  ;SOUND 
