@@ -1,9 +1,10 @@
 \ literal translation of BASIC program to Forth 
 
-\                             V2.73        ITC   
-\ V1 literal translation from BASIC       1:20.9  
-\      "          "   with fast scroll    1:02.8
-\ compiled basic                          1:40.0
+\ FORTH                       V2.78        ITC      DTC v2.69
+\ V1 literal translation from BASIC       1:21      1:04
+\      "          "   with fast scroll    1:16     
+
+\ compiled basic                          1:40
 
 INCLUDE DSK1.TOOLS 
 INCLUDE DSK1.ELAPSE 
@@ -15,11 +16,11 @@ INCLUDE DSK1.ARRAYS
 
 \ SCROLL entire screen in one block with VMBR and VMBW
 \ : SCROLL ( -- )
-\  HERE 100 + DUP>R  VTOP @  ( --  buffer dst) ( r: BUFFER)
-\  DUP C/L@ + R>             ( -- buffer dst src buffer)  
-\  [ C/SCR @ C/L @ - ] LITERAL DUP>R VREAD  R> VWRITE 
-\  0 23 2DUP >VPOS C/L@ BL VFILL  \ erase bottom line
-\  AT-XY ;                        \ set cursor  
+\ HERE 100 + DUP>R  VTOP @  ( --  buffer dst) ( r: BUFFER)
+\ DUP C/L@ + R>             ( -- buffer dst src buffer)  
+\ [ C/SCR @ C/L @ - ] LITERAL DUP>R VREAD  R> VWRITE 
+\ 0 23 2DUP >VPOS C/L@ BL VFILL  \ erase bottom line
+\ AT-XY ;                        \ set cursor  
 
 \ this code is the same as the kernel, but with faster scroll 
 \ : CR     (  -- )     VCOL OFF  VROW ++@  L/SCR = IF SCROLL THEN ;
