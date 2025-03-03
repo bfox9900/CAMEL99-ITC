@@ -6,13 +6,14 @@
 \ **********************************************************************
 CROSS-COMPILING
 TRUE  VALUE ITC          \ used to prevent directly compiling HILEVEL.HSF
-FALSE VALUE SLOWER       \ TRUE saves 28 bytes, FALSE ->14% FASTER compile times
+FALSE VALUE SLOWER       \ TRUE saves 64 bytes, FALSE -> 14% FASTER compile times
+FALSE VALUE FAST_TYPE    \ 22% faster SCREEN I/O    
 FALSE VALUE HASHING      \ Not working yet
 
 \ ======================================================================
 \              *** CONSOLE I/O SELECTION *** 
  
-TRUE     VALUE VDPI/O        \ select VDP chip console driver 
+TRUE       VALUE VDPI/O        \ select VDP chip console driver 
  VDPI/O 0= VALUE TTYI/O        \ selects 9902 RS232 console driver 
 
 
@@ -34,13 +35,15 @@ EMEM TIBSIZE -  EQU 'TIB     \ Terminal input buffer just below
 \ ======================================================================
 \             *** TARGET MEMORY LOCATION ***
 
--1  \ true= standard kernel ;  false=non-standard kernel
+0 \ true= standard kernel ;  false=non-standard kernel
 [IF]
     A000 VALUE CODESEG
     2000 VALUE HEAPSEG
+  \  FALSE TO FAST_TYPE   \ save 52 bytes 
 [ELSE]
-		6000 VALUE CODESEG  \ 6000 is the supercart RAM
-		2000 VALUE HEAPSEG  \ initial HEAP address when kernel boots
+		6000 VALUE CODESEG   \ 6000 is the supercart RAM
+		2000 VALUE HEAPSEG   \ initial HEAP address when kernel boots
+ \   TRUE TO FAST_TYPE   \ we have space in Supercart but it is not reliable
 [THEN]
 
 \ *******************************************************************
@@ -62,7 +65,7 @@ EMEM TIBSIZE -  EQU 'TIB     \ Terminal input buffer just below
  [cc] include cc9900\src.itc\bootstrx.hsf  \ cross-compiler loops & branch
  [cc] include cc9900\src.itc\ticktock.hsf  \ 9901 hardware timer
  
- [cc] include cc9900\src.itc\hilevel.hsf  \ core forth words
+ [cc] include cc9900\src.itc\hilevel.hsf   \ core forth words
 
 \ ======================================================================
 \  P A T C H   T H E   T A R G E T  S Y S T E M   V A R I A B L E S
@@ -79,12 +82,15 @@ EMEM TIBSIZE -  EQU 'TIB     \ Terminal input buffer just below
 [ELSE]  [CC] THERE 2+ DUP
 [THEN] 	[TC] DP T!  ORGDP T!
 
-	T' LOADSYS  BOOT T!
 
 [CC]
+\ === set the first Forth word that runs in BOOT variable ===
+	T' LOADSYS  BOOT T!
+
 \ =============================================================
 \ P A T C H   T A R G E T   I M A G E  F I L E   H E A D E R
 
+\ COLD create the Forth VM and loads R10 with NEXT 
  T' COLD >BODY BOOT-ADDRESS T!
 
 CROSS-COMPILING HEX

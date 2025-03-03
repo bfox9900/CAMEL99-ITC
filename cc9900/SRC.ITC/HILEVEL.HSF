@@ -36,7 +36,7 @@
 \ Jan 2022     create FORTHITC.MAK to build the project
 \ Oct 2022     Added META vocabulary
 \ Dec 2022     Changed FGET to return stack string ( buffer -- addr len)
-\ May 2024     Reduced ASM code in CONSOLE driver. Kernal is 118 bytes smaller. 
+\ May 2024     Reduced ASM code in CONSOLE driver. Kernel is 118 bytes smaller. 
 
 TARGET-COMPILING
 \ ======================================================================
@@ -196,22 +196,6 @@ ENDCODE
 \      NEXT,
 \ ENDCODE       
 
-\ double Rstack Forth2012
-CODE 2>R    ( d -- ) ( r-- n n)
-      RP -4 ADDI,          \ 14
-      TOS    *RP MOV,      \ 22
-      *SP+ 2 (RP) MOV,     \ 26
-      TOS POP,             \ 22
-      NEXT,              \ = 84
-ENDCODE
-
-CODE 2R>     ( -- d )
-      TOS PUSH,            \ 28
-      SP DECT,             \ 10
-      TOS RPOP,            \ 22
-      *SP  RPOP,            \ 26
-      NEXT,              \ = 88
-ENDCODE
 
 \ *G NOT standard forth. Nice native 9900 instructions
 CODE 1+! ( addr -- )  *TOS INC,  TOS POP,  NEXT,   ENDCODE
@@ -471,7 +455,9 @@ CODE >DIGIT  ( n -- c)   \ ASM is 9 bytes, 4X faster
 
 TTYI/O 
 [if]   [cc] include cc9900\src.itc\TTY-IOf.HSF
+
 [else] [cc] include cc9900\src.itc\CONSOLE2.HSF
+
 [then]
 
 \ ======================================================================
@@ -556,7 +542,7 @@ TTYI/O
       IF
         CR
         CR ." ? " TYPE  HONK
-        SOURCE-ID @ 0>  ( source is NOT console)
+        SOURCE-ID @ ( source is NOT console)
         IF  ."  Line " LINES @ DECIMAL U.
             CR CR SOURCE TYPE
         THEN ABORT
@@ -767,6 +753,7 @@ TARGET-COMPILING
 
 TARGET-COMPILING
 CODE COLD
+\     0 LIMI,    ( don't seem to need this)
       WRKSP0 LWPI,
       R0 HSprims LI,   \ source
       R1 HSstart LI,   \ destination
@@ -798,16 +785,18 @@ ENDCODE
 \ ; IMMEDIATE
 
 
-\ *new* Added VER string for easy updates
-[CC] CODESEG 6000 =
-[IF]    [TC] : .VER   ." V2.75 19AUG24 SuperCart" ;
-[ELSE]  [TC] : .VER   ." V2.75 19AUG24" ;
-[THEN]
+ [CC] CODESEG 6000 =
+ [IF]    [TC] : .VER   ." V2.78 2MAR25 SuperCart" ;
+ [ELSE]  [TC] : .VER   ." V2.78 2MAR25" ;
+ [THEN]
 
 [CC]
 \ ======================================================================
 \ B O O T   U P   C O D E
 \ *G  WARM initializes variables and vectors
+
+\ debugging word
+\ CODE HALT  BEGIN, R13 INC, AGAIN,  NEXT, ENDCODE 
 
 HEX
 VDPI/O [IF]
@@ -815,8 +804,8 @@ TARGET-COMPILING
 : WARM  ( -- )
         80 83C2 C!
         26 TPAD !
-        1000 VP !
-        H @ 2000 MAX 3FFF MIN  H !
+        1000 VP !  ( Free VDP memory start ) 
+        2000 H !   ( heap starts in low RAM)
         3FFF TMR!
         VDPTOP ^PAB !
         L0 LP !
@@ -872,14 +861,12 @@ TARGET-COMPILING
 ;
 [THEN]
 
-\ debugging word
-\ CODE HALT  BEGIN, R13 INC, AGAIN,  NEXT, ENDCODE 
-
 \ G*  LOADSYS is the primary boot word that starts Forth and loads extensions
 : LOADSYS
       WARM
       S" DSK1.START" INCLUDED
-      CR QUIT ;
+      CR QUIT 
+;
 
 \ =====================================================================
 \ define target comment words

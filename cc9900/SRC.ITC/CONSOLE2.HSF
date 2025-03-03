@@ -1,11 +1,13 @@
 \ console.fth provides I/O for the TI-99 console    May 2024  Brian Fox 
 \ Changed to reduce size by using more Forth code
+\ Mar 2 2025: used ?DO in "SPACES" 
 
 [CC] cr .( Console output)
 
 HEX 
 
 [TC]
+
 : C/L!  ( c/l -- )  \ pronounced "SEE-PER-ELL-STORE"
         DUP C/L !           \ set chars per line
         L/SCR *  C/SCR !    \ calc. chars per screen
@@ -14,7 +16,7 @@ HEX
 : TOPLN   ( -- vaddr)  VPG @ VTOP @ + ; 
 
 SLOWER [IF]
-   : >VPOS  ( x y -- Vaddr) C/L@ * + VPG @ + ; 
+   : >VPOS  ( x y -- Vaddr) C/L@ * + VPG @ + ; \ 12 bytes
 
 [ELSE]
    CODE >VPOS ( col row -- vaddr) \ compute a VDP screen address
@@ -55,7 +57,7 @@ SLOWER [IF]
    LOOP
    2DROP ( 50 bytes )
 
-   0 23 2DUP >VPOS C/L@ BL VFILL  AT-XY 
+   0 23 AT-XY  VPOS C/L@ BL VFILL 
 ;
 
 [ELSE]
@@ -80,7 +82,9 @@ SLOWER [IF]
 \ : ++@   ( addr -- n)  DUP 1+! @ ; 
 CODE ++@ ( addr -- n) *TOS INC,  *TOS TOS MOV,  NEXT, ENDCODE 
 
-: CR     (  -- ) VCOL OFF  VROW ++@  L/SCR = IF SCROLL THEN ;
+CODE WMODE  _WMODE @@ BL, TOS POP,   NEXT, ENDCODE 
+: CR     (  -- ) 
+   VCOL OFF  VROW ++@  L/SCR = IF SCROLL VPOS WMODE THEN ;
 
 : (EMIT) ( char -- ) VPOS VC!  VCOL ++@ C/L@ = IF CR THEN ;
 
@@ -91,13 +95,26 @@ CODE ++@ ( addr -- n) *TOS INC,  *TOS TOS MOV,  NEXT, ENDCODE
       0D OVER= IF  DROP CR     EXIT THEN
       08 OVER= IF  DROP BS     EXIT THEN
       (EMIT) ;
+-1 [IF]
 
 : TYPE   ( addr cnt --) PAUSE BOUNDS ?DO  I C@ (EMIT)  LOOP ;
+
+[ELSE]
+
+: TYPE   ( addr cnt --) 
+      PAUSE 
+      VPOS WMODE 
+      BOUNDS 
+      ?DO  
+         I C@ VDPWD C! 
+         VCOL ++@ C/L@ = IF CR THEN
+      LOOP ;
+[THEN]
 
 T' TYPE  RESOLVES 'TYPE
 
 : SPACE  ( -- )   BL (EMIT) ; 
-: SPACES ( n -- ) 0 MAX  0 ?DO  SPACE  LOOP ;
+: SPACES ( n -- ) 0 MAX 0 ?DO  SPACE  LOOP ;
 
 [cc] cr .( Console input)
 \ ======================================================================
@@ -117,6 +134,7 @@ CODE KEY? ( -- char)  \ *WARNING* it takes 1,128uS for KEY? scan to run
         837C @@ R1 MOVB,    \ read GPL status byte (=2000 if key pressed)
         R1  3 SLA,          \ check the key bit
         OC IF,              \ if carry flag set
+          \  TOS SETO, 
            8375 @@ TOS MOV, \ read the key ( LEGACY reasons)
         ENDIF,
         2 LIMI, 
