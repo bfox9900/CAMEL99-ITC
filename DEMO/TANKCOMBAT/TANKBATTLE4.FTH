@@ -1,4 +1,4 @@
-\ COMBAT.FTH 
+\ COMBAT.FTH  multi-tasking tank simulation for Camel99 Forth Brian Fox 
 \  Based on CCOMBAT HOST PROGRAM
 \  Version 02.14.23 
 \  by @VORTICON on Atariage.com 
@@ -276,7 +276,6 @@ DECIMAL
     DROP  
    -26 DB 60 MS 
    SILENT 
-
 ;
 
 \ add coordinates to a vector 
@@ -449,7 +448,7 @@ DECIMAL
 
 : TANK-BUILDER ( xt tank# --) 
     DUP DUP PID PANZER LOCAL ! 
-            PID ASSIGN  PAUSE ;
+            PID ASSIGN PAUSE ;
 
 \ assign the configured tank programs to tasks
 : CREATE-TANKS 
