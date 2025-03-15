@@ -105,19 +105,6 @@ DECIMAL
     12 DB 2000 TICKS
     MUTE ;
 
-VCREATE PACMAN
-    VBYTE 6,86,0D,97,AC,1A,B7,8
-    VBYTE 2,8F,08,2
-    VBYTE 2,AB,23,5
-    VBYTE 2,86,0D,4
-    VBYTE 1,BF,3
-    VBYTE 2,8E,0B,8
-    VBYTE 2,8A,0A,2
-    VBYTE 3,AC,1A,B7,8
-    VBYTE 2,9F,BF
- /VEND
- 
-
 \ ***************************
 \ random numbers
 \ ***************************
