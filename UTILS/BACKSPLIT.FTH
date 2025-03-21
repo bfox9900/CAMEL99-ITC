@@ -32,4 +32,4 @@
     THEN
     R> DROP ;
 
-: /SPLIT  ( a m b n -- b n a m-n )  DUP >R  2SWAP  R> - ;
+: /SPLIT  ( a m b n -- b n a m-n )  DUP>R  2SWAP  R> - ;

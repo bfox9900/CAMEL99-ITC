@@ -37,11 +37,19 @@ INCLUDE DSK1.COMPARE
  : ARRANGE   DUP PAIR COMPARE 0> IF SWP EXIT THEN DROP ;
 
  \ bubbles from end of list towards the beginning.
- : BUBBLE   PENULTIMATE BEGIN 2DUP U> IF 2DROP EXIT THEN
-            DUP ARRANGE [ 1 CELLS ] LITERAL - AGAIN ;
+ : BUBBLE   PENULTIMATE 
+            BEGIN 
+              2DUP U> 
+              IF  2DROP EXIT 
+              THEN DUP ARRANGE [ 1 CELLS ] LITERAL - 
+            AGAIN ;
 
- : SORT     POINTERS BEGIN DUP PENULTIMATE U> IF DROP EXIT
-            THEN DUP BUBBLE CELL+ AGAIN ;
+ : SORT     POINTERS 
+            BEGIN 
+              DUP PENULTIMATE U> 
+              IF DROP EXIT
+              THEN DUP BUBBLE CELL+ 
+            AGAIN ;
 
  : E        DUP PERFORM TYPE SPACE CELL+ ;
 

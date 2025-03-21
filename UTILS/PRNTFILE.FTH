@@ -23,7 +23,7 @@ VARIABLE REC$ 80 ALLOT        \ variable with 80 bytes of space
         BEGIN
           REC$ #1 @ LINPUT
           REC$ COUNT CR TYPE
-	  #1 @ EOF
+	        #1 @ EOF
         UNTIL
         #1 @ CLOSE-FILE ?FILERR
 ;

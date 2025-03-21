@@ -149,14 +149,16 @@ CREATE PROGNAME  10 ALLOT
 : ;CASE   ( n -- )  DOES> SWAP CELLS + PERFORM ;
 
 CASE: TAG-TABLE ( c --)
-  ] ( turn on compiler)
+  ( turn on compiler)
+  ]
     TAG-0  TAG-1  TAG-2  TAG-3    
     TAG-4  TAG-5  TAG-6  TAG-7 
     TAG-8  TAG-9  TAG-:  NOOP   ( 59)
     NOOP   NOOP   NOOP   NOOP   ( 63)
     NOOP   TAG-A  TAG-B  TAG-C  ( 67)
     TAG-D  TAG-E  TAG-F         ( 71)
-  [ ( turn off compiler)
+  [ 
+( turn off compiler)
 ;CASE 
 
 \ See E/A manual page 309 for meanings of object file tags.

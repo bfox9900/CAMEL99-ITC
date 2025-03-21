@@ -24,7 +24,7 @@ CREATE FIDS ( -- addr) 0 , 0 , 0 , 0 , 0 , 0 ,
 : RELEASE ( hndl -- ) ]FID OFF ;  \ *G release handle back to the pool
 : SELECT  ( hndl -- )
 \ *G make hndl the active PAB. Record as last handle in use
-  DUP ]FID @  ^PAB !  LASTH  ! ;
+  DUP ]FID @  ^PAB !  LASTH ! ;
 
 : VCOUNT  ( vdp$adr -- vdpadr len )
 \ *G COUNT for VDP strings
