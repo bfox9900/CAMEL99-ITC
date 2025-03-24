@@ -1,16 +1,17 @@
-CR .( GRAPHIX.FTH for CAMEL99 V2.X  Mar 2022 BFox )
+CR .( GRAPHIX.FTH for CAMEL99 V2.X  Mar 2025 BFox )
+CR .( 2025 faster, smaller CALLCHAR)
 CR  \ added protections to HCHAR & VCHAR to stop writing off screen
-HERE
-NEEDS VC,    FROM DSK1.VDPMEM  \ use by new CALLCHAR
-NEEDS TABLE: FROM DSK1.TABLES
-HEX
 
- 0380 TABLE:  ]CTAB     \ colour table VDP address
- 0800 TABLE8: ]PDT      \ "pattern descriptor table" VDP address
+HERE
+
+HEX
+: ]CTAB ( n -- Vaddr) 0380 + ; \ colour table VDP array
+
+: ]PDT  ( n -- Vaddr) 8* 0800 + ; \ "pattern descriptor table" VDP array
 
  \ ABORT to Forth with a msg if input is bad
-: ?MODE  ( n -- )      VMODE @ <>   ABORT" Bad mode" ;
-: ?COLOR ( n -- n )    DUP 16 U>    ABORT" Bad Color" ;
+: ?MODE  ( n -- N)    VMODE @ <>  ABORT" Bad mode" ;
+: ?COLOR ( n -- n )   DUP 16 U> ABORT" Bad Color" ;
 
 ( takes fg nibble, bg nibble, convert to TI hardware no.)
 ( test for legal values, and combine into 1 byte)
@@ -20,57 +21,62 @@ HEX
 : CLEAR  ( -- ) PAGE  0 17 AT-XY  ; ( because you love it )
 
 : COLOR  ( character-set fg-color bg-color -- )
-          1 ?MODE  >COLR SWAP ]CTAB  VC! ;
+        1 ?MODE  >COLR SWAP ]CTAB  VC! ;
 
 \ ascii value SET# returns the character set no.
 : SET#  ( ascii -- set#) 3 RSHIFT ;
 
 ( *NEW*  change RANGE of character sets at once)
 : COLORS  ( set1 set2 fg bg  -- )
-          1 ?MODE
-          >COLR >R
-          SWAP ]CTAB SWAP ]CTAB OVER - R> VFILL ;
+        1 ?MODE
+        >COLR >R
+        SWAP ]CTAB SWAP ]CTAB OVER - R> VFILL ;
 
 : SCREEN ( color -- )
-         1 ?MODE             \ check for MODE 1
-         1- ?COLOR ( -- n)   \ TI-BASIC color to VDP color and test
-         7 VWTR  ;           \ set screen colour in Video register 7
+        1 ?MODE             \ check for MODE 1
+        1- ?COLOR ( -- n)   \ TI-BASIC color to VDP color and test
+        7 VWTR  ;           \ set screen colour in Video register 7
 .( .)
+HEX
  : GRAPHICS  ( -- )
       1 VMODE !
       0 3C0  0 VFILL \ erase the entire 40 col. screen space
-\      4 DUP 2 VWTR 400 * VPG ! \ alternate page
-      00  2 VWTR     \ page zero, same as text mode
+      VTOP @ 2 VWTR  \ set video page *default is 0
       E0 DUP 83D4 C! \ KSCAN re-writes VDP Reg1 with this byte
 ( -- E0) 1 VWTR      \ VDP register 1  bit3 = 0 = Graphics Mode
-      0E 3 VWTR        \ color table
-      01 4 VWTR        \ pattern table
-      06 5 VWTR        \ sprite attribute table
-      01 6 VWTR        \ set sprite pattern table to 1x$800=$800
-      0 ]CTAB 10 10 VFILL \ color table: black on transparent [1,0]
-      8 SCREEN         \ cyan SCREEN
-      20 C/L!          \ 32 chars/line
+      0E 3 VWTR      \ color table AT 380
+      01 4 VWTR      \ pattern table  800 
+      06 5 VWTR      \ sprite attribute table = 6 X $80
+      01 6 VWTR      \ set sprite pattern table to 1x$800=$800
+      0 ]CTAB 20 10 VFILL \ color table: black on transparent [1,0]
+      8 SCREEN       \ cyan SCREEN
+      20 C/L!        \ 32 chars/line
       CLEAR
  ;
 
-: >DIG  ( char -- n) DIGIT? 0= ABORT" Bad digit" ;
-: CALLCHAR ( addr len char --) \ can be used for longstrings (128 bytes)
-        BASE @  VP @ 2>R  \ save these variables
-        ]PDT VP !         \ set vdp mem pointer to character location
-        HEX               \ we are converting hex numbers in the string
-        BOUNDS
-        DO
-           I    C@ >DIG  4 LSHIFT \ convert, move to right nibble
-           I 1+ C@ >DIG  OR VC,   \ combine with left nibble and compile to VDP
-        2 +LOOP
-        2R> VP ! BASE !  \ restore the variables
-;
-.( .)
-\ PATTERN: is deprecated. Use CREATE and comma
-\ : PATTERN: ( u u u u -- ) CREATE  >R >R >R  , R> , R> , R> , ;
+HEX 
+: CALLCHAR ( addr len ascii# --)
+        BASE @ >R 
+        HEX 
+        ]PDT >R         \ save pattern table address  
+        BEGIN 
+           DUP 
+        WHILE 
+        \ convert 1ST 4 chars to 16 bit # 
+            OVER 4 NUMBER? ABORT" Not HEX"
+            R@ V!            \ store integer (2 bytes)
+            4 /STRING 0 MAX  \ cut 4 chars off the string  
+            R> 2+ >R         \ bump PDT address by 2
+        REPEAT 
+        2DROP 
+        R> DROP 
+        R> BASE ! ;    
 
-: CHARDEF  ( addr char# --)  ]PDT      8 VWRITE ; \ write pattern to PDT
-: CHARPAT  ( addr char# --)  ]PDT SWAP 8 VREAD ;  \ read pattern to 'addr'
+.( .)
+\ write data block to pattern descriptor table 
+: PDT-WRITE  ( data size 1stchar)  ]PDT SWAP VWRITE ; 
+: CHARDEF  ( addr char# --) ]PDT 8 VWRITE ;  \ write one pattern to PDT
+: CHARPAT  ( addr char# --)  ]PDT SWAP 8 VREAD ; \ read pattern to 'addr'
 : GCHAR    ( col row -- char) >VPOS VC@ ; \ does not affect VROW,VCOL
 
 : HCHAR   ( col row char cnt -- ) \ *new* added automatic size protection
@@ -83,6 +89,7 @@ HEX
 \ change to Graphics mode (C/SCR = HEX300) to compile VWRAP correctly
 GRAPHICS
 
+.( .)
 HEX
 CODE VWRAP   \ 4x faster than Forth
   02A1 ,               \ R1 STWP,
@@ -95,11 +102,13 @@ CODE VWRAP   \ 4x faster than Forth
   NEXT,
 ENDCODE
 
-: (VCHAR) ( col row char cnt --)
-  2SWAP >VPOS  SWAP 0 ?DO  2DUP VC!  VWRAP  LOOP ;
+: VCHAR ( col row char cnt --)
+  DUP 0= IF 2DROP 2DROP EXIT THEN 
+  2SWAP >VPOS  SWAP 0 DO  2DUP VC!  VWRAP  LOOP ;
 
-: VCHAR  ( col row char cnt --) (VCHAR) 2DROP ;
+DECIMAL 
+0 32 2 1 COLORS 
 
 CR .( GRAPHICS 1 Mode READY)
-CR HERE SWAP - DECIMAL . .( bytes)
-HEX
+CR HERE SWAP -  . .( bytes)
+
