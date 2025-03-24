@@ -1,5 +1,6 @@
 \ A Finite State Machine  Dr. Julian Nobel  (R.I.P)
 
+\ moved to V2.5 Kernel
 \ : PERFORM    POSTPONE @   POSTPONE EXECUTE  ; IMMEDIATE
 
 : CASE:      CREATE   ;
