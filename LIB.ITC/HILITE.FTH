@@ -1,4 +1,5 @@
-\ HILITE.FTH   create reverse color characters and removes itself
+\ HILITE.FTH    updated Mar 25 2025
+\ create reverse color character set
 \ INCLUDE DSK1.TOOLS
 
 HEX
@@ -34,9 +35,9 @@ DECIMAL
  : BLINKER  ( Vaddr len -- ) BEGIN  2DUP REVERSE  500 MS  KEY? UNTIL 2DROP ;
 
 : TEST  PAGE ." This string will print normally"
-          CR   ." This will be reversed in 3 seconds"
+          CR ." This will be reversed in 3 seconds"
           CR
-          CR   ." This one will blink"
+          CR ." This one will blink"
 
           0 23 AT-XY ." Press a key to stop demo"
           3000 MS
