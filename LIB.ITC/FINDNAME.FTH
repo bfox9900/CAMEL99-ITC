@@ -1,17 +1,18 @@
 \ findname.fth
-NEEDS .S     FROM DSK1.TOOLS
-NEEDS S=     FROM DSK1.COMPARE
-NEEDS 4TH    FROM DSK1.3RD4TH
+NEEDS .S      FROM DSK1.TOOLS
+NEEDS COMPARE FROM DSK1.COMPARE
+NEEDS 4TH     FROM DSK1.3RD4TH
 
-: 2OVER    ( a b c d -- a b c d a b) POSTPONE 4TH  POSTPONE 4TH ; IMMEDIATE
+: 2OVER ( a b c d -- a b c d a b) POSTPONE 4TH  POSTPONE 4TH ; IMMEDIATE
 
 : FIND-NAME ( addr len -- nfa ) \ nfa is "name field address"
            CONTEXT @ @  ( -- nfa )
-           BEGIN DUP
-           WHILE ( tos<>0)
-              DUP 1+ 2OVER S=
+           BEGIN 
+             DUP C@         \ test word length byte
+           WHILE ( len<>0)
+              DUP>R  COUNT 2OVER 2OVER COMPARE 
            WHILE ( compare<>0)
-              NFA>LFA @   ( follow link to next name)
+              R> NFA>LFA @   ( follow link to next name)
            REPEAT
            THEN NIP NIP ;
 
