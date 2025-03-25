@@ -1,26 +1,21 @@
 \ HILITE.FTH   create reverse color characters and removes itself
 \ INCLUDE DSK1.TOOLS
 
-MARKER /REMOVE             \ put a "bookmark in the dictionary"
-
-NEEDS MALLOC  FROM DSK1.MALLOC
 HEX
 : ]PDT   ( char# -- 'pdt[n] ) 8* 800 + ; \ VDP pattern Descriptor table
 
 400 CONSTANT 1K
 
 : INVERTFONT ( -- )
-      1K MALLOC >R               \ get a 1K buffer
-      0 ]PDT R@  1K VREAD        \ copy VDP patterns to RAM
-      R@  1K  BOUNDS             \ loop thru 1K byte by byte
+      0 ]PDT 1K
+      BOUNDS             \ loop thru pattern table byte by byte
       DO
-        I DUP C@ INVERT SWAP C!  \ invert char pattern
+        I VC@ INVERT  I 1K +  VC! \ invert char patterns in VDP RAM 
       LOOP
-      R@  80 ]PDT  1K VWRITE     \ write RAM back to VDP upper charset
-      R> MFREE ;                 \ release the memory
+;
 
+\ use this word at the start of your program 
 INVERTFONT    ( change the VDP memory)
- /REMOVE      ( remove the above code from the Forth dictionary)
 
 \ *permanent routines*
 \ Type a string with reversed colors
@@ -31,8 +26,9 @@ INVERTFONT    ( change the VDP memory)
   : NORMAL  ( Vaddr len --) BOUNDS DO   I VC@ 7F AND I VC!   LOOP ;
   : REVERSE ( Vaddr len --) BOUNDS DO   I VC@ 80 XOR I VC!   LOOP ;
 
-\ test code
- : .HICHARS  FF 80 DO I EMIT LOOP ;
+\ test code ........................................
+: .HICHARS CR  FF 80 DO I EMIT LOOP ;
+: .LOCHARS CR  80 0  DO I EMIT LOOP ;
 
 DECIMAL
  : BLINKER  ( Vaddr len -- ) BEGIN  2DUP REVERSE  500 MS  KEY? UNTIL 2DROP ;
@@ -44,7 +40,11 @@ DECIMAL
 
           0 23 AT-XY ." Press a key to stop demo"
           3000 MS
-          0 1 AT-XY VPOS 34 REVERSE
 
-          0 3 AT-XY VPOS 19 BLINKER
- ;
+      \   X Y       len
+          0 1 >VPOS 34 REVERSE
+          0 3 >VPOS 19 BLINKER
+;
+
+.LOCHARS 
+.HICHARS
