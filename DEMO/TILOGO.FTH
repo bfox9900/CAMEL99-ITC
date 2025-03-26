@@ -1,29 +1,24 @@
-\ TI LOGO GRAPHICS chars patterns from Sometimes99er
-INCLUDE DSK1.GRAFIX
+\ Character definitions for TI logo.
+\ http://www.stuartconner.me.uk/ti/ti.htm
+\ GRAPHICS 1 mode only
+
+NEEDS CALLCHAR   FROM DSK1.GRAFIX
+
+DECIMAL
+ S" 0103030303030303" 1 CALLCHAR
+ S" FC0405050406020C" 2 CALLCHAR
+ S" 0080404080000C12" 3 CALLCHAR
+ S" FF80C04060381C0E" 4 CALLCHAR
+ S" 1921213D050505C4" 5 CALLCHAR
+ S" BA8A8ABAA1A1A122" 6 CALLCHAR
+ S" 0301000000000000" 7 CALLCHAR
+ S" E23110180C070300" 8 CALLCHAR
+ S" 4C9020404020E000" 9 CALLCHAR
 
 : TI.LOGO ( -- )
-        CR 11 EMIT 12 EMIT 13 EMIT    \ print 3 characters
-        CR 14 EMIT 15 EMIT 16 EMIT    \ print 3 characters
-        CR 17 EMIT 18 EMIT 19 EMIT  ; \ print 3 characters
+        CR 1 (EMIT) 2 (EMIT) 3 (EMIT) ."  CAMEL99 Forth"
+        CR 4 (EMIT) 5 (EMIT) 6 (EMIT)
+        CR 7 (EMIT) 8 (EMIT) 9 (EMIT)
+        CR CR ;
 
-\ get a copy of the dictionary address
-HERE
-
-\ Now compile patterns into unused dictionary space
-       0103 , 0303 , 0303 , 0303 ,
-       FC04 , 0505 , 0406 , 020C ,
-       0080 , 4040 , 8000 , 0C12 ,
-       FF80 , C040 , 6038 , 1C0E ,
-       1921 , 213D , 0505 , 05C4 ,
-       BA8A , 8ABA , A1A1 , A122 ,
-       0301 , 0000 , 0000 , 0000 ,
-       E231 , 1018 , 0C07 , 0300 ,
-       4C90 , 2040 , 4020 , E000 ,
-
-\ write the data from HERE on stack,  to VDP memory
-  DUP   11 ]PDT  4 CELLS 9 *  VWRITE
-
-\ put the dictionary pointer back (reclaims the memory)
-( here) DP !
-
-PAGE  TI.LOGO
+PAGE TI.LOGO
