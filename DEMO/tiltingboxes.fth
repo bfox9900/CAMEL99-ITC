@@ -35,8 +35,7 @@ VARIABLE CHR
 
 : BOX   ( x1 y1 x2 y2 char -- ) 
       CHR !
-      HEIGHT >R   
-      LENGTH >R
+      HEIGHT >R  LENGTH >R
       VADDR  R> R>  ( -- Vaddr len hgt)
       0 DO  
           2DUP CHR @ VFILL 
@@ -48,15 +47,8 @@ VARIABLE CHR
 : RUN
     PAGE ." * Tilted Boxes Illusion *"
     6 SCREEN
-    BEGIN  
 \       x  y    x  y   char      
         6  3   16  7   127 BOX
         4 10   20 15   126 BOX
-        2000 MS 
-
-        6  3   16  7   31 BOX
-        4 10   20 15   31 BOX
-        2000 MS 
-       ?TERMINAL
-    UNTIL
+    BEGIN  ?TERMINAL  UNTIL     \ goto 112 :-)
 ;
