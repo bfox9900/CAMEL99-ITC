@@ -1,4 +1,4 @@
-\ IDECLOCK.FTH  small version  Jul 2024
+\ IDECLOCK.FTH  small version For TI-99 IDE disk card  Jul 2024
 
 \ INCLUDE DSK1.TOOLS 
 
