@@ -19,7 +19,7 @@ VARIABLE OLDT
 CODE TIMERISR
 \ read the timer, which runs continuously in Camel99 Forth
           TOS PUSH,
-\ read 9901 timer
+\ read 9901 timer into TOS register  ( R4 )
        R12 2 LI,
           -1 SBO,
       TOS 14 STCR,
