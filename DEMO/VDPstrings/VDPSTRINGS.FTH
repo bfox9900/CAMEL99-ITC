@@ -16,45 +16,53 @@ INCLUDE DSK1.MALLOC
 \ We simply adjust the address and length on the Data stack. Very fast!
 \
 
-   NEEDS VHERE   FROM DSK1.VDPMEM
+ NEEDS VHERE   FROM DSK1.VDPMEM
+\ VDPMEM LIB provides: 
+\ VHERE   ( -- addr)
+\ VALLOT  ( n -- )  
+\ VC,     ( n -- )
+\ V,      ( n -- )
+\ VCOUNT  ( vdp$adr -- vdpadr len )
+\ VCREATE ( <text> -- )
 
-\ R> DROP is used 4 times. This faster
+\ R> DROP is used 4 times. RDROP is 8x faster
 HEX
-CODE RDROP   05C7 ,  NEXT, ENDCODE
+CODE RDROP   05C7 ,  NEXT, ENDCODE \ TP INCT, 
 DECIMAL
  
 \ ====================================
-\ VDP string primitives
+\ VDP STRING PRIMITIVES
+
+\ store CPU string to VDP string
+: V$!     ( addr len  vaddr len -- ) DROP 1- VPLACE ;
 
 : VGET$ ( VDP-adr len addr -- ) \ move VDP string to CPU addr
          2DUP C! CHAR+ SWAP VREAD ;
 \ compile stack string into VDP memory
 : VS,       ( $adr len-- )  VHERE OVER CHAR+  VALLOT VPLACE ;
 
-\ convert a VDP counted string to a stack string
-\ : VCOUNT    ( vdp$adr -- vdpadr len ) DUP 1+ SWAP VC@ ;
-
 \ Print a VDP stack string
-: VDPTYPE     ( vdp_addr len -- ) BOUNDS ?DO   I VC@ EMIT   LOOP ;
+: VDPTYPE   ( vdp_addr len -- ) BOUNDS ?DO  I VC@ EMIT  LOOP ;
 
 
 \ ====================================
 \ Replicate TI-BASIC string functions
 : VASC      ( vaddr len -- c) NIP VC@ ;
 : VLEN      ( vaddr len -- vaddr len)  DUP ; \ makes a copy of length
+DECIMAL 
 : VAL$     ( vaddr len - # )
-            20 MALLOC >R         \ get a temp buffer 32 bytes
+            32 MALLOC >R         \ get a temp buffer 32 bytes
             R@ VGET$             \ move string to CPU buff
             R> NUMBER? ABORT" VAL$ err"  \ ABORT if it fails
-            20 MFREE ;           \ free the buffer
+            32 MFREE ;           \ free the buffer
 
 \ DOES NOT CUT STRING: simply returns a new (address,len) pair
 : VLEFT$    ( vaddr len len' -- vaddr len') NIP ;
 : VRIGHT$   ( vaddr len len' -- vaddr len') 1- /STRING ;
 : VSEG$     ( vaddr len n1 n2 -- vaddr len) >R VRIGHT$  R> VLEFT$ ;
 
-\ VSTR$ VCHR$ return a stack string in CPU memory
-\ you need to store the result in a VDP string to keep it
+\ >>> VSTR$ VCHR$ return a stack string in CPU memory <<<
+\ you can store the result in a VDP string if needed
 : VSTR$     ( n -- addr len)  DUP ABS 0 <# #S ROT SIGN #>  ;
 
 \ uses ascii# as an offset into PAD.
@@ -111,12 +119,8 @@ DECIMAL
           DUP 1+ R> VC!  \ incr len, store new length in VDP
           + VC! ;        \ compute address of end of string, store char
 
-\ ===================================
-\ HI LEVEL user interface
 : VPRINT  ( vaddr len -- ) CR VDPTYPE ;
 
-\ store CPU string to VDP string
-: V$!     ( addr len  vaddr len -- ) DROP 1- VPLACE ;
 
 \ assign text to a VDP stack string
 : :="    ( vaddr len -- )  [CHAR] " PARSE  2SWAP V$! ;
@@ -148,8 +152,8 @@ DECIMAL
 \ compile a VDP string literal into a Forth word.
 \ uses 6 bytes of dictionary space
 : V"    ( <text> )
-       ?COMP                            \ test for compiling, abort if not
-        VHERE                           \ get current VDP address
+       ?COMP                            \ abort if not compiling
+       VHERE                            \ get current VDP address
        [CHAR] " PARSE VS,               \ compile string to VDP RAM
        POSTPONE LITERAL                 \ make VDP address a literal no. 
        POSTPONE VCOUNT ; IMMEDIATE      \ runtime: convert to addr,len
