@@ -44,3 +44,19 @@ HEX
           FILL2
           ?TERMINAL
         UNTIL ;
+
+: TEST3 
+    BEGIN 
+       0 3C0 [CHAR] A  VFILL 
+       PAGE 
+      ?TERMINAL 
+    UNTIL       
+;        
+
+: TEST4 
+    BEGIN 
+      WAITVBI 0 3C0 [CHAR] A  VFILL 
+      WAITVBI PAGE 
+      ?TERMINAL 
+    UNTIL       
+;        
