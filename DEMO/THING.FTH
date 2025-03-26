@@ -34,7 +34,7 @@ CHAR !  CONSTANT '!'
        '!'  I     VC!      \ write directly to VDP screen memory 
        '*'  N I - VC!      \ write to bottom of screen
         25 MS
-        ?TERMINAL ABORT" *BREAK*" 
+        ?TERMINAL IF TEXT TRUE ABORT" *BREAK*"  THEN 
     LOOP
     DROP
 ;
