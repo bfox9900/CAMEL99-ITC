@@ -1,4 +1,4 @@
-\ IDECLOCK.FTH   big version    July 2024 B FOX
+\ IDECLOCK.FTH   big version. For TI-99 IDE disk card  July 2024 B FOX
 
 \ INCLUDE DSK1.TOOLS  ( DEBUG only)
 
