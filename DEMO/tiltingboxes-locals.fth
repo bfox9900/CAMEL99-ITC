@@ -22,69 +22,38 @@
 
 NEEDS DUMP       FROM DSK1.TOOLS
 NEEDS GRAPHICS   FROM DSK1.GRAFIX
+NEEDS LOCAL:     FROM DSK1.CHEAPLOCALS
 
-HEX
-CODE LOCALS ( n --) \ build a stack frame n cells deep
-  C007 ,  \ RP R0 MOV,  ( DUP return stack pointer in R0)
-  0A14 ,  \ TOS 1 SLA,  ( CELLS )
-  61C4 ,  \ TOS RP SUB, ( allocate space on Rstack)
-  0647 ,  \ RP DECT,    ( make room for the old RP)
-  C5C0 ,  \ R0 RPUSH,   ( push old RP onto top of frame )
-  C136 ,  \ TOS POP,
-  NEXT,
-ENDCODE
-
-\ collapse stack frame: 
-CODE /LOCALS  ( -- ) 
-  C1D7 ,  \ *RP RP MOV, 
-  NEXT,  
-ENDCODE
-
-: LOCAL:  ( n -- ) \ name some local variables
-  CREATE  CELLS ,  \ record the cell offset for this local
-  ;CODE
-    0646 ,  \ make space on the DATA stack 
-    C584 ,  \ TOS PUSH,     
-    C107 ,  \ RP TOS MOV,   
-    A118 ,  \ *W TOS ADD,
-    NEXT,
-  ENDCODE
-
+DECIMAL 
 1 LOCAL: X1 
 2 LOCAL: X2
 3 LOCAL: Y1
 4 LOCAL: Y2
 5 LOCAL: C 
 
-: TEST  ( n n n n n == ) 
-  5 LOCALS 
-    C !  Y2 ! X2 !  Y1 ! X1 !    \ store stack to locals 
-    CR C ?
-    CR Y2 ?  X2 ? Y1 ? X1 ? 
-  /LOCALS 
-;
-
 : BOX   ( x1 y1 x2 y2 char -- ) \ 1120 sub box(x1,y1,x2,y2,c)
-  5 LOCALS 
+ 5 LOCALS 
     C ! Y2 ! X2 !  Y1 ! X1 !    \ store stack to locals 
-    
     BEGIN 
-        Y2 @ Y1 @ <>            \ for y=y1 to y2
+        Y2 @ 1+ Y1 @ >          \ for y=y1 to y2
     WHILE
                                 \ call hchar(y,x1,c,x2-x1+1)
-        Y1 @ X1 @ C@  X2 @ X1 @ 1+ - HCHAR  
+        X1 @  Y1 @  C @  X2 @ X1 @ -  HCHAR  
         Y1 1+!                  \  next y
     REPEAT     
-    /LOCALS 
-;                \ 1160 subend
+ /LOCALS 
+;                               \ 1160 subend
 
 : RUN
-    PAGE ." * Tilted Boxes Illusion *"
+    GRAPHICS 
+
+    CLEAR                  \ call clear
+    6 SCREEN               \ call screen(6)
     S" 30C0030C30C0030C0C03C0300C03C030" 126 CALLCHAR
-    6 SCREEN
-\       x  y    x  y   char      
-        6  3   16  7   127 BOX
-        4 10   20 15   126 BOX
-    BEGIN ?TERMINAL UNTIL
+\   x  y    x  y   char      
+    3  8   28  10  126 BOX
+    9 12   22  17  127 BOX
+    BEGIN ?TERMINAL UNTIL  \ goto 112  
+    
     TEXT 
 ;

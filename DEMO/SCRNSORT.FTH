@@ -29,7 +29,7 @@ C/L @ 8 * CONSTANT SIZE \ we will use top 7 lines of screen as the array
 
 : 1+!  ( n addr -- ) 1 SWAP +! ;
 
-: XCHGS  ( adr adr -- )  OVER VC@  OVER VC@  SWAP ROT VC!  SWAP VC! ;
+: XCHGS  ( adr adr -- ) OVER VC@  OVER VC@  SWAP ROT VC!  SWAP VC! ;
 
 : COMBSORT ( n -- )
    CR ." Descending COMB sort..."

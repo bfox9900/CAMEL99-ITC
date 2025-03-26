@@ -18,7 +18,6 @@ NEEDS GRAPHICS   FROM DSK1.GRAFIX
 
 DECIMAL
 \ this string re-defines the shape of character 126 and 127 
-S" 30C0030C30C0030C0C03C0300C03C030" 126 CALLCHAR
 
 \ X BASIC's sub functions provides local variables. We have to do  
 \ a lot more work to make BOX without local variable support. 
@@ -26,29 +25,38 @@ S" 30C0030C30C0030C0C03C0300C03C030" 126 CALLCHAR
 \ and the return stack for temporary storage.  
 
 \ convert x,y coordinates to VDP address, height and length 
-: HEIGHT   ( x1 y1 x2 y2 -- x1 y1 x2 y2 n) DUP  3 PICK - 1+ ;
-: LENGTH   ( x1 y1 x2 y2 -- x1 y1 x2 y2 n) OVER 4 PICK -  ;
-: VADDR   ( x1 y1 x2 y2 --  Vaddr) 2DROP >VPOS ;
 
+( x,y,c,len)
 \ resorted to 1 temp variable :-(
 VARIABLE CHR 
+: HORZCHAR ( x y len)  CHR @ SWAP HCHAR ;
+: LENGTH   ( x1 x2 -- X1 LEN ) OVER - ;
 
 : BOX   ( x1 y1 x2 y2 char -- ) 
-      CHR !
-      HEIGHT >R  LENGTH >R
-      VADDR  R> R>  ( -- Vaddr len hgt)
-      0 DO  
-          2DUP CHR @ VFILL 
-          SWAP C/L @ + SWAP 
+      CHR !   ( x1 y1 x2 y2 ) 
+      ROT     ( x1 x2 y2 y1 ) 
+      2SWAP   ( y2 y1 x1 x2 ) 
+      LENGTH  ( y2 y1 x1 len) 
+      1+ 2SWAP   ( x1 len y2 y1) 
+      0 DO    
+        ( x1 len ) 2DUP 
+        ( x y cnt -- )
+            I SWAP HORZCHAR     
       LOOP 
-      2DROP
+      2DROP DROP
 ;  
 
 : RUN
-    PAGE ." * Tilted Boxes Illusion *"
+    GRAPHICS 
+
+    CLEAR 
     6 SCREEN
-\       x  y    x  y   char      
-        6  3   16  7   127 BOX
-        4 10   20 15   126 BOX
+    ." * Tilted Boxes Illusion *"
+    S" 30C0030C30C0030C0C03C0300C03C030" 126 CALLCHAR
+\   x  y    x  y   char      
+    3  8   28  10  126 BOX
+    9 12   22  17  127 BOX
     BEGIN  ?TERMINAL  UNTIL     \ goto 112 :-)
+
+    TEXT 
 ;
