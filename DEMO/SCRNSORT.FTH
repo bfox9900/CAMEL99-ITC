@@ -2,6 +2,7 @@
 \ PORTED to CAMEL99 2017 for demo in screen
 
 INCLUDE DSK1.GRAFIX
+INCLUDE DSK1.CASE 
 
 VARIABLE GAP
 VARIABLE ITEMS
@@ -15,15 +16,15 @@ DECIMAL
 C/L @ 8 * CONSTANT SIZE \ we will use top 7 lines of screen as the array
 
 : COLORSET  17 0  DO  I 16 +   2  I 2 +  COLOR LOOP ;
-
 : .CHARSET    PAGE  255 0 DO I EMIT LOOP ;
-
 : ?   @ . ;
 
-: .DONE   CR ." Done in " PASSES ? ." passes"
-          CR SWAPS ? ."  exchanges"  ;
+: .REPORT
+   CR  
+   CR ." Done in " PASSES ? ." passes"
+   CR SWAPS ? ."  exchanges"  ;
 
-: ]Q  ( n -- adr)   ;   \ the screen is the array we will sort in VDP memory
+: ]Q  ( n -- adr)   ; \ the screen is the array we will sort in VDP memory
 
 : /1.3 ( N -- N )   10 13 */  1 MAX  ;
 
@@ -32,6 +33,7 @@ C/L @ 8 * CONSTANT SIZE \ we will use top 7 lines of screen as the array
 : XCHGS  ( adr adr -- ) OVER VC@  OVER VC@  SWAP ROT VC!  SWAP VC! ;
 
 : COMBSORT ( n -- )
+   CR 
    CR ." Descending COMB sort..."
     SIZE DUP ITEMS ! GAP !
     PASSES OFF
@@ -51,10 +53,11 @@ C/L @ 8 * CONSTANT SIZE \ we will use top 7 lines of screen as the array
         PASSES 1+!
        SFLAG @  GAP @ 1 = AND            \ additional conditional
    UNTIL
-   .DONE ;
+   .REPORT ;
 
 : SHELLSORT ( n -- )
-    ." Shell sort... "
+   CR 
+   CR ." Shell sort... "
     SIZE DUP ITEMS ! GAP !
     PASSES OFF
     SWAPS OFF
@@ -73,9 +76,10 @@ C/L @ 8 * CONSTANT SIZE \ we will use top 7 lines of screen as the array
         PASSES 1+!
        SFLAG @  GAP @ 0=  AND            \ additional conditional
    UNTIL
-   .DONE ;
+   .REPORT ;
 
 : BUBBLESORT ( n -- )
+   CR 
     CR ." Descending BUBBLE sort..."
     SIZE DUP ITEMS ! GAP !
     PASSES OFF
@@ -94,12 +98,41 @@ C/L @ 8 * CONSTANT SIZE \ we will use top 7 lines of screen as the array
        PASSES 1+!
        SFLAG @
    UNTIL
+   .REPORT ;
+   
+: BUBBLE_DEMO   .CHARSET BUBBLESORT ;
+: SHELL_DEMO    .CHARSET SHELLSORT ;
+: COMB_DEMO     .CHARSET COMBSORT ;
 
-   .DONE ;
+: MENU  
+    CR
+    CR ." 1  BUBBLE SORT"
+    CR ." 2  SHELL SORT" 
+    CR ." 3  COMB SORT"
+    CR ." X  Return to Forth"
+;
 
+: DEMO 
    COLORSET
-
-   .CHARSET
-
-
+   BEGIN 
+      PAGE ." ** SORT DEMONSTRATION ** "
+      CR 
+      CR ." This demo shows sorting"
+      CR ." on the screen."
+      CR 
+      CR ." Choose from the menu" 
+      MENU 
+      KEY
+      CASE 
+         [CHAR] 1 OF  BUBBLE_DEMO   ENDOF 
+         [CHAR] 2 OF  SHELL_DEMO   ENDOF 
+         [CHAR] 3 OF  COMB_DEMO   ENDOF 
+         [CHAR] X OF  CR CR ABORT   ENDOF 
+                      HONK 
+      ENDCASE 
+      CR 
+      CR ." Press a key for menu" KEY DROP 
+       
+   AGAIN 
+;
 
