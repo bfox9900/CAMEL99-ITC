@@ -1,5 +1,8 @@
 \ Source:  https://www.theultimatebenchmark.org/
 
+\ Second version test nesting using '-;' which is a
+\ tail call optimizer for Forth threaded code. 
+
 \ Amstrad 6128+ Z80A 4Mhz	Uniforth  Nesting 1Mil  3:26
 \ ZX Spectrum 2+  FIG-Forth 1.1a	  Nesting 1Mil  3:15
 \ C64 (normal)	  Forth64	          Nesting 1Mil	6:20
@@ -8,7 +11,8 @@
 \ TI-99 
 \                 TurboForth 1.21     Nesting 1Mil  2:29
 \                 Camel99 Forth ITC   Nesting 1Mil  2:30.7
-\                 w/tail-call optimization          1:49.6 (old: 1.54.6)
+\                 w/tail-call optimization          1:49.6 
+
 \                 Camel99 Forth DTC   Nesting 1Mil  2:16.6
 \                 w/tail-call optimization          1.38
 
