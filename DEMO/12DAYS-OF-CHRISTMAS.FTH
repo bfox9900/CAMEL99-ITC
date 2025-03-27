@@ -3,7 +3,7 @@
 
 INCLUDE DSK1.TOOLS
 
-: //  S" " S, ; 
+: //  0 , ; 
 
 CREATE ORDINALS 
    // 
@@ -14,7 +14,7 @@ CREATE ORDINALS
 
 : NTH  ( addr n -- addr' len) 0 ?DO  COUNT + ALIGNED  LOOP ;
 
-: .ORDINAL  ( n -- n)  DUP ORDINALS SWAP NTH COUNT TYPE ;
+: .ORDINAL  ( n -- n)  ORDINALS OVER NTH COUNT TYPE ;
  
 CREATE GIFTS 
     //
