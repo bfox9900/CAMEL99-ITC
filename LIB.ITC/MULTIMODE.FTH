@@ -1,6 +1,9 @@
 \ multicolor.fth   for Camel99 Forth    2024 Brian Fox 
 \ based on code from TI-Forth  
 
+INCLUDE DSK1.TOOLS 
+INCLUDE DSK1.ASM9900
+
 NEEDS CHARSET FROM DSK1.CHARSET 
 HERE 
 
@@ -139,15 +142,51 @@ CODE 4DUP ( a b c d -- a b c d a b c d)
    NEXT,                                           \ TOTAL 142
 ENDCODE     
 
+HEX
+\ : DXY  ( x y x2 y2 -- dY dX) ROT - ABS -ROT - ABS  ;
+CODE DXY?   ( x y x2 y2 -- ?)
+    R0  POP,   \ X2 
+    R1  POP,   \ Y 
+    R2  POP,   \ X 
+    TOS PUSH,   \ Y2->*SP 
+    R2 TOS MOV, \ X->TOS 
+
+    R0 TOS SUB, \ x2 x - 
+    TOS ABS,    \ abs(dx)
+
+    R1 *SP SUB,  \ y2-y  
+    *SP ABS,     \ abs(dy)
+\ MAX     
+    *SP TOS CMP, 
+    LO IF,  SP INCT, 
+    ELSE,   TOS POP, 
+    ENDIF, 
+\ 2 < 
+    TOS 2 CI, 
+    LO IF, TOS SETO, 
+    ELSE,   TOS CLR, 
+    ENDIF,
+    NEXT,
+ENDCODE
+
+  \ : MID  + 1+ 2/    \ compute mid points 
+  \  + 1+ 2/ R>           
+
+CODE MID ( x1 y1 x2 y2 -- n )
+    A136 , \ *SP+ TOS ADD, \ +
+    0584 , \      TOS INC, \ 1+
+    0814 , \ TOS  1  SRA, \ 2/
+    NEXT,
+ENDCODE     
+
 DECIMAL 
 : LINE ( x1 y1 x2 y2 -- )
 \ ANS version of Dr. Ting's recursive line.  R.I.P.
-    4DUP  ROT - ABS -ROT - ABS          \ compute dx dy 
-    MAX 2 < IF  2DROP MM.PLOT  EXIT THEN \ nothing do, get out  
+    4DUP ( DXY MAX 2 <) 
+    DXY? IF  2DROP MM.PLOT  EXIT THEN 
 
     4DUP ROT 
-    + 1+ 2/ >R    \ compute mid points 
-    + 1+ 2/ R>           
+    MID >R MID R> 
     2DUP 2ROT RECURSE RECURSE ;
 
 : MOVETO ( x y -- ) S" AT-XY" EVALUATE ; IMMEDIATE ( alias)

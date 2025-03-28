@@ -119,5 +119,36 @@ DROP
 : XY@      ( -- x y) VROW 2@ ; 
 : HLINE    ( n x y --) AT-XY 0 DO MCOLOR @ XY@ MCHAR  VCOL 1+! LOOP ;
 : VLINE    ( n x y --) AT-XY 0 DO MCOLOR @ XY@ MCHAR  VROW 1+!  LOOP ; 
+DECIMAL 
+\ Text macros make LINE clearer but run full speed 
+: 2ROT ( d1 d2 d3 -- d2 d3 d1) 
+       S" 2>R 2SWAP 2R> 2SWAP" EVALUATE ; IMMEDIATE 
+\ : 4DUP ( a b c d -- a b c d a b c d) 
+\       S" 3 PICK 3 PICK 3 PICK 3 PICK" EVALUATE ; IMMEDIATE 
+
+ HEX 
+ CODE 4DUP ( a b c d -- a b c d a b c d)
+   C046 ,          \ SP  R1 MOV,  \ dup stack pointer    \  14
+   0646 , C584 ,   \ TOS PUSH,    ( -- a b c d d)        \  28
+   0226 , FFFA ,   \ SP -6 AI,    \ make some room       \  12
+   C5B1 ,          \ R1 *+ *SP MOV,                      \  28
+   C9B1 , 0002 ,   \ R1 *+ 2 (SP) MOV,                   \  30
+   C9B1 , 0004 ,   \ R1 *+ 4 (SP) MOV,                   \  30
+   NEXT,                                           \ TOTAL 142
+ ENDCODE     
+
+DECIMAL 
+: LINE ( x1 y1 x2 y2 -- )
+\ ANS version of Dr. Ting's recursive line.  R.I.P.
+    4DUP  ROT - ABS -ROT - ABS           \ compute dx dy 
+    MAX 2 < IF  2DROP MM.PLOT  EXIT THEN \ nothing do, get out  
+
+    4DUP ROT 
+    + 1+ 2/ >R    \ compute mid points 
+    + 1+ 2/ R>           
+    2DUP 2ROT RECURSE RECURSE ;
+
+: MOVETO ( x y -- ) S" AT-XY" EVALUATE ; IMMEDIATE ( alias)
+: LINETO ( x y -- ) 2DUP XY@ LINE MOVETO ;
 
 HERE SWAP - DECIMAL . .( bytes)
