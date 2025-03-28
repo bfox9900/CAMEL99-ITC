@@ -127,8 +127,4 @@ DECIMAL
 : MOVETO ( x y -- ) S" AT-XY" EVALUATE ; IMMEDIATE ( alias)
 : LINETO ( x y -- ) 2DUP XY@ LINE MOVETO ;
 
-
-: MOVETO ( x y -- )  S" AT-XY" EVALUATE ; IMMEDIATE ( alias)
-: LINETO  ( x y -- ) 2DUP XY@ LINE MOVETO ;
-
 HERE SWAP - DECIMAL . .( bytes)
