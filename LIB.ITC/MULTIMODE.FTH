@@ -73,8 +73,6 @@ CODE >NAME ( col row -- Vaddr)
     NEXT,
 ENDCODE         
 
-: >NAME  2/ SWAP 2/ SWAP >VPOS ;
-
 CODE ]PATTERN ( row char -- Vaddr)  \ address of color byte
     0A34 ,          \ TOS  3 SLA,   \ char index 8*
     0224 , PDT ,    \ TOS PDT AI,   \ add the base address 
@@ -83,8 +81,6 @@ CODE ]PATTERN ( row char -- Vaddr)  \ address of color byte
     A102 ,          \ R2  TOS ADD,  \ add pattern offset         
     NEXT,
 ENDCODE      
-
-: ]PATTERN ( row char -- Vaddr)  8* PDT +  SWAP 7 AND + ;
 
 HEX 
 CODE NYBBLES ( color Vaddr colorbyte -- colorbyte')   
@@ -102,16 +98,6 @@ CODE NYBBLES ( color Vaddr colorbyte -- colorbyte')
     A103 ,          \ R3 TOS ADD, 
     NEXT,
 ENDCODE        
-
- : NYBBLES ( color Vaddr colorbyte -- colorbyte')   
-    SWAP 1 AND 
-    IF 
-       F0 AND 
-    ELSE 
-       0F AND 
-       SWAP 4 LSHIFT
-    THEN  +  
- ;
 
 : MCHAR  ( color col row --)
     2DUP >NAME VC@ ]PATTERN DUP>R VC@  NYBBLES  R> VC! ;
@@ -156,8 +142,7 @@ ENDCODE
 DECIMAL 
 : LINE ( x1 y1 x2 y2 -- )
 \ ANS version of Dr. Ting's recursive line.  R.I.P.
-  \  4DUP  ROT - ABS -ROT - ABS           \ compute dx dy 
-    4DUP   ROT - ABS >R - ABS R> 
+    4DUP  ROT - ABS -ROT - ABS          \ compute dx dy 
     MAX 2 < IF  2DROP MM.PLOT  EXIT THEN \ nothing do, get out  
 
     4DUP ROT 
