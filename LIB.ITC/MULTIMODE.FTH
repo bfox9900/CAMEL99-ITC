@@ -135,7 +135,7 @@ CODE 4DUP ( a b c d -- a b c d a b c d)
    0226 , FFFA ,   \ SP -6 AI,    \ make some room       \  12
    C5B1 ,          \ R1 *+ *SP MOV,                      \  28
    C9B1 , 0002 ,   \ R1 *+ 2 (SP) MOV,                   \  30
-   C9B1 , 0004 ,   \  R1 *+ 4 (SP) MOV,                  \  30
+   C9B1 , 0004 ,   \ R1 *+ 4 (SP) MOV,                   \  30
    NEXT,                                           \ TOTAL 142
 ENDCODE     
 

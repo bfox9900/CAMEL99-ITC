@@ -59,6 +59,8 @@ HEX
 \ After MULTI mode, we need to restore character pattern in VDP
 \ CHARSET reads in the default characters from GROM 
 
+
+
 : TEXT   TEXT CHARSET PAGE ;
 
 \ MCHAR for Camel99 Forth   Sept 14 2024 Brian fox 
