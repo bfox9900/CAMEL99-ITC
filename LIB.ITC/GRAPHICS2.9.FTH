@@ -1,11 +1,12 @@
-\ Graphics2 Mode V2.8 for Camel99 Forth Dec 2022 BJF 
+\ Graphics2 Mode V2.9 for Camel99 Forth Dec 2022 BJF 
 \ Referenced TI-FORTH: 
 ( CONVERT TO GRAPHICS2 MODE CONFIG 14SEP82 LAO)
 
 \ Test results using simple program
 \ V2.1  Forth with text macros   
 \ 2.7   critical VOR VERASE and XY-offset as CODE
-\ 2.8   PIXPOS re-coded in ASM
+\ 2.8   PIXPOS re-coded in ASM, LINE uses tail called optimization
+\ 2.9   DXY? removes 1 4DUP call. MID written in code
 
 \ COMPILES under ITC ONLY
 CR .( Two colour bit map mode )  
@@ -17,6 +18,7 @@ NEEDS CHARSET   FROM DSK1.CHARSET
 NEEDS ARRAY     FROM DSK1.ARRAYS 
 NEEDS 4TH       FROM DSK1.3RD4TH \ fast access to deep stack items 
 
+HERE 
 HEX 
 \ 
 \ text mode so we can return to the Forth console 
@@ -176,7 +178,17 @@ ENDCODE
 \ line drawing 
 DECIMAL 
 : 2ROT ( d1 d2 d3 -- d2 d3 d1) S" 2>R 2SWAP 2R> 2SWAP" EVALUATE ; IMMEDIATE
-: 4DUP ( d1 d2 -- d1 d2 d1)    S" 4TH 4TH 4TH 4TH" EVALUATE ; IMMEDIATE 
+\ : 4DUP ( d1 d2 -- d1 d2 d1)    S" 4TH 4TH 4TH 4TH" EVALUATE ; IMMEDIATE 
+ HEX 
+ CODE 4DUP ( a b c d -- a b c d a b c d)
+   C046 ,          \ SP  R1 MOV,  \ dup stack pointer    \  14
+   0646 , C584 ,   \ TOS PUSH,    ( -- a b c d d)        \  28
+   0226 , FFFA ,   \ SP -6 AI,    \ make some room       \  12
+   C5B1 ,          \ R1 *+ *SP MOV,                      \  28
+   C9B1 , 0002 ,   \ R1 *+ 2 (SP) MOV,                   \  30
+   C9B1 , 0004 ,   \ R1 *+ 4 (SP) MOV,                   \  30
+   NEXT,                                           \ TOTAL 142
+ ENDCODE     
 
 HEX
 \ manual tail call optimizer. Improves LINE by 1.5% 
@@ -190,15 +202,62 @@ CODE GOTO   C259 ,  ( *IP IP MOV,)  NEXT, ENDCODE
       ?CSP
 ; IMMEDIATE
 
+HEX
+\ : DXY  ( x y x2 y2 -- dY dX) ROT - ABS -ROT - ABS  ;
+: X1   3 (SP) ;
+: Y1   2 (SP) ;
+: X2   1 (SP) ;
+: Y2   *SP  ;
+
+CODE DXY?   ( x y x2 y2 --x y x2 y2 ?)
+      TOS PUSH,  
+   Y2 TOS MOV, 
+    Y1 Y2 SUB, 
+       Y2 ABS, 
+
+    X1 X2 SUB, 
+       X2 ABS, 
+\ MAX     
+    *SP TOS CMP, 
+    LO IF, TOS POP, 
+    ELSE,   SP INCT, 
+    ENDIF, 
+\ 2 < 
+    TOS 2 CI, 
+    LO IF, TOS SETO, 
+    ELSE,  TOS CLR, 
+    ENDIF,
+    NEXT,
+ENDCODE
+
+
+  \ : MID  + 1+ 2/    \ compute mid points 
+  \  + 1+ 2/ R>           
+
+CODE MID ( x1 y1 x2 y2 -- n )
+    A136 , \ *SP+ TOS ADD, \ +
+    0584 , \      TOS INC, \ 1+
+    0814 , \ TOS  1  SRA, \ 2/
+    NEXT,
+ENDCODE     
+
+DECIMAL 
 : LINE ( x1 y1 x2 y2 -- )
+\ ANS version of Dr. Ting's recursive line.  R.I.P.
+    4DUP DXY? IF  2DROP PLOT  EXIT THEN 
+    4DUP ROT 
+    MID >R MID R> 
+    2DUP 2ROT RECURSE RECURSE ;
+
+\ : LINE ( x1 y1 x2 y2 -- )
 \ ANS version of Dr. Ting's recursive line R.I.P.
-    4DUP  ROT - ABS >R - ABS R> 
-    MAX 2 <
-    IF  2DROP PLOT  EXIT THEN
-    4DUP  ROT + 1+ 2/ >R 
-    + 1+ 2/ R>
-    2DUP 2ROT 
-    RECURSE RECURSE -;
+\    4DUP  ROT - ABS >R - ABS R> 
+\    MAX 2 <
+\    IF  2DROP PLOT  EXIT THEN
+\    4DUP  ROT + 1+ 2/ >R 
+\    + 1+ 2/ R>
+\    2DUP 2ROT 
+\    RECURSE RECURSE -;
  
 0 VALUE x
 0 VALUE y 
@@ -210,3 +269,4 @@ CODE GOTO   C259 ,  ( *IP IP MOV,)  NEXT, ENDCODE
 : HLINE ( x y len ) >R MOVETO R>  0 DO  x I +  y  PLOT  LOOP ; 
 : VLINE ( x y len ) >R MOVETO R>  0 DO  y  x I +  PLOT  LOOP ; 
 
+HERE SWAP - DECIMAL . 

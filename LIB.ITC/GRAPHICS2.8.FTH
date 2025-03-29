@@ -17,6 +17,7 @@ NEEDS CHARSET   FROM DSK1.CHARSET
 NEEDS ARRAY     FROM DSK1.ARRAYS 
 NEEDS 4TH       FROM DSK1.3RD4TH \ fast access to deep stack items 
 
+HERE 
 HEX 
 \ 
 \ text mode so we can return to the Forth console 
@@ -210,3 +211,4 @@ CODE GOTO   C259 ,  ( *IP IP MOV,)  NEXT, ENDCODE
 : HLINE ( x y len ) >R MOVETO R>  0 DO  x I +  y  PLOT  LOOP ; 
 : VLINE ( x y len ) >R MOVETO R>  0 DO  y  x I +  PLOT  LOOP ; 
 
+HERE SWAP - DECIMAL . 
