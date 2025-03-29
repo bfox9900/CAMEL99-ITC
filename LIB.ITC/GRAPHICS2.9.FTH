@@ -246,7 +246,7 @@ DECIMAL
 \ ANS version of Dr. Ting's recursive line.  R.I.P.
     4DUP DXY? IF  2DROP PLOT  EXIT THEN 
     4DUP ROT 
-    MID >R MID R> 
+    MID SWAP MID SWAP 
     2DUP 2ROT RECURSE RECURSE ;
 
 \ : LINE ( x1 y1 x2 y2 -- )
