@@ -3,7 +3,10 @@
 \  Version 02.14.23 
 \  by @VORTICON on Atariage.com 
 
-\  Heavily modified for Camel99 Forth  2023 Brian Fox 
+\ Heavily modified for Camel99 Forth  2023 Brian Fox 
+\ This version uses the multi-tasker to create autonomous 
+\ "alpha" intelligent "tanks". Only two are killers. 
+\ The rest are just targets. 
 
 \ NEEDS DUMP      FROM DSK1.TOOLS 
 NEEDS BYTE      FROM DSK1.DATABYTE 
@@ -98,7 +101,7 @@ HEX
 52 USER SPEED   
 54 USER MEMORY   \ pointer to circular buffer of headings for BETA chars  
 56 USER MAILBOX  \ one mailbox per task
-58 USER BRAIN   
+58 USER BRAIN    \ contains program that controls tanks "thinking"
 60 USER SPRITE#  \ sprite # of the radar dot  
 
 \ --------------------------------------
@@ -313,7 +316,7 @@ DECIMAL
     -18 DB DUP TICKS 
     -22 DB DUP TICKS 
     -26 DB     TICKS 
-    MUTE
+    SILENT 
 ;
 
 : BOINK       900 HZ  500 DECAY1   ; 
@@ -547,15 +550,19 @@ DECIMAL
     BEEP CLRLN 0 23 AT-XY  ." Simulation completed"
     2000 MS 
 ;
-
+HEX 
+: UPCASE  5F AND ;
+DECIMAL 
 : RUN  
   BEGIN 
     DECIMAL 
-    INIT-MULTI  DRAW-SCREEN  BUILD-TANKS    
-    MONITOR_ACTIVITY
-    SINGLE SILENT  
+    INIT-MULTI  
+    DRAW-SCREEN  
+    BUILD-TANKS    
+    MONITOR_ACTIVITY \ console task just watches things 
+    SINGLE SILENT    \ turn multi-tasking, kill all sound 
     PROMPT ." Exit simulation?" 
-    KEY [CHAR] Y =
+    KEY UPCASE [CHAR]  Y =
   UNTIL 
   BYE
 ;
