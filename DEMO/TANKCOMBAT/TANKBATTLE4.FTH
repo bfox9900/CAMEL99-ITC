@@ -373,7 +373,6 @@ DECIMAL
     2  %CHANCE IF FREEZE             EXIT THEN 
     5  %CHANCE IF 50 RND 5 + SPEED ! EXIT THEN 
 ; 
-
 : RABBIT-TANK ( --) 
     100 SPEED !  
     GEN3 MUTE 
