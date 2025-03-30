@@ -229,12 +229,15 @@ DECIMAL
 
 HEX
 \ manual tail call optimizer. Improves LINE by 1.5% 
-CODE GOTO   C259 ,  ( *IP IP MOV,)  NEXT, ENDCODE
-: -;  ( -- ) 
-      HERE 2- @ >BODY       \ get previous XT, compute data field
-      -2 ALLOT              \ erase the previous XT
-      POSTPONE GOTO  ,      \ compile the address for GOTO
-      POSTPONE [            \ turn off compiler
+: PREVXT ( -- XT)  HERE 1 CELLS - @ ; 
+
+\ -; does not end with EXIT because it is branching directly to another
+\ list of tokens. That other list will end in EXIT or NEXT.
+: -;  ( -- ) \ programmer controlled
+      PREVXT >BODY              \ get previous XT, compute PFA
+     -1 CELLS ALLOT             \ erase the previous XT
+      POSTPONE BRANCH HERE - ,  \ compile BRANCH to the PFA
+      POSTPONE [                \ turn off compiler
       REVEAL
       ?CSP
 ; IMMEDIATE
