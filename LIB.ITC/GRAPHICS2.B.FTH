@@ -200,14 +200,7 @@ HEX
 : X2   1 (SP) ;
 : Y2   *SP  ;
 
-CODE 4DUPDXY?   ( x y x2 y2 --x y x2 y2  x y x2 y2 ?)
-    C046 ,          \ SP  R1 MOV,  \ dup stack pointer    \  14
-    0646 , C584 ,   \ TOS PUSH,    ( -- a b c d d)        \  28
-    0226 , FFFA ,   \ SP -6 AI,    \ make some room       \  12
-    C5B1 ,          \ R1 *+ *SP MOV,                      \  28
-    C9B1 , 0002 ,   \ R1 *+ 2 (SP) MOV,                   \  30
-    C9B1 , 0004 ,   \ R1 *+ 4 (SP) MOV,                   \  30
-
+CODE DXY? ( x y x2 y2 --x y x2 y2 ?)
       TOS PUSH,  
    Y2 TOS MOV, 
     Y1 Y2 SUB, 
@@ -250,7 +243,7 @@ DECIMAL
 
 : LINE ( x1 y1 x2 y2 -- )
 \ ANS version of Dr. Ting's recursive line.  R.I.P.
-    4DUPDXY? IF  2DROP PLOT  EXIT THEN 
+    DXY? IF  2DROP PLOT  EXIT THEN 
     MIDXY 2DUP 2ROT RECURSE RECURSE ;
  
 0 VALUE x
@@ -260,7 +253,7 @@ DECIMAL
 : LINETO  ( x y -- ) 2DUP x y LINE MOVETO ;
 
 \ no safety net !! 
-: HLINE ( x y len ) >R MOVETO R>  0 DO  x I +  y  PLOT  LOOP ; 
-: VLINE ( x y len ) >R MOVETO R>  0 DO  y  x I +  PLOT  LOOP ; 
+: HLINE ( x y len ) -ROT MOVETO  0 DO  x I +  y  PLOT  LOOP ; 
+: VLINE ( x y len ) -ROT MOVETO  0 DO  x  y I +  PLOT  LOOP ; 
 
 HERE SWAP - DECIMAL . 
