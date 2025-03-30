@@ -191,16 +191,19 @@ CODE GOTO   C259 ,  ( *IP IP MOV,)  NEXT, ENDCODE
       ?CSP
 ; IMMEDIATE
 
+CODE MIDPOINT   *SP+ TOS ADD,  TOS INC,  TOS 1 SRA,  NEXT, ENDCODE ( + 1+ 2/ )
+CODE |-|        *SP+ TOS SUB,  TOS ABS,  NEXT, ENDCODE
+
 : LINE ( x1 y1 x2 y2 -- )
 \ ANS version of Dr. Ting's recursive line R.I.P.
-    4DUP  ROT - ABS >R - ABS R> 
+    4DUP  ROT |-| >R |-| R> 
     MAX 2 <
     IF  2DROP PLOT  EXIT THEN
-    4DUP  ROT + 1+ 2/ >R 
-    + 1+ 2/ R>
+    4DUP  
+    ROT MIDPOINT >R  MIDPOINT R>
     2DUP 2ROT 
     RECURSE RECURSE -;
- 
+
 0 VALUE x
 0 VALUE y 
 
@@ -208,7 +211,9 @@ CODE GOTO   C259 ,  ( *IP IP MOV,)  NEXT, ENDCODE
 : LINETO  ( x y -- ) 2DUP x y LINE MOVETO ;
 
 \ no safety net !! 
-: HLINE ( x y len ) >R MOVETO R>  0 DO  x I +  y  PLOT  LOOP ; 
-: VLINE ( x y len ) >R MOVETO R>  0 DO  y  x I +  PLOT  LOOP ; 
+: HLINE ( x y len ) -ROT MOVETO  0 DO  x I +  y  PLOT  LOOP ; 
+: VLINE ( x y len ) -ROT MOVETO  0 DO  x  y I +  PLOT  LOOP ; 
+
 
 HERE SWAP - DECIMAL . 
+

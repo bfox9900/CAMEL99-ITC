@@ -236,13 +236,8 @@ ENDCODE
 
   \ : MID  + 1+ 2/    \ compute mid points 
   \  + 1+ 2/ R>           
-
-CODE MID ( x1 y1 x2 y2 -- n )
-    A136 , \ *SP+ TOS ADD, \ +
-    0584 , \      TOS INC, \ 1+
-    0814 , \ TOS  1  SRA, \ 2/
-    NEXT,
-ENDCODE     
+CODE MIDPOINT   *SP+ TOS ADD,  TOS INC,  TOS 1 SRA,  NEXT, ENDCODE ( + 1+ 2/ )
+CODE |-|        *SP+ TOS SUB,  TOS ABS,  NEXT, ENDCODE
 
 DECIMAL 
 : LINE ( x1 y1 x2 y2 -- )

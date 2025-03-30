@@ -128,7 +128,7 @@ DECIMAL
 
 \ no safety net !! 
 : HLINE ( x y len ) -ROT MOVETO  0 DO  x I +  y  PLOT  LOOP ; 
-: VLINE ( x y len ) -ROT MOVETO  0 DO  y  x I +  PLOT  LOOP ; 
+: VLINE ( x y len ) -ROT MOVETO  0 DO  x  y I +  PLOT  LOOP ; 
 
 HERE SWAP - DECIMAL . .( bytes )
 

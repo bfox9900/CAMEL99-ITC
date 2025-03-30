@@ -3,105 +3,55 @@
 NEEDS HLINE  FROM DSK1.GRAPHIC2
 NEEDS RDN    FROM DSK1.RANDOM 
 
+: ?BREAK  ?TERMINAL IF  TEXT  ABORT  THEN ;
+
 DECIMAL 
 : RNDCOLOR ( -- )  16 RND 0 COLOR ;
-: RNDX     ( -- n) 64 RND ;
-: RNDY     ( -- n) 48 RND ;
-: RNDLEN   ( -- n) 10 RND 2+ ;
-
-: LINETEST 
-   PENCIL IS STYLUS 
-   GRAPHICS2 
-   0 0  245 190 LINE 
-   BEGIN KEY? UNTIL 
-   TEXT  
-;
+: RNDX     ( -- n) 200 RND ;
+: RNDY     ( -- n) 180 RND ;
+: RNDLEN   ( -- n) 75 RND 2+ ;
 
 : ANGLES  
-   PENCIL IS STYLUS 
    GRAPHICS2 
-   ( RNDCOLOR)   40 0 0 HLINE  16 0 0 VLINE 
-   ( RNDCOLOR)  48 2 2 HLINE  24 2 2 VLINE 
-   ( RNDCOLOR)  56 4 4 HLINE  32 4 4 VLINE 
-   ( RNDCOLOR)  58 6 6 HLINE  40 6 6 VLINE 
-   BEGIN KEY? UNTIL 
-   TEXT
-;
-
-: RNDLINES 
-    CLEAR 
-    100 0 
-    DO 
-      RNDCOLOR  RNDLEN RNDX RNDY HLINE 
-      RNDCOLOR  RNDLEN RNDX RNDY VLINE 
-    LOOP 
+   CLEAR 
+   PENCIL IS STYLUS 
+   25 0 
+   DO 
+ \  X Y LEN        X Y LEN
+    I I 200 HLINE  I I 160 VLINE 
+   3 +LOOP  
+   24 184 200 HLINE  224 24 160 VLINE 
 ;
 
 : DIAGONALS
-    16 1
+    120 60
     DO 
-       I 0 COLOR ! 
-       32 12 
+       50  20
        DO  I  I J +  PLOT  LOOP 
-       100 MS  
-    LOOP    
+       ?BREAK  
+    2 +LOOP    
 ; 
 
+: RNDLINES 
+    GRAPHICS2 
+    CLEAR 
+    40 0 
+    DO 
+      RNDLEN RNDX RNDY HLINE 
+      RNDLEN RNDX RNDY VLINE 
+      ?BREAK
+    LOOP 
+;
+
 : TEST 
-   GRAPHICS2
+   GRAPHICS2 
+   CLEAR 
+   PENCIL IS STYLUS 
+   RNDCOLOR 
    BEGIN
-        CLEAR
-        ANGLES 
-        DIAGONALS
-        RNDLINES 
-        500 MS 
+        ANGLES BEEP 
+        DIAGONALS BEEP 
+        RNDLINES BEEP 
         ?TERMINAL 
    UNTIL  
    TEXT ;
-
-: TESTLINE 
-   MULTICOLOR 
-   CLEAR 
-   500 0 DO 
-     RNDCOLOR RNDX RNDY RNDX RNDY LINE 
-   LOOP 
-   TEXT
-; 
-
-: TESTLINE2 
-   MULTICOLOR 
-   BEGIN 
-      CLEAR 
-      RNDX RNDY MOVETO 
-      20 0 
-      DO  
-         RNDCOLOR RNDX RNDY LINETO 
-         ?TERMINAL 
-         IF 
-           UNLOOP TEXT ABORT 
-         THEN 
-      LOOP 
-   AGAIN 
-; 
-
-: RNDSHAPE
-   RNDCOLOR RNDX RNDY MOVETO 
-   8 RND 3 +  0 
-   DO  
-      RNDX RNDY LINETO 
-      ?TERMINAL 
-      IF 
-         UNLOOP TEXT ABORT 
-      THEN 
-   LOOP 
-;   
-
-: TESTLINE3
-   MULTICOLOR 
-   BEGIN 
-      CLEAR 
-      3 RND 1+  0 DO RNDSHAPE  LOOP 
-      1000 MS 
-   AGAIN 
-;
-
