@@ -42,7 +42,7 @@ HEX
       CHARSET    \ restore charset because VDP memory is mangled
       PAGE ;     
 
-: CLEAR   ( -- )  PDT  1800  0 VFILL ;    \ ERASE pattern table
+: CLEAR   ( -- )  PDT  1800  0 VFILL ; \ ERASE pattern table
 
 : COLOR   ( fg bg --)     
       SWAP 4 LSHIFT SWAP +    \ merge colors into a byte 
@@ -84,11 +84,10 @@ DEFER STYLUS   \ usage:  PENCIL IS STYLUS    ERASER IS STYLUS
     PDT VTOP !        \ VROW VCOL can be used if needed 
     70 5 VWTR         \ sprite attribute table: VR5*>80  = >3800 
      7 6 VWTR         \ sprite pattern table: VR6 * >800 = >3800 
-   0F1 7 VWTR        \ screen background colour white on transparent 
+   0F1 7 VWTR         \ screen background colour white on transparent 
     0E0 DUP VDPR1 C! 1 VWTR   \ set mode, copy into memory for system  
     4 VMODE !  
     0 837A C!  ;      \ highest sprite in auto-motion 
-
 
 \ Compute offset into pattern table per: 
 \ TI Video Display Processors, Programmer's Guide
@@ -110,33 +109,16 @@ DECIMAL
 : 2ROT ( d1 d2 d3 -- d2 d3 d1) S" 2>R 2SWAP 2R> 2SWAP" EVALUATE ; IMMEDIATE
 : 4DUP ( d1 d2 -- d1 d2 d1)    S" 4TH 4TH 4TH 4TH" EVALUATE ; IMMEDIATE 
 
-HEX
-\ manual tail call optimizer, 1.5% speed up on LINE
-CODE GOTO   C259 ,  ( *IP IP MOV,)  NEXT, ENDCODE
-
-: -;  ( -- ) 
-      HERE 2- @ >BODY       \ get previous XT, compute data field
-      -2 ALLOT              \ erase the previous XT
-      POSTPONE GOTO  ,      \ compile the address for GOTO
-      POSTPONE [            \ turn off compiler
-      REVEAL
-      ?CSP
-; IMMEDIATE
-
+DECIMAL 
 : LINE ( x1 y1 x2 y2 -- )
-\ ANS version of Dr. Ting's recursive line (R.I.P.)
-    4DUP ROT  - ABS SWAP - ABS SWAP 
-    MAX 2 < IF  2DROP PLOT  EXIT THEN
+\ ANS version of Dr. Ting's recursive line.  R.I.P.
+    4DUP  ROT - ABS -ROT - ABS           \ compute dx dy 
+    MAX 2 < IF  2DROP PLOT  EXIT THEN \ nothing do, get out  
 
     4DUP ROT 
-  \ compute mid point in the line   
-    + 1+ 2/       \ y
-    SWAP 
-    + 1+ 2/       \ x 
-    SWAP   
-    2DUP 2ROT 
-    RECURSE RECURSE -;
-
+    + 1+ 2/ >R    \ compute mid points 
+    + 1+ 2/ R>           
+    2DUP 2ROT RECURSE RECURSE ;
 
 0 VALUE x
 0 VALUE y 
@@ -145,8 +127,8 @@ CODE GOTO   C259 ,  ( *IP IP MOV,)  NEXT, ENDCODE
 : LINETO  ( x y -- ) 2DUP x y LINE MOVETO ;
 
 \ no safety net !! 
-: HLINE ( x y len ) >R MOVETO R>  0 DO  x I +  y  PLOT  LOOP  ; 
-: VLINE ( x y len ) >R MOVETO R>  0 DO  y  x I +  PLOT  LOOP ; 
+: HLINE ( x y len ) -ROT MOVETO  0 DO  x I +  y  PLOT  LOOP ; 
+: VLINE ( x y len ) -ROT MOVETO  0 DO  y  x I +  PLOT  LOOP ; 
 
 HERE SWAP - DECIMAL . .( bytes )
 
