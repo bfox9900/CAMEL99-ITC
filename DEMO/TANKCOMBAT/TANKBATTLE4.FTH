@@ -357,7 +357,7 @@ DECIMAL
     100 SPEED !  
     GEN2 MUTE 
     PANZER @ SET# GRAY RED COLOR 
-    ['] PAUSE BRAIN ! 
+    ['] PAUSE BRAIN !  \ this makes BRAIN a NOOP
     ALPHA-MIND  
 ;     
 
