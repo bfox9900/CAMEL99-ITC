@@ -177,21 +177,7 @@ ENDCODE
 \ ====================================
 \ line drawing 
 DECIMAL 
-
-HEX
-\ manual tail call optimizer. Improves LINE by 1.5% 
-CODE GOTO   C259 ,  ( *IP IP MOV,)  NEXT, ENDCODE
-: -;  ( -- ) 
-      HERE 2- @ >BODY       \ get previous XT, compute data field
-      -2 ALLOT              \ erase the previous XT
-      POSTPONE GOTO  ,      \ compile the address for GOTO
-      POSTPONE [            \ turn off compiler
-      REVEAL
-      ?CSP
-; IMMEDIATE
-
-HEX
-\ : DXY  ( x y x2 y2 -- dY dX) ROT - ABS -ROT - ABS  ;
+\ : DXY  ( x y x2 y2 -- dY dX) ROT - ABS -ROT - ABS ;
 
 \ name items on the stack for clairity 
 \ Using index addressing to avoid 4DUP 
@@ -241,15 +227,27 @@ DECIMAL
 : 2ROT ( d1 d2 d3 -- d2 d3 d1) 
   S" 2>R 2SWAP 2R> 2SWAP" EVALUATE ; IMMEDIATE
 
+HEX
+\ manual tail call optimizer. Improves LINE by 1.5% 
+CODE GOTO   C259 ,  ( *IP IP MOV,)  NEXT, ENDCODE
+: -;  ( -- ) 
+      HERE 2- @ >BODY       \ get previous XT, compute data field
+      -2 ALLOT              \ erase the previous XT
+      POSTPONE GOTO  ,      \ compile the address for GOTO
+      POSTPONE [            \ turn off compiler
+      REVEAL
+      ?CSP
+; IMMEDIATE
+
 : LINE ( x1 y1 x2 y2 -- )
 \ ANS version of Dr. Ting's recursive line.  R.I.P.
     DXY? IF  2DROP PLOT  EXIT THEN 
-    MIDXY 2DUP 2ROT RECURSE RECURSE ;
+    MIDXY 2DUP 2ROT RECURSE RECURSE -;
  
 0 VALUE x
 0 VALUE y 
 
-: MOVETO ( x y -- ) TO y   TO x ;
+: MOVETO  ( x y -- ) TO y   TO x ;
 : LINETO  ( x y -- ) 2DUP x y LINE MOVETO ;
 
 \ no safety net !! 
