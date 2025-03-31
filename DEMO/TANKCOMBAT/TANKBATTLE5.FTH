@@ -299,11 +299,6 @@ DECIMAL
 : VDP>XY     ( Vaddr -- X Y) C/L@ /MOD  ;
 : NEXT-ADDR  ( Vaddr -- Vaddr') VDP>XY FWD >VPOS ;
 
-\ radar sweep in a circle at range distance. Sprite used to see the scanner 
-DECIMAL 
-  S" 0000001000000000" 1 CALLCHAR 
-: >PIXXY  ( x y -- px py) 8* SWAP 8* SWAP ;
-: PLOT    ( x y -- ) >PIXXY SPRITE# @ LOCATE ;
 
 : ADVANCE    ( -- )  
   ERASE-TANK   
@@ -398,7 +393,7 @@ DECIMAL
     GEN1 MUTE ( set the sound generator for this task )
     15 12 XY! 
     RND-HEADING  
-    PANZER @ SET# BLACK RED COLOR 
+    PANZER @ SET# BLACK 1 COLOR 
     0 SPRITE# ! 
  ( char colr   x    y   sp# )
     1   LIME  255  255 SPRITE# @ SPRITE
@@ -449,6 +444,40 @@ DECIMAL
     AGAIN 
 ;
 
+\ SNIPER TANK CAN SHOOT FARTHER 
+\ Sprite used to see the scanner operation 
+DECIMAL 
+  S" 0000001000000000" 1 CALLCHAR 
+: >PIXXY  ( x y -- px py) 8* SWAP 8* SWAP ;
+: PLOT    ( x y -- ) PAUSE >PIXXY SPRITE# @ LOCATE ;
+: 1AHEAD ( x y -- char)  NEXT-XY 2DUP PLOT GCHAR ;
+: 2AHEAD ( x y -- char)  NEXT-XY NEXT-XY 2DUP PLOT GCHAR ;
+
+: SNIPER 
+    120 SPEED ! 
+    GEN1 MUTE ( set the sound generator for this task )
+    15 12 XY! 
+    RND-HEADING  
+    PANZER @ SET# RUST 1 COLOR 
+    9 SPRITE# ! 
+ ( char colr   x    y   sp# )
+    1   WHITE 255  255 SPRITE# @ SPRITE
+    ['] PAUSE BRAIN ! 
+    BEGIN 
+      PAUSE 
+      XY@ 1AHEAD DUP ENEMY? IF DESTROY  KILLS 1+!  ELSE 
+      XY@ 2AHEAD DUP ENEMY? IF DESTROY  KILLS 1+!  ELSE 
+      
+      DUP BKG =  IF DROP ADVANCE                   ELSE 
+                 \ default actions     
+                    BOINK  GEN1 MUTE 
+                    RND-HEADING 
+                    DROP
+      THEN THEN THEN 
+      MUTE 
+    AGAIN 
+;
+
 : TANK-BUILDER ( xt tank# --) 
     DUP DUP PID PANZER LOCAL ! 
             PID ASSIGN PAUSE ;
@@ -470,7 +499,7 @@ DECIMAL
   ['] RABBIT-TANK TANK10 TANK-BUILDER
   ['] RABBIT-TANK TANK11 TANK-BUILDER
 
-  ['] ALPHA-TANK  TANK12  TANK-BUILDER
+  ['] SNIPER  TANK12  TANK-BUILDER
   ['] ALPHA-TANK  TANK13  TANK-BUILDER
   ['] ALPHA-TANK  TANK14  TANK-BUILDER
   ['] ALPHA-TANK  TANK15  TANK-BUILDER
@@ -573,7 +602,7 @@ DECIMAL
 
   LOCK
   INCLUDE DSK1.SAVESYS 
-' STARTER  SAVESYS DSK3.ALPHAHUNT
+' STARTER  SAVESYS DSK3.TANKS-5
 
 
 
