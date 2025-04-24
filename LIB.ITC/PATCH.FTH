@@ -11,9 +11,9 @@ INCLUDE DSK1.TOOLS
 
 : PATCHES ( xt --)
     '                        \ get code address of the word to patch
-    >BODY DUP -ROT           \ advance to the data address and save a copy
+    >BODY DUP>R              \ advance to the data address and save a copy
       !                      \ store the execution token in data field
-    ['] EXIT SWAP CELL+ !  ; \ store XT of EXIT in the next address
+    ['] EXIT R> CELL+ !  ;   \ store XT of EXIT in the next address
 
 : TEST   CR ." DEFAULT ACTION" ;
 

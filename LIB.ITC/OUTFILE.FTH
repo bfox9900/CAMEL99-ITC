@@ -6,6 +6,8 @@
 \ ie: the buffer address= [PAB FBUFF] V@  + [PAB CHARS] VC@ 
 \ Only write to disk when CR is encountered or if buffer will overflow.
 \ No control characters allowed. Use spaces for DV80 files
+\ Apr 2025. Corrected OVERFLOW to limit to 80 bytes/record 
+\ changed >>OUT to OUT.TYPE 
 
 \                   *** THIS VERSION WORKS **** 
 NEEDS WRITE-FILE  FROM DSK1.ANSFILES
@@ -38,12 +40,13 @@ VARIABLE FOUT  \ byte counter for outfile
 
 : FLUSH-BUFFER ( -- ) OUTH WRITE-PAB    0 [PAB CHARS] VC! ;
  
+: >= ( n n -- ?)  1- > ;
 : OVERFLOW?  ( n -- ?)  \ test n bytes will overflow buffer
-    [PAB CHARS] VC@ +   \ add n to chars in the buffer 
-    [PAB RECLEN] VC@ >  \ compare to the maximum size 
+    [PAB CHARS]  VC@ +  \ add n to chars in the buffer 
+    [PAB RECLEN] VC@ >= \ compare to the maximum size 
 ;
 
-: >>OUT ( caddr len -- )
+: OUT.TYPE ( caddr len -- )
     OUTH 0= ABORT" Output file not open"
     OUTH SELECT 
     DUP OVERFLOW? IF  FLUSH-BUFFER  THEN 
@@ -53,8 +56,8 @@ VARIABLE FOUT  \ byte counter for outfile
  
 \ ==========================================
 \ redefine standard output words to echo to file if output handle<>0
-: EMIT  ( c --)   OUTH IF DUP HERE C!  HERE 1 >>OUT  THEN EMIT ;
-: TYPE  ( a u --) OUTH IF 2DUP  >>OUT  THEN TYPE ;
+: EMIT  ( c --)   OUTH IF DUP HERE C!  HERE 1 OUT.TYPE  THEN EMIT ;
+: TYPE  ( a u --) OUTH IF 2DUP  OUT.TYPE  THEN TYPE ;
 
 : ."  (  ccc" -- )
     POSTPONE S" 

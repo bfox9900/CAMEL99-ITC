@@ -1,11 +1,11 @@
 CR .( TI-99 EA3 object file LINKER, Dec 21 2021 B Fox)
 \ Dec 2021 improved linking speed by 33%
- 
+\ Apr 24 2025, rebuild with new -trailing. Does not need 0 MAX 
  
 INCLUDE DSK1.TOOLS
 NEEDS .S        FROM DSK1.TOOLS
 NEEDS +TO       FROM DSK1.VALUES
-NEEDS -TRAILING FROM DSK1.TRAILING
+NEEDS -TRAILING FROM DSK1.TRAILING \ rebuilt with new -trailing
 NEEDS ELAPSE    FROM DSK1.ELAPSE
 NEEDS 3RD       FROM DSK1.3RD4TH
 NEEDS MARKER    FROM DSK1.MARKER
@@ -70,7 +70,7 @@ DECIMAL
     R> BASE ! ;
 
 : PARSE-DEF  ( addr len -- addr' len' label len)
-    7 CHOP  1 /STRING -TRAILING 0 MAX ;
+    7 CHOP  1 /STRING -TRAILING ( 0 MAX) ;
 
 : DODEF ( addr len n -- ) \ compile DEF as a Forth constant
     >R  PARSE-DEF HEADER, COMPILE DOCON  R> , ;
@@ -88,7 +88,6 @@ DECIMAL
  
 : RELOCATE ( addr -- addr') BASE-MEM + ;
  
-
 : ERR-REPORT 
     ONLY FORTH ALSO DEFS DEFINITIONS 
     CR ." >>REF  " LABEL$ COUNT TYPE ."  not found"
@@ -219,7 +218,7 @@ ENDCODE
  
 ONLY FORTH DEFINITIONS ALSO DEFS
 : HELP
-  PAGE ." Camel99 Linker III  Nov15 2024"
+  PAGE ." Camel99 Linker III  Apr 24 2025"
   CR
   CR ." Usage: "
   CR ." NEW  clear HEAP mem. & DEFS words"
@@ -254,6 +253,6 @@ HEX
 
 LOCK 
 INCLUDE DSK1.SAVESYS
-' GO SAVESYS DSK2.LINKEXE 
+' GO SAVESYS DSK6.LINKEXE 
  
   
