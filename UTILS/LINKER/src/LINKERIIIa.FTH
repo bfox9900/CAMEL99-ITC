@@ -68,7 +68,7 @@ HEX
 : PARSE# ( addr len -- n )
     1 /STRING    \ remove tag character
 \  BUG fix: Remove trailing spaces before NUMBER? 
-    4 CHOP -TRAILING 0 MAX NUMBER? ?#ERROR ; 
+    4 CHOP -TRAILING NUMBER? ?#ERROR ; 
  
 : GETLABEL  ( addr len -- addr' len' label len)
     1 /STRING   6 CHOP  -TRAILING 0 MAX ;
@@ -215,10 +215,10 @@ ENDCODE
  
 ONLY FORTH DEFINITIONS 
 : HELP
-  PAGE ." Camel99 Linker IV  Nov12 2024"
+  PAGE ." Camel99 Linker IV  Apr 24 2025"
   CR
   CR ." Usage: "
-  CR ." NEW  clear HEAP mem. & DEFS words"
+  CR ." NEW  clears HEAP mem. & DEFS words"
   CR ." LINK DSK?.FILENAME   load object"
   CR ." Commands:"
   CR ." <def> RUN     branch to def"
@@ -255,6 +255,6 @@ HEX
 
 LOCK 
 INCLUDE DSK1.SAVESYS
-' GO SAVESYS DSK2.LINKEXE 
+' GO SAVESYS DSK6.LINKEXE 
  
  

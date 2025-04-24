@@ -62,7 +62,6 @@ HEX
 : CHOP   ( addr len n --  addr' len' addr2 len2 )
     S" 3RD OVER 2>R  1- /STRING  2R>"  EVALUATE ; IMMEDIATE
 
-
 DECIMAL 
 : PARSE# ( addr len -- n )
     BASE @ >R 
@@ -70,7 +69,7 @@ DECIMAL
     R> BASE ! ;
 
 : PARSE-DEF  ( addr len -- addr' len' label len)
-    7 CHOP  1 /STRING -TRAILING ( 0 MAX) ;
+    7 CHOP  1 /STRING -TRAILING ;
 
 : DODEF ( addr len n -- ) \ compile DEF as a Forth constant
     >R  PARSE-DEF HEADER, COMPILE DOCON  R> , ;
