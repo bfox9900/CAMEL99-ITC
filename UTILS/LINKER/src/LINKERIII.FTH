@@ -153,7 +153,7 @@ HEX
           [CHAR] 2 OF  0 TO ORIGIN           ENDOF \ ??
            \ TRUE ABORT" Can't parse this file" 
         ENDCASE
-        1 /STRING 0 MAX  \ dvance to next char
+        1 /STRING 0 MAX  \ advance to next char
     REPEAT
     2DROP ;
  
@@ -185,6 +185,8 @@ DECIMAL
 : .SIZE ( n --) ." Object size :" PROGSIZE @ U. ;
 
 : LINK ( <PATH> )
+       ONLY FORTH ALSO DEFS DEFINITIONS 
+       
        PARSE-NAME ?PATH EA3LOAD
        .ELAPSED
        CR LINES ?  ." lines of object code"

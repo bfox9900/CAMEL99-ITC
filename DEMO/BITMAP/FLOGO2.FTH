@@ -17,7 +17,7 @@
 \ copies or substantial portions of the Software.
 
 
-NEEDS PLOT  FROM DSK1.GRAPHICS2
+NEEDS PLOT  FROM DSK1.GRAPHICS2B
 
 \ ===============================================
 \ named colors

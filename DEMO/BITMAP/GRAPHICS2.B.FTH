@@ -1,4 +1,4 @@
-\ Graphics2 Mode V2.9 for Camel99 Forth Dec 2022 BJF 
+CR .( Graphics2 Mode V2.9B for Camel99 Forth Mar 2025 BJF)
 \ Referenced TI-FORTH: 
 ( CONVERT TO GRAPHICS2 MODE CONFIG 14SEP82 LAO)
 
