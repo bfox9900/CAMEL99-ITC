@@ -4,7 +4,17 @@ CR .( TI-99 EA3 object LINKER, SUPERCART Dec 21 2021 B Fox)
 NEEDS .S        FROM DSK1.TOOLS
 
 NEEDS +TO       FROM DSK1.VALUES
-NEEDS -TRAILING FROM DSK1.TRAILING \ rebuilt with new -trailing
+\ NEEDS -TRAILING FROM DSK1.TRAILING \ rebuilt with new -trailing
+ : -TRAILING
+    1-
+    BEGIN
+        2DUP + C@ BL =
+    WHILE
+        1-
+   REPEAT
+    1+ ; 
+
+
 NEEDS ELAPSE    FROM DSK1.ELAPSE
 NEEDS 3RD       FROM DSK1.3RD4TH
 NEEDS MARKER    FROM DSK1.MARKER
@@ -68,7 +78,7 @@ DECIMAL
     R> BASE ! ;
 
 : PARSE-DEF  ( addr len -- addr' len' label len)
-    7 CHOP  1 /STRING -TRAILING 0 MAX ;
+    7 CHOP  1 /STRING -TRAILING ;
 
 : DODEF ( addr len n -- ) \ compile DEF as a Forth constant
     >R  PARSE-DEF HEADER, COMPILE DOCON  R> , ;

@@ -17,10 +17,10 @@ C016 , \        *SP  R0 MOV,
 A004 , \         TOS R0 ADD, 
 9050 , \         R0 **  R1 CMPB, 
 1602 , \    EQ WHILE, 
-0504 , \        TOS DEC, 
+0604 , \         TOS DEC, 
 10FA , \    REPEAT, 
 0584 , \    TOS INC,         
-    NEXT,
+NEXT,
 ENDCODE       
 
 DECIMAL 
