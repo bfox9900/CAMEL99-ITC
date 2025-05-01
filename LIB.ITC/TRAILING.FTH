@@ -11,7 +11,7 @@ CR .( -TRAILING remove trailing blanks  Apr 2025 FOX)
 HEX
 CODE -TRAILING ( addr len -- addr len') \ 8x FASTER than Forth
 0604 , \    TOS DEC,
-0201 , 2000, \ R1 2000 LI,      \ space char 
+0201 , 2000 , \ R1 2000 LI, (space char)
        \    BEGIN, 
 C016 , \        *SP  R0 MOV, 
 A004 , \         TOS R0 ADD, 
