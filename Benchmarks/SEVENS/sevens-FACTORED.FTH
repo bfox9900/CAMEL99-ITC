@@ -47,8 +47,8 @@ DECIMAL
             1 +TO INAROW        \ 250 INAROW=INAROW+1
             INAROW 6 =          \ 260 IF INAROW<>6 THEN 300
             IF                
-              DROP TRUE 
-              LEAVE 
+              DROP TRUE         \ return "win" flag
+              LEAVE             \ exit loop 
             THEN                
         ELSE                    \ 280 GOTO 300 
             0 TO INAROW         \ 290 INAROW=0
@@ -56,7 +56,7 @@ DECIMAL
     LOOP                        \ 300 NEXT I
 ;
 
-: PRINT_A[] 
+: PRINT_A[] ( --) 
     CR
     CARRY DUP NDX 1+ ]A C!      \ 310 A(I)=CARRY
     IF                          \ 320 IF CARRY=0 THEN 340
@@ -65,7 +65,7 @@ DECIMAL
 
     0  NUMLEN                   \ 340 FOR I=NUMLEN TO 1 
     DO   
-       I ]A C@ >DIGIT (EMIT)    \ 350 PRINT CHR$(A(I)+48);
+       I ]A C@ 48 + (EMIT)      \ 350 PRINT CHR$(A(I)+48)
     -1 +LOOP                    \ 360 NEXT I ( STEP -1)
 ; 
 

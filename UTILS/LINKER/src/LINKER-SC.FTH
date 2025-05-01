@@ -1,12 +1,22 @@
-CR .( TI-99 EA3 object file LINKER, Dec 21 2021 B Fox)
+CR .( TI-99 EA3 object LINKER, SUPERCART Dec 21 2021 B Fox)
 \ Dec 2021 improved linking speed by 33%
 \ Apr 24 2025, rebuild with new -trailing. Does not need 0 MAX 
  
 NEEDS .S        FROM DSK1.TOOLS
-NEEDS PLOT      FROM DSK1.GRAPHICS2B
 
 NEEDS +TO       FROM DSK1.VALUES
-NEEDS -TRAILING FROM DSK1.TRAILING \ rebuilt with new -trailing
+\ NEEDS -TRAILING FROM DSK1.TRAILING \ rebuilt with new -trailing
+
+: -TRAILING
+    1-
+    BEGIN
+        2DUP + C@ BL =
+    WHILE
+        1-
+    REPEAT
+    1+ ; 
+
+
 NEEDS ELAPSE    FROM DSK1.ELAPSE
 NEEDS 3RD       FROM DSK1.3RD4TH
 NEEDS MARKER    FROM DSK1.MARKER
@@ -56,7 +66,7 @@ HEX
     HEAP $2000 FF FILL  \ erase low ram
     HEAP TO BASE-MEM
     ['] DEFS  >BODY OFF \ skip all DEFS words
-    ORGDP @ DP ! 
+\    ORGDP @ DP ! 
 ;    
 
 \ string utilities
@@ -237,24 +247,5 @@ ONLY FORTH DEFINITIONS ALSO DEFS
   CR
 ;
  
- 
 CR HERE SWAP - DECIMAL . .( bytes)
-
-ONLY FORTH DEFINITIONS  
-HEX 
-: GO   
-    WARM
-    INIT-WORDLISTS 
-    ONLY FORTH ALSO DEFS DEFINITIONS 
-    E4 7 VWTR 
-    NEW 
-    HELP 
-    CR ORDER 
-    ." Ready"
-    ABORT ; 
-
-LOCK 
-INCLUDE DSK1.SAVESYS
-' GO SAVESYS DSK6.LINKEXE 
- 
   
