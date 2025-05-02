@@ -1,0 +1,62 @@
+-Code -Name
+
+0 Module ID 
+The First Free Address pointer is placed in the relocation
+base register and the load address register. The module length is added
+to the First Free Address pointer. The module name is ignored.
+
+1,2 Entry Address 
+A value of 1 indicates an absolute entry address. 
+A value of 2 indicates a relocatable entry address. 
+One of these tags may appear at the end of the object code file by 
+specifying an entry point with an END in your assembly language program.
+The Loader immediately executes any object code starting with one of these tags.
+
+3,4 External References 
+A value of 3 indicates that the symbol is in relocatable code.
+A value of 4 indicates that the symbol is in absolute code. 
+The REFed symbol is placed in the REF/DEF table with the address of 
+the symbol (plus the relocation base.
+    if the tag is 3. The entry is deleted from the table when 
+       the corresponding DEF is found. The first word of the 
+       reference is given in two's-complement notation.
+
+5,6 External Definitions 
+A value of 5 indicates that the symbol is in relocatable code. 
+A value of 6 indicates that the symbol is in absolute code. 
+The DEFed symbol is placed in the REF/DEF table with the address of 
+the symbol plus the relocation base if the tag is 5.
+
+7 Record Checksum 
+The checksum is tested with the computed value.
+
+8 Ignored Checksum 
+The value field is ignored.
+
+9 Absolute Load Address
+The value is placed in the current address register.
+
+A Relocatable Load Address 
+The value plus the relocation base register is placed in
+the current address register.
+
+B Absolute Data
+The data is placed at the address specified by the current 
+address register. The current address is incrernented by 2.
+
+C Relocatable Load Address 
+The value of the data plus the relocation base register is
+Data placed at the address specified by the current address
+register. The current address is incrernented by 2.
+
+D Load Bias     Loading halts with an error.
+
+E Undefined     Loading halts with an error.
+F End of Record The rest of the record is ignored and a new record is read.
+
+G,H Undefined   Loading halts with an error.
+
+I Program Segment ID    Ignored.
+
+:  End of File 
+    When the first character of a record, loading halts.

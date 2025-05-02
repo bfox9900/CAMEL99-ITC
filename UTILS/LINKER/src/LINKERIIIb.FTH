@@ -93,7 +93,7 @@ DECIMAL
  
 : ERR-REPORT 
     ONLY FORTH ALSO DEFS DEFINITIONS 
-    CR ." >>REF  " LABEL$ COUNT TYPE ."  not found"
+    CR ." >> EXTERNAL REF " LABEL$ COUNT TYPE ."  not found"
     CR
     CR ." Line#  = " LINES ? 
     CR ." Memory = " HEAP U. 
@@ -118,28 +118,31 @@ HEX
 ;
 
 \ See E/A manual page 309 for meanings of object file tags
+
 : TAG-INTERPRETER 
-    [CHAR] B :CASE  PARSE# HEAP,            BREAK;
-    [CHAR] A :CASE  PARSE# RELOCATE H !     BREAK;
-    [CHAR] C :CASE  PARSE# RELOCATE HEAP,   BREAK;
-    [CHAR] 5 :CASE  PARSE# RELOCATE DODEF   BREAK;
- 
-    [CHAR] 3 :CASE  PARSE# RELOCATE >R DEF-ADDR R> ! BREAK;
+    [CHAR] B :CASE  PARSE# HEAP,            BREAK; \ absolute data
+    [CHAR] A :CASE  PARSE# RELOCATE H !     BREAK; \ load address
+    [CHAR] C :CASE  PARSE# RELOCATE HEAP,   BREAK; \ rel. load address
+
+ \ external references
+    [CHAR] 3 :CASE  PARSE# RELOCATE >R DEF-ADDR R> ! BREAK; 
     [CHAR] 4 :CASE  PARSE# >R DEF-ADDR R> ! BREAK;
 
+\ external definitions
+    [CHAR] 5 :CASE  PARSE# RELOCATE DODEF   BREAK;
     [CHAR] 6 :CASE  PARSE# ?ADDR DODEF      BREAK;
     [CHAR] 9 :CASE  PARSE# ?ADDR H !        BREAK;
 
-    [CHAR] F :CASE  DROP 0                  BREAK; \ End :CASE record 
+    [CHAR] F :CASE  DROP 0                  BREAK; \ End record 
     [CHAR] 0 :CASE  MODULE-ID               BREAK;
     [CHAR] : :CASE  .TOOLVER                BREAK;
     [CHAR] 7 :CASE  PARSE# RecCheckSum !    BREAK;
-    [CHAR] 8 :CASE  4 /STRING               BREAK;
+    [CHAR] 8 :CASE  4 /STRING               BREAK; \ Ignored Checksum 
  
     [CHAR] D :CASE  [CHAR] D ?TAG           BREAK;
     [CHAR] E :CASE  [CHAR] E ?TAG           BREAK;
-    [CHAR] 1 :CASE  PARSE# TO ORIGIN        BREAK;
-    [CHAR] 2 :CASE  0 TO ORIGIN             BREAK; 
+    [CHAR] 1 :CASE  PARSE# TO ORIGIN        BREAK; \ absolute entry
+    [CHAR] 2 :CASE  0 TO ORIGIN             BREAK; \ relocatable entry 
 ;
 
 : ParseObject ( add len -- )
@@ -215,10 +218,12 @@ ONLY FORTH DEFINITIONS ALSO DEFS
 : HELP
   PAGE ." Camel99 Linker III  May 1 2025"
   CR
-  CR ." Usage: "
-  CR ." NEW  clear HEAP mem. & DEFS words"
-  CR ." LINK DSK?.FILENAME   load object"
-  CR ." Commands:"
+  CR ." -Commands-"
+  CR ." NEW   clear memory & DEFS wordlist"
+  CR ." LINK <path>  load object file to memory"
+  CR ." DIR  <path>  list files on disk"
+  CR
+  CR ." -Accessing Code-"
   CR ." <def> RUN     branch to def"
   CR ." <def> CALL    BL to def"
   CR ." <def> BLWP    BLWP to def"
@@ -227,10 +232,8 @@ ONLY FORTH DEFINITIONS ALSO DEFS
   CR ." <def> EXTERN:   <name>  branches to DEF"
   CR ." <def> EXT-SUB:  <name> BL to DEF"
   CR ." <def> EXT-PROG: <name> BLWP to DEF"
-  CR
 ;
- 
- 
+  
 CR HERE SWAP - DECIMAL . .( bytes)
 
 ONLY FORTH DEFINITIONS  
