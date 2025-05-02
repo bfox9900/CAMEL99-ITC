@@ -4,16 +4,7 @@ CR .( TI-99 EA3 object LINKER, SUPERCART Dec 21 2021 B Fox)
 NEEDS .S        FROM DSK1.TOOLS
 
 NEEDS +TO       FROM DSK1.VALUES
-\ NEEDS -TRAILING FROM DSK1.TRAILING \ rebuilt with new -trailing
- : -TRAILING
-    1-
-    BEGIN
-        2DUP + C@ BL =
-    WHILE
-        1-
-   REPEAT
-    1+ ; 
-
+NEEDS -TRAILING FROM DSK1.TRAILING \ rebuilt with new -trailing
 
 NEEDS ELAPSE    FROM DSK1.ELAPSE
 NEEDS 3RD       FROM DSK1.3RD4TH
@@ -160,7 +151,8 @@ HEX
           [CHAR] E OF  [CHAR] E ?TAG         ENDOF
           [CHAR] 1 OF  PARSE# TO ORIGIN      ENDOF
           [CHAR] 2 OF  0 TO ORIGIN           ENDOF \ ??
-           \ TRUE ABORT" Can't parse this file" 
+
+                 TRUE ABORT" File format seems wrong" 
         ENDCASE
         1 /STRING 0 MAX  \ advance to next char
     REPEAT
@@ -246,4 +238,7 @@ ONLY FORTH DEFINITIONS ALSO DEFS
 ;
  
 CR HERE SWAP - DECIMAL . .( bytes)
+CR .( Initializing...) 
+NEW 
+
   

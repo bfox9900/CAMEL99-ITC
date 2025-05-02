@@ -1,7 +1,7 @@
 CR .( TI-99 EA3 object file LINKER, Dec 21 2021 B Fox)
 \ Dec 2021 improved linking speed by 33%
 \ NOV 2024 replaced Eaker case with :case BREAK; 
-\          Speed up is only 3% 
+\          Speed up is only 8.7% SPEED UP
 
  
 NEEDS WORDLIST FROM DSK1.WORDLISTS
@@ -123,7 +123,7 @@ CREATE PROGNAME  10 ALLOT
  
  
           [CHAR] 4 :CASE  PARSE# 
-                       LABEL-EVAL SWAP !        BREAK;
+                          LABEL-EVAL SWAP !     BREAK;
  
           [CHAR] 6 :CASE  PARSE# DODEF          BREAK;
  
