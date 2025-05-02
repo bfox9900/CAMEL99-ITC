@@ -1,29 +1,34 @@
 CR .( TI-99 EA3 object file LINKER, Dec 21 2021 B Fox)
 \ Dec 2021 improved linking speed by 33%
-\ NOV 2024 replaced Eaker case with Vector table
+\ NOV 2024 replaced Eaker case with :case BREAK; 
+\          Speed up is 8.7% 
 
-INCLUDE DSK1.TOOLS
-
+ 
 NEEDS WORDLIST FROM DSK1.WORDLISTS
 ONLY FORTH DEFINITIONS
 
-
-\ NEEDS .S        FROM DSK1.TOOLS
+: :CASE  ( n --) POSTPONE OVER=  POSTPONE IF  POSTPONE DROP ; IMMEDIATE
+: BREAK; ( -- )  POSTPONE EXIT  POSTPONE THEN ; IMMEDIATE
+ 
+NEEDS .S        FROM DSK1.TOOLS
 NEEDS +TO       FROM DSK1.VALUES
-NEEDS CASE      FROM DSK1.CASE
 NEEDS -TRAILING FROM DSK1.TRAILING
 NEEDS ELAPSE    FROM DSK1.ELAPSE
 NEEDS 3RD       FROM DSK1.3RD4TH
 \ NEEDS LIFO:     FROM DSK1.STACKS
 NEEDS MARKER    FROM DSK1.MARKER
+NEEDS DIR       FROM DSK1.DIR
  
 MARKER /LINKER  \ remove LINKER
  
 HERE
 VOCABULARY DEFS
- 
- 
-ONLY FORTH DEFINITIONS
+ONLY FORTH ALSO DEFS DEFINITIONS 
+
+: *END* ;  \ first word in DEFS wordlist 
+
+ONLY FORTH DEFINITIONS 
+
 DECIMAL
 0 VALUE #1  \ a file handle
  
@@ -36,29 +41,10 @@ A000  VALUE ORIGIN    \ Where the code will be loaded by AORG
 : ?BREAK  ( -- ) ?TERMINAL ABORT" *BREAK*" ;
 : SPACEBAR ( -- ) KEY? BL = IF  KEY DROP  THEN ;
  
-\ add words so we don't need to include tools
-HEX
-: .ID     ( NFAaddr --) COUNT 1F AND TYPE ;
  
 DECIMAL
 .( ..)
-: WORDS   ( -- )
-    0 >R  ( word counter on Rstack)
-    CONTEXT @ DUP CR .WID CR
-    @
-    BEGIN DUP
-    WHILE
-        ?BREAK  SPACEBAR
-        DUP ( -- nfa) .ID SPACE
-        R> 1+ >R
-        NFA>LFA @
-    REPEAT
-    DROP
-    CR R>
-    BASE @ >R
-    DECIMAL . SPACE ." words"
-    R> BASE ! ;
- 
+
 \ heap memory management
 : HEAP   ( -- addr) H @ ;  \ current heap pointer
 : HALLOT ( n -- )  H +! ;  \ move heap pointer
@@ -69,26 +55,27 @@ HEX
     $2000 H !
     HEAP $2000 FF FILL  \ erase low ram
     HEAP TO BASE-MEM
-    ['] DEFS  >BODY OFF  ;  \ remove all DEFS words
- 
+    ['] DEFS >BODY OFF 
+    ORGDP @ DP ! 
+;    
+
 \ string utilities
 : CHOP   ( addr len n --  addr' len' addr2 len2 )
-    S" 3RD OVER 2>R  1- /STRING  2R>"  EVALUATE ; IMMEDIATE
+    3RD OVER 2>R  1- /STRING  2R> ;
  
-: /TAG     ( addr len -- addr' len') \ cut tag character
-    S" 1 /STRING" EVALUATE  ;  IMMEDIATE
- 
-: ?#ERROR    ABORT" Bad number" ;
+: ?#ERROR  IF CR SOURCE TYPE CR  ABORT" Bad number" THEN ;
  
 : PARSE# ( addr len -- n )
-    /TAG  4 CHOP NUMBER? ?#ERROR ;
+    1 /STRING    \ remove tag character
+\  BUG fix: Remove trailing spaces before NUMBER? 
+    4 CHOP -TRAILING NUMBER? ?#ERROR ; 
  
-: GETLABEL  ( addr len -- addr' len' label len)
-    /TAG  6 CHOP  -TRAILING 0 MAX ;
+: PARSELABEL  ( addr len -- addr' len' label len)
+    1 /STRING   6 CHOP  -TRAILING ;
  
 : DODEF ( addr len n -- )
     >R         ( -- addr' len') ( r: -- ref_addr)
-    GETLABEL ( addr' len' label len)
+    PARSELABEL ( addr' len' label len)
     HEADER,  COMPILE DOCON  R> ,  \ make a Forth Constant
 ;
  
@@ -100,9 +87,9 @@ CREATE PROGNAME  10 ALLOT
     8 CHOP  PROGNAME PLACE ;
  
 : .TOOLVER  ( addr len -- addr 0)
-    /TAG  40 CHOP -TRAILING CR TYPE  DROP 0 ;
+   1 /STRING  40 CHOP -TRAILING CR TYPE  DROP 0 ;
  
-: ?TAG    CR ." Unsupported TAG -> "  EMIT ABORT ;
+: ?TAGERR    CR ." Unsupported TAG -> "  EMIT ABORT ;
  
 : RELOCATE ( addr -- addr')  BASE-MEM + ;
  
@@ -118,74 +105,71 @@ CREATE PROGNAME  10 ALLOT
     ONLY DEFS FIND  ?REF    \ search only the defs vocabulary
     ONLY FORTH ALSO DEFS ;  \ restore normal searching
 
-\ Since Assembler Labels are stored as Forth constants
+\ Since Assembler DEFs are stored as Forth constants
 \ we can find them and 'execute' them to return their memory address
-: LABEL-EVAL ( -- n)
-   GETLABEL HERE PLACE      \ store label at HERE as counted string
-   HERE FIND-LABEL EXECUTE  \ run the word generate address
+: DEF-ADDR ( -- u)
+   PARSE-DEF LABEL$ PLACE    \ read the DEF text 
+   LABEL$ FIND-LABEL         \ search in DEFS vocabulary 
+   EXECUTE                   \ DEF is constant. Execute to get no. 
 ;
+
  
-: TAG-0    PROG-ID ;
-: TAG-1    PARSE# TO ORIGIN ;
-: TAG-2    0 TO ORIGIN ;
-: TAG-3    PARSE# RELOCATE  LABEL-EVAL SWAP ! ;
-: TAG-4    PARSE# LABEL-EVAL SWAP ! ;
-: TAG-5    PARSE# RELOCATE DODEF ;
-: TAG-6    PARSE# DODEF  ;
-: TAG-7    4 /STRING  ;
-: TAG-8    4 /STRING  ;
-: TAG-9    PARSE# H !  ;
-: TAG-:    .TOOLVER  ; 
-: TAG-A    PARSE# RELOCATE H ! ;
-: TAG-B    PARSE# HEAP, ;
-: TAG-C    PARSE# RELOCATE HEAP, ;
-: TAG-D    [CHAR] D ?TAG ;
-: TAG-E    [CHAR] E ?TAG ;
-: TAG-F    DROP 0 ;
+: TAG-INTERPRET ( c )
+    [CHAR] B :CASE  PARSE# HEAP,          BREAK;
+    [CHAR] A :CASE  PARSE# RELOCATE H !   BREAK;
+    [CHAR] C :CASE  PARSE# RELOCATE HEAP, BREAK;
+    [CHAR] 5 :CASE  PARSE# RELOCATE DODEF BREAK;
 
-: NOOP ;
+    [CHAR] 3 :CASE  PARSE# RELOCATE >R 
+                    DEF-ADDR R> !         BREAK;
+    [CHAR] 4 :CASE  PARSE# >R DEF-ADDR R> !  BREAK;
+ 
+    [CHAR] 6 :CASE  PARSE# DODEF          BREAK;
+ 
+    [CHAR] 9 :CASE  PARSE# H !            BREAK;
 
-: CASE:  ( -- <name> ) CREATE  ;
-: ;CASE   ( n -- )  DOES> SWAP CELLS + PERFORM ;
-
-CASE: TAG-TABLE ( c --)
-  ( turn on compiler)
-  ]
-    TAG-0  TAG-1  TAG-2  TAG-3    
-    TAG-4  TAG-5  TAG-6  TAG-7 
-    TAG-8  TAG-9  TAG-:  NOOP   ( 59)
-    NOOP   NOOP   NOOP   NOOP   ( 63)
-    NOOP   TAG-A  TAG-B  TAG-C  ( 67)
-    TAG-D  TAG-E  TAG-F         ( 71)
-  [ 
-( turn off compiler)
-;CASE 
+    [CHAR] F :CASE  DROP 0                BREAK; \ CHECKSUM ignored
+    [CHAR] 0 :CASE  PROG-ID               BREAK;
+    [CHAR] : :CASE  .TOOLVER              BREAK;
+    [CHAR] 7 :CASE  4 /STRING             BREAK;
+    [CHAR] 8 :CASE  4 /STRING             BREAK;
+ 
+    [CHAR] D :CASE  [CHAR] D ?TAGERR      BREAK;
+    [CHAR] E :CASE  [CHAR] E ?TAGERR      BREAK;
+    [CHAR] 1 :CASE  PARSE# TO ORIGIN      BREAK;
+    [CHAR] 2 :CASE  0 TO ORIGIN           BREAK; \ ??
+                    ( DEFAULT:)  DROP 
+; 
 
 \ See E/A manual page 309 for meanings of object file tags.
 : ParseObject ( add len -- )
     BEGIN
         DUP ( len<>0)
     WHILE
-        OVER C@  [CHAR] 0 -  TAG-TABLE
+        OVER C@ TAG-INTERPRET
         1 /STRING 0 MAX  \ advance to next char
-        0 SKIP 
     REPEAT
     2DROP ;
  
 DECIMAL
-: EA3LOAD ( caddr len -- )
-    CR ." Linking " 2DUP TYPE
-    SOURCE-ID @ >IN @ 2>R           \ save source-ID, input pointer
+CREATE LNBUFF 127 ALLOT 
+: OPEN-DV80 
     PSZ NEGATE ^PAB +!              \ make new PAB, on pab stack
-    ( $ len ) 80 04 FOPEN ?FILERR   \ OPEN as DISPLAY FIXED 80 INPUT
+    80 04 FOPEN ?FILERR             \ OPEN as DISPLAY FIXED 80 INPUT
     SOURCE-ID 1+!                   \ incr. source ID (1st file is 1)
     LINES OFF                       \ reset the line counter
+;
+
+: EA3LOAD ( caddr len -- )
+    CR ." Linking " 2DUP TYPE
+    SOURCE-ID @ >IN @ 2>R            \ save source-ID, input pointer
+    ( $ len ) OPEN-DV80 
     BEGIN
-        2 FILEOP 0=                   \ file read operation
+        2 FILEOP 0=                  \ file read operation
     WHILE
-        HERE 200 + DUP FGET ( addr n) \ read line to temp mem buffer
-        ParseObject                   \ interpret line of object code
-        LINES 1+!                     \ count the line
+        PAD 200 + DUP FGET ( addr n) \ read line to temp mem buffer
+        ParseObject                  \ interpret line of object code
+        LINES 1+!                    \ count the line
     REPEAT
     PSZ ^PAB +!                     \ remove PAB from pab stack
     2R> >IN !  SOURCE-ID !          \ restore >IN, SOURCE-ID
@@ -194,17 +178,15 @@ DECIMAL
 : ?PATH ( addr len -- addr len)
        2DUP [CHAR] . SCAN NIP 0= ABORT" Path expected" ;
  
-: .BYTES  ( addr -- ) HEAP SWAP -  . ." bytes of code" ;
+: .BYTES  ( addr -- ) HEAP $2000 -  . ." bytes used" ;
  
 : LINK ( <PATH> )
        TICKER OFF
        BASE @ >R
        HEX
-       ONLY FORTH ALSO DEFS DEFINITIONS
- 
-       HEAP
        PARSE-NAME ?PATH  EA3LOAD
        CR DEFS WORDS
+       CR LINES ?  ." lines of object code"
        CR DECIMAL .BYTES
        .ELAPSED
  
@@ -230,12 +212,12 @@ ENDCODE
 : EXT-SUB:  ( def --) CODE  06A0 , ( addr)  ,  NEXT,  ;  \ BL @def
 : EXT-PROG: ( def --) CODE  0420 , ( vector) ,  NEXT,  ; \ BLWP @def
  
-ONLY FORTH DEFINITIONS ALSO DEFS
+ONLY FORTH DEFINITIONS 
 : HELP
-  PAGE ." Camel99 Linker IV  Nov12 2024"
+  PAGE ." Camel99 Linker IV  Apr 24 2025"
   CR
   CR ." Usage: "
-  CR ." NEW  clear HEAP mem. & DEFS words"
+  CR ." NEW  clears HEAP mem. & DEFS words"
   CR ." LINK DSK?.FILENAME   load object"
   CR ." Commands:"
   CR ." <def> RUN     branch to def"
@@ -250,11 +232,28 @@ ONLY FORTH DEFINITIONS ALSO DEFS
   CR
 ;
  
-HELP
-NEW
+\ HELP
+
+\ NEW
 CR ." Linker is RESET"
  
 CR HERE SWAP - DECIMAL . .( bytes)
- 
+
+ONLY FORTH DEFINITIONS  
+HEX 
+: GO   
+    WARM
+    INIT-WORDLISTS 
+    ONLY FORTH ALSO DEFS DEFINITIONS 
+    E4 7 VWTR 
+    NEW 
+    HELP 
+    CR ORDER 
+    
+    ABORT ; 
+
+LOCK 
+INCLUDE DSK1.SAVESYS
+' GO SAVESYS DSK6.LINKEXE 
  
  
