@@ -22,7 +22,7 @@ HEX
 
 \ transfer from GROM to VDP
  : GVMOVE  ( grom_addr vdp_addr cnt -- )
-          ROT GROM  BOUNDS DO  GC@+ I VC!  LOOP ;
+        ROT GROM  BOUNDS DO  GC@+ I VC!  LOOP ;
 
 : CHARSET ( -- )
         [CHAR] ~ 1+  BL                \ all ASCII chars
