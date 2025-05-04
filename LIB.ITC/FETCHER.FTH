@@ -8,7 +8,7 @@
 \ they do the job for those specific data elements that need it.
 \
 
-\ INCLUDE DSK1.TOOLS.F
+\ INCLUDE DSK1.TOOLS
 
 HEX
 \ fetch value from the address in the code
