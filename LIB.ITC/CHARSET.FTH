@@ -7,15 +7,16 @@
 \ Lowercase                      087Bh     96  126      7
 
 HEX
-\ 9800 CONSTANT GRMRD ( GROM base)   \ GROM read byte
-\ 9802 CONSTANT GRMRA                \ GROM set read address
+ 9800 CONSTANT GRMRD ( GROM base)   \ GROM read byte
+ 9802 CONSTANT GRMRA                \ GROM set read address
 \ 9C00 CONSTANT GRMWD                \ GROM write byte
 \ 9C02 CONSTANT GRMWA                \ GROM set write address
 
 HEX
-: GROM   ( addr -- ) DUP 9C02 ! 9C02 C! ;  \ set GROM address
+\ by using ! and C! we don't need to swap bytes. :-) 
+: GROM   ( addr -- ) DUP GRMRA ! GRMRA C! ;  \ set GROM address
 \ read & auto-increment address
-: GC@+   ( -- c)  S" 9800 C@" EVALUATE ; IMMEDIATE 
+: GC@+   ( -- c)  S" GRMRD C@" EVALUATE ; IMMEDIATE 
 : ]PDT   ( char# -- 'pdt[n] )  8* 800 + ; \ VDP pattern Descriptor table
 : ]GFONT ( ascii -- grom_adr) BL -  7 * 6B4 + ; \ GROM array of TIFont data
 
