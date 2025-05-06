@@ -41,6 +41,7 @@ VARIABLE FOUT  \ byte counter for outfile
 : FLUSH-BUFFER ( -- ) OUTH WRITE-PAB    0 [PAB CHARS] VC! ;
  
 : >= ( n n -- ?)  1- > ;
+
 : OVERFLOW?  ( n -- ?)  \ test n bytes will overflow buffer
     [PAB CHARS]  VC@ +  \ add n to chars in the buffer 
     [PAB RECLEN] VC@ >= \ compare to the maximum size 
