@@ -79,7 +79,7 @@ DECIMAL
 : TOUPPER ( addr len -- addr len ) \  convert STACK$ to uppercase in place
     2DUP  BOUNDS DO  I C@ UPPER I C!  LOOP ;
 
-: TOLOWER ( addr len -- addr len) \  convert STACK$ to uppercase
+: TOLOWER ( addr len -- addr len) \  convert STACK$ to lowercase
     2DUP  BOUNDS DO  I C@ LOWER I C!  LOOP ;
 
 .( .)
