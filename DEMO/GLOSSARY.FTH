@@ -99,7 +99,7 @@ DECIMAL
 HEX
 : ID$     ( NFAaddr -- caddr len) COUNT 1F AND  ;
 
-: +PLACE  ( adr n adr -- )   2DUP 2>R  COUNT +  SWAP CMOVE 2R> C+! ;
+: +PLACE  ( adr n adr -- )   2DUP 2>R  COUNT +  SWAP MOVE 2R> C+! ;
 
 DECIMAL
 
@@ -130,7 +130,6 @@ DECIMAL
             CR ." Writing file..."
             WRITE-WORDS
             #1 CLOSE-FILE ?FILERR
-            R> MFREE                        \ release the memory (low ram)
             0 TO ^DATA
             CR ." Complete"
 ;
