@@ -99,8 +99,8 @@ DECIMAL
 \ which is written in assembler. We can transfer all the DATA
 \ at once to VDP "pattern descriptor table" called ]PDT.
 
-                     \ source   dest.   byte-cnt
-: NEW-PATTERNS  ( -- )  DATA   40 ]PDT   64 8*   VWRITE ;
+                     \ source   dest.        byte-cnt
+: NEW-PATTERNS  ( -- )  DATA   [CHAR] ( ]PDT  64 8*   VWRITE ;
 
 \ this is a very BASIC way to write to the screen
 : SHOW-FACE
@@ -135,19 +135,18 @@ DECIMAL
           500 MS
           SHOW-FACE        \ this is the slow method
           FAST-FACE        \ This is the fast way
+\ *CAMEL99 Forth has 'MS' which delays, so we don't use CALL SOUND
           500 MS           \ 220 CALL SOUND(2000,44733,0)
                            ( sound used for delay in BASIC)
           *BREAK*          \ Forth has no automatic BREAK key
       LOOP  ;              \ 230 NEXT A
 
-\ *CAMEL99 Forth has 'MS' which delays, so we don't use CALL SOUND
 
 : RUN
      GRAPHICS              \ we have to change to 32 col graphics mode
-     PAGE
-     ." Forth method on the left"
-  CR ." BASIC method on the right"
-     2000 MS
+     PAGE ." FAST VWRITE on the left"
+     CR   ." Looping like BASIC on the right"
+     CR   1 3 DO  I .  1000 MS  -1 +LOOP ." GO!"
      BEGIN
        RESTORE             \ we need RESTORE if we run more than once
        READ-DATA

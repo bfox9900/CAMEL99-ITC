@@ -1,7 +1,7 @@
 \ GLOSSARY GENERATOR  Updated to use current libraries  7Jul2022  Brian Fox
 
 \ This demo uses some advanced features of CAMEL99 forth
-\ 1. Dynamically allocating memory in the HEAP ( MALLOC )
+\ 1. Create a very fast "table" array in low RAM
 \ 2. Vectored execution of the comparison operator
 \ 3. Combsort routine which runs about 10X faster than Bubble sort
 \ 4. Measuring elapsed time using screen timeout timer value
@@ -15,23 +15,17 @@ NEEDS TO         FROM DSK1.VALUES
 NEEDS IS         FROM DSK1.DEFER
 NEEDS ELAPSE     FROM DSK1.ELAPSE
 NEEDS WRITE-LINE FROM DSK1.ANSFILES
-NEEDS S=         FROM DSK1.COMPARE
-NEEDS MALLOC     FROM DSK1.MALLOC
+NEEDS COMPARE    FROM DSK1.COMPARE
+NEEDS TABLE2:    FROM DSK1.TABLES
 
 HEX
-\ variables uses by COMBSORT
-VARIABLE SFLAG
+2000 TABLE2: ]DATA  ( n -- [n]data ) \ low RAM array
+
 VARIABLE ITEMS
-0 VALUE GAP
-
-0 VALUE ^DATA   \ a data array pointer
-
-: ]DATA    ( n -- [n]data ) CELLS ^DATA + ; \ index into ^DATA
-
 \ load the name field address (NFA) of all words, into ^DATA
-: LOAD.NAMES ( -- addr n )
+: LOAD.NAMES ( -- addr cells )
+            0 ]DATA 2000 0 FILL
              CR ." Loading names... "
-             ITEMS OFF            \ reset ITEMS variable
              LATEST @             ( -- nfa )
              0 >R                 \ put a loop index on return stack
              BEGIN
@@ -40,11 +34,11 @@ VARIABLE ITEMS
                 NFA>LFA @         \ goto link field, fetch next NFA
                 DUP 0=            \ is it zero?
              UNTIL
-             R> DUP .  ." words"
-             ITEMS !  ;           \ store # items for sort to use
+             0 ]DATA  R> DUP ITEMS ! DUP .  ." words"
+;
 
 \ compare strings uses S=
-: COMPARE$ ( $1 $2 -- flag)  1+ SWAP COUNT S= ;
+: COMPARE$ ( $1 $2 -- flag)  COUNT ROT COUNT COMPARE ;
 : >$       ( $1 $2 -- flag)  COMPARE$ 0> ;  \ $1 > $2
 : <$       ( $1 $2 -- flag)  COMPARE$ 0< ;  \ $1 < $2
 
@@ -53,42 +47,44 @@ DEFER PRECEDE   \ this will be the string comparison operator
 : ASCENDING  ( -- )  ['] <$ IS PRECEDE ;
 : DESCENDING ( -- )  ['] >$ IS PRECEDE ;
 
-ASCENDING   \ default sort direction
+ ASCENDING   \ default sort direction
 
-: /1.3  ( n -- n/1.35 ) \ 100/135 is fastest GAP  ratio for this sort
-        S" 100 135 */ 1 MAX " EVALUATE ;  IMMEDIATE
-
-: XCHG  ( 'data[1] 'data[2] $1 $2 -- )
-        S" SWAP ROT !  SWAP ! "  EVALUATE ; IMMEDIATE
 
 HEX
-: SORTWORDS ( -- )
-    ^DATA 0= ABORT" No buffer allocated"
-    LOAD.NAMES
-    CR ." Sorting "
-    ITEMS @ TO GAP                   \ init combort gap
-    BEGIN
-       GAP  /1.3  TO GAP             \ compute new gap width
-       SFLAG ON                      \ sort flag set to TRUE
-       ITEMS @  GAP -  0             \ setup loop
-       DO
-           I  GAP + ]DATA  I ]DATA   ( -- data[gap] data[i]  )
-           OVER @ OVER @             ( -- data[gap] data[i] nfa1 nfa2)
-           2DUP                      ( -- data[gap] data[i] nfa1 nfa2 nfa1 nfa2)
-           PRECEDE IF                \ compare string at nfa1,nfa2
-               XCHG                  \ xchg if wrong order
-               SFLAG OFF             \ we are not done yet
-           ELSE
-               2DROP 2DROP           \ no exchange so collapse the stack info
-           THEN
-       LOOP
-       [CHAR] . EMIT                 \ show progress on screen
-       SFLAG @  GAP 1 = AND          \ test for completion
-    UNTIL
-\   200 CELLS MFREE                 \ release memory
-\    0 TO ^DATA                       \ clear the data pointer
-    CR  ;
+\ gratuitous variables for clarity
+0 VALUE  GAP
+VARIABLE SORTED
 
+DECIMAL
+\ divide by 1.35 using Forth's scaling operator
+\ found this ratio to be the fastest
+: 1.35/  ( n -- n' ) 100 135 */ ;
+
+: XCHG  ( addr1 addr2 -- ) 2DUP @ SWAP @  ROT ! SWAP ! ;
+
+: COMBSORT ( addr n -- )
+    DUP>R  TO GAP                    \ save n on Rstack and in GAP
+    BEGIN
+      GAP 1.35/  TO GAP              \ re-compute the gap
+      SORTED ON
+      R@ ( -- n) GAP -  0           \ n-gap is loop limit
+      DO ( -- addr )
+         DUP I CELLS +  DUP GAP CELLS +  ( -- addr1 addr2 )
+         OVER @ OVER @ PRECEDE       \ compare the contents of cells, which are strings
+         IF
+            XCHG                     \ Exchange the data in the cells
+            SORTED OFF               \ flag we are not sorted
+         ELSE
+           2DROP
+         THEN
+      LOOP
+      SORTED @  GAP 0=  AND          \ test for complete
+   UNTIL
+   R> 2DROP
+;
+
+DECIMAL
+: SORTWORDS ( -- ) LOAD.NAMES  CR ." Sorting "  COMBSORT ;
 
 \ display the words in sorted order
 : .WORDS   ( -- )
@@ -97,7 +93,9 @@ HEX
             DO
                I ]DATA @ .ID SPACE
                ?BREAK
+               KEY? IF KEY DROP THEN
             LOOP ;
+
 HEX
 : ID$     ( NFAaddr -- caddr len) COUNT 1F AND  ;
 
@@ -105,7 +103,7 @@ HEX
 
 DECIMAL
 
-CREATE OUT$  82 ALLOT ;
+CREATE OUT$  82 ALLOT
 
 0 VALUE #1
 
@@ -128,7 +126,6 @@ CREATE OUT$  82 ALLOT ;
 DECIMAL
 : GLOSSARY ( path$ len -- )
             DV80 W/O OPEN-FILE ?FILERR TO #1
-            4096 DUP>R MALLOC TO ^DATA     \ allocate 4k for the word names
             SORTWORDS
             CR ." Writing file..."
             WRITE-WORDS
