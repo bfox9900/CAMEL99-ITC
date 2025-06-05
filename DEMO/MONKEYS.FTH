@@ -1,7 +1,7 @@
 \ monkeys.fth
 \ TESTED with verison 2.70
 
-\ NEEDS .S  FROM DSK1.TOOLS  \ DEBUGGING ONLY 
+\ NEEDS .S  FROM DSK1.TOOLS  \ DEBUGGING ONLY
 NEEDS RND FROM DSK1.RANDOM
 
 DECIMAL
@@ -78,8 +78,8 @@ VARIABLE VOWELS
 \ never more than 2 vowels in a row
 \ never more than 1 consonants in a row
 : RULES   ( CHAR -- CHAR )
-           1 CONSONANTS?  IF  DROP    GETVOWEL  THEN
            2 VOWELS?      IF  DROP    GETCONST  THEN
+           1 CONSONANTS?  IF  DROP    GETVOWEL  THEN
            REMEMBER ;
 
 \ 1 random key stroke, remember it and check rules , count char
@@ -97,11 +97,11 @@ VARIABLE VOWELS
 : WAITKEYUP  ( -- ) BEGIN KEY? 0= UNTIL ;
 : WAITKEY    ( -- ) KEY? IF KEY DROP THEN ;
 
-: TAB        ( --) 8  VCOL @ 8 MOD - 0 MAX SPACES  ;
+: TAB        ( --) VCOL ! ;
 
 DECIMAL
 : MONKEY-LINE  ( -- )
-  CR   MONKEY-WORD TAB TAB  MONKEY-WORD TAB TAB  MONKEY-WORD ;
+  CR   MONKEY-WORD  14 TAB  MONKEY-WORD  26 TAB   MONKEY-WORD ;
 
 : TITLE PAGE
   CR 2 TAB ." IF..."
@@ -112,7 +112,7 @@ DECIMAL
   CR 2 TAB ." they will type the complete works"
   CR 2 TAB ." of Shakespeare."
   CR
-  CR 29 TAB ." Anonymous"
+  CR 12 TAB ." Anonymous"
 
   10 23 AT-XY  ." Press a key to begin..." KEY DROP ;
 
@@ -121,7 +121,7 @@ DECIMAL
          TITLE PAGE
          CHARSOUT OFF
          WORDSOUT OFF
-         8 WORD_LEN !
+         9 WORD_LEN !
          CR ." Max word length = " WORD_LEN @ .
          BEGIN
            WAITKEY
