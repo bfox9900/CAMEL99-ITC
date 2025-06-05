@@ -11,7 +11,7 @@ NEEDS ]PDT      FROM DSK1.GRAFIX
 \ Use the characters at ASCII 127 and above
 
 \ set VDP pointer, VP,  to pattern table start address
-DECIMAL 127 ]PDT VP !  
+DECIMAL 127 ]PDT VP !
 
 HEX
 VDP ( forces data to compile to VDP RAM )
@@ -145,7 +145,7 @@ DATA F0F0,F0F0,0F0F,0F0F    \ PAT127
 
 DECIMAL
 5 SCREEN
-0 31 15 1 COLORS \ all charsets to gray/transparent 
+0 31 15 1 COLORS \ all charsets to gray/transparent
 : .CHARSET  CR  255 0 DO I EMIT LOOP ;
  PAGE
 .CHARSET
@@ -153,5 +153,5 @@ DECIMAL
 \ S" DSK2.FNT4+C64" SAVE-FONT
 
 INCLUDE DSK1.RANDOM
+\ added 20 mS delay so it is more fun to watch :-)
 : MAZE PAGE BEGIN  203 2 RND + EMIT 20 MS  ?TERMINAL UNTIL ;
-
