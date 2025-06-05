@@ -37,18 +37,16 @@ VARIABLE ITEMS
              0 ]DATA  R> DUP ITEMS ! DUP .  ." words"
 ;
 
-\ compare strings uses S=
+\ compare counted strings using COMPARE
 : COMPARE$ ( $1 $2 -- flag)  COUNT ROT COUNT COMPARE ;
 : >$       ( $1 $2 -- flag)  COMPARE$ 0> ;  \ $1 > $2
 : <$       ( $1 $2 -- flag)  COMPARE$ 0< ;  \ $1 < $2
-
 
 DEFER PRECEDE   \ this will be the string comparison operator
 : ASCENDING  ( -- )  ['] <$ IS PRECEDE ;
 : DESCENDING ( -- )  ['] >$ IS PRECEDE ;
 
  ASCENDING   \ default sort direction
-
 
 HEX
 \ gratuitous variables for clarity
@@ -130,6 +128,5 @@ DECIMAL
             CR ." Writing file..."
             WRITE-WORDS
             #1 CLOSE-FILE ?FILERR
-            0 TO ^DATA
             CR ." Complete"
 ;
