@@ -96,19 +96,19 @@ DECIMAL
                I ]DATA @ .ID SPACE
                ?BREAK
             LOOP ;
-
+HEX
 : ID$     ( NFAaddr -- caddr len) COUNT 1F AND  ;
+DECIMAL
 
 : +PLACE  ( adr n adr -- )   2DUP 2>R  COUNT +  SWAP MOVE 2R> C+! ;
 
-DECIMAL
 0 VALUE #1
 
 \ output buffer formatting words
 : PADDED ( addr$  n -- )  SWAP C! ;
 : BLANKS ( addr -- )      BL FILL ;
 
-: ','  ( -- )  S" , "  PAD +PLACE ;  \ add a comma/space to output buffer
+: ','  ( -- )  S"  , "  PAD +PLACE ;  \ add a comma/space to output buffer
 
 : S+   ( addr len -- ) PAD +PLACE ; \ add string to outbut buffer
 
@@ -125,17 +125,14 @@ DECIMAL
                ?BREAK
             LOOP ;
 
-HEX
+DECIMAL
 : GLOSSARY ( path$ len -- )
             TICKER OFF
             DV80 W/O OPEN-FILE ?FILERR TO #1
-            1000 MALLOC TO ^DATA     \ allocate 4k space for the word names
             ASCENDING SORTWORDS
             CR ." Writing file..."
             WRITE-WORDS
             #1 CLOSE-FILE ?FILERR
-            1000 MFREE               \ release the mmeory (low ram)
-            0 TO ^DATA
             CR ." Complete"
             .ELAPSED
 ;

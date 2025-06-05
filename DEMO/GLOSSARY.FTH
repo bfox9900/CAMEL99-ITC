@@ -26,14 +26,15 @@ VARIABLE ITEMS
 : LOAD.NAMES ( -- addr cells )
             0 ]DATA 2000 0 FILL
              CR ." Loading names... "
-             LATEST @             ( -- nfa )
              0 >R                 \ put a loop index on return stack
+             LATEST @             ( -- nfa )
              BEGIN
+                DUP
+             WHILE
                 DUP R@ ]DATA !    ( -- nfa )
                 R> 1+ >R          \ increment loop counter
                 NFA>LFA @         \ goto link field, fetch next NFA
-                DUP 0=            \ is it zero?
-             UNTIL
+            REPEAT
              0 ]DATA  R> DUP ITEMS ! DUP .  ." words"
 ;
 
@@ -86,13 +87,13 @@ DECIMAL
 
 \ display the words in sorted order
 : .WORDS   ( -- )
-            CR
-            ITEMS @ 0
-            DO
-               I ]DATA @ .ID SPACE
-               ?BREAK
-               KEY? IF KEY DROP THEN
-            LOOP ;
+        CR
+        ITEMS @ 0
+        DO
+            I ]DATA @ .ID SPACE
+            ?BREAK
+            KEY? IF KEY DROP THEN
+        LOOP ;
 
 HEX
 : ID$     ( NFAaddr -- caddr len) COUNT 1F AND  ;
@@ -101,7 +102,7 @@ HEX
 
 DECIMAL
 
-CREATE OUT$  82 ALLOT
+\ CREATE OUT$  82 ALLOT
 
 0 VALUE #1
 
@@ -111,13 +112,13 @@ CREATE OUT$  82 ALLOT
 \ write the words in sorted order
 : WRITE-WORDS   ( -- )
             CR
-            ITEMS @ 0
+            ITEMS @ 1-   0
             DO
-               OUT$ 80 BLANK
-               I ]DATA @ ID$ OUT$ PLACE
-                OUT$ 20 PADDED
-                S" ( -- )"  OUT$ +PLACE
-                OUT$ COUNT  #1 WRITE-LINE ?FILERR
+                PAD 82 BLANK
+                I ]DATA @ ID$ PAD PLACE
+                PAD 20 PADDED
+                S" ( -- )"  PAD +PLACE
+                PAD COUNT  #1 WRITE-LINE ?FILERR
                ?BREAK
             LOOP ;
 
