@@ -4,7 +4,7 @@ INCLUDE DSK1.BOOLEAN
 
 \ Usage Example
  DECIMAL
- 1024 CONSTANT size \ # of bits we want
+ 1024 CONSTANT size \ # of bits we want. This uses only 128 bytes.
  size BITS: ]X      \ make array X of size bits
 
 \ set and reset each bit using the BSET BRST BIT@ words.
