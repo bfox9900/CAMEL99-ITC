@@ -1,5 +1,6 @@
 \ sorting demo with sound effects
 \ Updated Jan 2022
+\ Updated Jun 2025 to use TI LOGO colour names
 
 NEEDS .S     FROM DSK1.TOOLS
 NEEDS HZ     FROM DSK1.SOUND
@@ -45,9 +46,9 @@ SQR2 8 + CONSTANT SQR3
 ;
 
 : SET-COLORS
-  SQR  SET#   WHT   GRAY COLOR  \ GRAY shadow on left side
-  SQR2 SET#   LTGRN GRAY COLOR  \ green
-  SQR3 SET#   DKRED GRAY COLOR  \ red
+  SQR  SET#   WHITE GRAY COLOR  \ GRAY shadow on left side
+  SQR2 SET#   LIME  GRAY COLOR  \ green
+  SQR3 SET#   RED   GRAY COLOR  \ red
 ;
 
 : NOTE  ( value -- ) 4 LSHIFT 400 + HZ  -6 DB  ;

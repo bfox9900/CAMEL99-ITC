@@ -1,5 +1,5 @@
 \ sorting demo with sound effects, with Quick-Sort   May 6 2022 Brian Fox
-\ Updated for CAmel99 V2.7 kernel with MOVE not CMOVE 
+\ Updated for CAmel99 V2.7 kernel with MOVE not CMOVE
 
 NEEDS .S     FROM DSK1.TOOLS
 NEEDS HZ     FROM DSK1.SOUND
@@ -24,7 +24,7 @@ CREATE REFDATA
        7 ,   9 , 11 , 06 , 10 ,  4 ,   1 , 14 ,
 
 \ load the array with different kinds of mixed up data
-: LOAD-DATA  ( -- ) REFDATA  0 ]Q  SIZE CELLS MOVE ;
+: LOAD-DATA  ( -- ) REFDATA  0 ]Q  SIZE CELLS CMOVE ;
 
 \ Musical BAR graph
 DECIMAL
