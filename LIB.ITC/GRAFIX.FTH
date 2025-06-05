@@ -52,7 +52,7 @@ HEX
       01 4 VWTR        \ pattern table
       06 5 VWTR        \ sprite attribute table
       01 6 VWTR        \ set sprite pattern table to 1x$800=$800
-      0 ]CTAB 10 10 VFILL \ color table: black on transparent [1,0]
+      0 ]CTAB 20 10 VFILL \ color table: black on transparent [1,0]
       8 SCREEN         \ cyan SCREEN
       20 C/L!          \ 32 chars/line
       CLEAR
