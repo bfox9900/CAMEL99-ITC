@@ -41,7 +41,7 @@ HEX
         7 VWTR  ;           \ set screen colour in Video register 7
 .( .)
 HEX
- : GRAPHICS  ( -- )
+: GRAPHICS  ( -- )
       1 VMODE !
       0 3C0  0 VFILL \ erase the entire 40 col. screen space
 \      4 DUP 2 VWTR 400 * VPG ! \ alternate page
@@ -56,7 +56,7 @@ HEX
       8 SCREEN         \ cyan SCREEN
       20 C/L!          \ 32 chars/line
       CLEAR
- ;
+;
 
 HEX
 : CALLCHAR ( addr len ascii# --)
