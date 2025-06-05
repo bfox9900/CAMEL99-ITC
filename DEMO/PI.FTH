@@ -40,15 +40,6 @@ NEEDS .R     FROM DSK1.UDOTR
 NEEDS ELAPSE FROM DSK1.ELAPSE
 NEEDS MALLOC FROM DSK1.MALLOC
 
-\ proper MOVE for 9900, cell wide
-\ HEX
-\ CODE MOVE
-\    C036 , C076 , C104 , 1306 , 0584 ,
-\    0244 , FFFE , CC31 , 0644 , 15FD ,
-\    C136 ,
-\ NEXT,
-\ ENDCODE
-
 DECIMAL
 
 0 VALUE POWER  ( adr)
@@ -115,7 +106,7 @@ VARIABLE CARRY
   -1 +LOOP
   DROP ;
 
-: COPY ( -- ) POWER TERM SIZE CELLS CMOVE ;
+: COPY ( -- ) POWER TERM SIZE  MOVE ;
 
 \ : ZERO? ( result -- f )  +INDEX NIP SIZE = ;
 : ZERO? ( result -- F ) SIZE CELLS 0 SKIP NIP 0= ;
@@ -170,7 +161,7 @@ DECIMAL
   ?DO
     0 OVER !
     DUP 10000 MULTIPLY
-    DUP @  0 <# # # # # #> TYPE SPACE
+    DUP @  0 <#  # # # #  #> TYPE SPACE
 \    OUT @ C/L @ > IF CR THEN  \ not needed for Camel99
     4  +LOOP
   DROP  CR ;
@@ -180,12 +171,12 @@ DECIMAL
   PAD DUP 20 ACCEPT NUMBER? ABORT" Invalid" CR ;
 
 : PI ( n -- )
-( GetNumber ) DUP TO NDIGIT
-
+  TICKER OFF
+  DUP TO NDIGIT
   \ array size = ceil(ndigit / log10(2^16))
   109 UM* 525 UM/MOD SWAP ( rem) IF  1+  THEN
   ( extra for accurate last digits)
-  2 +  TO SIZE
+  2+  TO SIZE
 
   \ create arrays in un-allocated memory
   HERE TO POWER   SIZE 20 + CELLS ALLOT
@@ -193,6 +184,7 @@ DECIMAL
   HERE TO RESULT  SIZE 20 + CELLS ALLOT
   50 ALLOT  ( hold buffer space)
   CalcPi
-\  PRINT
+  .ELAPSED
+  PRINT
 ;
 \ end
