@@ -54,3 +54,11 @@ This is to allow future linking to Assembler if needed.
 Found bug in how to build SuperCart verion so CAML99SC running out of memory
 at HEX 6000 if the E/A SuperCart is installed. Works in Classic99 Emulator as
 well.
+
+
+June 3 2025
+
+V 2.8 Kernel for expansion RAM and Super Cart version.
+Changed back to using CMOVE CMOVE> per Forth 2012 spec.
+Added MOVE to kernel which moves CELLS.  It is 2X faster when you need that. 
+
