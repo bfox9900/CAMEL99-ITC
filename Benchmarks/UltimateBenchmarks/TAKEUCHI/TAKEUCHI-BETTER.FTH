@@ -9,7 +9,7 @@
 \      (tak (1- x) y z)
 \      (tak (1- y) z x)
 \      (tak (1- z) x y))))
-	 
+
 \ ----------------------------------------------------------------------------------------
 \ Equivalent Forth definition of Takeuchi function:  CAMEL99 Forth
 
@@ -74,7 +74,7 @@ DECIMAL
            RECURSE
       THEN ;
 
-: TAK4  ( x y z -- result )  \ 46.16 seconds
+: TAK4  ( x y z -- result )  \ 47 seconds
       OVER 4TH >=           \ remove needless factoring
       IF NIP NIP
       ELSE TAKX RECURSE
@@ -83,3 +83,19 @@ DECIMAL
            RECURSE
       THEN ;
 
+: TAK5  ( x y z -- result )  \ 45.5 seconds
+      OVER 4TH >= IF NIP NIP EXIT THEN  \ FAST EXT
+      TAKX RECURSE
+      TAKY RECURSE
+      TAKZ RECURSE
+           RECURSE
+;
+
+INCLUDE DSK1.TAILCALL
+: TAK6  ( x y z -- result )  \ 44.9 seconds
+      OVER 4TH >= IF NIP NIP EXIT THEN  \ FAST EXT
+      TAKX RECURSE
+      TAKY RECURSE
+      TAKZ RECURSE
+           RECURSE
+-;   \ tail call optimizing semi-colon
