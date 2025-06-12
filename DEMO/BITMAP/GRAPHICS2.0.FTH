@@ -114,11 +114,23 @@ DECIMAL
 : 2ROT ( d1 d2 d3 -- d2 d3 d1) S" 2>R 2SWAP 2R> 2SWAP" EVALUATE ; IMMEDIATE
 : 4DUP ( d1 d2 -- d1 d2 d1)    S" 4TH 4TH 4TH 4TH" EVALUATE ; IMMEDIATE
 
+\ taken from DSK1.DIRSPRIT library
+HEX
+CODE DXY   ( x y x2 y2 -- dx dy)
+C076 , \  *SP+  R1 MOV, \ x2
+6136 , \  *SP+ TOS SUB, \ y2=y2-y
+0744 , \       TOS ABS,
+6581 , \   R1  *SP SUB, \ x=x-x2
+0756 , \       *SP ABS,
+NEXT,
+ENDCODE
+
 DECIMAL
 : LINE ( x1 y1 x2 y2 -- )
 \ ANS version of Dr. Ting's recursive line.  R.I.P.
-    4DUP  ROT - ABS -ROT - ABS           \ compute dx dy
-    MAX 2 < IF  2DROP PLOT  EXIT THEN \ nothing do, get out
+    4DUP \ ROT - ABS -ROT - ABS     \ compute dx dy
+    DXY    ( this makes line 20% faster)
+    MAX 2 < IF  2DROP PLOT  EXIT THEN
     4DUP
    \ compute mid points
     ROT  + 1+ 2/
@@ -144,10 +156,10 @@ HERE SWAP - DECIMAL . .( bytes )
 
  : TEST
    GRAPHICS2
-   PENCIL IS STYLUS
-   BIGX
-   ERASER IS STYLUS
-   BIGX
-   BEGIN KEY? UNTIL
+   BEGIN
+      PENCIL IS STYLUS  BIGX
+      ERASER IS STYLUS  BIGX
+      KEY?
+   UNTIL
    TEXT
 ;

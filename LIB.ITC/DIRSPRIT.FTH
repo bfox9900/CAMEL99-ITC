@@ -3,11 +3,12 @@ CR .( direct SPRITE control lexicon  v2.5) \  Mar 23 2022 Brian Fox
 \ Feb 2022   Added TABLE4:
 \ Mar 2022   Removed distance calcs for sprites to DSK1.DISTANCE file
 \            Added DXY code word for faster COINC.
- 
+\ June 2025  Removed one instruction from FUSEXY
+
 \ NEEDS .S     FROM DSK1.LOWTOOLS  \ debugging tools
 NEEDS TABLE4: FROM DSK1.TABLES
 NEEDS HCHAR   FROM DSK1.GRAFIX  \ must be in Graphics 1 mode
- 
+
 HERE
 CR .( Compiling direct sprite lexicon)
 HEX
@@ -15,37 +16,36 @@ HEX
 300    CONSTANT SAT      \ sprite attribute table VDP RAM base address
 20 4*  CONSTANT SATsize  \ size of the table, 32 sprites x 4 bytes/record
 1F     CONSTANT MAX.SP   \ 32 sprites, 0 .. 31
- 
+
 \ hi speed memory addresses are actually variables
 83D4   CONSTANT VDPR1    \ MEMORY for VDP Register 1, TI SYSTEM address
- 
+
 VARIABLE SPR#            \ holds the last sprite defined by SPRITE
- 
+
 SAT     TABLE4: SP.Y
 SAT 1+  TABLE4: SP.X
 SAT 2+  TABLE4: SP.PAT
 SAT 3 + TABLE4: SP.COLR
- 
+
 HEX
 \ Operates directly on stack memory, speeds up LOCATE by 14%
  CODE FUSEXY ( x y spr# -- yyxx spr#)
-      C036 , \ *SP+ R0 MOV,
-      06C0 , \  R0  SWPB,
-      A016 , \ *SP R0 ADD,
-      C580 , \  R0 *SP MOV,
+      C036 . \ *SP+ R0 MOV,
+      06C0 , \      R0 SWPB,
+      A580 , \  R0 *SP ADD,
       NEXT,
-      ENDCODE
- 
+ENDCODE
+
 \ finger trouble protection. Runtime array index test.
 : ?NDX  ( n -- n ) MAX.SP OVER < ABORT" Bad SPR#" ;
- 
+
 CR .( .)
 : DELALL  ( -- )
           1 ?MODE               \ test for graphics mode
           1 6 VWTR              \ vdp reg 6 = 1, puts ]PDT @ $800
           SAT SATsize BL VFILL  \ init the sprite desc. table with blanks
           SPR# OFF ;            \ #sprites=0
- 
+
 \ They CAN be index protected by the word ?NDX.
 \ POSITION is a macro for more COINC speed
 : POSITION  ( sprt# -- dx dy ) ( ?NDX) S" SP.Y V@ SPLIT" EVALUATE ; IMMEDIATE
@@ -59,14 +59,14 @@ CR .( .)
           R@    SP.COLOR           \ set the sprite color
           R@    PATTERN            \ set the character pattern to use
           R> SPR# @ MAX  SPR# ! ;  \ update sprite counter variable
- 
+
 \ like Extended BASIC Magnify but parameters are 1 less
 HEX
 : MAGNIFY  ( mag-factor -- ) VDPR1 C@ 0FC AND +  DUP 1 VWTR  VDPR1 C! ;
- 
+
 \ VDP status bit set if any two sprites overlap
 : COINCALL  ( -- ? ) VDPSTS C@ 20 AND ;
- 
+
 HEX
 CODE DXY   ( x y x2 y2 -- dx dy)
 C076 , \  *SP+  R1 MOV, \ x2
@@ -76,20 +76,20 @@ C076 , \  *SP+  R1 MOV, \ x2
 0756 , \       *SP ABS,
 NEXT,
 ENDCODE
- 
+
 \ ?=0 means no coincidence
 : COINC ( spr#1 spr#2 tol -- ?)
         >R
         POSITION ROT POSITION ( -- x1 y1 x2 y2 )
         DXY  R@ <
         SWAP R> < AND ;
- 
+
 : COINCXY   ( dx dy sp# tol -- ? )
         >R
         POSITION   ( -- x1 y1 x2  y2 )
         DXY  R@ <
         SWAP R> < AND ;
- 
+
 DELALL
 HERE SWAP -
 CR
