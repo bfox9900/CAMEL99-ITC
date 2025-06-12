@@ -30,7 +30,7 @@ SAT 3 + TABLE4: SP.COLR
 HEX
 \ Operates directly on stack memory, speeds up LOCATE by 14%
  CODE FUSEXY ( x y spr# -- yyxx spr#)
-      C036 . \ *SP+ R0 MOV,
+      C036 , \ *SP+ R0 MOV,
       06C0 , \      R0 SWPB,
       A580 , \  R0 *SP ADD,
       NEXT,
