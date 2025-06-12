@@ -8,7 +8,6 @@ CR .( Two colour bit map mode )
 NEEDS DUMP        FROM DSK1.TOOLS
 NEEDS VALUE       FROM DSK1.VALUES
 NEEDS CHARSET     FROM DSK1.CHARSET
-NEEDS ARRAY       FROM DSK1.ARRAYS
 NEEDS 4TH         FROM DSK1.3RD4TH   \ fast access to deep stack items
 NEEDS DEFER       FROM DSK1.DEFER
 NEEDS TABLE:      FROM DSK1.TABLES   \ fast indexing array
@@ -120,9 +119,8 @@ DECIMAL
 \ ANS version of Dr. Ting's recursive line.  R.I.P.
     4DUP  ROT - ABS -ROT - ABS           \ compute dx dy
     MAX 2 < IF  2DROP PLOT  EXIT THEN \ nothing do, get out
-
     4DUP
-     \ compute mid points
+   \ compute mid points
     ROT  + 1+ 2/
     -ROT + 1+ 2/ SWAP
     2DUP 2ROT RECURSE RECURSE ;
@@ -139,6 +137,17 @@ DECIMAL
 
 HERE SWAP - DECIMAL . .( bytes )
 
-PENCIL IS STYLUS
+: BIGX
+   254 190  0   0 LINE
+   254   0  0 190 LINE
+;
 
- : TEST  GRAPHICS2  245 175  0 0 LINE  KEY DROP  TEXT ;
+ : TEST
+   GRAPHICS2
+   PENCIL IS STYLUS
+   BIGX
+   ERASER IS STYLUS
+   BIGX
+   BEGIN KEY? UNTIL
+   TEXT
+;
