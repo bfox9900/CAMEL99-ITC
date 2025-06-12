@@ -1,7 +1,7 @@
 \ Graphics2 Mode Driver for Camel99 Forth    Dec 2022 BJF
-\ Written in Forth
+\ Written in Forth to show methods.
 \ Referenced TI-FORTH: ( CONVERT TO GRAPHICS2 MODE CONFIG 14SEP82 LAO)
-
+\ 2025 Added TABLE: for faster access into VDP tables
 \ COMPILES under ITC and DTC systems
 CR .( Two colour bit map mode )
 
@@ -11,6 +11,7 @@ NEEDS CHARSET     FROM DSK1.CHARSET
 NEEDS ARRAY       FROM DSK1.ARRAYS
 NEEDS 4TH         FROM DSK1.3RD4TH   \ fast access to deep stack items
 NEEDS DEFER       FROM DSK1.DEFER
+NEEDS TABLE:      FROM DSK1.TABLES   \ fast indexing array
 
 HERE
 HEX
@@ -31,6 +32,8 @@ HEX
  0000 VALUE CTAB    \ color table
  2000 VALUE PDT     \ pattern descriptor table
  1800 VALUE IMG
+
+PDT TABLE: ]PDT  \ gives faster index into PDT
 
 : TEXT  ( -- )
       40COL COUNT VREGS
@@ -54,7 +57,7 @@ HEX
 HEX
 CREATE BITS ( -- addr) 80 C, 40 C, 20 C, 10 C, 8 C, 4 C, 2 C, 1 C,
 
-: >BIT ( n -- bit[n]) S" BITS + C@" EVALUATE ; IMMEDIATE
+BITS TABLE: ]BIT
 
 \ drawing code ...
 HEX
@@ -87,20 +90,23 @@ DEFER STYLUS   \ usage:  PENCIL IS STYLUS    ERASER IS STYLUS
    0F1 7 VWTR         \ screen background colour white on transparent
     0E0 DUP VDPR1 C! 1 VWTR   \ set mode, copy into memory for system
     4 VMODE !
+    PENCIL IS STYLUS
     0 837A C!  ;      \ highest sprite in auto-motion
 
 \ Compute offset into pattern table per:
 \ TI Video Display Processors, Programmer's Guide
+\ *note: We use UM/MOD because it is the fastest divide in the system.
 : PIXPOS ( x y -- )
       SWAP
       FF AND                \ mask X is required
       0 8 UM/MOD 8*         \ compute X offset into VDP memory
-      SWAP >BIT SWAP        \ convert remainder to bit mask
-
+      SWAP ]BIT C@          \ convert remainder to bit mask
+      SWAP
       ROT 0FF AND
       0 8 UM/MOD             \ compute Y offset into VDP memory
-      >< + +                 \ combine x y into integer
-      PDT + ;                \ add all offsets to PDT base address
+      FUSE                   \ fuse bytes x y into one integer
+      +                      \ add the remainder
+      ]PDT ;                 \ use integer as index PDT
 ;
 
 : PLOT   ( x y -- ) S" PIXPOS STYLUS" EVALUATE ; IMMEDIATE
@@ -115,9 +121,10 @@ DECIMAL
     4DUP  ROT - ABS -ROT - ABS           \ compute dx dy
     MAX 2 < IF  2DROP PLOT  EXIT THEN \ nothing do, get out
 
-    4DUP ROT
-    + 1+ 2/ >R    \ compute mid points
-    + 1+ 2/ R>
+    4DUP
+     \ compute mid points
+    ROT  + 1+ 2/
+    -ROT + 1+ 2/ SWAP
     2DUP 2ROT RECURSE RECURSE ;
 
 0 VALUE x
@@ -131,3 +138,7 @@ DECIMAL
 : VLINE ( x y len ) -ROT MOVETO  0 DO  x  y I +  PLOT  LOOP ;
 
 HERE SWAP - DECIMAL . .( bytes )
+
+PENCIL IS STYLUS
+
+ : TEST  GRAPHICS2  245 175  0 0 LINE  KEY DROP  TEXT ;
