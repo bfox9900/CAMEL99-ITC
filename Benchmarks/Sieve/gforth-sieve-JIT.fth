@@ -1,15 +1,14 @@
 \ gforth's siev.fs (uses address arithmetic and DO for the inner loop)
 
 NEEDS .S    FROM DSK1.TOOLS
+NEEDS JIT:  FROM DSK1.JIT
+NEEDS ELAPSE FROM DSK1.ELAPSE
+
 
 \ Running on Camel99 Forth
 \ Byte Magazine version:  120 seconds
 \ GForth version       :   74.1 seconds (38% faster)
 
-\ DECIMAL
-\ 8190 CONSTANT SIZE
-\ VARIABLE FLAGS   SIZE ALLOT  0 FLAGS !
-\ FLAGS SIZE + CONSTANT EFLAG
 
 \ Use 8K in low RAM for the array
 HEX 2000 CONSTANT FLAGS   0 FLAGS !
@@ -19,7 +18,8 @@ DECIMAL
 
 FLAGS SIZE + CONSTANT EFLAG
 
-: DO-PRIME  ( -- n )
+
+JIT: JIT-PRIME  ( -- n )
   FLAGS SIZE 1 FILL
   0 3   ( -- accumulator 1st-offset)
   EFLAG FLAGS  \ end-address, start-address
@@ -37,15 +37,14 @@ FLAGS SIZE + CONSTANT EFLAG
         THEN
         CELL+            \ inc. offset by 2
     LOOP
-    DROP ;
+    DROP
+;JIT
 
 
 : PRIMES ( -- )
    PAGE ."  10 Iterations"
-   10 0 DO  DO-PRIME  CR SPACE . ." Primes"  LOOP
+   10 0 DO  JIT-PRIME  CR SPACE . ." Primes"  LOOP
    CR ." Done!"
 ;
 
-INCLUDE DSK1.ELAPSE
-
-\ run with: ELAPSE PRIMES
+CR .( run with: ELAPSE PRIMES)

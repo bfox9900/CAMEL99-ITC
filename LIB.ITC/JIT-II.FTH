@@ -1,9 +1,11 @@
-\ jit.fth Compiles inline code as headless words in HEAP  Nov 29 2022
+\ jit-II.fth Compiles inline code as headless words in HEAP  Nov 29 2022
 
 \ Problem:
 \ ITC Forth spends 50% of it's time running 3 instructions call NEXT.
 \ This system compiles primitives from the kernel as super-instructions
 \ and compiles the execution token for the super instructions in a Forth word.
+
+\ Version II compiles code into dictionary ram as CODE definitions.
 
 NEEDS .S     FROM DSK1.TOOLS   \ debug
 NEEDS ELAPSE FROM DSK1.ELAPSE  \ execution timing
@@ -33,12 +35,6 @@ CODE @      C114 ,         NEXT, ENDCODE
 CODE C@     D114 , 0984 ,  NEXT, ENDCODE
 CODE +      A136 ,         NEXT, ENDCODE
 
-\ Heap management
-: THERE  ( -- addr) H @ ;  \ returns end of Target memory in HEAP
-: HALLOT ( n -- )   H +! ; \ Allocate n bytes of target memory.
-: T,     ( n -- )   THERE ! 2 HALLOT ;  \ "target compile" n into heap
-
-: NEWHEAP ( -- ) 2000 2000 0 FILL   2000 H ! ; \ reset HEAP
 
 045A CONSTANT 'NEXT'  \ 9900 CODE for B *R10   Camel99 Forth's NEXT code
 
@@ -49,7 +45,7 @@ CODE +      A136 ,         NEXT, ENDCODE
         DUP @ 'NEXT' <>  \ the instruction is not 'NEXT'
     WHILE
         DUP @  ( -- IP instruction)
-        T,     \ compile instruction
+        ,      \ compile instruction
         CELL+  \ advance IP
         2DUP < ABORT" End of code not found"
     REPEAT
@@ -58,32 +54,27 @@ CODE +      A136 ,         NEXT, ENDCODE
 
 : COMPILES ( <codeword> ) POSTPONE [']  POSTPONE CODE, ; IMMEDIATE
 
-\ steal code words from the kernel and compile it to target memory
-: DUP,   COMPILES DUP ;
-: DROP,  COMPILES DROP ;
-: 1-,    ( n -- n') COMPILES 1-  ; \ TOS DEC,
-
 \ tiny assemblers to explain the code
 HEX
-: TOS!,  ( n )       0204 T,  T, ; \ load n into TOS
-: @TOS, ( addr - )   C120 T,  T, ; \ fetch symbolic to TOS
+: 1-,    ( n -- n') COMPILES 1-  ; \ TOS DEC,
+: DUP,   COMPILES DUP  ;
+: DROP,  COMPILES DROP ;
 
-: LIT,   ( n -- )    DUP, TOS!, ; \ compile n as literal in TOS
-: JVAR, ( addr -- )  DUP, @TOS,  ;
+: LIT,   ( n -- )    DUP, 0204 ,  , ; \ LI R4,<n>
 
 \ store a byte offset in odd byte of addr.
 \ Addr is the location of Jump instruction
 : RESOLVE ( addr offset --) 2- 2/ SWAP 1+ C! ;
 
-\ compute offset from addr addr' & complete the jump instruction
+\ compute offset from addr to addr' & complete the jump instruction
 : <BACK   ( addr addr' -- ) TUCK -  RESOLVE ;
 
 : ?BYTE ( c -- c)  DUP FF00 AND ABORT" Jump out of range" ;
 
-\ compile jump instructions with no offset
-: JMP,  ( c --) ?BYTE 1000 + T, ;
-: JNO,  ( c --) ?BYTE 1900 + T, ;
-: JNC,  ( c --) ?BYTE 1700 + T, ;
+\ compile "raw" jump instructions with no offset byte
+: JMP,  ( c --) ?BYTE 1000 + , ;
+: JNO,  ( c --) ?BYTE 1900 + , ;
+: JNC,  ( c --) ?BYTE 1700 + , ;
 
 \ --------[ JIT compilers for LOOPS and BRANCHING ]---------
 \ When the JITS wordlist is placed 1st in the search order
@@ -95,19 +86,21 @@ HEX
 VOCABULARY JITS
 ALSO JITS DEFINITIONS
 
-: BEGIN    THERE >CS ; IMMEDIATE  \ push location onto control stack
+: BEGIN    HERE >CS ; IMMEDIATE  \ push location onto control stack
 
 \ <DO> is CODE preamble to setup return stack.
-: DO  ( -- there) COMPILES <DO>   POSTPONE BEGIN ; IMMEDIATE
+: DO  ( -- HERE)
+   COMPILES <DO>   POSTPONE BEGIN
+; IMMEDIATE
 
 : LOOP
-    0597 T,                   \ *RP INC,
-    CS> THERE  0 JNO, <BACK   \ compute offset, compile into JNO
-    COMPILES UNLOOP           \ collapse stack frame
+    0597 ,                   \ *RP INC,
+    CS> HERE  0 JNO, <BACK   \ compute offset, compile into JNO
+    COMPILES UNLOOP          \ collapse stack frame
 ; IMMEDIATE
 
 : +LOOP
-    0A5CA T,         \ TOS *RP ADD,
+    0A5CA ,          \ TOS *RP ADD,
     DROP,            \ don't need TOS value anymore
     POSTPONE LOOP    \ compile loop code
 ; IMMEDIATE
@@ -115,21 +108,21 @@ ALSO JITS DEFINITIONS
 : I  COMPILES I ;  IMMEDIATE
 : J  COMPILES J ;  IMMEDIATE
 
-: AGAIN   CS> THERE 0 JMP, <BACK ; IMMEDIATE
+: AGAIN   CS> HERE 0 JMP, <BACK ; IMMEDIATE
 
 : UNTIL
     1-,
     DROP,
-    CS> THERE 0 JNC, <BACK ; IMMEDIATE
+    CS> HERE 0 JNC, <BACK ; IMMEDIATE
 
 : IF    ( n -- )
     1-,       \ If tos=0, DEC will cause a carry
     DROP,
-    THERE >CS 0 JNC, ; IMMEDIATE
+    HERE >CS 0 JNC, ; IMMEDIATE
 
-: THEN  CS> THERE OVER - RESOLVE ; IMMEDIATE
+: THEN  CS> HERE OVER - RESOLVE ; IMMEDIATE
 
-: ELSE  THERE >CS  0 JMP,
+: ELSE  HERE >CS  0 JMP,
         CS>SWAP POSTPONE THEN ; IMMEDIATE
 
 : WHILE  ( n -- ) POSTPONE IF CS>SWAP ; IMMEDIATE
@@ -142,23 +135,24 @@ FORTH DEFINITIONS
 \ CFA of a code word contains the address of the next cell
 : CODE? ( XT -- ?)  DUP @ 2- = ;
 
-: SPECIALS ( xt -- ) \
+: OTHERS ( xt -- ) \
     DUP
-    @     \ FETCH the "executor" address
-    CASE  \ compare to know executors
+    @     \ FETCH the "executor" addres
+    CASE  \ compare to executor words
         ['] DOVAR    OF  >BODY   LIT, ENDOF
         ['] DOCON    OF  >BODY @ LIT, ENDOF
         ['] DOUSER @ OF  EXECUTE LIT, ENDOF
-        TRUE ABORT" Can't optimize word"  ( any other Forth word bombs)
+\       ['] DOCOL    OF  >BODY RECURSE  ENDOF     \ future? :-)
+        TRUE ABORT" Can't optimize word"
     ENDCASE
 ;
 
 : JITCOMPILE,  ( xt -- )
     DUP CODE?
     IF
-       CODE,      \ compile kernel code & exit
+       CODE,    \ compile kernel code inline
     ELSE
-       SPECIALS   \ xt is not a code word...
+       OTHERS   \ handle everything else
     THEN
 ;
 
@@ -179,7 +173,7 @@ VARIABLE JSTATE
         IF ( it's a word)
             1+ JSTATE @ 0= OR
             IF   EXECUTE      \ IF BEGIN etc. are all immediate
-            ELSE JITCOMPILE,  \ code and data are not
+            ELSE JITCOMPILE,
             THEN
         ELSE
             COUNT NUMBER? ?ERR
@@ -193,11 +187,9 @@ VARIABLE JSTATE
 : JIT-COMPILER    ['] <JIT>    'IV ! ;
 : FORTH-COMPILER  ['] <INTERP> 'IV ! ;
 
-: TCODE ( -- addr) HEADER !CSP   THERE , ;
-
 : JIT: ( -- JIT-xt)
     ALSO JITS         \ put JITS VOCABULARY first in search order
-    TCODE
+    CODE
     JSTATE ON
     JIT-COMPILER
 ;
@@ -206,10 +198,9 @@ VARIABLE JSTATE
     PREVIOUS          \ restore previous search order
     FORTH-COMPILER
     JSTATE OFF
-    'NEXT' T,        \ compile NEXT at end of new code word
+    NEXT,            \ compile NEXT at end of new code word
+    ENDCODE
     ?CS              \ check control flow stack
-    ?CSP
 ; IMMEDIATE
 
 HERE SWAP - SPACE DECIMAL . .( bytes)
-NEWHEAP
