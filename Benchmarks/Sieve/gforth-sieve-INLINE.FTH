@@ -1,10 +1,12 @@
 \ gforth's siev.fs (uses address arithmetic and DO for the inner loop)
 
 NEEDS .S    FROM DSK1.TOOLS
+NEEDS INLINE[  FROM DSK1.INLINE
 
 \ Running on Camel99 Forth
 \ Byte Magazine version:  120 seconds
 \ GForth version       :   74.1 seconds (38% faster)
+\ with inline              63.5
 
 \ DECIMAL
 \ 8190 CONSTANT SIZE
@@ -24,16 +26,16 @@ FLAGS SIZE + CONSTANT EFLAG
   0 3   ( -- accumulator 1st-offset)
   EFLAG FLAGS  \ end-address, start-address
   DO   I C@    \ I is the array address
-       IF  DUP I + DUP EFLAG <
+       IF  INLINE[ DUP I + DUP EFLAG ]  <
            IF
                 EFLAG SWAP
                 DO
-                    0 I C!
+                  INLINE[ 0 I C! ]
                 DUP +LOOP
            ELSE
                  DROP
            THEN
-           SWAP 1+ SWAP  \ inc. the accumulator
+           INLINE[ SWAP 1+ SWAP  ]
         THEN
         CELL+            \ inc. offset by 2
     LOOP

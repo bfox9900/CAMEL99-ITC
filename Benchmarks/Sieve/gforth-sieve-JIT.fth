@@ -18,28 +18,29 @@ DECIMAL
 
 FLAGS SIZE + CONSTANT EFLAG
 
-
-JIT: JIT-PRIME  ( -- n )
-  FLAGS SIZE 1 FILL
-  0 3   ( -- accumulator 1st-offset)
-  EFLAG FLAGS  \ end-address, start-address
-  DO   I C@    \ I is the array address
-       IF  DUP I + DUP EFLAG <
-           IF
-                EFLAG SWAP
-                DO
-                    0 I C!
-                DUP +LOOP
-           ELSE
-                 DROP
-           THEN
-           SWAP 1+ SWAP  \ inc. the accumulator
-        THEN
-        CELL+            \ inc. offset by 2
-    LOOP
-    DROP
+JIT: INNER ( addr - addr')
+    IF
+        EFLAG SWAP
+        DO  0 I C! DUP +LOOP
+    ELSE
+        DROP
+    THEN
+    SWAP 1+ SWAP
 ;JIT
 
+: JIT-PRIME
+    FLAGS SIZE 1 FILL
+    0 3   ( -- accumulator 1st-offset)
+    EFLAG FLAGS  \ end-address, start-address
+    DO
+        I C@    \ I is the array address
+        IF  DUP I + DUP EFLAG <
+
+        THEN
+        CELL+                   \ inc. offset by 2
+    LOOP
+    DROP
+;
 
 : PRIMES ( -- )
    PAGE ."  10 Iterations"

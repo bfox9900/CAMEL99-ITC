@@ -7,24 +7,43 @@
 
 \ Version II compiles code into dictionary ram as CODE definitions.
 
+\ Version III uses a literal stack to allow optimizing
+
 NEEDS .S     FROM DSK1.TOOLS   \ debug
 NEEDS ELAPSE FROM DSK1.ELAPSE  \ execution timing
 NEEDS CASE   FROM DSK1.CASE
 NEEDS LIFO:  FROM DSK1.STACKS
 NEEDS WORDLIST FROM DSK1.WORDLISTS
 
+VOCABULARY ASSEMBLER
+ALSO ASSEMBLER DEFINITIONS
+
+INCLUDE DSK1.ASM9900
+
+ONLY FORTH ALSO ASSEMBLER ALSO FORTH DEFINITIONS
+
+
 HERE
+
+10 LIFO: LITSTK
+: >LIT    LITSTK PUSH ;
+: LIT>    LITSTK POP ;
+: LIT?  ( -- n) LITSTK STACK-DEPTH ;
+: /LIT  LITSTK DUP @  SWAP CELL+ ! ;
+: .LS   LIT? 0 DO LIT> U. LOOP ;
 
 8 LIFO: CS     \ small CONTROL FLOW STACK for loops and branching
 : >CS     ( n -- ) CS PUSH ;
 : CS>     ( -- n ) CS POP ;
 : CS>SWAP ( -- )   CS> CS> SWAP >CS >CS ;
-: ?CS     CS STACK-DEPTH ABORT" Un-match IF or loop" ;
+: ?CS     CS STACK-DEPTH ABORT" Un-match IF or loop words" ;
 
 : FORTH-COMPILER  ['] <INTERP> 'IV ! ;
 
 : ABORT"  ( ? --) \ restores normal Forth interpreter
-   DUP IF FORTH-COMPILER THEN  POSTPONE ABORT" ; IMMEDIATE
+     DUP IF FORTH-COMPILER
+            /LIT    ( collapse litstk)
+     THEN  POSTPONE ABORT" ; IMMEDIATE
 
 HEX
 \ *** changed for kernel V2.69 ***
@@ -59,10 +78,19 @@ CODE +      A136 ,         NEXT, ENDCODE
 \ tiny assemblers to explain the code
 HEX
 : 1-,    ( n -- n') COMPILES 1-  ; \ TOS DEC,
-: DUP,   COMPILES DUP  ;
-: DROP,  COMPILES DROP ;
 
-: LIT,   ( n -- )    DUP, 0204 ,  , ; \ LI R4,<n>
+
+\ ================================================
+\     ATTEMPT TO OPTIMIZE DROP/DUP sequences
+
+VARIABLE TOSFREE  \ TRUE = TOS REGISTER IS FREE TO USE
+
+: DUP,   COMPILES DUP    TOSFREE ON  ;
+: DROP,  COMPILES DROP   TOSFREE OFF ;
+\ =================================================
+
+
+: LIT,   ( n -- )  COMPILES DUP  0204 ,  , ; \ LI R4,<n>
 
 \ store a byte offset in odd byte of addr.
 \ Addr is the location of Jump instruction
@@ -131,30 +159,96 @@ ALSO JITS DEFINITIONS
 
 : REPEAT  POSTPONE AGAIN  POSTPONE THEN ; IMMEDIATE
 
+
 \ --------------------------------------------------------------
 
 FORTH DEFINITIONS
 \ CFA of a code word contains the address of the next cell
 : CODE? ( XT -- ?)  DUP @ 2- = ;
 
-: OTHERS ( xt -- ) \
+VARIABLE XT-TYPE  \ future ...
+: ISVAR   1 XT-TYPE ! ;
+: ISCONST 2 XT-TYPE ! ;
+: ISUSER  3 XT-TYPE ! ;
+: ISCODE  4 XT-TYPE ! ;
+
+: OPT@, ( xT 'XT)
+    LIT? 0=
+    IF CODE,  \ if not literal found, the argument is already on the stack
+    ELSE
+        DROP  \ don't need xt of kernel code.
+    \ this is the optimized code
+       DUP,
+       LIT> @@ TOS MOV,  \ compile symbolic addressing code
+    THEN
+;
+
+ : OPTC@, ( xT 'XT)
+    LIT? 0=
+    IF CODE,  \ if not literal found, the argument is already on the stack
+    ELSE
+        DROP  \ don't need xt of kernel code.
+    \ this is the optimized code
+       DUP,
+       LIT> @@ TOS MOVB,  \ compile symbolic addressing code
+       TOS 8 SRA,
+    THEN
+ ;
+
+: OPT!,
+    LIT? 0=
+    IF CODE,
+    ELSE
+        DROP  \ don't need xt of kernel code.
+    \ this is the optimized code
+        TOS LIT> @@ MOV,   \ compile stack-> memory instruction
+        DROP,              \ to refill TOS
+    THEN
+;
+
+: OPTC!,
+    LIT? 0=
+    IF CODE,
+    ELSE
+        DROP  \ don't need xt of kernel code.
+    \ this is the optimized code
+        1 (SP) LIT> @@ MOVB,  \  26
+        SP INCT,              \  10   inc. stack pointer by 2
+        DROP,                 \ to refill TOS
+    THEN
+;
+
+: OTHERS, ( xt -- ) \
     DUP
     @     \ FETCH the "executor" addres
     CASE  \ compare to executor words
-        ['] DOVAR    OF  >BODY   LIT, ENDOF
-        ['] DOCON    OF  >BODY @ LIT, ENDOF
-        ['] DOUSER @ OF  EXECUTE LIT, ENDOF
+        ['] DOVAR    OF  >BODY   >LIT  ENDOF
+        ['] DOCON    OF  >BODY @ LIT,  ENDOF
+        ['] DOUSER @ OF  EXECUTE LIT,  ENDOF
 \       ['] DOCOL    OF  >BODY RECURSE  ENDOF     \ future? :-)
         TRUE ABORT" Can't optimize word"
+    ENDCASE
+;
+
+\ specific CODE word and optimizers , otherwise just compile kernel code
+: OPT-CODE,
+    DUP
+    CASE
+        ['] @ OF    OPT@,   ENDOF
+        ['] C@ OF  OPTC@,   ENDOF
+
+        ['] ! OF    OPT!,   ENDOF
+        ['] C! OF  OPTC!,   ENDOF
+                    CODE,  \ default, compile kernel code
     ENDCASE
 ;
 
 : JITCOMPILE,  ( xt -- )
     DUP CODE?
     IF
-       CODE,    \ compile kernel code inline
+       OPT-CODE,    \ compile kernel code inline
     ELSE
-       OTHERS   \ handle everything else
+       OTHERS,   \ handle everything else
     THEN
 ;
 
@@ -164,6 +258,8 @@ FORTH DEFINITIONS
 \ 3. ABORTS if you try to compile a Forth word
 \ 4. Compiles literal numbers with LI instruction
 
+VARIABLE JSTATE
+
 : <JIT> ( -- )
     'SOURCE 2!  >IN OFF
     BEGIN
@@ -171,13 +267,13 @@ FORTH DEFINITIONS
     WHILE
         FIND ?DUP
         IF ( it's a word)
-            1+ STATE @ 0= OR
+            1+ JSTATE @ 0= OR
             IF   EXECUTE      \ IF BEGIN etc. are all immediate
             ELSE JITCOMPILE,
             THEN
         ELSE
             COUNT NUMBER? ?ERR
-            STATE @ IF LIT, THEN  \ special number compiler
+            JSTATE @ IF LIT, THEN  \ special number compiler
         THEN
         DEPTH 0< ABORT" JIT: Underflow"
     REPEAT
@@ -189,16 +285,32 @@ FORTH DEFINITIONS
 : JIT: ( -- JIT-xt)
     ALSO JITS         \ put JITS VOCABULARY first in search order
     CODE
-    JIT-COMPILER ]
+    JSTATE ON
+    /LIT              \ clear the literal stack
+    JIT-COMPILER
 ;
 
 : ;JIT ( JIT-XT -- )
     PREVIOUS          \ restore previous search order
     FORTH-COMPILER
+    JSTATE OFF
     NEXT,            \ compile NEXT at end of new code word
-    ENDCODE
-    POSTPONE [
+    LIT? IF CR ." WARNING: LIT stack contains " CR ." >> ".LS THEN
     ?CS              \ check control flow stack
+    ENDCODE
 ; IMMEDIATE
 
 HERE SWAP - SPACE DECIMAL . .( bytes)
+
+VARIABLE X
+VARIABLE Y
+HEX
+JIT: TEST1
+    FFFF 0
+    DO
+       X C@ DROP
+    LOOP
+;JIT
+
+' TEST1 >BODY
+.S
