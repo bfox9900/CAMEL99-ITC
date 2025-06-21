@@ -11,8 +11,11 @@ NEEDS .S    FROM DSK1.TOOLS
 \ VARIABLE FLAGS   SIZE ALLOT  0 FLAGS !
 \ FLAGS SIZE + CONSTANT EFLAG
 
+NEEDS FILLW   FROM  DSK1.FILLW
+
 \ Use 8K in low RAM for the array
 HEX CREATE FLAGS  2000 ALLOT  0 FLAGS !
+HEX 0101 CONSTANT $0101
 
 DECIMAL
 8190 CONSTANT SIZE
@@ -20,7 +23,9 @@ DECIMAL
 FLAGS SIZE + CONSTANT EFLAG
 
 : DO-PRIME  ( -- n )
-  FLAGS SIZE 1 FILL
+ \ FLAGS SIZE 1 FILL
+    FLAGS SIZE  $0101 FILLW  ( set array )
+
   0 3   ( -- accumulator 1st-offset)
   EFLAG FLAGS  \ end-address, start-address
   DO   I C@    \ I is the array address

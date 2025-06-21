@@ -35,24 +35,24 @@ DECIMAL
    10 0 DO  DO-PRIME  CR SPACE . ." Primes"  LOOP
    CR ." Done!"
 ;
- 
-INCLUDE DSK1.FILLW 
-\ WITH fast fill
+
+INCLUDE DSK1.FILLW
+\ WITH fast fill and 2* and 2DROP
 HEX 0101 CONSTANT $0101
-DECIMAL 
+DECIMAL
 : DO-PRIME3
    FLAGS SIZE  $0101 FILLW  ( set array )
    0        ( counter )
    SIZE 0
    DO FLAGS I + C@
-     IF I DUP +  3 +  DUP I +
+     IF I 2*  3 +  DUP I +
         BEGIN
           DUP SIZE <
         WHILE
            0 OVER FLAGS +  C!
            OVER +
         REPEAT
-        DROP DROP
+        2DROP
         1+
      THEN
    LOOP
@@ -86,5 +86,39 @@ DECIMAL
    PAGE ." 10 Iterations"
    10 0 DO  DO-PRIME2 LOOP
    CR
+   CR ." Done!"
+;
+
+
+\ WITH fast fill and 2* and 2DROP "TABLE:"
+NEEDS FILLW   FROM  DSK1.FILLW
+NEEDS TABLE:  FROM DSK1.TABLES
+
+HEX 0101 CONSTANT $0101
+
+FLAGS TABLE: ]FLAGS
+
+DECIMAL
+: DO-PRIME4
+   FLAGS SIZE  $0101 FILLW  ( set array )
+   0        ( counter )
+   SIZE 0
+   DO I ]FLAGS C@
+     IF I 2*  3 +  DUP I +
+        BEGIN
+          DUP SIZE <
+        WHILE
+           0 OVER ]FLAGS C!
+           OVER +
+        REPEAT
+        2DROP
+        1+
+     THEN
+   LOOP
+;
+
+: PRIMES4 ( -- )
+   PAGE ."  10 Iterations"
+   10 0 DO  DO-PRIME4  CR SPACE . ." Primes"  LOOP
    CR ." Done!"
 ;
