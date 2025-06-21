@@ -25,25 +25,26 @@ ONLY FORTH ALSO ASSEMBLER ALSO FORTH DEFINITIONS
 
 HERE
 
-10 LIFO: LITSTK
-: >LIT    LITSTK PUSH ;
-: LIT>    LITSTK POP ;
-: LIT?  ( -- n) LITSTK STACK-DEPTH ;
-: /LIT  LITSTK DUP @  SWAP CELL+ ! ;
-: .LS   LIT? 0 DO LIT> U. LOOP ;
+10 LIFO: ARGSTK
+: >ARG    ARGSTK PUSH ;
+: ARG>    ARGSTK POP ;
+: ARG?  ( -- n) ARGSTK STACK-DEPTH ;
+: /ARGS  ARGSTK DUP @  SWAP CELL+ ! ;
+: .ARGS   ARG? 0 DO ARG> U. LOOP ;
 
 8 LIFO: CS     \ small CONTROL FLOW STACK for loops and branching
 : >CS     ( n -- ) CS PUSH ;
 : CS>     ( -- n ) CS POP ;
 : CS>SWAP ( -- )   CS> CS> SWAP >CS >CS ;
-: ?CS     CS STACK-DEPTH ABORT" Un-match IF or loop words" ;
+: ?CS     CS STACK-DEPTH ABORT" Un-matched IF or loop words" ;
 
 : FORTH-COMPILER  ['] <INTERP> 'IV ! ;
 
 : ABORT"  ( ? --) \ restores normal Forth interpreter
      DUP IF FORTH-COMPILER
-            /LIT    ( collapse litstk)
-     THEN  POSTPONE ABORT" ; IMMEDIATE
+            /ARGS    ( collapse ARGSTK)
+            POSTPONE ABORT"
+     THEN  ; IMMEDIATE
 
 HEX
 \ *** changed for kernel V2.69 ***
@@ -79,7 +80,6 @@ CODE +      A136 ,         NEXT, ENDCODE
 HEX
 : 1-,    ( n -- n') COMPILES 1-  ; \ TOS DEC,
 
-
 \ ================================================
 \     ATTEMPT TO OPTIMIZE DROP/DUP sequences
 
@@ -87,9 +87,25 @@ VARIABLE TOSFREE  \ TRUE = TOS REGISTER IS FREE TO USE
 
 : DUP,   COMPILES DUP    TOSFREE ON  ;
 : DROP,  COMPILES DROP   TOSFREE OFF ;
+
+: LOOKBACK ( n -- u) CELLS NEGATE HERE + @ ; \ read existing code
+: REMOVE   ( n -- )  CELLS NEGATE ALLOT ; \ removes cells of code
+
+HEX
+C136 CONSTANT "DROP"  \ *SP+ R4 MOV,
+
+: ?DUP,
+    1 LOOKBACK  "DROP" =
+    IF   1 REMOVE  TOSFREE ON
+    ELSE DUP,
+    THEN
+;
+
+
 \ =================================================
 
-
+HEX
+\ compile code to load TOS ( r4 ) with n
 : LIT,   ( n -- )  COMPILES DUP  0204 ,  , ; \ LI R4,<n>
 
 \ store a byte offset in odd byte of addr.
@@ -172,65 +188,54 @@ VARIABLE XT-TYPE  \ future ...
 : ISUSER  3 XT-TYPE ! ;
 : ISCODE  4 XT-TYPE ! ;
 
-: OPT@, ( xT 'XT)
-    LIT? 0=
-    IF CODE,  \ if not literal found, the argument is already on the stack
-    ELSE
-        DROP  \ don't need xt of kernel code.
-    \ this is the optimized code
-       DUP,
-       LIT> @@ TOS MOV,  \ compile symbolic addressing code
-    THEN
-;
+: OPTIMIZER: : ;
+: ;OPTIMIZER  POSTPONE CODE,  POSTPONE ;  ; IMMEDIATE
 
- : OPTC@, ( xT 'XT)
-    LIT? 0=
-    IF CODE,  \ if not literal found, the argument is already on the stack
-    ELSE
-        DROP  \ don't need xt of kernel code.
-    \ this is the optimized code
-       DUP,
-       LIT> @@ TOS MOVB,  \ compile symbolic addressing code
-       TOS 8 SRA,
-    THEN
- ;
+: CASE:       POSTPONE IF POSTPONE DROP ; IMMEDIATE
+: ;CASE       POSTPONE EXIT POSTPONE THEN ; IMMEDIATE
 
-: OPT!,
-    LIT? 0=
-    IF CODE,
-    ELSE
-        DROP  \ don't need xt of kernel code.
-    \ this is the optimized code
-        TOS LIT> @@ MOV,   \ compile stack-> memory instruction
-        DROP,              \ to refill TOS
-    THEN
-;
+OPTIMIZER: OPT@, ( xt --)
+    ARG? CASE:  ?DUP, ARG> @@ TOS MOV,   ;CASE
+;OPTIMIZER
 
-: OPTC!,
-    LIT? 0=
-    IF CODE,
-    ELSE
-        DROP  \ don't need xt of kernel code.
-    \ this is the optimized code
-        1 (SP) LIT> @@ MOVB,  \  26
-        SP INCT,              \  10   inc. stack pointer by 2
-        DROP,                 \ to refill TOS
-    THEN
-;
+OPTIMIZER: OPTC@, ( xT 'XT)
+    ARG? CASE:  ?DUP,  ARG> @@ TOS MOVB,  TOS 8 SRA,   ;CASE
+;OPTIMIZER
 
-: OTHERS, ( xt -- ) \
-    DUP
-    @     \ FETCH the "executor" addres
-    CASE  \ compare to executor words
-        ['] DOVAR    OF  >BODY   >LIT  ENDOF
-        ['] DOCON    OF  >BODY @ LIT,  ENDOF
-        ['] DOUSER @ OF  EXECUTE LIT,  ENDOF
-\       ['] DOCOL    OF  >BODY RECURSE  ENDOF     \ future? :-)
-        TRUE ABORT" Can't optimize word"
-    ENDCASE
-;
+OPTIMIZER: OPT!,
+    ARG? CASE:  TOS ARG> @@ MOV, DROP,   ;CASE
+;OPTIMIZER
 
-\ specific CODE word and optimizers , otherwise just compile kernel code
+
+OPTIMIZER: OPTC!,
+    ARG? CASE:
+           1 (SP) ARG> @@ MOVB,  SP INCT,  DROP,
+        ;CASE
+;OPTIMIZER
+
+0204 CONSTANT "LI" \ load imm. to R4
+
+OPTIMIZER: OPT+, ( xt -- )
+\ 2 literal number added togther
+    2 LOOKBACK "LI" =  6 LOOKBACK "LI" = AND
+    CASE:
+       1 LOOKBACK 5 LOOKBACK + ( -- sum) \ read literals and add them
+       8 REMOVE \ get rid of old code
+       ( -- sum) LIT,     \ compile sum as a literal
+   ;CASE
+
+\ case of literal and address argument (ie: a variable)
+    2 LOOKBACK "LI" =  ARG? AND
+    CASE:
+       1 LOOKBACK ARG> + ( sum ) \ literal + address
+       4 REMOVE
+       LIT,
+    ;CASE
+
+;OPTIMIZER
+
+\ specific CODE word and optimizers
+\ If the case statemente can't find it, just compile kernel code
 : OPT-CODE,
     DUP
     CASE
@@ -239,7 +244,22 @@ VARIABLE XT-TYPE  \ future ...
 
         ['] ! OF    OPT!,   ENDOF
         ['] C! OF  OPTC!,   ENDOF
+
+        ['] +  OF  OPT+,    ENDOF
+
                     CODE,  \ default, compile kernel code
+    ENDCASE
+;
+
+: OTHERS, ( xt -- ) \
+    DUP
+    @     \ FETCH the "executor" addres
+    CASE  \ compare to executor words
+        ['] DOVAR    OF  >BODY   >ARG  ENDOF \ push address onto literal stack
+        ['] DOCON    OF  >BODY @ LIT,  ENDOF
+        ['] DOUSER @ OF  EXECUTE LIT,  ENDOF
+\       ['] DOCOL    OF  >BODY RECURSE  ENDOF \ future? :-)
+        TRUE ABORT" Can't optimize word"
     ENDCASE
 ;
 
@@ -286,7 +306,7 @@ VARIABLE JSTATE
     ALSO JITS         \ put JITS VOCABULARY first in search order
     CODE
     JSTATE ON
-    /LIT              \ clear the literal stack
+    /ARGS              \ clear the literal stack
     JIT-COMPILER
 ;
 
@@ -295,22 +315,49 @@ VARIABLE JSTATE
     FORTH-COMPILER
     JSTATE OFF
     NEXT,            \ compile NEXT at end of new code word
-    LIT? IF CR ." WARNING: LIT stack contains " CR ." >> ".LS THEN
+    ARG? IF CR ." WARNING: LIT stack contains " CR ." >> ".ARGS THEN
     ?CS              \ check control flow stack
     ENDCODE
 ; IMMEDIATE
 
 HERE SWAP - SPACE DECIMAL . .( bytes)
 
+
+\ test program
 VARIABLE X
 VARIABLE Y
+VARIABLE Z
+
 HEX
 JIT: TEST1
     FFFF 0
     DO
-       X C@ DROP
+       I X !
+       X C@ Y !
+       Y @ Z !
     LOOP
 ;JIT
 
-' TEST1 >BODY
-.S
+\ ' TEST1 >BODY
+\ .S
+SP@ SP!
+
+
+JIT: TEST2
+   2  3 +
+;JIT
+
+
+
+
+
+\ DEBUG VERSION
+: ;JIT ( JIT-XT -- )
+    PREVIOUS          \ restore previous search order
+    FORTH-COMPILER
+    JSTATE OFF
+    NEXT,            \ compile NEXT at end of new code word
+    ARG? IF CR ." WARNING: LIT stack contains " CR ." >> ".ARGS THEN
+    ?CS              \ check control flow stack
+    CR .S
+; IMMEDIATE

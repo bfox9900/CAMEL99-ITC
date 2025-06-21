@@ -24,7 +24,7 @@ JIT: DO-PRIME
    FLAGS SIZE  $0101 FILLW  ( set array )
    0        ( counter )
    SIZE 0
-   DO FLAGS I + C@
+   DO I FLAGS  + C@
      IF
         I 2*  3 +  DUP I +
         BEGIN
