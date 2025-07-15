@@ -1,0 +1,532 @@
+*******************************************************************************
+*                                                                             *
+*   original 'LINES' demo for the cartridge 'Mini Memory'                     *
+*                                                                             *
+*-----------------------------------------------------------------------------*
+*                                                                             *
+*   based on a disassembler listing (author unknown) found on a disk shared   *
+*   by user 'ti99iuc' in a posting at atariage.com                            *
+*   https://forums.atariage.com/topic/382601-lines-%C2%B4demo/                *
+*                                                                             *
+*   inserted a lot of labels as branching destinations                        *
+*   replaced all '$ + xx' and the like jumps with labels                      *
+*                                                                             *
+*   added a bunch of EQU directives to avoid constants in the code            *
+*                                                                             *
+*   beautified code by inserting empty and tail lines to emphasize logic      *
+*                                                                             *
+*   briefly explains the usage of the subroutines right at their entry        *
+*                                                                             *
+*   verbosely explains almost every single line of code to the right          *
+*   so the complete program could be read as 'prosa' ;-)                      *
+*                                                                             *
+*   added some remarks about possible changes that could or should be made    *
+*   actually nothing is changed, the code remains the original code as it     *
+*   is found in the Mini Memory after loading                                 *
+*                                                                             *
+*   happy computing!                                                          *
+*                                                                             *
+*   Michael 'miriki' Rittweger                                  15-Jul-2025   *
+*   m.rittweger@miriki.com                           Kiel, Northern Germany   *
+*                                                                             *
+*******************************************************************************
+
+       DEF  LINES
+
+       REF  KSCAN             Key Scan
+* The standard VDP routines aren't very fast and could easily replaced by a
+* few lines of own code, preventing BLWP and using BL for instance
+* A VSBMW (VDP Single Byte Multiple Write) routine would be a good enhancement
+* then for e.g. clearing the PDT and CLT in one call
+* The 'COPYR1' routine below is kind of like that
+       REF  VSBR              VDP Single Byte Read
+       REF  VWTR              VDP Write To Register
+       REF  VSBW              VDP Single Byte Write
+
+SYSRST EQU  >0000             Address of the "System Reset" routine
+
+BLWPWS EQU  >8300             Start of Scratch PAD RAM, used for workspace reg.
+WSPACE EQU  >8320             Workspace registers in fast RAM
+
+SETKJ  EQU  >8374             Set polling mode: Key, Joy1, Joy2
+GETKEY EQU  >8375             ASCII of keypress
+
+VDPWD  EQU  >8C00             VDP Write Data port (see VSBW)
+STATUS EQU  >837C             GPL Status byte (Bit 2 >20 ind. new keypress)
+
+PDTADR EQU  >0000             Pattern Descriptor Table
+PDTLEN EQU  >1800             Length of PDT
+SITADR EQU  >1800             Screen Image Table / Name Table
+SITLEN EQU  >0300             Length of SIT
+CLTADR EQU  >2000             Color Table
+CLTLEN EQU  >1800             Length of CLT
+SATADR EQU  >1B00             Sprita Attribute Table
+SATLEN EQU  >0080             Length of SAT
+
+RNDADD EQU  >1D6B             dec. 7531 for the Random-series
+
+       AORG >7CD6             Absolute Address in Mini Memory RAM
+
+*******************************************************************************
+*                                                                             *
+*   sub programs                                                              *
+*                                                                             *
+*******************************************************************************
+
+* load R2 with a pointer to a data table with "DATA >rrvv" where rr = VDP
+* register no. and vv = value to write into that register.
+* End the table with a "DATA >FFFF" entry.
+
+VUPDAT MOV  *R2+,R0           Get reg.no. and value from table
+       JLT  XVUPD             If >FFFF then jump to end of routine
+
+       BLWP @VWTR             Write reg.no. (MSB) and value (LSB)
+       JMP  VUPDAT            continue loop
+
+XVUPD  B    *R11              Return to calling program
+
+*******************************************************************************
+
+* Load R0 with a VDP address and R1 with a value to write from there on. Load
+* R2 with a count of how many times R1 should be written in row
+
+COPYR1 BLWP @VSBW             write the starting address and value into VDP
+       JMP  CR1END            jump to end of loop
+
+CR1NXT MOVB R1,@VDPWD         using autoincrement of address to write next char
+
+CR1END DEC  R2                while the counter didn't reach 0
+       JNE  CR1NXT            ... continue with the loop
+
+       B    *R11              Return to calling program
+
+*******************************************************************************
+
+* Take the random seed, add >1D6B (dez. 7531) and write it back, prevent 0.
+
+RANDOM MOV  @SEED,R1          Get the actual random number
+
+RNDNXT AI   R1,RNDADD         Add 7531
+       JEQ  RNDNXT            If 0 then repeat that step
+
+       MOV  R1,@SEED          Set the new random number
+
+       B    *R11              Return to calling program
+
+*******************************************************************************
+
+* Load R0 with the X position, R1 with the Y position and R2 with the color
+* Then this routine sets a pixel and its FG/BG there after calculating the
+* byte offset into Color/Pattern table
+
+SETCOL MOV  R1,R4             <R0,R1> TO COLOR R2
+       SLA  R4,5
+       SOC  R1,R4
+       ANDI R4,>FF07
+       A    R0,R4
+       ANDI R0,>0007
+       S    R0,R4
+       LI   R3,>8000
+       SRC  R3,0
+* This below assumes the PDT at >0000
+* It breaks if VDP R3/4 are changed to produce other base addresses
+* An "LI R0,PDTADR" and "A R4,R0" would be better here
+       MOV  R4,R0
+       BLWP @VSBR             Get the actual 8 pixels set in the PDT there
+
+       SOC  R3,R1             Add the new pixel
+       BLWP @VSBW             Write the new 8 pixels into the PDT
+
+* This assumes the CLT is >2000 after the PDT which is assumed at >0000
+* It breaks if VDP R3/4 are changed to produce other base addresses
+* Same as above, an "LI R0,CLTADR" and "A R4,R0" would be better here
+       AI   R0,CLTADR
+       BLWP @VSBR             Get the actual FG/BG color set into the CLT there
+
+       MOVB R1,R1             Is there already a color set?
+       JNE  XSETCL            ... Then jump to end of routine
+
+       SRC  R2,4
+       SOC  R2,R1
+       BLWP @VSBW             Write the new color into the CLT
+
+XSETCL B    *R11              Return to calling program
+
+*******************************************************************************
+
+* Adaption of the Bresenham algorithm to draw a line without gaps using
+* "Micro-Steps"
+* Before calling this routine, prepare:
+* R5: Color >0x00 (low nibble of MSB)
+* R6: start-X
+* R7: start-Y
+* R8: end-X
+* R9: end-Y
+
+BRSNHM DATA BLWPWS            Workspace registers in fast RAM
+       DATA BRSNH0            Entry point
+
+BRSNH0 CLR  R12               step-M = 0
+       LI   R5,1              step-X = +1 (to right)
+       LI   R6,1              step-Y = +1 (to bottom)
+
+DX     MOV  @16(R13),R7       Get "old" R8 - End-X
+       MOV  @12(R13),R9       Get "old" R6 - start-X
+* R7 (DX) = R7 (X2) - R9 (X1)
+       S    R9,R7             From left to right? (delta-X pos.)
+       JLT  DXNEG             No? Then continue at "right to left"
+       JMP  DXPOS             ... Else continue at "left to right"
+
+* right to left (delta-X neg.)
+DXNEG  NEG  R5                step-X = -1 (to left)
+       NEG  R7                Delta-X to positive
+
+* left to right (delta-X pos.)
+DXPOS  MOV  R7,R7             Is delta-X = 0 ? (vertical line)
+       JNE  DY                No? Then skip next step (step-M stays at 0)
+
+       SETO R12               step-M = -1
+
+* R7 IS delta-X (always pos.), R5 IS step-X
+
+DY     MOV  @18(R13),R8       Get "old" R9 - end-Y
+       MOV  @14(R13),R10      Get "old" R7 - start-Y
+* R8 (DY) = R8 (Y2) - R10 (Y1)
+       S    R10,R8            From top to bottom? (delta-Y pos.)
+       JLT  DYNEG             No? Then continue at "bottom to top"
+       JMP  NPIXEL            ... Else continue at "main loop"
+
+* bottom to top (delty-y neg.)
+DYNEG  NEG  R6                step-Y = -1 (to top)
+       NEG  R8                delta-Y to positive
+
+* R8 IS delta-Y (always pos.), R6 IS step-Y
+
+* main loop for drawing the line
+
+NPIXEL MOV  R9,R0             pos-X to R0
+       MOV  R10,R1            pos-Y to R1
+       MOV  @10(R13),R2       Color ("old" R5) to R2
+       BL   @SETCOL           Set the color
+
+       C    R9,@16(R13)       Has R9 reached "old" R8 (end-X)?
+       JNE  BRENSE            No? continue at "advance pixel position"
+
+       C    R10,@18(R13)      Has R10 reached "old" R9 (end-Y)?
+       JNE  BRENSE            No? continue at "advance pixel position"
+
+       RTWP                   Return to calling programm
+
+* advance pixel position
+BRENSE MOV  R12,R12           step-M reached?
+       JLT  YUPDAT            No? Then continue at "YUPDAT"
+
+       A    R5,R9             Add step-X to pos-X
+       S    R8,R12            Subtract delta-Y from step-M
+       JMP  NPIXEL            Continue with the next pixel
+
+YUPDAT A    R6,R10            Add step-Y to pos-Y
+       A    R7,R12            Add delta-X to step-M
+       JMP  NPIXEL            Continue with the next pixel
+
+*******************************************************************************
+*                                                                             *
+*   main program loop - entry point 'LINES' after loading                     *
+*                                                                             *
+*******************************************************************************
+
+LINES  LWPI WSPACE            Workspace Registers in fast RAM
+
+       LI   R2,BITMAP         Set VDP registers to "bitmap" mode
+       BL   @VUPDAT           (See further comments at the DATA block)
+
+       LI   R0,SATADR
+       LI   R1,>D000          Set 208 to the first Sprite in the SAT
+       BLWP @VSBW             This disables all sprites
+
+* Fill the SIT at >1800 3 times with >00 .. >FF (so >0300 in len)
+
+       LI   R0,SITADR         Starting address
+       CLR  R2                Counter 0 .. 2 (outer loop)
+
+INIT0  CLR  R1                Starting character (LSB) (inner loop)
+
+INIT1  SWPB R1                Get character into MSB
+       BLWP @VSBW             ... write it
+
+       SWPB R1                ... and put it back into LSB
+       INC  R1                Next inner loop / character >00 .. >FF
+       INC  R0                Next position >00 .. >FF in the SIT
+       CI   R1,256            Did we pass >FF and reach >100 ?
+       JLT  INIT1             No? Then continue inner loop
+
+       INC  R2                Next outer loop
+       CI   R2,3              Did we reach 3 ?
+       JLT  INIT0             No? Then continue outer loop
+
+* This assumes the PDT at >0000
+* It breaks if VDP R3/4 are changed to produce other base addresses
+* (An "LI R0,PDTADR" would be better here...)
+       CLR  R0                Fill PDT (len >1800 @>0000) with >00
+       CLR  R1
+       LI   R2,PDTLEN
+       BL   @COPYR1
+
+       LI   R0,CLTADR         Fill CLT (len >1800 @>2000) with >00
+       LI   R1,>0000          (might use "CLR R1" here instead)
+       LI   R2,CLTLEN
+       BL   @COPYR1
+
+       LI   R0,>0711          VDP reg. 7: FG >1 (black), BG >1 (black)
+       BLWP @VWTR
+
+       CLR  @HOLDC            Start in color mode (monochrome >FFFF)
+       CLR  R3                counter for lines drawn
+
+       LI   R6,128            Start first line at X = 128
+       LI   R7,96             Start first line at Y = 96
+       LI   R8,211            End first line at X = 211
+       LI   R9,163            End first line at Y = 163
+       CLR  R0
+       INCT R0
+       MOV  R0,@X0            Step X0 = 2
+       INCT R0
+       MOV  R0,@Y0            Step Y0 = 4
+       INCT R0
+       MOV  R0,@X1            Step X1 = 6
+       INCT R0
+       MOV  R0,@Y1            Step Y1 = 8
+
+LNEXT  MOV  @HOLDC,R0         Color or Monochrome?
+       JNE  UPDEND            Not 0? Then Monochrome, skip next steps
+
+       BL   @RANDOM           generate new random number
+
+       ANDI R1,>000F          ... and use it as a 4 bit color code
+       MOV  R1,R5
+       CI   R5,2              prevent color 0 and 1
+       JHE  UPDEND
+
+       ORI  R5,2
+
+UPDEND A    @X0,R6            Add step-X0 to start-X of line
+       A    @Y0,R7            Add step-Y0 to start-Y of line
+       A    @X1,R8            Add step-X1 to end-X of line
+       A    @Y1,R9            Add step-Y1 to end-Y of line
+
+CHKR6  MOV  R6,R6             Did start-X exit the screen to the left?
+       JLT  NEGX0             ... then jump to "reverse X0 direction"
+
+       CI   R6,256            Did start-X not exit the screen to the right?
+       JLT  CHKR8             ... then skip next step
+
+NEGX0  NEG  @X0               Reverse the X0 (start of line) direction
+       A    @X0,R6            Add step-X0 to start-X of line
+
+CHKR8  MOV  R8,R8             Did end-X exit the screen to the left?
+       JLT  NEGX1             ... then jump to "reverse X1 direction"
+
+       CI   R8,256            Did end-X not exit the screen to the right?
+       JLT  CHKR7             ... then skip next step
+
+NEGX1  NEG  @X1               Reverse the X1 (end of line) direction
+       A    @X1,R8            Add step-X1 to end-X of line
+
+CHKR7  MOV  R7,R7             Did start-Y exit the screen to the top?
+       JLT  NEGY0             ... then jump to "reverse Y0 direction"
+
+       CI   R7,192            Did start-Y not exit the screen to the bottom?
+       JLT  CHKR9             ... then skip next step
+
+NEGY0  NEG  @Y0               Reverse the Y0 (start of line) direction
+       A    @Y0,R7            Add step-Y0 to start-Y of line
+
+CHKR9  MOV  R9,R9             Did end-Y exit the screen to the top?
+       JLT  NEGY1             ... then jump to "reverse Y1 direction"
+
+       CI   R9,192            Did end-Y not exit the screen to the bottom?
+       JLT  OKRALL            ... then skip next step
+
+NEGY1  NEG  @Y1               Reverse the Y1 (end of line) direction
+       A    @Y1,R9            Add step-Y1 to end-Y of line
+
+OKRALL BLWP @BRSNHM           Draw the line
+
+GK     CLR  R0
+       MOVB R0,@SETKJ         set "keyboard" polling
+       BLWP @KSCAN            poll the keyboard
+
+       MOVB @GETKEY,R0        get the ASCII code of a keypress
+       MOVB @STATUS,R1        Is any bit (esp. 2:COND) in GPL status byte set?
+       JEQ  HOLD0             No? Then skip the next queries
+
+GK1    CI   R0,>0500          Is the Key "Alt-4 (Clear)" pressed?
+       JNE  GK2               No? Skip the next step
+
+       B    @DONE             Jump to "program end"
+
+GK2    CI   R0,>4300          Is the key "C (Color)" pressed?
+       JNE  GK                No? Continue polling the keyboard
+
+       INV  @HOLDC            Switch between color / monochrome
+
+* Read it the other way round: Any key pressed? Then repeat polling
+* Thus a keypress (valid like "C" or not) pauses the line drawing
+HOLD0  CI   R0,>FF00          Is "No key" pressed?
+       JNE  GK                No? Then repeat polling
+
+       INC  R3                The next line was drawn, so ...
+       CI   R3,80             Were 80 lines drawn already?
+       JNE  LNEXT             No? Then draw the next line
+
+       CLR  R3                Yes? then start over by resetting the counter
+
+       LI   R2,10             Pause 10 (outer) times >FFFF (inner) loop
+       LI   R4,>FFFF
+
+WAIT0  DEC  R4                while we didn't reach 0 (inner) ...
+       JNE  WAIT0             ... continue inner loop
+
+       DEC  R2                while we didn't reach 0 (outer) ...
+       JNE  WAIT0             ... continue outer loop
+
+RNDX0  BL   @RANDOM           generate new random number for X0
+
+       MOV  R1,R1             random number is ...
+       JLT  MSKX0N            negative? Then skip next step
+
+MSKX0P ANDI R1,>0007          Mask the positive Rnd to 3 bits
+       JMP  RNDX1
+
+MSKX0N ORI  R1,>FFF8          Mask the negative Rnd to 3 bits
+       MOV  R1,@X0            Set new X0 direction
+
+RNDX1  BL   @RANDOM           generate new random number for X1
+
+       MOV  R1,R1             random number is ...
+       JLT  MSKX1N            negative? Then skip next step
+
+MSKX1P ANDI R1,>0007          Mask the positive Rnd to 3 bits
+       JMP  RNDY0             Skip next step
+
+MSKX1N ORI  R1,>FFF8          Mask the negative Rnd to 3 bits
+       MOV  R1,@X1            Set new X1 direction
+
+RNDY0  BL   @RANDOM           generate new random number for Y0
+
+       MOV  R1,R1             random number is ...
+       JLT  MSKY0N            negative? Then skip next step
+
+MSKY0P ANDI R1,>0007          Mask the positive Rnd to 3 bits
+       JMP  RNDY1             Skip next step
+
+MSKY0N ORI  R1,>FFF8          Mask the negative Rnd to 3 bits
+       MOV  R1,@Y0            Set new Y0 direction
+
+RNDY1  BL   @RANDOM           generate new random number for Y1
+
+       MOV  R1,R1             random number is ...
+       JLT  MSKY1N            negative? Then skip next step
+
+MSKY1P ANDI R1,>0007          Mask the positive Rnd to 3 bits
+       JMP  CLRPDT            Skip next step
+
+MSKY1N ORI  R1,>FFF8          Mask the negative Rnd to 3 bits
+       MOV  R1,@Y1            Set new Y1 direction
+
+* This assumes the PDT at >0000
+* It breaks if VDP R3/4 are changed to produce other base addresses
+* (An "LI R0,PDTADR" would be better here...)
+CLRPDT CLR  R0                Fill PDT (len >1800 @>0000) with >00
+       CLR  R1
+       CLR  R3
+       LI   R2,PDTLEN
+       BL   @COPYR1
+
+CLRCLT LI   R0,CLTADR         Fill CLT (len >1800 @>2000) with >00
+       LI   R1,>0000          (might use "CLR R1" here instead)
+       LI   R2,CLTLEN
+       BL   @COPYR1
+
+       B    @LNEXT            Draw the next (in this case: first) line.
+
+*******************************************************************************
+
+* RESET MACHINE
+
+DONE   LI   R2,TM             set VDP registers to "text" mode
+       BL   @VUPDAT
+       LIMI 2                 allow interrupts
+       BLWP @SYSRST           branch to system reset routine
+
+*******************************************************************************
+*                                                                             *
+*   data segment                                                              *
+*                                                                             *
+*******************************************************************************
+
+* BITMAP (graphics 2 mode), 16K, NOT BLANK
+* R0 : >02 ......x. : M3 set = graphics 2 mode
+* R1 : >E0 xxx..... : 16k, not blank, int. enable
+* R2 : >06 .....xx. : SIT = >06 * >0400 = @ >1800 (len >0300)
+* R3 : >FF xxxxxxxx : CLT = >FF * >0040 = len >1FFF @ >2000
+* R4 : >03 ......xx : PDT = >03 * >0800 = len >1FFF @ >0000
+* R5 : >36 ..xx.xx. : SAT = >36 * >0080 = @ >1B00 (len >0080)
+* R6 :
+* R7 : >17 ...x.xxx : FG >1 (black), BG >7 (cyan)
+
+BITMAP DATA >0002
+       DATA >01E0
+	   DATA >0206
+	   DATA >03FF             better: >DF for len >17FF
+       DATA >0403             better: >02 for len >17FF
+	   DATA >0536
+	   DATA >0717
+	   DATA >FFFF
+
+*******************************************************************************
+
+* TEXT (text mode)
+* R0 : >00 ........ :
+* R1 : >F0 xxxx.... : 16k, not blank, int. enable, M1 set = text mode
+* R2 : >00 ........ : SIT = >00 * >0400 = @ >0000 (len >0300)
+* R3 : >FF xxxxxxxx : CLT = >FF * >0040 = @ >3FC0 (unused in text mode)
+* R4 : >01 .......x : PDT = >00 * >0800 = @ >0800 (len >0800)
+* R5 : >60 .xx..... : SAT = >60 * >0080 = @ >3000 (len >0080)
+* R6 :
+* R7 :
+
+TM     DATA >0000
+       DATA >01F0
+	   DATA >0200
+	   DATA >03FF
+       DATA >0401
+	   DATA >0560
+	   DATA >FFFF
+
+*******************************************************************************
+
+       BSS  16                unused ?
+
+*******************************************************************************
+
+X0     DATA 0
+X1     DATA -6
+Y0     DATA -4
+Y1     DATA 8
+
+*******************************************************************************
+
+       BSS  2                 unused ?
+
+*******************************************************************************
+
+SEED   DATA >D88C             dec. 55436
+
+*******************************************************************************
+
+HOLDC  DATA >0000
+
+*******************************************************************************
+
+       END                    maybe use "END LINES" instead
