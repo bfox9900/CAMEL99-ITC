@@ -46,7 +46,7 @@ DECIMAL
     11 15 16 COLOR
 ;
 
-\ *** MACROS are used to speed up these critical routines **
+\ ** MACROS are used to speed up these critical routines **
 \ rather than computing VDP address from row/col every time
 \ we use translation functions on the initial address
 MACRO >Right    " 2+"          ( Vaddr -- vaddr' )
