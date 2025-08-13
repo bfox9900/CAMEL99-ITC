@@ -46,6 +46,7 @@ DECIMAL
     11 15 16 COLOR
 ;
 
+\ *** MACROS are used to speed up these critical routines **
 \ rather than computing VDP address from row/col every time
 \ we use translation functions on the initial address
 MACRO >Right    " 2+"          ( Vaddr -- vaddr' )
@@ -55,6 +56,7 @@ MACRO >Diagonal " C/L@ + 2+"   ( Vaddr -- vaddr' )
 
 \ combine char & char+1 into an integer and write in 1 operation
 MACRO .BRICK  " DUP 1+ SWAP FUSE  OVER V!"  ( Vaddr char -- Vaddr)
+
 MACRO SHADOW? " DUP VC@ DUP 39 <"  ( Vaddr -- Vaddr ?)
 
 : ?DIAGLINE   SHADOW? IF  1 OR SWAP VC! EXIT   THEN 2DROP ;
