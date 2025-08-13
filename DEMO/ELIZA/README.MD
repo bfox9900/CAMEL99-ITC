@@ -44,6 +44,5 @@ The definition of topic is below.
 : <TOPIC?>  <TOPIC> '?' ;
 ```
 
-
 With a little more effort we could make an operator the creates
 a dictionary entry of the flattened phrase automagically.
