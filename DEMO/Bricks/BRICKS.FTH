@@ -82,13 +82,19 @@ DECIMAL
             >Diagonal ?DIAGLINE
       REPEAT
       DROP
+\ use this line for program running from forth console
+      ?TERMINAL IF  TEXT ." Forth "  ABORT THEN
+
+\ *use this line  if you make a binary program
+\      ?TERMINAL IF  BYTE  THEN
+
     AGAIN
 ;
 
 HERE SWAP -
 CR DECIMAL . .( bytes added to system)
 
-\CR .( Building binary image)
+\ CR .( Building binary image)
 \ : COLD    WARM  GO  ;
 \
 \ LOCK
