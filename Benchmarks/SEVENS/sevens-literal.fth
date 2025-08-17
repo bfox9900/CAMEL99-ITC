@@ -8,7 +8,9 @@
 \ CAMELTTY   4800 BAUD                    0:51
 \           38400 BAUD                    0:32
 
-\ compiled basic                          1:40
+\ ============================================================
+\ TI BASIC                               27:20
+\ Compiled BASIC                          1:40
 
 INCLUDE DSK1.TOOLS
 INCLUDE DSK1.ELAPSE
