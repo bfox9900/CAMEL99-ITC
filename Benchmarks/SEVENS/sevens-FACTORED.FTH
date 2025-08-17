@@ -23,9 +23,11 @@ DECIMAL
 
  256 CARRAY ]A                  \ 100 DIM A(256)
 
+ 0 ]A CONSTANT []A              \ record base address of array
+
 : MEM_INIT
-  0 ]A 256 ERASE                \ init ]A to zeros
-  7 0 ]A C!                     \ 120 A(1)=7
+  []A 256 ERASE                \ init ]A to zeros
+  7 []A C!                     \ 120 A(1)=7
 
   1 TO POWER                    \ 140 POWER=1
   0 TO NUMLEN                   \ 150 NUMLEN=1
@@ -57,19 +59,19 @@ DECIMAL
 ;
 
 : PRINT[] ( addr len -- ) \ print array backwards
+    CR
   \  0  NUMLEN                 \ 340 FOR I=NUMLEN TO 1
     OVER + ( --'start 'end)    \ compute addresses instead
     DO
-       I C@ 48 + EMIT          \ 350 PRINT CHR$(A(I)+48)
+       I C@ 48 + (EMIT)        \ 350 PRINT CHR$(A(I)+48)
     -1 +LOOP                   \ 360 NEXT I ( STEP -1)
 ;
 
-: PRINT_A[] ( ? --)
+: ?ADJUST-LENGTH ( --)
     CARRY DUP NDX 1+ ]A C!      \ 310 A(I)=CARRY
     IF                          \ 320 IF CARRY=0 THEN 340
        1 +TO NUMLEN             \ 330 NUMLEN=NUMLEN+1
     THEN
-    CR  0 ]A NUMLEN  PRINT[]
 ;
 
 : RUN
@@ -79,8 +81,9 @@ DECIMAL
         1 +TO POWER              \ 160 POWER=POWER+1
        ." 7 ^" POWER . ." IS:"   \ 170 PRINT "7 ^";POWER;"IS:"
         ?BREAK
-        PROCESSOR ( -- ?)
-        PRINT_A[]
+        PROCESSOR ( win?)
+        ?ADJUST-LENGTH
+        []A NUMLEN  PRINT[]
         CR CR
     UNTIL                       \ THEN 160
 
