@@ -32,7 +32,7 @@ CREATE GIFTS
 
 
 : .GIFT    ( n -- addr len)  GIFTS SWAP NTH COUNT TYPE ;
-: STUFF... ( n --) 0 SWAP DO  I .GIFT CR  200 MS   -1 +LOOP ;
+: STUFF... ( n --) 0 SWAP DO  I .GIFT CR  1000 MS   -1 +LOOP ;
 
 : DAY ( n --)
   CR ." On the " .ORDINAL ."  day of Christmas,"
