@@ -1,45 +1,47 @@
 \ http://www.forth.org/fd/FD-V02N1.pdf
 
-\ SPECIAL CAMEL99 FORTH FEATURE DEMONSTRATION 
+\ SPECIAL CAMEL99 FORTH FEATURE DEMONSTRATION
 \ --------------------------------------------
-\ made faster arrays with ;CODE  ENDCODE 
-\ show how to use TRANSIENT PERMANENT and DETACH 
-\ reset ARRAY items with OFF rather than 0 SWAP ! 
-\ set ARRAY items with ON  
-\ 27% SPEED IMPROVEMENT
+\ made faster arrays with ;CODE  ENDCODE
+\ show how to use TRANSIENT PERMANENT and DETACH
+\ reset ARRAY items with OFF rather than 0 SWAP !
+\ set ARRAY items with ON
+\ 26% speed improvement
 
-\ Camel99 Forth HARNESS and Libary files 
-INCLUDE DSK1.WORDLISTS 
+\ Camel99 Forth HARNESS and Libary files
+INCLUDE DSK1.WORDLISTS
 INCLUDE DSK1.UDOTR
-INCLUDE DSK1.ELAPSE 
+INCLUDE DSK1.ELAPSE
 
-: ++    POSTPONE 1+! ; IMMEDIATE 
+: ++    POSTPONE 1+! ; IMMEDIATE
 
 INCLUDE DSK1.TRANSIENT
 
-TRANSIENT  \ Assembler is only need temporarily. 
-VOCABULARY ASSEMBLER 
-ONLY FORTH ALSO ASSEMBLER DEFINITIONS 
-INCLUDE DSK1.ASM9900 
+TRANSIENT  \ Assembler is only need temporarily.
+VOCABULARY ASSEMBLER
+ONLY FORTH ALSO ASSEMBLER DEFINITIONS
+INCLUDE DSK1.ASM9900
 
 PERMANENT  \ everything after this goes in regular dictionary
-ONLY FORTH  ALSO ASSEMBLER  ALSO FORTH DEFINITIONS 
+
+ONLY FORTH  ALSO ASSEMBLER  ALSO FORTH DEFINITIONS
 
 8 CONSTANT queens
 
-\ Nqueen solution from FD-V02N1.pdf
- \ : 1array CREATE 0 DO 1 , LOOP DOES> SWAP CELLS + ;
- 
- \ Make this array 8x faster with 2 assembler instructions 
- : 1array 
-    CREATE 0 DO TRUE , LOOP   \ compile time: init array items 
-\ Runtime will be this assembler code          
-    ;CODE  
+ \ Make this array 8x faster with 2 assembler instructions
+ : 1array
+    CREATE 0 DO TRUE , LOOP   \ compile time: init array items
+\ Runtime will be this assembler code
+    ;CODE ( ndx -- addr)
         TOS 1 SLA,  \ 1 SHIFT Left is 2*  ie: CELLS
-        \ W register holds the data address of the word         
+        \ W register holds the data address of the word
         W  R4 ADD,  \ data_address + tos = address(n)
         NEXT,
-ENDCODE          
+    ENDCODE
+
+\ Nqueen solution from FD-V02N1.pdf
+
+\ : 1array CREATE 0 DO TRUE , LOOP DOES> SWAP CELLS + ;
 
     queens 1array a \ a,b & c: workspaces for solutions
  queens 2* 1array b
@@ -52,17 +54,19 @@ ENDCODE
   2DUP + b @ >R
   DROP a @ R> R> * * ;
 
+\ replaced some code with ON and OFF
+\ Not standard words but are common and use 1 instruction on TMS9900
 : mark ( c i -- )
   SWAP
-  2DUP - queens 1- + c 0 SWAP !
-  2DUP + b OFF    \ 0 SWAP !
-  DROP a OFF ;    \   0 SWAP ! ;
+  2DUP - queens 1- + c OFF  \ 0 SWAP !
+  2DUP + b OFF              \ 0 SWAP !
+  DROP a OFF ;              \ 0 SWAP ! ;
 
 : unmark ( c i -- )
   SWAP
-  2DUP - queens 1- + c 1 SWAP !
-  2DUP + b ON   \ 1 SWAP !
-  DROP a   ON ;  \ 1 SWAP ! ;
+  2DUP - queens 1- + c ON \ 1 SWAP !
+  2DUP + b ON             \ 1 SWAP !
+  DROP a   ON ;           \ 1 SWAP ! ;
 
 VARIABLE tries
 VARIABLE sols
@@ -72,27 +76,28 @@ VARIABLE sols
 
 : try
   queens 0
-  DO 
+  DO
     1 tries +!
     DUP I safe
-    IF 
-        DUP I mark
+    IF
+      DUP I mark
     	DUP I SWAP x !
-        DUP queens 1- < 
-        IF DUP 1+ RECURSE 
-        ELSE sols ++  .sol 
-        THEN DUP I unmark
+      DUP queens 1- <
+      IF DUP 1+ RECURSE
+      ELSE sols ++  .sol
+      THEN DUP I unmark
      THEN
-  LOOP 
+  LOOP
   DROP ;
 
-: GO 
-  0 tries ! 
-  CR 0 try 
+: GO
+  0 tries !
+  CR 0 try
   CR sols @ . ." solutions Found, for n = " queens . ;
+
 
 DETACH  ( removes assembler and frees LOW RAM  HEAP )
 
-CR .( Type:  ELAPSE GO )  
-\ FD version in 54.8 seconds 
-\ Optimized version in 43.1 seconds 
+CR .( Type:  ELAPSE GO )
+\ FD version     : 58.2  seconds
+\ Optimized ARRAY: 46.25 seconds
