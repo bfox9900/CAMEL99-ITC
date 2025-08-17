@@ -11,7 +11,7 @@ INCLUDE DSK1.VALUES
 DECIMAL
 \ helper words
 : ?BREAK   ?TERMINAL ABORT" *BREAK*" ;
-: ERASE ( addr len -- )  0 FILL ;
+: ERASE   ( addr len --)  0 FILL ;
 
 \ define all data before use
 \ 0 VALUE WIN   \ replaced with flag on data stack
@@ -26,8 +26,8 @@ DECIMAL
  0 ]A CONSTANT []A              \ record base address of array
 
 : MEM_INIT
-  []A 256 ERASE                \ init ]A to zeros
-  7 []A C!                     \ 120 A(1)=7
+  []A 256 ERASE                 \ init ]A to zeros
+  7 []A C!                      \ 120 A(1)=7
 
   1 TO POWER                    \ 140 POWER=1
   0 TO NUMLEN                   \ 150 NUMLEN=1
