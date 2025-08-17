@@ -74,18 +74,20 @@ DECIMAL
     THEN
 ;
 
+: .POWER
+    ." 7 ^" POWER . ." IS:" ;   \ 170 PRINT "7 ^";POWER;"IS:"
+
 : RUN
     CR ." 7's Problem "          \ 110 PRINT "7's Problem"
     MEM_INIT
     BEGIN
         1 +TO POWER              \ 160 POWER=POWER+1
-       ." 7 ^" POWER . ." IS:"   \ 170 PRINT "7 ^";POWER;"IS:"
-        ?BREAK
-        PROCESSOR ( win?)
+        .POWER
+        PROCESSOR ( win?)       \ WIN flag is on the data stack
         ?ADJUST-LENGTH
         []A NUMLEN  PRINT[]
-        CR CR
-    UNTIL                       \ THEN 160
-
+        CR CR                   \ 370 PRINT ::
+        ?BREAK
+    ( win?) UNTIL               \ 380 IF WIN<>1 THEN 160
   ." Winner is 7 ^" POWER .     \ 390 PRINT "WINNER IS 7 ^";POWER
 ;                               \ 420 END
