@@ -2,8 +2,8 @@
 
 \ FORTH                       V2.78        ITC      DTC v2.69
 \ ---------                   -------    ------     ---------
-\ V1 literal translation from BASIC       1:21      1:04
-\      "          "   with fast scroll    1:16
+\ V1 literal translation from BASIC       1:26      1:04
+\      "          "   with fast scroll    1:14
 
 \ CAMELTTY   4800 BAUD                    0:51
 \           38400 BAUD                    0:32
@@ -21,16 +21,16 @@ INCLUDE DSK1.ARRAYS
 \ .......................................................
 
 \ SCROLL entire screen in one block with VMBR and VMBW
-\ : SCROLL ( -- )
-\ HERE 100 + DUP>R  VTOP @  ( --  buffer dst) ( r: BUFFER)
-\ DUP C/L@ + R>             ( -- buffer dst src buffer)
-\ [ C/SCR @ C/L @ - ] LITERAL DUP>R VREAD  R> VWRITE
-\ 0 23 2DUP >VPOS C/L@ BL VFILL  \ erase bottom line
-\ AT-XY ;                        \ set cursor
+ : SCROLL ( -- )
+  HERE 100 + DUP>R  VTOP @  ( --  buffer dst) ( r: BUFFER)
+  DUP C/L@ + R>             ( -- buffer dst src buffer)
+  [ C/SCR @ C/L @ - ] LITERAL DUP>R VREAD  R> VWRITE
+  0 23 2DUP >VPOS C/L@ BL VFILL  \ erase bottom line
+  AT-XY ;                        \ set cursor
 
 \ this code is the same as the kernel, but with faster scroll
-\ : CR     (  -- )     VCOL OFF  VROW ++@  L/SCR = IF SCROLL THEN ;
-\ : (EMIT) ( char -- ) VPOS VC!  VCOL ++@  C/L@ = IF CR THEN ;
+ : CR     (  -- )     VCOL OFF  VROW ++@  L/SCR = IF SCROLL THEN ;
+ : (EMIT) ( char -- ) VPOS VC!  VCOL ++@  C/L@ = IF CR THEN ;
 \ .......................................................
 
 DECIMAL
@@ -46,6 +46,7 @@ VARIABLE NDX   ( transfers loop index out of DO LOOP )
 
  256 CARRAY ]A                  \ 100 DIM A(256)
   0 ]A 256 0 FILL               \ init ]A to zero as DIM does
+  ( Forth Arrays are OPTION BASE 0)
 
 : RUN
   CR ." 7's Problem "           \ 110 PRINT "7's Problem"
