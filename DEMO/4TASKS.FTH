@@ -49,21 +49,21 @@ DECIMAL
 
 : COUNTER1              \ decimal counter
             DECIMAL
-            100 TPAD !  \ set task's PAD OFFSET from HERE
+            100 TPAD !  \ set task's PAD as an offset from FORTH's HERE
             0 0 1000 0 UPCOUNTER
             STOP  ;
 
 DECIMAL
 : COUNTER2              \ hex counter
             HEX
-            200 TPAD !
+            200 TPAD !  \ put PAD higher in memory for number printing
             9 0  512 0 DNCOUNTER
             STOP ;
 
 DECIMAL
-: COUNTER3            \ perpetual binary counter
-            300 TPAD !
-            2 BASE !  \ print in binary
+: COUNTER3              \ perpetual binary counter
+            300 TPAD !  \ PAD must go higher than counter2
+            2 BASE !    \ print in binary
             BEGIN
               20 0 256 0 UPCOUNTER
             AGAIN ;
@@ -72,7 +72,7 @@ HEX 83D6 CONSTANT SCR_TIME_OUT
 
 DECIMAL
 : PULSER  \ show round robin time
-            400 TPAD !
+            400 TPAD !  \ and again, keep the PAD even higher
             DECIMAL
             BEGIN
               30 0 AT-XY ." t=" PULSE@  .MS
