@@ -43,7 +43,14 @@ VARIABLE #TASKS
 
 DECIMAL
 
-: RUN    30 TASKS  MULTI ;
+: RUN
+        30 TASKS
+        CR
+        CR ." Starting Multi-tasker..."
+        MULTI
+        PAUSE   \ if we don't come back from this it's a fail
+        CR ." Success!"
+        ;
 
 : HELP
 PAGE
@@ -53,13 +60,14 @@ CR ." Type HELP to see this screen."
 CR ." SINGLE will stop multi-tasking"
 CR ." MULTI will start multi-tasking"
 CR
-CR  ." Type  RUN to start 25 tasks"
+CR  ." RUN  spawns 30 new tasks"
 CR ." .TASKS  to see task list"
-CR
+CR ." KILLALL destroys all 30 tasks"
+CR ." (re-type RUN to re-spawn) "
 CR ."  X ?  to see X increment"
-CR
-CR
+CR ." STOPALL to sleep all tasks"
 CR ." MONITOR to see round-robin time"
+CR ." WAKEALL to awaken all tasks "
 CR ." Hold FCTN 4 to stop MONITOR"
 ;
 
