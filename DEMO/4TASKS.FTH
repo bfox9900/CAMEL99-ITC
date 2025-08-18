@@ -4,27 +4,30 @@ INCLUDE DSK1.TOOLS
 INCLUDE DSK1.MTASK99
 INCLUDE DSK1.UDOTR    \ Right justified number printing
 INCLUDE DSK1.MALLOC   \ Malloc removed from kernel in V2.0
+INCLUDE DSK1.VALUES
 
 INIT-MULTI
 
-( word to  create a task in heap and FORK)
-: TASK:  ( size -- )  MALLOC DUP FORK CONSTANT ;
+\ Use primitives to create a word that dynamically creates a task
+\ wakes it and returns the task PID (program identifier)
+: SPAWN  ( xt -- pid) USIZE MALLOC DUP>R FORK  R@ ASSIGN R@ WAKE R>  ;
 
-USIZE TASK: TASK1
-USIZE TASK: TASK2
-USIZE TASK: TASK3
-USIZE TASK: TASK4
+\ used to hold Pid of each task
+0 VALUE TASK1
+0 VALUE TASK2
+0 VALUE TASK3
+0 VALUE TASK4
 
 DECIMAL
 \ get the round-robin task time in 9901 timer ticks. (21.2uS per tick)
 : PULSE@  ( ) TMR@ PAUSE TMR@ - ABS ;
 
 \ print n timer ticks in milli-seconds
-: .MS    ( n -- )  213 10000  */  6 U.R  ." mS" ;
+: .MS    ( n -- )  213 10000  */  4 U.R  ." mS" ;
 
 
 \ single command to stop a task and goto next task
-: STOP    ( -- ) MYSELF SLEEP PAUSE ;
+: STOP    ( -- ) MYSELF SLEEP PAUSE  ;
 
 \ re-entrant up counter
 : UPCOUNTER ( col row end start -- )
@@ -46,20 +49,20 @@ DECIMAL
 
 : COUNTER1              \ decimal counter
             DECIMAL
-            132 TPAD !  \ set task's PAD offset from HERE
+            100 TPAD !  \ set task's PAD OFFSET from HERE
             0 0 1000 0 UPCOUNTER
             STOP  ;
 
 DECIMAL
 : COUNTER2              \ hex counter
             HEX
-            164 TPAD !
+            200 TPAD !
             9 0  512 0 DNCOUNTER
             STOP ;
 
 DECIMAL
 : COUNTER3            \ perpetual binary counter
-            196 TPAD !
+            300 TPAD !
             2 BASE !  \ print in binary
             BEGIN
               20 0 256 0 UPCOUNTER
@@ -68,8 +71,8 @@ DECIMAL
 HEX 83D6 CONSTANT SCR_TIME_OUT
 
 DECIMAL
-: PULSER                \ show round robin time
-            220 TPAD !
+: PULSER  \ show round robin time
+            400 TPAD !
             DECIMAL
             BEGIN
               30 0 AT-XY ." t=" PULSE@  .MS
@@ -77,15 +80,12 @@ DECIMAL
               SCR_TIME_OUT  OFF  \ kill screen time-out
             AGAIN ;
 
-: RUN-TASKS
-['] COUNTER1 TASK1 ASSIGN
-['] COUNTER2 TASK2 ASSIGN
-['] COUNTER3 TASK3 ASSIGN
-['] PULSER   TASK4 ASSIGN
-  TASK4 WAKE 1000 MS
-  TASK1 WAKE 1000 MS
-  TASK2 WAKE 1000 MS
-  TASK3 WAKE ;
+: SPAWN-TASKS
+    ['] COUNTER1 SPAWN TO TASK1
+    ['] COUNTER2 SPAWN TO TASK2
+    ['] COUNTER3 SPAWN TO TASK3
+    ['] PULSER   SPAWN TO TASK4
+;
 
 : RUN
      PAGE
@@ -111,4 +111,4 @@ DECIMAL
      CR
      CR ." Press a key to start the demo" KEY DROP
      MULTI
-     RUN-TASKS  ;
+    SPAWN-TASKS  ;
