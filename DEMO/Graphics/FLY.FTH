@@ -160,32 +160,33 @@ VARIABLE TRYS
           200 RND  30 MAX DUP SPEED !  MS
         THEN ;
 
-: FLYBRAIN  ( -- )
+: FLYBRAIN  ( -- ?)
+        FALSE
         200 RND 100 + 0
         DO
            CLEAR-AHEAD?
            IF   MOVE-FLY
            ELSE ALPHA-THINK
            THEN SPEED @ MS
-           ?TERMINAL IF SILENT TRUE ABORT" HALT!" THEN
            CRAZY
+           KEY? IF DROP TRUE LEAVE  THEN
+           ?TERMINAL IF SILENT TRUE ABORT" HALT!" THEN
          LOOP
 ;
 
 DECIMAL
 : RUN      ( -- )
+      16 SCREEN
+      PAGE 4 10 AT-XY ." Fly Intelligence Demo" 1000 MS
        BEGIN
-           16 SCREEN
-           PAGE 4 10 AT-XY ." Fly Intelligence Demo" 1000 MS
            PAGE  .BORDER  .WALLS
            HAPPY SHOW-FLY
            CHANGE-DIR
            60 SPEED !
            SNDINIT
            BEGIN
-              FLYBRAIN
-              KEY?
               SILENT 1000 RND MS
+              FLYBRAIN
            UNTIL
            SILENT
            ?TERMINAL IF ABORT THEN
