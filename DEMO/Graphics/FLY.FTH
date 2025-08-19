@@ -95,7 +95,7 @@ CREATE MY-XY  10 , 10 ,    \ independant cursor for alpha guy
                ELSE  RNDV
                THEN ;
 
-: CHANGE-DIR   ( -- )  NEW-VECTORS 2DUP VECTOR 2! ]POINT ;
+: CHANGE-DIR   ( -- ) NEW-VECTORS 2DUP VECTOR 2! ]POINT ;
 
 : VECTOR@      ( --  dx dy)  VECTOR 2@ ;
 
@@ -132,8 +132,8 @@ VARIABLE TRYS
 
 \ print right justified n spaces
 : .VECTOR  ." Vector"  VECTOR 2@  2 .R ." ," 2 .R ;
-: .TRYS    ." Trys "   TRYS @     2 .R ;
-: .SPEED   ." Speed "  SPEED @    3 .R ;
+: .TRYS    ." Trys"    TRYS @ 2 .R ;
+: .SPEED   ." Speed "  SPEED @ 3 .R ;
 : CLRLN    AT-XY VPOS  C/L@  BL VFILL ;
 : .BRAIN  ( -- )  0 0 CLRLN  .VECTOR SPACE .TRYS SPACE .SPEED ;
 
@@ -149,6 +149,7 @@ VARIABLE TRYS
                CHANGE-DIR              \ get new direction
                1 TRYS +!               \ count the try
                .BRAIN                  \ report to screen
+               100 MS
               CLEAR-AHEAD?
             UNTIL
             HAPPY  BUZZ ;
@@ -157,35 +158,39 @@ VARIABLE TRYS
         100 RND 10 <
         IF
           CHANGE-DIR BUZZ
-          200 RND  30 MAX DUP SPEED !  MS
+          100 RND  25 MAX DUP SPEED !  MS
         THEN ;
 : ?BREAK             ?TERMINAL IF SILENT PAGE TRUE ABORT" HALT!" THEN ;
 
-: FLYBRAIN  ( -- )
-        200 RND 100 + 0
-        DO
-           CLEAR-AHEAD?
-           IF   MOVE-FLY
-           ELSE ALPHA-THINK
-           THEN SPEED @ MS
-           CRAZY
-           ?BREAK
-         LOOP
+: FLYBRAIN ( -- ?)
+   FALSE
+   200 RND 100 + 0
+   DO
+      CLEAR-AHEAD?
+      IF   MOVE-FLY
+      ELSE ALPHA-THINK
+      THEN SPEED @ MS
+      CRAZY
+      ?BREAK
+      KEY? IF  DROP TRUE LEAVE THEN  \ exit if key pressed, return true
+   LOOP
 ;
 
 DECIMAL
 : RUN      ( -- )
-      16 SCREEN
-      PAGE 4 10 AT-XY ." Fly Intelligence Demo" 1000 MS
-       BEGIN
-           PAGE  .BORDER  .WALLS
-           HAPPY SHOW-FLY
-           CHANGE-DIR
-           60 SPEED !
-           SNDINIT
-           FLYBRAIN
-           SILENT 1000 RND MS
-           ?BREAK
-        AGAIN ;
+   16 SCREEN
+   PAGE 4 10 AT-XY ." Fly Intelligence Demo" 1000 MS
+   BEGIN
+      PAGE  .BORDER  .WALLS
+      HAPPY SHOW-FLY
+      CHANGE-DIR
+      60 SPEED !
+      SNDINIT
+      BEGIN
+         FLYBRAIN
+         SILENT 1000 RND MS
+      UNTIL
+      ?BREAK
+   AGAIN ;
 CR
 CR .( -- Type RUN to start the program)
