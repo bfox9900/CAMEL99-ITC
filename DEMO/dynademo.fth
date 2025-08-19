@@ -7,6 +7,7 @@ NEEDS VALUE FROM DSK1.VALUES
 
 HEX
 HERE
+\ HEAP is the "Low RAM" 8K block in TI-99 memory space
 : HEAP   ( -- addr)  H @ ;  \ equivalent to HERE in HI memory
 : HALLOT ( n -- )    H +! ; \ equivalent to ALLOT in HI memory
 : HALIGN ( -- )   HEAP ALIGNED H ! ;
@@ -28,7 +29,7 @@ HERE
  CR HERE SWAP - DECIMAL . .( bytes)
 
 
-\ DEMO CODE
+\ >>> DEMO CODE <<<
 HEX 2000 H !   \ reset heap pointer to the where you want the heap
 
 \ dynamically allocate space for a string literal
