@@ -72,18 +72,7 @@ DECIMAL
 
 \ ===============================
 \ string functions not in BASIC
-: VTRIM  ( adr len char -- adr len') \ remove trailing chars
-        >R                      \ push CHAR to return stack
-        1-
-        BEGIN
-          2DUP + VC@ R@ =   \ fetch last character
-        WHILE
-          1-
-        REPEAT
-        1+ 0 MAX
-        RDROP ;               \ clean up rstack
-
-: V-TRAILING  ( vadr len  -- vadr len')
+: V-TRAILING  ( vadr len  -- vadr len') \ remove all trailing blanks
         1-
         BEGIN
           2DUP + VC@ BL =   \ fetch last character
@@ -91,6 +80,19 @@ DECIMAL
           1-
         REPEAT
         1+ 0 MAX ;
+
+: VTRIM  ( adr len char -- adr len') \ remove all trailing char
+        >R                   \ push CHAR to return stack
+        1-
+        BEGIN
+          2DUP + VC@ R@ =   \ fetch last character
+        WHILE
+          1-
+        REPEAT
+        1+ 0 MAX
+        RDROP ;             \ clean up rstack
+
+
 
 : VSKIP ( adr len char -- adr len')  \ remove leading chars
         >R     \ remember char
@@ -117,6 +119,7 @@ DECIMAL
         THEN
         RDROP  \ drop char   \ 32 bytes
 ;
+
 
 \ add a char onto the end of a VDP stack string
 : V+CHAR  ( char addr len -- )
