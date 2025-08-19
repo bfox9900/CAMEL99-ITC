@@ -92,8 +92,6 @@ DECIMAL
         1+ 0 MAX
         RDROP ;             \ clean up rstack
 
-
-
 : VSKIP ( adr len char -- adr len')  \ remove leading chars
         >R     \ remember char
         BEGIN
@@ -120,7 +118,6 @@ DECIMAL
         RDROP  \ drop char   \ 32 bytes
 ;
 
-
 \ add a char onto the end of a VDP stack string
 : V+CHAR  ( char addr len -- )
           OVER 1- >R     \ compute address of length byte, rpush
@@ -128,7 +125,6 @@ DECIMAL
           + VC! ;        \ compute address of end of string, store char
 
 : VPRINT  ( vaddr len -- ) CR VDPTYPE ;
-
 
 \ assign text to a VDP stack string
 : :="    ( vaddr len -- )  [CHAR] " PARSE  2SWAP V$! ;
@@ -139,13 +135,13 @@ DECIMAL
 \  1 means adr1 > adr2
 
 : VCOMPARE  ( adr1 n1 adr2 n2 -- -1|0|1 )
-    ROT  2DUP - >R            ( a1 a2 n2 n1)( R: n2-n1)
+    ROT  2DUP - >R            ( a1 a2 n2 n1) ( R: n2-n1)
     MIN                       ( a1 a2 n3)
     BOUNDS
     ?DO                       ( a1)
-        VCOUNT  I VC@  -      ( a1 diff)
+        VCOUNT  I VC@ -      ( a1 diff)
         DUP IF
-            NIP  0< 1 OR      ( -1|1)
+            NIP 0< 1 OR       ( -1|1)
             UNLOOP
             RDROP
             EXIT
