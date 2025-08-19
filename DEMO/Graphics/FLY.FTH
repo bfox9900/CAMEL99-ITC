@@ -159,9 +159,9 @@ VARIABLE TRYS
           CHANGE-DIR BUZZ
           200 RND  30 MAX DUP SPEED !  MS
         THEN ;
+: ?BREAK             ?TERMINAL IF SILENT PAGE TRUE ABORT" HALT!" THEN ;
 
-: FLYBRAIN  ( -- ?)
-        FALSE
+: FLYBRAIN  ( -- )
         200 RND 100 + 0
         DO
            CLEAR-AHEAD?
@@ -169,8 +169,7 @@ VARIABLE TRYS
            ELSE ALPHA-THINK
            THEN SPEED @ MS
            CRAZY
-           KEY? IF DROP TRUE LEAVE  THEN
-           ?TERMINAL IF SILENT TRUE ABORT" HALT!" THEN
+           ?BREAK
          LOOP
 ;
 
@@ -184,12 +183,9 @@ DECIMAL
            CHANGE-DIR
            60 SPEED !
            SNDINIT
-           BEGIN
-              SILENT 1000 RND MS
-              FLYBRAIN
-           UNTIL
-           SILENT
-           ?TERMINAL IF ABORT THEN
+           FLYBRAIN
+           SILENT 1000 RND MS
+           ?BREAK
         AGAIN ;
 CR
 CR .( -- Type RUN to start the program)
