@@ -154,6 +154,7 @@ DECIMAL
 
 INCLUDE DSK1.RANDOM
 \ added 20 mS delay so it is more fun to watch :-)
-: MAZE PAGE BEGIN  203 2 RND + EMIT 20 MS  ?TERMINAL UNTIL ;
+: MAZE
+    PAGE BEGIN  203 2 RND + EMIT  20 MS  ?TERMINAL UNTIL ;
 
 CR .( Type MAZE to run the program)
