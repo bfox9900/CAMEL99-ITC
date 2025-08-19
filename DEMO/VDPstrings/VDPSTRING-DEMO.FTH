@@ -9,7 +9,7 @@
  : Q$       V" The single quote creates a string literal in VDP memory" ;
  : DIRTY$   V"                    <<CORE>>                            " ;
 
-\ assigning string variables with $! ("string store")
+\ assigning vdp string variables with V$! ("string store")
  S" Now is the time for all good men "    A$ V$!
  S" to come to the aid of their country." B$ V$!
 
@@ -21,13 +21,14 @@
          LOOP ;
 
 : COMPTEST    10 0 DO   Q$ Q$ =V$  .    LOOP ;
-: TRIMTEST    10 0 DO  DIRTY$ BL VTRIM  VDPTYPE  LOOP ;
-: SKIPTEST    10 0 DO  DIRTY$ BL VSKIP  VDPTYPE  LOOP ;
-: CLEANTEST   10 0 DO  DIRTY$ BL VSKIP  V-TRAILING  VDPTYPE  LOOP ;
+: TRIMTEST    10 0 DO  DIRTY$ BL VTRIM CR VDPTYPE  LOOP ;
+: SKIPTEST    10 0 DO  DIRTY$ BL VSKIP CR VDPTYPE  LOOP ;
+: CLEANTEST   10 0 DO  DIRTY$ BL VSKIP  V-TRAILING CR VDPTYPE  LOOP ;
 
-: SCANTEST 
-    CR    
-    10 0 DO  
-        A$ 2DUP VDPTYPE    [CHAR] g VSCAN  CR VDPTYPE 
-        CR 
+: SCANTEST
+    CR
+    10 0 DO
+        CR A$ 2DUP VDPTYPE
+        CR [CHAR] g VSCAN  VDPTYPE
+        CR
     LOOP ;

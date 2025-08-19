@@ -17,9 +17,9 @@ INCLUDE DSK1.MALLOC
 \
 
  NEEDS VHERE   FROM DSK1.VDPMEM
-\ VDPMEM LIB provides: 
+\ VDPMEM LIB provides:
 \ VHERE   ( -- addr)
-\ VALLOT  ( n -- )  
+\ VALLOT  ( n -- )
 \ VC,     ( n -- )
 \ V,      ( n -- )
 \ VCOUNT  ( vdp$adr -- vdpadr len )
@@ -27,9 +27,9 @@ INCLUDE DSK1.MALLOC
 
 \ R> DROP is used 4 times. RDROP is 8x faster
 HEX
-CODE RDROP   05C7 ,  NEXT, ENDCODE \ TP INCT, 
+CODE RDROP   05C7 ,  NEXT, ENDCODE \ RP INCT,
 DECIMAL
- 
+
 \ ====================================
 \ VDP STRING PRIMITIVES
 
@@ -49,7 +49,8 @@ DECIMAL
 \ Replicate TI-BASIC string functions
 : VASC      ( vaddr len -- c) NIP VC@ ;
 : VLEN      ( vaddr len -- vaddr len)  DUP ; \ makes a copy of length
-DECIMAL 
+
+DECIMAL
 : VAL$     ( vaddr len - # )
             32 MALLOC >R         \ get a temp buffer 32 bytes
             R@ VGET$             \ move string to CPU buff
@@ -73,19 +74,23 @@ DECIMAL
 \ string functions not in BASIC
 : VTRIM  ( adr len char -- adr len') \ remove trailing chars
         >R                      \ push CHAR to return stack
-        OVER +  1- ( 'start 'end)
+        1-
         BEGIN
-          DUP              \ test if 'start='end
+          2DUP + VC@ R@ =   \ fetch last character
         WHILE
-          DUP VC@ R@ =          \ compare to last character
-        WHILE                   \ test for match.
-          1-                    \ while char is a match, decrement length
+          1-
         REPEAT
-        THEN
-        OVER -                  \ compute length
+        1+ 0 MAX
         RDROP ;               \ clean up rstack
 
-: V-TRAILING ( addr len -- addr len') BL VTRIM ;
+: V-TRAILING  ( vadr len  -- vadr len')
+        1-
+        BEGIN
+          2DUP + VC@ BL =   \ fetch last character
+        WHILE
+          1-
+        REPEAT
+        1+ 0 MAX ;
 
 : VSKIP ( adr len char -- adr len')  \ remove leading chars
         >R     \ remember char
@@ -155,7 +160,7 @@ DECIMAL
        ?COMP                            \ abort if not compiling
        VHERE                            \ get current VDP address
        [CHAR] " PARSE VS,               \ compile string to VDP RAM
-       POSTPONE LITERAL                 \ make VDP address a literal no. 
+       POSTPONE LITERAL                 \ make VDP address a literal no.
        POSTPONE VCOUNT ; IMMEDIATE      \ runtime: convert to addr,len
 
 \ ================================
@@ -178,5 +183,3 @@ DECIMAL
                   ROT *   ( -- vaddr offset)
                   +       ( -- vaddr[n] )
                   VCOUNT ;
-
-
