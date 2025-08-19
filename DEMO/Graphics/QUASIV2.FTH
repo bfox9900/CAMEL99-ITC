@@ -85,7 +85,7 @@ DECIMAL
       [CHAR] .  16 128 0  I SPRITE
       RNDX-VECT 15  I MOTION
       RNDCOLOR  I SP.COLOR
-      100 MS
+      98 MS
       ?BREAK
      LOOP
   AGAIN ;
