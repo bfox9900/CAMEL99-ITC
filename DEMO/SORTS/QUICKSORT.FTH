@@ -33,7 +33,7 @@ INCLUDE DSK1.ELAPSE
 : QSORT ( l r -- )
   PARTITION  SWAP ROT
   2DUP < IF RECURSE ELSE 2DROP THEN
-  2DUP < IF RECURSE ELSE 2DROP THEN ; 
+  2DUP < IF RECURSE ELSE 2DROP THEN ;
 
 : QUICKSORT ( array len -- )
   DUP 2 < IF 2DROP EXIT THEN  1- CELLS OVER + QSORT ;
@@ -41,7 +41,7 @@ INCLUDE DSK1.ELAPSE
 
 \ ============ TESTING COMMANDS ======================
 HEX
-2000 H !   \ reset the heap 
+2000 H !   \ reset the heap
 
 DECIMAL
 1000 CONSTANT SIZE
@@ -54,11 +54,11 @@ SIZE CELLS  MALLOC CONSTANT Q[]
 
 \ load the array with different kinds of mixed up data
 : CLEARIT  ( -- ) 0 ]Q SIZE CELLS ERASE ;     \ all the same data  8.16
-: REVERSED ( -- ) SIZE  0 DO  SIZE I -  I ]Q !      LOOP ; \ 4.4 
-: ASCENDING ( -- ) SIZE  0 DO     I  I ]Q !      LOOP ;   \ 3.38 
+: REVERSED ( -- ) SIZE  0 DO  SIZE I -  I ]Q !      LOOP ; \ 4.4
+: ASCENDING ( -- ) SIZE  0 DO     I  I ]Q !      LOOP ;   \ 3.38
 : RANDIT   ( -- ) SIZE  0 DO  256 RND I ]Q !   LOOP ;     \ 8.08
 : TWOIT    ( -- ) CLEARIT   99 45 ]Q !  777 SIZE 2/ ]Q ! ; \ 2 different records 8.18
-: TURTLES  ( -- ) \ 5.4 
+: TURTLES  ( -- ) \ 5.4
            SIZE 0
             DO
                I I CHAR+ ]Q !   \ each 2 elements are reversed
@@ -69,7 +69,12 @@ SIZE CELLS  MALLOC CONSTANT Q[]
 \ use this to print the array (use FNCT 4 to break out (ALT 4 on PC)
 : .Q   ( -- ) CR  SIZE  0 DO  I ]Q @ U. ?BREAK  LOOP ;
 
-REVERSED
-: GO   Q[] SIZE QUICKSORT  ; \ 4.4 SECONDS 
-
-
+: GO
+  CR ." Reversing array of " SIZE . ." integers"
+  REVERSED
+  CR ." Quick sorting ... "
+   Q[] SIZE
+   TICKER OFF
+   QUICKSORT
+   CR .ELAPSED
+   CR ." Type .Q to see array " ; \ 4.4 SECONDS
