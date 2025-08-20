@@ -13,15 +13,17 @@ ONLY FORTH DEFINITIONS
 MARKER /MORSE
 
 HEX
+CODE 0LIMI   0300 , 0000 ,  NEXT, ENDCODE
+
 : LOWER?  ( c -- c ?) DUP [CHAR] a [CHAR] z 1+  WITHIN ;
 : TOUPPER ( c -- c') LOWER? IF  5F AND  THEN ;
 : $UPPER  ( addr len -- ) BOUNDS ?DO  I C@ TOUPPER  I C!   LOOP ;
 
 DECIMAL
-  1500 VALUE FREQ    \ 1500 Hz will be the tone freq.
+   800 VALUE FREQ    \ 1500 Hz will be the tone freq.
    400 VALUE ADIT    \ duration of one "dit" for ~10 words per minute
 
-: WPM  ( n -- ) 1000 SWAP / 30 MAX  TO ADIT ;
+: WPM  ( n -- ) 500 SWAP / 30 MAX 2* TO ADIT ;
 
 \ Compute all durations based on ADIT
 : DIT_DUR      ADIT MS ;
@@ -33,22 +35,20 @@ DECIMAL
 : TONE ( -- ) FREQ HZ  0 DB  ;
 
 : MORSE-EMIT  ( char -- )
-        DUP  BL =                      \ check for space character
-        IF
-             DROP WORDGAP              \ ignore char and delay
-        ELSE
-             PAD C!                    \ write char to buffer
-             PAD 1 EVALUATE            \ evaluate 1 character string
-             LETTERGAP
-        THEN ;
+        DUP  BL =  IF  DROP WORDGAP  EXIT THEN  \ check for space character
+        PAD C!                    \ write char to buffer
+        0LIMI  \ makes more accurate timing with no interupts
+        PAD 1 EVALUATE            \ evaluate 1 character string
+        LETTERGAP
+;
 
 : TRANSMIT ( ADDR LEN -- )
            2DUP $UPPER                 \ convert string, leave a copy
            CR                          \ newline,
            BOUNDS                      \ convert loop indices to address ranges
            DO
-              I C@ DUP EMIT            \ dup and send char to console
-              MORSE-EMIT               \ send the morse code
+              I C@ DUP (EMIT)         \ dup and send char to console
+              MORSE-EMIT              \ send the morse code
               ?TERMINAL ABORT" Transmission halted"
            LOOP ;
 
@@ -94,8 +94,17 @@ FORTH DEFINITIONS
    CR MORSE TRANSMIT
    CR
    CR ." Now something more appropriate:"  500 MS
-   CR ." at 10 WPM"
-   10 WPM CR S" CQ CQ CQ DE VE3CFW / K " MORSE TRANSMIT
+   CR ." at 15 WPM"
+
+   800 TO FREQ
+   15 WPM
+   CR S" CQ CQ CQ DE VE3CFW / K " MORSE TRANSMIT
+
+   950 TO FREQ
+   14 WPM S" VE3CFW DE WB6LLA WB6LLA R R" TRANSMIT
+   S" U R  5 BY 9 OM HERE IN CALIFORNIA" TRANSMIT
+   S" QTH  SAN DIEGO  SAN DIEGO USA." TRANSMIT
+   6 WPM S" K " TRANSMIT
 ;
 
 CR .( Type TEST to run DEMO)
