@@ -1,6 +1,12 @@
 \ TI sound lists in VDP RAM for testing
 
+\ Sound lists are played with the ISR
+\ but the background list manager runs as a task.
+
 NEEDS ISRPLAY  FROM DSK1.ISRSOUND
+NEEDS MULTI    FROM DSK1.MTASK99
+
+
 
 HEX
 VCREATE MUNCHMAN
