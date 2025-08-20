@@ -1,14 +1,15 @@
-\ TI sound lists in VDP RAM for testing
+\ ISR SOUND DEMO:  sound lists manager as a task. Aug 2025 B. Fox
 
-\ Sound lists are played with the ISR
-\ but the background list manager runs as a task.
-\ This allows the list manager to wait
+\ Sound lists are played with the ISR but the
+\ background list manager runs as a task.
+\ This allows the player to block until sounds are finished
+\ while other Forth code runs in the foreground.
 
 NEEDS ISRPLAY  FROM DSK1.ISRSOUND
 NEEDS MULTI    FROM DSK1.MTASK99
 NEEDS MALLOC   FROM DSK1.MALLOC
 
-
+\ create a bunch of sound lists in VDP RAM
 VCREATE MUNCHMAN
 HEX    VBYTE 08,85,2A,90,A6,08,B0,CC,1F,12
        VBYTE 08,85,2A,90,A4,1C,B0,C9,0A,12
@@ -152,7 +153,6 @@ HEX    VBYTE 4,98,B8,DF,FF,1
        VBYTE 4,9F,BF,DF,FF,0
 /VEND
 
-
 VCREATE SND4
 HEX    VBYTE 4,98,BF,DF,FF,1
        VBYTE 2,80,07,1
@@ -206,11 +206,11 @@ VCREATE FUEL
        VBYTE 1,9F,0
 /VEND
 
-\ PLAY waits until the sound ISR ha finished the list
+\ PLAY "blocks" until the sound ISR has finished the list it's playing.
 : PLAY   ISRWAIT  ISRPLAY ;
 
-\ We can put sound lists inside Forth loops for more control
-: 5SHOTS     5 0 DO FIRE PLAY LOOP  EXPLODE PLAY ;
+\ We can put sound lists inside Forth definitions for more control
+: 5SHOTS     5 0 DO  FIRE PLAY  LOOP  EXPLODE PLAY ;
 
 : PLAYALL
        MUNCHMAN PLAY
@@ -230,13 +230,15 @@ VCREATE FUEL
        EXPLODE  PLAY
 
 \ We must end the task safely like this
-       MYSELF SLEEP PAUSE
+       MYSELF SLEEP
+       PAUSE     \ switch to the next task in the queue
 ;
 
-( create task area in LOW RAM heap and FORK)
-: TASK:  ( size -- )  MALLOC DUP FORK CONSTANT ;
+\ create task area in LOW RAM and FORK it. (ie: setup as Forth VM)
+\ USIZE = 192 bytes
+: TASK:  ( size -- ) USIZE MALLOC DUP FORK CONSTANT ;
 
-USIZE TASK: SOUNDMANAGER
+ TASK: SOUNDMANAGER
 
 ' PLAYALL SOUNDMANAGER ASSIGN
 
