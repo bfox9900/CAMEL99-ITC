@@ -27,6 +27,5 @@ INIT-MULTI
         MULTI
         USER1 WAKE
         MYSELF SLEEP PAUSE
-
         SINGLE
 ;
