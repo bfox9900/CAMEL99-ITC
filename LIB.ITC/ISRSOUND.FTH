@@ -44,7 +44,7 @@ HEX
             2LIMI ;                    \ interrupts on
 
 \ Wait for the sound list to complete.
-: ISRWAIT ( -- ) BEGIN SNDSIZ C@ WHILE PAUSE REPEAT ;
+: ISRWAIT ( -- ) BEGIN 83CE C@ WHILE  PAUSE REPEAT ;
 
 1000 VP !    \ reset VDP memory pointer
 
