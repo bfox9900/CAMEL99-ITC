@@ -4,16 +4,16 @@ NEEDS .S   FROM DSK1.LOWTOOLS
 
 INCLUDE DSK1.EMPTY
 
-EMPTY 
+EMPTY
 
 HEX
  CODE WAITVBI ( -- )
-   0 LIMI,
-   8802 @@ R0 MOVB,
+   R1 8000 LI,            \ VDP interrupt mask
+   8802 @@ R2 MOVB,       \ reset VDP status byte
    BEGIN,
-     8802 @@ R0 MOVB,
-     R0 8000 ANDI,
-   NE UNTIL,
+      8802 @@ R2 MOVB,     \ get VDP status byte
+      R1 R2 COC,           \ VDP interrupt?
+   EQ UNTIL,               \ loop if not
    NEXT,
  ENDCODE
 
@@ -45,18 +45,18 @@ HEX
           ?TERMINAL
         UNTIL ;
 
-: TEST3 
-    BEGIN 
-       0 3C0 [CHAR] A  VFILL 
-       PAGE 
-      ?TERMINAL 
-    UNTIL       
-;        
+: TEST3
+    BEGIN
+       0 3C0 [CHAR] A  VFILL
+       PAGE
+      ?TERMINAL
+    UNTIL
+;
 
-: TEST4 
-    BEGIN 
-      WAITVBI 0 3C0 [CHAR] A  VFILL 
-      WAITVBI PAGE 
-      ?TERMINAL 
-    UNTIL       
-;        
+: TEST4
+    BEGIN
+       0 3C0 [CHAR] A  WAITVBI VFILL
+      WAITVBI PAGE
+      ?TERMINAL
+    UNTIL
+;
