@@ -207,7 +207,7 @@ VCREATE FUEL
 /VEND
 
 \ PLAY "blocks" until the sound ISR has finished the list it's playing.
-: PLAY   ISRWAIT  ISRPLAY ;
+: PLAY ( Vaddr --) ISRWAIT  ISRPLAY ;
 
 \ We can put sound lists inside Forth definitions for more control
 : 5SHOTS     5 0 DO  FIRE PLAY  LOOP  EXPLODE PLAY ;
