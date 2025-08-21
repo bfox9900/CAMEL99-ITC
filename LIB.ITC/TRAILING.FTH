@@ -22,7 +22,7 @@ A116 ,          \ *SP TOS  ADD,    compute end of string
 6116 ,          \   *SP TOS SUB,
 0584 ,          \   TOS INC,        1+
 C104 ,          \   TOS TOS MOV,
-1401 ,          \   LO IF,  TOS CLR,  ENDIF,
+1501 ,          \   LTE IF,  TOS CLR,  ENDIF,
 04C4 ,
 NEXT,
 ENDCODE
