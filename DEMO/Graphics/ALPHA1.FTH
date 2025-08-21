@@ -158,7 +158,9 @@ DECIMAL
            CHANGE-DIR
            150 SPEED!     \ 150 is slow, longest delay
            BEGIN
-              SP0 SP!
+            \ this is cheating but I couldn't find the leak :)
+              SP0 SP!     \ reset data stack.
+
               FOOD? IF BEEP EAT THEN
               CLEAR-AHEAD?
               IF   MOVE-MAN
