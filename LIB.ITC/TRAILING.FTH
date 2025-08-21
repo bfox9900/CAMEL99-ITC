@@ -10,7 +10,7 @@ CR .( -TRAILING remove trailing blanks  Apr 2025 FOX)
 
 \ -TRAILING  *Faster* remove trailing blanks   Oct 2021 FOX
 HEX
-CODE -TRAILING
+CODE /TRAILING ( addr n -- addr 'n)
 A116 ,          \ *SP TOS  ADD, compute end of string
 0604 ,          \     TOS  DEC,     1-
 0201 , 2000 ,   \  R1 2000 LI,      BL R1 !
@@ -24,4 +24,5 @@ A116 ,          \ *SP TOS  ADD, compute end of string
 NEXT,
 ENDCODE
 
+: -TRAILING  /TRAILING 0 MAX ;
 DECIMAL
