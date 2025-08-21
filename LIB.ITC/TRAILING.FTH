@@ -8,18 +8,19 @@ CR .( -TRAILING remove trailing blanks  Apr 2025 FOX)
 \    REPEAT
 \    1+ ;
 
+\ -TRAILING  *Faster* remove trailing blanks   Oct 2021 FOX
 HEX
-CODE -TRAILING ( addr len -- addr len') \ 8x FASTER than Forth
-0604 , \    TOS DEC,
-0201 , 2000 , \ R1 2000 LI, (space char)
-       \    BEGIN,
-C016 , \        *SP  R0 MOV,
-A004 , \         TOS R0 ADD,
-9050 , \         R0 **  R1 CMPB,
-1602 , \    EQ WHILE,
-0604 , \         TOS DEC,
-10FA , \    REPEAT,
-0584 , \    TOS INC,
+CODE -TRAILING
+A116 ,          \ *SP TOS  ADD, compute end of string
+0604 ,          \     TOS  DEC,     1-
+0201 , 2000 ,   \  R1 2000 LI,      BL R1 !
+                \  BEGIN
+9054 ,          \  *TOS R1 CMPB,
+1602 ,          \   EQ WHILE,
+0604 ,          \      TOS DEC,     1-
+10FC ,          \   REPEAT,
+6116 ,          \   *SP TOS SUB,
+0584 ,          \   TOS INC,        1+
 NEXT,
 ENDCODE
 
