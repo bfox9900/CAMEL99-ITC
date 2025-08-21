@@ -3,16 +3,17 @@
 INCLUDE DSK1.TOOLS
 INCLUDE DSK1.GRAFIX
 INCLUDE DSK1.RANDOM
+INCLUDE DSK1.UDOTR  \ right justified number printers
 INCLUDE DSK1.MARKER
 
 MARKER ALPHA
 \ ==================================
 \ character patterns
 HEX
- 00FE FEFE FEFE FEFE PATTERN: REDBRICK
- 3C7E DBFF DBE7 7E3C PATTERN: HAPPYFACE
- 3C7E DBFF E7DB 7E3C PATTERN: SADFACE
- 0022 5508 C92A 1C3E PATTERN: PLANT
+CREATE REDBRICK   00FE , FEFE , FEFE , FEFE ,
+CREATE HAPPYFACE  3C7E , DBFF , DBE7 , 7E3C ,
+CREATE SADFACE    3C7E , DBFF , E7DB , 7E3C ,
+CREATE PLANT      0022 , 5508 , C92A , 1C3E ,
 
 \ named chars
 DECIMAL
@@ -20,12 +21,12 @@ DECIMAL
 168 CONSTANT BRICK
 176 CONSTANT FOOD
 
-\ define chars
- REDBRICK  BRICK CHARDEF   BRICK  SET#  7 15 COLOR
- PLANT      FOOD CHARDEF   FOOD   SET# 13  1 COLOR
+: DEFINE-CHARS
+ REDBRICK  BRICK CHARDEF   BRICK SET#  7 15 COLOR
+ PLANT      FOOD CHARDEF   FOOD  SET# 13  1 COLOR
+;
 
 : CLIP       ROT MIN MAX ;
-
 : RNDX   ( -- x)  23 RND 2 22 CLIP ;
 : RNDY   ( -- y)  33 RND 2 30 CLIP ;
 
@@ -67,7 +68,7 @@ CREATE MY-XY  RNDY , RNDX ,    \ independant cursor for alpha guy
 
 : CHANGE-DIR   ( -- )  NEW-VECTORS VECTOR 2! ;
 : VECTOR@      ( --  dx dy)  VECTOR 2@ ;
-: VECT+        ( x y dx dy -- x' y' ) ROT +  -ROT + SWAP ;
+: VECT+        ( x y dx dy -- x' y' )  ROT + >R +  R> ;
 
 \ direct memory screen control
 : >VPOS        ( Y X -- vaddr)  C/L@ * + ;
@@ -84,12 +85,10 @@ CREATE MY-XY  RNDY , RNDX ,    \ independant cursor for alpha guy
 DECIMAL
 VARIABLE TRYS
 VARIABLE SPEED
-
-\ print right justified n spaces
-: .R   ( n n -- )  >R DUP ABS 0 <# #S ROT SIGN #>  R> OVER - SPACES TYPE ;
+: BLANKLN ( -- ) VPOS C/L@ BL VFILL ;
 
 : .BRAIN     ( -- )
-     0 0 CLRLN
+     0 0 AT-XY BLANKLN
      ." Vector"  VECTOR 2@  2 .R ." ," 2 .R
      SPACE ." Trys " TRYS @ 2 .R
      SPACE ." Energy " SPEED @ 150 - ABS 3 .R ;
@@ -105,9 +104,9 @@ VARIABLE SPEED
 : SPEED++    ( -- ) SPEED @ 35 - SPEED! ;   \ speed is inverse
 : SPEED--    ( -- ) SPEED @ 1+  SPEED! ;
 
-: EAT        ( -- )
-             BL NEXT-POS >VPOS VC!
-             SPEED++ ;
+: EAT    ( -- )
+         BL NEXT-POS >VPOS VC!
+         SPEED++ ;
 
 : CLEAR-AHEAD? ( -- ?) NEXT-POS READ-CHAR  BL = ;
 : FOOD?        ( -- ?) NEXT-POS READ-CHAR  FOOD = ;
@@ -118,29 +117,54 @@ VARIABLE SPEED
             BEGIN
                1 TRYS +!               \ count the try
                CHANGE-DIR              \ get new direction
-               .BRAIN 50 MS                                               
+               .BRAIN 50 MS
                CLEAR-AHEAD?
             UNTIL
-            HAPPY   ;
+            HAPPY ;
+
+: EXPLAIN
+TEXT
+PAGE  ."       * ALPHA INTELLIGENCE *"
+CR
+CR    ." A minimum form of machine intelligence"
+CR    ." where a robot follows a vector until it"
+CR    ." meets an optstacle."
+CR
+CR    ." It then tries RANDOM vectors until it"
+CR    ." finds a clear path."
+CR    ." Lather, Rinse, Repeat."
+CR
+CR    ." (Press a key to change the maze)"
+CR
+CR    ." Concept from:"
+CR
+CR    ."     PROJECTS IN MACHINE INTELLIGENCE"
+CR    ."        for your HOME COMPUTER"
+CR    ."        David Heiserman, 1982"
+
+6 23 AT-XY ." Press any key to continue"
+BEGIN KEY? UNTIL
+;
 
 DECIMAL
 : RUN      ( -- )
-       BEGIN
-           PAGE 4 10 AT-XY ." Alpha Intelligence Demo" 1000 MS
-           PAGE
-           16 SCREEN
+      PAGE 4 10 AT-XY ." Alpha Intelligence Demo" 1000 MS
+      EXPLAIN
+      BEGIN
+           GRAPHICS  16 SCREEN
+           DEFINE-CHARS
            .BORDER  .WALLS  PLANTS
            HAPPY SHOW-MAN
            CHANGE-DIR
            150 SPEED!     \ 150 is slow, longest delay
            BEGIN
+              SP0 SP!
               FOOD? IF BEEP EAT THEN
               CLEAR-AHEAD?
-              IF   MOVE-MAN   \ if true
-              ELSE ALPHA-THINK             \ otherwise
+              IF   MOVE-MAN
+              ELSE ALPHA-THINK
               THEN SPEED @ MS
               KEY?
            UNTIL
-           ?BREAK
-        AGAIN ;
-
+           ?TERMINAL IF PAGE .S QUIT   THEN
+      AGAIN ;
