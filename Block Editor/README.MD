@@ -19,4 +19,4 @@ if use the TI BASIC syntax.
 - At the Forth console type:  INCLUDE DSK?.BLOCKEDIT
     - Where? is the disk number with the BLOCKEDIT program
 - The program will take some time to compile.
-    (1 min on Classic99, 2 minutes with floppy disk)
+    - (1 min on Classic99, 2 minutes with floppy disk)
