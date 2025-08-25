@@ -1,6 +1,10 @@
-# BLock Editor Example
+# BLock Editor for 80 Column Screen
 
 This is a simple editor for use with "block" files.
+
+** This editor requires the F18 video card or equivalent because it uses
+   80 column screen format.
+
 It is compatible with the block files used by TurboForth and FbForth so you can use it to persuse those system's code using Camel99 Forth.
 
 A block file a binary file that is read as blocks of 1K bytes.
@@ -9,8 +13,6 @@ This was the traditional way the Forth accessed disk in the early days.
 The BLOCK files are in a TI-99 file format called "DISPLAY FIXED 128"
 if use the TI BASIC syntax.
 
-** This editor requires the F18 video card or equivalent because it uses
-   80 column screen format.
 
 ### Compiling the Block Editor
 - You must have the Camel99 Forth disk with library files in DSK1.
@@ -61,14 +63,13 @@ CTRL KEYS    ( CTRL key must be held down )
   "C"    Copy line at cursor to copy buffer stack (non-destructive)
   "X"    Extract line at cursor and copy to buffer stack
   "V"    Paste copy buffer to line and push lines down
-\
 
 FORTH COMMANDS         Function Performed
-\
-    USE <PATH>    Open a block file for editing
+
+  USE <path>      Open a block file for editing
   EDIT            edit selected block number (number precedes command)
   ED              Invokes editor at active block
-\
+
   TEXT or T ....  Switch to TEXT display mode.
-\
+
   COLD      ....  re-starts FORTH from scratch.
