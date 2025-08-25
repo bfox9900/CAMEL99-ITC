@@ -1,4 +1,4 @@
-CR .( blocks.fth  for CAMEL99 Forth  Mar2023  BJFox)
+CR .( blocks.fth  for CAMEL99 Forth  Aug2024  BJFox)
 
 \ Based on ideas from HsForth by Jim Kalihan (RIP)
 \ Oct 9 2019 reduced compiled size from 930 bytes to 890
@@ -8,31 +8,32 @@ CR .( blocks.fth  for CAMEL99 Forth  Mar2023  BJFox)
 \            Used DUP>R cuz it's now in Kernel 2.66
 \ Aug 2021   Added ?BLKFILE to test file in dir.
 \ Apr 2022   Added LOAD and --> to allow compiling from block files
-\ Mar 2023   Fix stack issue on MAKE-BLOCKS. 
+\ Mar 2023   Fix stack issue on MAKE-BLOCKS.
 \            Buffers now allocated with H (heap)
-\            ?BLKFILE renamed to ?EXISTS.   
+\            ?BLKFILE renamed to ?EXISTS.
+\ Aug 2024   Added DUP@ optimizer
 
 \ NEEDS DUMP       FROM DSK1.TOOLS
 NEEDS OPEN-FILE  FROM DSK1.ANSFILES
 
 HERE
-DECIMAL 
-4               CONSTANT #BUFF    \ active buffers 7 max 
+DECIMAL
+4               CONSTANT #BUFF    \ active buffers 7 max
 1024            CONSTANT B/BUF
 B/BUF 2 CELLS + CONSTANT BLKSIZE  \ 1K + 4 byte header
 128             CONSTANT B/SEC    \ bytes per sector on TI disk
 
-\ use heap pointer for buffer allocations 
+\ use heap pointer for buffer allocations
 HEX
 2000 H !  CR CR .( ** HEAP reset to >2000 **) CR
 
-H @ CONSTANT FIRST 
+H @ CONSTANT FIRST
 BLKSIZE #BUFF *  H +!  ( allocate memory in the heap )
-H @ CONSTANT LIMIT     ( end of allocation is limit ) 
+H @ CONSTANT LIMIT     ( end of allocation is limit )
 
 DECIMAL
-VARIABLE PREV      FIRST  PREV !  \ PREV holds last block selected 
-VARIABLE USE       FIRST  USE  !  \ USE hold the next buffer to use 
+VARIABLE PREV      FIRST  PREV !  \ PREV holds last block selected
+VARIABLE USE       FIRST  USE  !  \ USE hold the next buffer to use
 VARIABLE LOWBLK
 VARIABLE HIGHBLK   78 HIGHBLK !  \ default value
 VARIABLE BHNDL                   \ block file handle
@@ -44,10 +45,10 @@ HEX
 : ?BLOCKS   ( -- ) BHNDL @ 0= ABORT" BLOCK file closed" ;
 : ?BLKERR   ( ? -- ) ?DUP IF BHNDL OFF  ?FILERR  THEN ;
 
-\ MASK: TOS 7FFF ANDI, 
+\ MASK: TOS 7FFF ANDI,
 CODE MASK   ( n -- n)  0244 , 7FFF ,   NEXT, ENDCODE
 \ optimzer: and saves 12 bytes
-CODE DUP@   ( addr -- addr n) 0646 , C584 , C114 , NEXT, ENDCODE 
+CODE DUP@   ( addr -- addr n) 0646 , C584 , C114 , NEXT, ENDCODE
 
 \ move file pointer to start of block (One BLOCK= 8 sectors)
 : SEEK   ( blk# -- ) ?BLOCKS  8* BHNDL @ REPOSITION-FILE ?BLKERR ;
@@ -70,7 +71,7 @@ HEX
 
 : +BUF   ( addr-- addr') BLKSIZE + DUP LIMIT = IF  DROP FIRST  THEN ;
 
-: BUFFER ( n -- addr ) 
+: BUFFER ( n -- addr )
    USE @ DUP>R        \ get current buffer record & Rpush
    @ 0<               \ has it been updated?
    IF                 \ if true ...
@@ -83,7 +84,7 @@ HEX
    R> CELL+ ;         \ return the buffer address
 
 : BLOCK   ( block# --- addr )
-   ?BLOCKS 
+   ?BLOCKS
    >R
    PREV @ DUP@  R@ - MASK
    IF
@@ -109,10 +110,10 @@ HEX
    #BUFF 0
    DO
       DUP@ 0< \ updated?
-      IF           
+      IF
          DUP@ MASK  OVER 2DUP !
          CELL+ SWAP WBLK
-      THEN ( buffer) +BUF  
+      THEN ( buffer) +BUF
    LOOP
    DROP ;
 
@@ -123,14 +124,14 @@ HEX
 DECIMAL
 : DF128   DISPLAY RELATIVE  B/SEC FIXED ;
 
-: ?EXISTS ( addr len --) 
+: ?EXISTS ( addr len --)
    R/O OPEN-FILE ABORT" File not found" CLOSE-FILE DROP ;
-   
+
 .( .)
 : OPEN-BLOCKS ( file$ len -- )
    2DUP DF128 ?EXISTS
    EMPTY-BUFFERS
-   BHNDL OFF 
+   BHNDL OFF
    2DUP R/W OPEN-FILE ?FILERR BHNDL !
    ACTIVE PLACE ; \ if successful store file name
 
@@ -163,7 +164,7 @@ DECIMAL
      I LINE B/L EVALUATE
    LOOP ;
 
-: -->   ( n -- ) SCR @ 1+ LOAD ;
+: -->   ( n -- ) SCR @ 1+ LOAD ; IMMEDIATE
 
 HERE SWAP - DECIMAL  CR .  .( bytes)
 EMPTY-BUFFERS
