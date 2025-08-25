@@ -38,8 +38,8 @@ To display and edit a block use the EDIT command prefaced with the block number:
 ```
 
 ### Block Editor Key Commands.
-
-  TI-99 FCTN KEY   PC Keyboard
+```
+#### TI-99 FCTN KEY   PC Keyboard
 
   DELETE            Delete      deletes 1 char and shortens line by 1 char
   INSERT            Insert      toggles between inserting or overwrite mode
@@ -55,21 +55,24 @@ To display and edit a block use the EDIT command prefaced with the block number:
   "X"               Down Arrow  move the Cursor down
   "S"               Left Arrow  move the Cursor left
   "D"               Rigth Arrwo move the Cursor right
+```
 
-
-CTRL KEYS    ( CTRL key must be held down )
+#### CTRL KEYS    ( CTRL key must be held down )
+```
   "S"    Save all updated buffers to disk
   "P"    Paste copy buffer at row line (overwrites)
   "C"    Copy line at cursor to copy buffer stack (non-destructive)
   "X"    Extract line at cursor and copy to buffer stack
   "V"    Paste copy buffer to line and push lines down
+```
 
-FORTH COMMANDS         Function Performed
-
+#### FORTH COMMANDS         Function Performed
+```
   USE <path>      Open a block file for editing
   EDIT            edit selected block number (number precedes command)
   ED              Invokes editor at active block
-
-  TEXT or T ....  Switch to TEXT display mode.
-
+  SAVE            Save all updated buffers
+  TEXT            Switch to 40 column TEXT display mode
+  CLEAR           erase contents of a block number on stack and update buffer
   COLD      ....  re-starts FORTH from scratch.
+```
