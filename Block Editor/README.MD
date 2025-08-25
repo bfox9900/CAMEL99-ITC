@@ -5,13 +5,13 @@ This is a simple editor for use with "block" files.
 ** This editor requires the F18 video card or equivalent because it uses
    80 column screen format.
 
-It is compatible with the block files used by TurboForth and FbForth so you can use it to persuse those system's code using Camel99 Forth.
+It is compatible with the block files used by TurboForth and FbForth so you can use it to peruse those system's code while in Camel99 Forth.
 
-A block file a binary file that is read as blocks of 1K bytes.
+A block file is a file that is read as blocks of 1K bytes.
 This was the traditional way the Forth accessed disk in the early days.
 
 The BLOCK files are in a TI-99 file format called "DISPLAY FIXED 128"
-if use the TI BASIC syntax.
+if we use the TI BASIC syntax.
 
 
 ### Compiling the Block Editor
@@ -37,6 +37,13 @@ To display and edit a block use the EDIT command prefaced with the block number:
 5 EDIT
 ```
 
+#### Copybuffer Stack
+This editor makes use of a stack to hold lines of text that are copied or "Xtracted"
+*WARNING*
+It is best to play with the cut/copy/paste before touching anything serious because inserting (control V) a line pushes down the lines below so that the bottom line will disappear.
+If that happens press ESCAPE and type UNDO ED to get back to the original block text.
+
+
 ### Block Editor Key Commands.
 ```
 #### TI-99 FCTN KEY |PC Keyboard
@@ -45,9 +52,8 @@ To display and edit a block use the EDIT command prefaced with the block number:
   INSERT            Insert      toggles between inserting or overwrite mode
   ERASE             Alt 3       erases 1 line & stores in a buffer stack
   CLEAR             PageDown    displays the next disk block
+  PROCEED           PageUp      displays the previous disk block
   BEGIN             Home        homes cursor to top of block
-  PROCEED           PaeUp       displays the previous disk block
-  AID                N/A        (future) delete line from right of cursor
   REDO              Alt 8       Inserts ERASEd line at cursor's row
   BACK              Escape      returns to FORTH console
 
