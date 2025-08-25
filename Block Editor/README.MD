@@ -67,15 +67,46 @@ To display and edit a block use the EDIT command prefaced with the block number:
 ```
 
 #### FORTH Console Commands
+The editor words are compiled into a separate vocabulary called EDITOR.
+When the editor is compiled the default search order for the dictionary is:
+```
+EDITOR  FORTH-WORDLIST ROOT
+CURRENT: EDITOR    ( where new words will be compiled)
+```
+
+To see the search order use the command: ORDER
+If you change the order you can get back to having the EDITOR first with:
+```
+EDITOR
+```
+
+If by chance you really mess up the search order type this:
+```
+ONLY FORTH ALSO EDITOR DEFINITIONS
+```
+
+
+At the Forth console with the EDITOR in the search order you have a few
+commands at your disposal listed below.
+
 ```
   USE <path>        Open a block file for editing
+  CLOSE-BLOCKS      Close the open block file
+
   EDIT              Edit selected block number (number precedes command)
   ED                Invokes editor at active block
+
   >>                List the next block
   <<                List the previous block
+
   SAVE              Save all updated buffers
-  UNDO              Empty all buffers. They will refill from disk on next access
+  UNDO              Empty all buffers. This will refill un-saved data from disk
+
+  7 CLEAR           erase contents of a block 7 and update buffer
+
   TEXT              Switch to 40 column TEXT display mode
-  CLEAR             erase contents of a block number on stack and update buffer
-  COLD              re-starts FORTH from scratch.
+
+  50 S" DSK3.MYBLOCKS" MAKE-BLOCKS  creates a new file with 50 blocks ON DSK3.
+
+  COLD              re-starts FORTH from removes editor
 ```
