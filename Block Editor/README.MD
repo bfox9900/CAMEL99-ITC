@@ -18,3 +18,5 @@ if use the TI BASIC syntax.
 - Start Camel99 Forth or Camel99SC Forth (Super Cart version)
 - At the Forth console type:  INCLUDE DSK?.BLOCKEDIT
     - Where? is the disk number with the BLOCKEDIT program
+- The program will take some time to compile.
+    (1 min on Classic99, 2 minutes with floppy disk)
