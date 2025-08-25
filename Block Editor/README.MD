@@ -39,6 +39,7 @@ To display and edit a block use the EDIT command prefaced with the block number:
 
 #### Copybuffer Stack
 This editor makes use of a stack to hold lines of text that are copied or "Xtracted"
+
 *WARNING*
 It is best to play with the cut/copy/paste before touching anything serious because inserting (control V) a line pushes down the lines below so that the bottom line will disappear.
 If that happens press ESCAPE and type UNDO ED to get back to the original block text.
