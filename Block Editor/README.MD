@@ -66,13 +66,16 @@ To display and edit a block use the EDIT command prefaced with the block number:
   "V"    Paste copy buffer to line and push lines down
 ```
 
-#### FORTH COMMANDS         Function Performed
+#### FORTH COMMANDS     Function Performed
 ```
-  USE <path>      Open a block file for editing
-  EDIT            edit selected block number (number precedes command)
-  ED              Invokes editor at active block
-  SAVE            Save all updated buffers
-  TEXT            Switch to 40 column TEXT display mode
-  CLEAR           erase contents of a block number on stack and update buffer
-  COLD      ....  re-starts FORTH from scratch.
+  USE <path>        Open a block file for editing
+  EDIT              Edit selected block number (number precedes command)
+  ED                Invokes editor at active block
+  >>                List the next block
+  <<                List the previous block
+  SAVE              Save all updated buffers
+  UNDO              Empty all buffers. They will refill from disk on next access
+  TEXT              Switch to 40 column TEXT display mode
+  CLEAR             erase contents of a block number on stack and update buffer
+  COLD              re-starts FORTH from scratch.
 ```
