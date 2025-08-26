@@ -1,4 +1,4 @@
-\ FLOGO   CAMEL99 FORTH LOGO to test GRAPHICS2  Mode  Dec 2022 Brian Fox 
+\ FLOGO   CAMEL99 FORTH LOGO to test GRAPHICS2  Mode  Dec 2022 Brian Fox
 \ Based on fignition LOGO https://github.com/AshleyF/FIGTurtle
 \ Expanded names from single letter commands for clarity
 
@@ -21,7 +21,7 @@ NEEDS PLOT  FROM DSK1.GRAPHICS2B
 
 \ ===============================================
 \ named colors
-DECIMAL 
+DECIMAL
  \ named colors for Graphics programs
 : ENUM  ( 0 <text> -- n) DUP CONSTANT  1+ ;
 
@@ -35,7 +35,7 @@ DECIMAL
   ENUM CYAN
   ENUM MEDRED
   ENUM LTRED
-  ENUM YELLOW 
+  ENUM YELLOW
   ENUM LTYEL
   ENUM GREEN
   ENUM MAGENTA
@@ -43,7 +43,7 @@ DECIMAL
   ENUM WHITE
 DROP
 
-: HUE ( fg -- ) 0 COLOR ; 
+: HUE ( fg -- ) 0 COLOR ;
 
 \ ===============================================
 \ screen coordinates
@@ -61,14 +61,14 @@ YMAX 2/ CONSTANT YCNTR
  VARIABLE W      \ Radian ?
 
 \ ===============================================
-\ direction table 
+\ direction table
 DECIMAL
 CREATE SINTAB
   000 , 027 , 053 , 079 ,
   104 , 127 , 150 , 171 ,
   190 , 206 , 221 , 233 ,
   243 , 249 , 254 , 255 ,
-  000 , 
+  000 ,
 
 \ expose the table as a byte array. Use text macro for speed
 \ : ]N@ ( ndx -- n) S" N + C@" EVALUATE ; IMMEDIATE
@@ -89,26 +89,26 @@ CODE SIN ( ndx -- addr)  2*, SINTAB []@,  NEXT, ENDCODE
 
 \ =======================================
 \ coordinate scaling
-\ A little machine code makes a difference 
-HEX 
+\ A little machine code makes a difference
+HEX
 \ : BYTE   00FF AND ;
-\ : 256*     ( --c) ><  BYTE ; \ swap byte is 256 * :-) 
+\ : 256*     ( --c) ><  BYTE ; \ swap byte is 256 * :-)
 \ : 256/    ( --c) 8 RSHIFT  BYTE ;
 
 CODE 256*   06C4 , NEXT, ENDCODE  \ TOS SWPB,
-CODE 256/   0984 , NEXT, ENDCODE  \ TOS 8 SRL, 
+CODE 256/   0984 , NEXT, ENDCODE  \ TOS 8 SRL,
 
-DECIMAL 
+DECIMAL
 \ returns scaled,centred X,Y values
 : XSCALE  ( --c) 256/ XCNTR +  ;
 : YSCALE  ( --c) 256/ YCNTR +  ;
 
-DECIMAL 
-: [X,Y]  ( -- x y) S" X @ XSCALE Y @ YSCALE" EVALUATE ; IMMEDIATE 
+DECIMAL
+: [X,Y]  ( -- x y) S" X @ XSCALE Y @ YSCALE" EVALUATE ; IMMEDIATE
 
 \ =======================================
-\ plotter control  
-: PEN-UP          ['] 2DROP IS STYLUS ; \ noop, consumes args 
+\ plotter control
+: PEN-UP          ['] 2DROP IS STYLUS ; \ noop, consumes args
 : PEN-DOWN           PENCIL IS STYLUS ;
 
 \ =======================================
@@ -128,7 +128,7 @@ DECIMAL
          1 ?DO
              W @ Y +!
              Q @ X +!
-            DRAW 
+            DRAW
          LOOP ;
 
 : BGN    ( -- )  CLEAR  HOME PEN-DOWN  ;
@@ -136,7 +136,7 @@ DECIMAL
 : WAIT   PEN-UP  500 MS  ;
 
 DECIMAL
-\ primitives 
+\ primitives
 : WALK  ( turns moves loops -- )
   0 ?DO  2DUP FWD TURN   LOOP 2DROP PEN-UP ;
 
@@ -157,19 +157,20 @@ DECIMAL
 : SQUIRAL ( -- ) BGN -50 50 GOTO  20 0 DO 100 FWD 21 TURN LOOP  WAIT ;
 : ROSE    ( -- ) BGN 0 50 0 DO 2+ DUP FWD  14 TURN  LOOP        WAIT ;
 
-\ primitives for flower 
+\ primitives for flower
 : HP      ( -- ) 1 5 15 WALK    -1 2 15 WALK ;
 : PETAL   ( -- ) HP 30 TURN  HP 30 TURN      ;
 : FLOWER  ( -- ) BGN 15 0 DO   PETAL 4 TURN  LOOP               WAIT ;
 
-: DEMO     
-  GRAPHICS2 
+: DEMO
+  GRAPHICS2
 
-    WHITE HUE SINE  
-    MAGENTA HUE BURST  
-    GREEN HUE SQUIRAL  
-    BLUE HUE SPIRAL  
-    YELLOW HUE STARS  
-    RED HUE ROSE  
-    LTRED HUE FLOWER  
- TEXT ;
+    WHITE HUE SINE
+    MAGENTA HUE BURST
+    GREEN HUE SQUIRAL
+    BLUE HUE SPIRAL
+    YELLOW HUE STARS
+    RED HUE ROSE
+    LTRED HUE FLOWER
+    TEXT
+    BL CHAR _ FUSE  CURS ! ;
