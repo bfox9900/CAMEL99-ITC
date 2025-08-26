@@ -1,12 +1,18 @@
 \ ANS Dynamic Memory test
 \ Minimalist ALLOCATE FREE RESIZE for Camel99 Forth B Fox Sept 3 2020
 \ Static allocation, size function and crude re-sizing
-\ Use with VALUE to retain the pointers
+\ Use with VALUE to hold the pointers
+
+\ Data structure of allocated node:
+\  <SIZE> , <address>
+\ Node returns the address field. ADDRESS-2 give size field
 
 NEEDS VALUE FROM DSK1.VALUES
 
 HEX
 HERE
+: CELL-  S" 2-" EVALUATE ; IMMEDIATE
+
 \ HEAP is the "Low RAM" 8K block in TI-99 memory space
 : HEAP   ( -- addr)  H @ ;  \ equivalent to HERE in HI memory
 : HALLOT ( n -- )    H +! ; \ equivalent to ALLOT in HI memory
@@ -17,25 +23,28 @@ HERE
 : HC,    ( n -- )  HEAP C!  1 HALLOT ;
 
 : ALLOCATE ( n -- addr ?) DUP H, HEAP SWAP HALLOT FALSE ;
+
 \ *warning* FREE removes everything above it as well
- : FREE     ( addr -- ?) 2- DUP OFF  H ! FALSE ;
+ : FREE     ( addr -- ?) CELL- DUP OFF  H ! FALSE ;
 \ *warning* RESIZE will fragment the HEAP
  : RESIZE   ( n addr -- addr ?) DROP ALLOCATE ;
- : SIZE     ( addr -- n) 2- @ ; \ not ANS/ISO commonly found
+ : SIZE     ( addr -- n) CELL- @ ; \ not ANS/ISO commonly found
 
 \ A bit of protection  and syntax sugar
- : ?ALLOC ( ? --) ABORT" Allocate error" ;
+ : ?ALLOC ( ? --) ABORT" ALLOCATE error" ;
  : ->     ( -- addr ?) ?ALLOC  POSTPONE TO ; IMMEDIATE
+
  CR HERE SWAP - DECIMAL . .( bytes)
 
 
-\ >>> DEMO CODE <<<
+\                >>> DEMO CODE <<<
 HEX 2000 H !   \ reset heap pointer to the where you want the heap
 
 \ dynamically allocate space for a string literal
-
 : STRING:  ( addr len -- ) DUP ALLOCATE ?ALLOC DUP>R PLACE  R> VALUE ;
-: PRINT    COUNT CR TYPE ;
+
+: ?POINTER ( u -- ) DUP SIZE 0= ABORT" Null pointer" ;
+: PRINT    ?POINTER COUNT CR TYPE ;
 
 DECIMAL
 0 VALUE A$  ( create a null pointer )
@@ -47,6 +56,7 @@ DECIMAL
 
  S" This is string A$" A$ PLACE
  S" B$ is my name" B$ PLACE
+
  S" This string allocates itself" STRING: C$
 
  A$ PRINT
@@ -54,3 +64,7 @@ DECIMAL
  B$ PRINT
  CR
  C$ PRINT
+
+
+\ a bit crude but it works
+ A$ FREE  A$ PRINT
