@@ -3,9 +3,11 @@
 \ Static allocation, size function and crude re-sizing
 \ Use with VALUE to hold the pointers
 
-\ Data structure of allocated node:
-\  <SIZE> , <address>
-\ Node returns the address field. ADDRESS-2 give size field
+\ updated aUG 2025
+\ Data structure of allocated node in the heap.
+\  <SIZE> , < data ...... >
+\ Node returns the address of the DATA field.
+\ Address-2 gives size field
 
 NEEDS VALUE FROM DSK1.VALUES
 
@@ -65,6 +67,5 @@ DECIMAL
  CR
  C$ PRINT
 
-
-\ a bit crude but it works
+\ error out on a null pointer
  A$ FREE  A$ PRINT
