@@ -211,4 +211,36 @@ DECIMAL
 
 HERE SWAP - DECIMAL . .( bytes)
 
-USE DSK7.BLOCKS
+: DEBUG
+PAGE
+HEX
+CONTEXT 8 CELLS DUMP
+CR ." 'latest = " LATEST U.
+CR ."  Latest = " LATEST @ U.
+CR ."  DP =     " DP     @ U.
+CR ." ' EDITOR =" ' EDITOR 4 CELLS DUMP
+;
+
+ONLY FORTH DEFINITIONS
+\ to make Forth system for block editing
+\ lock the current dictionary for COLD boots
+: LOCK    DP @ ORGDP !
+          CONTEXT @ @ ORGLAST !
+;
+
+: COLD
+    WARM
+    ['] FIND12 'FIND !
+    DEBUG
+    ONLY FORTH DEFINITIONS ALSO EDITOR
+    ORDER
+    ABORT ;
+
+ONLY FORTH DEFINITIONS ALSO EDITOR
+
+LOCK
+
+INCLUDE DSK1.SAVESYS
+
+
+' COLD SAVESYS DSK7.BLKDEVSYS
