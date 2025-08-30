@@ -7,7 +7,7 @@ DECIMAL
 
 HEX
 : DIR  ( <DSK?.> )   \  needs the '.' ONLY shows file name
-          BL PARSE-WORD ?FILE
+          PARSE-NAME ?FILE
           RELATIVE 100 FIXED R/O BIN OPEN-FILE ?FILERR
           >R  \ push handle onto Return stack
           PAD 50 R@ READ-LINE ?FILERR 2DROP
@@ -32,4 +32,3 @@ HEX
           DECIMAL
           CR LINES @ . ." files" CR
           HEX ;
-
