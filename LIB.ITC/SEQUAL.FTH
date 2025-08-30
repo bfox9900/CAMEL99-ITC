@@ -1,7 +1,6 @@
 \ S= adapted from Camel Forth MSP430
-\ machine code version is in DSK1.COMPARE
-\ NEEDS DUMP FROM DSK1.TOOLS
-\ NEEDS POP, FROM DSK1.ASM9900
+\ machine code version
+
 HEX
 CODE S= ( addr1 addr2 len)
     C0B6 , C076 , C004 , 04C4 , 130A , 9CB1 ,
