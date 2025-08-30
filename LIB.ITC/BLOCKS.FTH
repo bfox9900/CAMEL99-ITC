@@ -85,7 +85,7 @@ HEX
 
 : BLOCK   ( block# --- addr )
    ?BLOCKS
-   >R
+   >R     \ block# held on rstack
    PREV @ DUP@  R@ - MASK
    IF
       BEGIN
