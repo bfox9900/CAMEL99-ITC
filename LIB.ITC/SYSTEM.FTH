@@ -10,17 +10,18 @@ CR .( ANS FORTH Extensions...)
   PARSE-NAME INCLUDED SPACE LINES @ DECIMAL . ." lines" ;
 .( .)
 HEX
-\ support for machine code 
-: CODE      ( -- )  HEADER  HERE 2+ , !CSP ;
-: NEXT,     ( -- )  045A , ;  \ B *R10
-: ENDCODE   ( -- )  ?CSP  ;
-
 \ aliases for ANS compliance
 CODE CELLS   A104 , NEXT, ENDCODE  \ 2*
 CODE CHAR+   0584 , NEXT, ENDCODE  \ 1+
 CODE >BODY   05C4 , NEXT, ENDCODE  \ 2+
 CODE CELL+   05C4 , NEXT, ENDCODE  \ 2+
-: CHARS  ;  \ noop
+
+\ support for machine code
+: CODE      ( -- )  HEADER  HERE CELL+ , !CSP ;
+: NEXT,     ( -- )  045A , ;  \ B *R10
+: ENDCODE   ( -- )  ?CSP  ;
+
+: CHARS  ; IMMEDIATE \ noop
 
 .( .)
 : ;CODE
