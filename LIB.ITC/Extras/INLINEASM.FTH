@@ -1,5 +1,7 @@
 \ inlineasm.fth         BFOX
 \ allows inline asm or machine code in colon definition
+\ Has an 8 byte overhead versus 10 to 16 for a CODE word
+\ : TRIVIAL ( n n -- n) ASM[ *SP+ TOS ADD, ]ASM  42 * ;
 
 HEX
 : ASM[   \ Begin Forth Assembly Code within high-level Forth
