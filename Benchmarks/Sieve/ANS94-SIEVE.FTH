@@ -6,10 +6,12 @@ NEEDS VALUE FROM DSK1.VALUES
 : UNDER+  ( a b c --a' b ) ROT + SWAP ;
 : SQUARED ( a -- a^2) DUP * ;
 
+\ --------------------------------------------
 DECIMAL
 8192 CONSTANT SIZE  \ test this many odd numbers
 CREATE FLAGS SIZE CHARS ALLOT  \ odd numbers
 HERE CONSTANT END-FLAGS  \ address after the list
+
 : ODD  ( u -- n)  \ number n of flag u
    2* 3 + ;
 
