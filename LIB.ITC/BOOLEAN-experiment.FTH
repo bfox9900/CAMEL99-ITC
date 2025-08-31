@@ -20,6 +20,17 @@ HEX
 
  : BITMASK ( bit# -- n )  1 SWAP LSHIFT ;  \ for little endian CPU (x86)
 \ : BITMASK ( bit# -- n )  1 SWAP LSHIFT >< ; \ For Big endian TMS9900
+\ using this code word speeds things up only 9%
+\ CODE BITMASK ( bit# -- mask) \ shift left arithmetic
+\            TOS R0  MOV,    \ the shift bits MUST be in R0 to do this
+\            TOS 1 LI,
+\            R0 R0 MOV,
+\            NE IF,
+\               TOS R0 SLA,
+\            ENDIF,
+\            NEXT,
+\ ENDCODE
+
 
 \ API
 : BIT@ ( bit# bits[] -- ?) BITFLD @ SWAP RSHIFT 0001 AND ;  \ return 1 bit

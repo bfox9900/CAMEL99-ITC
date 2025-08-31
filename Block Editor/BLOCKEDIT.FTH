@@ -144,12 +144,12 @@ CREATE LNSTK  STKBASE , \ init pointer to stkbase
   LNSTK @ STKBASE = IF  DROP BEEP   EXIT THEN
   SLIDEDN  PASTELN RELIST ;
 
+: ?CLOSE  BHNDL @ IF CLOSE-BLOCKS THEN ;
+
 \ user console commands
 : CLEAR     ( n -- ) BLOCK B/BUF BLANK UPDATE ;
 : >>   1 SCR +!  RELIST  HOME ; \ page up
 : <<   SCR @ 1- 0 MAX SCR !  RELIST  HOME ; \ page down
-
-: ?CLOSE  BHNDL @ IF CLOSE-BLOCKS THEN ;
 : USE  ( <path> ) ?CLOSE  PARSE-NAME OPEN-BLOCKS ;
 : UNDO ( -- ) EMPTY-BUFFERS ;
 
