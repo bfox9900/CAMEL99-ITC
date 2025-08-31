@@ -3,7 +3,7 @@
 NEEDS DUMP FROM DSK1.LOWTOOLS
 
 HEX
-CODE :=    ( addr1 addr2 --)  \ 10X FASTER THAN X @ Y !
+CODE :=    ( addr1 addr2 --)  \ FASTER THAN X @ Y !
    W POP,
   *W *TOS MOV,
    TOS POP,

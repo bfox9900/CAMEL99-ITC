@@ -62,6 +62,7 @@ DECIMAL
 : <<  ( -- )  SCR @ 1- 0 MAX  SCR ! L ;
 : P   ( l# -- ) 1 PARSE ROT LINE SWAP CMOVE UPDATE  L ;
 
+
 : ED  ( l# )
   CR VROW 2@  DUP .LINE
   AT-XY DUP LINE B/L ACCEPT DROP
@@ -106,3 +107,16 @@ HERE SWAP - .
 
  USE DSK7.BLOCKS
  0 LIST
+
+: GETLINE ( addr line -- ) LINE 64 ROT PLACE ;
+: GETXY   ( -- X Y) VROW 2@ ;
+
+: EL  ( l# --)
+        >R
+        PAD R@ GETLINE
+        CR GETXY
+        R@ ROW
+        AT-XY  PAD 1+ DUP B/L ACCEPT
+        R@ LINE B/L BLANK
+        R> LINE SWAP CMOVE
+        UPDATE ;
