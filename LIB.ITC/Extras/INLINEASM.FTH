@@ -1,14 +1,5 @@
-\ assign.fth
-
-NEEDS DUMP FROM DSK1.LOWTOOLS
-
-HEX
-CODE :=    ( addr1 addr2 --)  \ 10X FASTER THAN X @ Y !
-   W POP,
-  *W *TOS MOV,
-   TOS POP,
-  NEXT,
-ENDCODE
+\ inlineasm.fth         BFOX
+\ allows inline asm or machine code in colon definition
 
 HEX
 : ASM[   \ Begin Forth Assembly Code within high-level Forth
@@ -22,11 +13,3 @@ HEX
    NEXT,                    \ NEXT, in ASSEMBLER vocabulary in kernel
    ]                        \ switch ON compiler
 ; IMMEDIATE
-
-DECIMAL
-VARIABLE X
-VARIABLE Y
-
-: TEST1  32000 0 DO  X @ Y !  LOOP ; \ 7.6
-: TEST2  32000 0 DO  X Y :=   LOOP ; \ 6.7
-: TEST3  32000 0 DO  ASM[  X @@ Y @@ MOV, ]ASM  LOOP ; \ 3.3
