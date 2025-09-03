@@ -41,11 +41,17 @@ ALSO EDITOR DEFINITIONS
 
 HERE
 DECIMAL
-\ B/L is the editor line len
-64 CONSTANT B/L
+64 CONSTANT B/L  \ "bytes per line"
 
+\ utility words
+: GETXY   ( -- X Y) VROW 2@ ;
 : BLANK ( a n -) BL FILL ;
 : ?BLK    DEPTH 0= ABORT" Block# expected" ;
+: ACCEPTLN ( l# -- ) LINE B/L ACCEPT DROP ;
+: TYPELN   ( l# -- ) LINE B/L TYPE ;
+: ?CLOSE-BLOCKS   BHNDL @ IF  CLOSE-BLOCKS THEN ;
+
+\ list a block
 : ROW   ( l# -- l#') DUP LINE VPOS B/L -TRAILING VWRITE 1+ ;
 : .LINE   ( l# -- l#') DUP 2 .R  ." | " ROW CR ;
 : 4LINES  ( l# -- l#') .LINE .LINE .LINE .LINE ;
@@ -54,19 +60,21 @@ DECIMAL
 : .HEAD   ( n -- )   ." SCR#" 4 .R 50 SPACES  ACTIVE COUNT TYPE CR ;
 : .NDX    ( blk# --)  BLOCK CR  0 .LINE ;
 
+\ display line# and edit it in block buffer
+: EDITLN ( line# -- )
+      >R
+      GETXY  R@ TYPELN
+      AT-XY  R> ACCEPTLN ;
+
 \ editor commands
-: USE ( <path> )  BL PARSE-WORD  OPEN-BLOCKS ;
+: USE ( <path> )  BL PARSE-WORD  ?CLOSE-BLOCKS OPEN-BLOCKS ;
 : LIST ( n -- ) PAGE DUP SCR ! .HEAD  16LINES ;
 : L    SCR @ LIST  ;
 : >>  ( -- )  1 SCR +! L ;
 : <<  ( -- )  SCR @ 1- 0 MAX  SCR ! L ;
 : P   ( l# -- ) 1 PARSE ROT LINE SWAP CMOVE UPDATE  L ;
+: EL  ( l# --) CR EDITLN  UPDATE  L ;
 
-
-: ED  ( l# )
-  CR VROW 2@  DUP .LINE
-  AT-XY DUP LINE B/L ACCEPT DROP
-  UPDATE ;
 
 : DL  ( l# -- ) LINE B/L BLANK UPDATE L ;
 : CP  ( L1 L2 -- ) (CP) UPDATE  L ;
@@ -97,7 +105,7 @@ DECIMAL
 : PASTE  ( -- ) \ for pasting text into a block
       16 0
       DO
-         I LINE B/L ACCEPT UPDATE
+         I ACCEPTLN UPDATE
       LOOP
       FLUSH ;
 
@@ -107,16 +115,3 @@ HERE SWAP - .
 
  USE DSK7.BLOCKS
  0 LIST
-
-: GETLINE ( addr line -- ) LINE 64 ROT PLACE ;
-: GETXY   ( -- X Y) VROW 2@ ;
-
-: EL  ( l# --)
-        >R
-        PAD R@ GETLINE
-        CR GETXY
-        R@ ROW
-        AT-XY  PAD 1+ DUP B/L ACCEPT
-        R@ LINE B/L BLANK
-        R> LINE SWAP CMOVE
-        UPDATE ;
