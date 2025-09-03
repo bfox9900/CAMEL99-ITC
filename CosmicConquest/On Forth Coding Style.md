@@ -197,9 +197,5 @@ However the hard part is that would have required someone new to Forth to have r
 
 
 
-
-
-
-
 ### To be continued...
 As I think find more examples of good Forth coding style I will put them here.
