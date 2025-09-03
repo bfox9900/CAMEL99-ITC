@@ -137,6 +137,9 @@ Stack comments are the key to remembering what goes in and what comes out of eac
 
 ### Number Input Example
 Here is the orginal word to get an numberic input from the player.
+There is nothing wrong with this code. It is simply not indiomatic Forth.
+Also it is harder to debug because you cannot test pieces of it interactively.
+
 ```
 : INPUT ( --- n1 ) ( number input routine)
    0       ( accumlator on the data stack )
@@ -157,9 +160,14 @@ Here is the orginal word to get an numberic input from the player.
 ```
 
 I will try to re-write it using Fig Forth words.
-I don't think the original author knew about ASCII or the APPLE ][ Forth did not have it.
+I don't think the original author knew about ASCII or the maybe his APPLE ][ Forth did not have it.
 
 ```
+0 CONSTANT FALSE
+1 CONSTANT TRUE   \ FIG Forth use 1
+
+: WITHIN ( u lo hi -- t )  OVER - >R - R> U<  ;
+
 : READKEY    ( -- c) KEY DUP EMIT ;
 : BACKSPACE? ( char -- char ? ) DUP 8 = ;
 : DIGIT?     ( char -- char ? ) DUP  ASCII 0  ASCII 9 1+ WITHIN ;
@@ -174,13 +182,20 @@ I don't think the original author knew about ASCII or the APPLE ][ Forth did not
 : INPUT ( -- n)
     0
     BEGIN
-      READKEY BACKSPACE?
+      READKEY
+      BACKSPACE?
       IF   DROP  10 /  FALSE
       ELSE NUMBER?
       ENDIF
     UNTIL ;
 ```
-The interesting thing here
+
+The interesting thing here is that Fig Forth has words to read a string into memory and the word NUMBER to convert a string to number with an error flag for a bad conversion.
+These words are used by the interpreter to convert user input.
+However the hard part is that would have required someone new to Forth to have read the glossary and found those words. So writing your own INPUT word at a low level was a fast solution.
+
+
+
 
 
 
