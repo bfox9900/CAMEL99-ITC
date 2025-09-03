@@ -69,8 +69,8 @@ the problem at hand.
 
 ### More Re-usable Code
 As we can see in the example factoring out and naming these code pieces allows
-us to re-use them elsewhere as needed. Doing things the Forth way we we get a 
-test word for lower case letters and a word to convert lower case to upper case. 
+us to re-use them elsewhere as needed. Doing things the Forth way we we get a
+test word for lower case letters and a word to convert lower case to upper case.
 The original code gave one "fossilized" sub-routine that could only do one thing.
 
 ### Make Your Life Simpler
@@ -98,12 +98,12 @@ parts of the matrix that are "mine"  or "his" (the enemy)
 ```
 On the other side we named the data structures with a ']' character to
 remind us that these words are used together. In effect we have made a data
-structure syntax out of primitive pieces. 
+structure syntax out of primitive pieces.
 (We could add compile-time testing to enforce matching '[ ]' but I chose not to)
 
 ```
-  : X]       ( n -- addr) 1 FLEETS ; 
-  : Y]       ( n -- addr) 2 FLEETS ; 
+  : X]       ( n -- addr) 1 FLEETS ;
+  : Y]       ( n -- addr) 2 FLEETS ;
 
   \ We can simplify the code and save space
   : X]@    X] @ ;
@@ -119,21 +119,72 @@ structure syntax out of primitive pieces.
 Now accessing data looks like this:
 ```
   [MY XY]@                      ( get my position coordinates)
- 
+
   [MY SHIPS]@                   ( fetch the number of ships I have )
   [HIS SHIPS]@  [MY SHIPS]@ >   ( does he have more ships that me?)
   1 [MY SHIPS] +!               ( increment my ship count)
-  -2 [HIS SHIPS] +!             ( reduce enemy ships by 2) 
+  -2 [HIS SHIPS] +!             ( reduce enemy ships by 2)
 ```
 
 ### Less Comments Required
-One of the side-effects of one line definitions and syntax enhancments is that 
-if you choose your names wisely, you can understand the code easier when you come back to it. 
-This means expansive text comments are not as necessary and we all know how fast comments go stale. 
+One of the side-effects of one line definitions and syntax enhancments is that
+if you choose your names wisely, you can understand the code easier when you come back to it.
+This means expansive text comments are not as necessary and we all know how fast comments go stale.
 
 BUT... **Do not omit the stack comments.**
 
 Stack comments are the key to remembering what goes in and what comes out of each definition.
+
+### Number Input Example
+Here is the orginal word to get an numberic input from the player.
+```
+: INPUT ( --- n1 ) ( number input routine)
+   0       ( accumlator on the data stack )
+   BEGIN
+       KEY DUP EMIT DUP 8 = ( is it backspace?)
+       IF
+         DROP 10 / 0 ( get rid of last digit)
+       ELSE
+         DUP 57 > ( check if char is digit)
+         IF DROP 1
+         ELSE DUP 48 <
+           IF DROP 1
+           ELSE 48 - SWAP 10 * + 0
+           ENDIF
+         ENDIF
+       ENDIF
+     UNTIL ;
+```
+
+I will try to re-write it using Fig Forth words.
+I don't think the original author knew about ASCII or the APPLE ][ Forth did not have it.
+
+```
+: READKEY    ( -- c) KEY DUP EMIT ;
+: BACKSPACE? ( char -- char ? ) DUP 8 = ;
+: DIGIT?     ( char -- char ? ) DUP  ASCII 0  ASCII 9 1+ WITHIN ;
+: >DIGIT+    ( n char -- n' ) ASCII 0 -  SWAP 10 * +  ;
+
+: NUMBER? ( n char -- n ?)
+    DIGIT?
+    IF   >DIGIT+  FALSE
+    ELSE  DROP    TRUE
+    ENDIF ;
+
+: INPUT ( -- n)
+    0
+    BEGIN
+      READKEY BACKSPACE?
+      IF   DROP  10 /  FALSE
+      ELSE NUMBER?
+      ENDIF
+    UNTIL ;
+```
+The interesting thing here
+
+
+
+
 
 ### To be continued...
 As I think find more examples of good Forth coding style I will put them here.
