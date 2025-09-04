@@ -33,6 +33,8 @@
 \ This code is PUBLIC DOMAIN. Use at your own risk.
 
 \ Modified for Camel99 Forth  Mar 2021 Fox
+\ Sept 2025: Using 32bit timer for long duration measurements
+
 \ NEEDS DUMP   FROM DSK1.TOOLS
 NEEDS VALUE  FROM DSK1.VALUES
 NEEDS D=     FROM DSK1.DOUBLE
@@ -189,6 +191,7 @@ DECIMAL
     DUP 10000 MULTIPLY
     DUP @  0 <#  # # # #  #> TYPE SPACE
 \    OUT @ C/L @ > IF CR THEN  \ not needed for Camel99
+     ?TERMINAL ABORT" Print halted"
     4  +LOOP
   DROP  CR ;
 
@@ -196,21 +199,21 @@ DECIMAL
   CR ." How many digits do you want? "
   PAD DUP 20 ACCEPT NUMBER? ABORT" Invalid" CR ;
 
+: .SIZE   CR ." Array size = " SIZE . ." bytes" ;
 : .POWER  CR ." POWER array is at " POWER U. ;
 : .TERM   CR ." TERM  array is at " TERM  U. ;
 : .RESULT CR ." RESULT array is at " RESULT U. ;
 : .HERE   CR ." HERE is at " HERE U. ;
 
 : PI ( n -- )
-  RESET32   \ reset timer
-
-  DUP TO NDIGIT
+  PAGE GetNumber DUP TO NDIGIT
   \ array size = ceil(ndigit / log10(2^16))
   109 UM* 525 UM/MOD SWAP ( rem) IF  1+  THEN
   ( extra for accurate last digits)
   2+  TO SIZE
 
   \ create arrays in un-allocated memory
+  .SIZE
   HERE TO POWER   SIZE 20 + CELLS ALLOT
   .POWER
   HERE TO TERM    SIZE 20 + CELLS ALLOT
@@ -218,8 +221,8 @@ DECIMAL
   HERE TO RESULT  SIZE 20 + CELLS ALLOT
   .RESULT
   50 ALLOT  ( hold buffer space)
-  CalcPi
-  .ELAPSED
+
+  RESET32  CalcPi  .ELAPSED
   CR
   CR ." Press a key to see result" KEY DROP
   PRINT
