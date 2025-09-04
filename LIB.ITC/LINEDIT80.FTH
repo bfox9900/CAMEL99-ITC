@@ -47,8 +47,6 @@ DECIMAL
 : GETXY   ( -- X Y) VROW 2@ ;
 : BLANK ( a n -) BL FILL ;
 : ?BLK    DEPTH 0= ABORT" Block# expected" ;
-: ACCEPTLN ( l# -- ) LINE B/L ACCEPT DROP ;
-: TYPELN   ( l# -- ) LINE B/L TYPE ;
 : ?CLOSE-BLOCKS   BHNDL @ IF  CLOSE-BLOCKS THEN ;
 
 \ list a block
@@ -61,6 +59,8 @@ DECIMAL
 : .NDX    ( blk# --)  BLOCK CR  0 .LINE ;
 
 \ display line# and edit it in block buffer
+: ACCEPTLN ( l# -- ) LINE B/L ACCEPT DROP ;
+: TYPELN   ( l# -- ) LINE B/L TYPE ;
 : EDITLN ( line# -- )
       >R
       GETXY  R@ TYPELN

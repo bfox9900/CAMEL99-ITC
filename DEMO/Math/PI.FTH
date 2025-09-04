@@ -33,12 +33,11 @@
 \ This code is PUBLIC DOMAIN. Use at your own risk.
 
 \ Modified for Camel99 Forth  Mar 2021 Fox
-NEEDS DUMP   FROM DSK1.TOOLS
+\ NEEDS DUMP   FROM DSK1.TOOLS
 NEEDS VALUE  FROM DSK1.VALUES
 NEEDS D=     FROM DSK1.DOUBLE
 NEEDS .R     FROM DSK1.UDOTR
-NEEDS ELAPSE FROM DSK1.ELAPSE
-NEEDS MALLOC FROM DSK1.MALLOC
+NEEDS ELAPSE FROM DSK1.ELAPSE32
 
 DECIMAL
 
@@ -68,13 +67,27 @@ VARIABLE CARRY
 0 VALUE FACTOR
 
 \ scan forward for cell containing non-zero
-: +INDEX ( ADR -- ADR INDEX )
-    -1
-    BEGIN 1+ DUP SIZE -
-    WHILE
-       2DUP CELLS + @
-    UNTIL
-    THEN ;
+\ : +INDEX ( ADR -- ADR INDEX )
+\    -1
+\    BEGIN 1+ DUP SIZE -
+\    WHILE
+\       2DUP CELLS + @
+\    UNTIL
+\    THEN ;
+
+\ this is a bit faster. B Fox
+: +INDEX (  adr -- adr' len')
+        DUP SIZE
+        BEGIN
+          DUP
+        WHILE ( len<>0)
+          OVER @ 0=
+        WHILE
+          2 /STRING
+        REPEAT
+        THEN
+        DROP OVER - 2/
+;
 
 : DIVIDE ( ADR FACTOR -- )
   TO FACTOR
@@ -95,6 +108,19 @@ VARIABLE CARRY
        2DUP CELLS + @
     UNTIL
     THEN ;
+
+\ : -INDEX ( adr -- adr index )
+\    DUP
+\    SIZE CELLS
+\    OVER +
+\    BEGIN 2DUP <>
+\    WHILE
+\       DUP @ 0=
+\    WHILE
+\       2-
+\    REPEAT
+\    THEN ;
+
 
 : MULTIPLY ( adr factor -- )
   TO FACTOR   CARRY OFF
@@ -170,8 +196,14 @@ DECIMAL
   CR ." How many digits do you want? "
   PAD DUP 20 ACCEPT NUMBER? ABORT" Invalid" CR ;
 
+: .POWER  CR ." POWER array is at " POWER U. ;
+: .TERM   CR ." TERM  array is at " TERM  U. ;
+: .RESULT CR ." RESULT array is at " RESULT U. ;
+: .HERE   CR ." HERE is at " HERE U. ;
+
 : PI ( n -- )
-  TICKER OFF
+  RESET32   \ reset timer
+
   DUP TO NDIGIT
   \ array size = ceil(ndigit / log10(2^16))
   109 UM* 525 UM/MOD SWAP ( rem) IF  1+  THEN
@@ -180,11 +212,16 @@ DECIMAL
 
   \ create arrays in un-allocated memory
   HERE TO POWER   SIZE 20 + CELLS ALLOT
+  .POWER
   HERE TO TERM    SIZE 20 + CELLS ALLOT
+  .TERM
   HERE TO RESULT  SIZE 20 + CELLS ALLOT
+  .RESULT
   50 ALLOT  ( hold buffer space)
   CalcPi
   .ELAPSED
+  CR
+  CR ." Press a key to see result" KEY DROP
   PRINT
 ;
 \ end
