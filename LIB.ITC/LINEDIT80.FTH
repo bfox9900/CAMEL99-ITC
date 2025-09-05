@@ -17,7 +17,6 @@
 
 \ LIST ( n -- ) list block n
 \ UNDO   empty all buffers and reload current block
-\ EACH  ( blk1 blk2 XT ) Apply XT to each block in the range
 \ INDEX ( blk1 blk2) show top line of blocks in the range given
 \ LOAD  ( blk --) Load the given block
 \ THRU  ( blk1 blk2) LOAD the blocks in the given range
