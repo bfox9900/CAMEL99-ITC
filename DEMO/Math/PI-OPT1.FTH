@@ -40,6 +40,20 @@ NEEDS VALUE  FROM DSK1.VALUES
 NEEDS D=     FROM DSK1.DOUBLE
 NEEDS .R     FROM DSK1.UDOTR
 NEEDS ELAPSE FROM DSK1.ELAPSE32
+NEEDS MARKER FROM DSK1.MARKER
+
+\ B FOX changes
+\ improved +INDEX and -INDEX
+\ re-ordered args in ADDITION SUBTRACT DIVIDE AND MULTIPLY
+
+\ add standard word CELLS+ to Camel99 forth
+HEX           2*     +
+CODE CELLS+  0A14 , A136 , NEXT, ENDCODE
+
+\ Performance changes from original
+\ 500 digit test
+\ Original Code   2:23.7
+\ Opt1            2:21.6
 
 DECIMAL
 
@@ -52,58 +66,82 @@ VARIABLE CARRY
 
 : ADD ( -- )
   CARRY OFF
-  RESULT   0 SIZE 1- DO
-    I CELLS OVER + ( res) DUP @ 0
-    I CELLS TERM + @ 0  D+  CARRY @ M+
+  RESULT   0 SIZE 1-
+  DO
+    DUP  I CELLS+   DUP @ 0
+    TERM I CELLS+ @  0  D+  CARRY @  M+
     ( hi) CARRY !  ( lo) SWAP ( res) !
-  -1 +LOOP  DROP ;
+  -1 +LOOP
+  DROP ;
 
 : SUBTRACT ( -- )
   CARRY OFF
-  RESULT   0 SIZE 1- DO
-    I CELLS OVER + ( RES) DUP @ 0
-    I CELLS TERM + @ 0  D-  CARRY @ M+
+  RESULT   0 SIZE 1-
+  DO
+    DUP  I CELLS+   DUP @ 0
+    TERM I CELLS+ @  0  D-  CARRY @ M+
     ( HI) CARRY !  ( LO) SWAP ( RES) !
   -1 +LOOP  DROP ;
 
 0 VALUE FACTOR
 
 \ scan forward for cell containing non-zero
- : +INDEX ( ADR -- ADR INDEX )
-    -1
-    BEGIN 1+ DUP SIZE -
-    WHILE
-       2DUP CELLS + @
-    UNTIL
-    THEN ;
+\ : +INDEX ( ADR -- ADR INDEX )
+\    -1
+\    BEGIN 1+ DUP SIZE -
+\    WHILE
+\       2DUP CELLS+ @
+\    UNTIL
+\    THEN ;
 
+\ this is a bit faster. B Fox
+: +INDEX (  adr -- adr' len')
+        DUP SIZE
+        BEGIN
+          DUP
+        WHILE ( len<>0)
+          OVER @ 0=
+        WHILE
+          2 /STRING
+        REPEAT
+        THEN
+        DROP OVER - 2/
+;
 
 : DIVIDE ( ADR FACTOR -- )
   TO FACTOR
   CARRY OFF
   +INDEX ( adr index ) SIZE SWAP
   ?DO
-     I CELLS OVER + ( res)
-     DUP @  CARRY @  FACTOR  UM/MOD
+    DUP I CELLS+  ( res)
+    DUP @  CARRY @  FACTOR  UM/MOD
     ( quot) ROT ( res) !  ( rem) CARRY !
   LOOP
   DROP ;
 
 \ scan backward for cell containing non-zero
+\ : -INDEX ( adr -- adr index )
+\    SIZE
+\    BEGIN 1- DUP
+\    WHILE
+\       2DUP CELLS+ @
+\    UNTIL
+\    THEN ;
+
+\ a bit faster
 : -INDEX ( adr -- adr index )
-    SIZE
-    BEGIN 1- DUP
+    SIZE CELLS
+    BEGIN 2- DUP
     WHILE
-       2DUP CELLS + @
+       2DUP + @
     UNTIL
     THEN ;
-
 
 : MULTIPLY ( adr factor -- )
   TO FACTOR   CARRY OFF
   -INDEX ( adr index ) 0 SWAP
   DO
-    I CELLS OVER + ( res)
+    DUP I CELLS+ ( res)
     DUP @  FACTOR  UM*  CARRY @ M+
     ( hi) CARRY !  ( lo) SWAP ( res) !
   -1 +LOOP
@@ -131,6 +169,13 @@ VARIABLE SIGN
   POWER  DIVISOR  DIVIDE
   1 EXP !  PASS 1- SIGN ! ;
 
+HEX 83D6 CONSTANT ALWAYS
+
+CREATE SCHARS   CHAR | C, CHAR / C, CHAR - C, CHAR \ C,
+VARIABLE SPIN#
+: SPINCHAR ( -- char ) SPIN# @ 1+ 3 AND DUP SPIN# ! SCHARS + C@  ;
+: SPINNER    SPINCHAR VPUT ;
+
 0 VALUE NDIGIT
 
 : CalcPi ( -- )
@@ -143,6 +188,7 @@ VARIABLE SIGN
     I TO PASS
     INITIALIZE
     BEGIN
+      SPINNER
       POWER TERM SIZE MOVE
       TERM  EXP @ DIVIDE
       SIGN @  DUP IF  SUBTRACT  ELSE  ADD  THEN
@@ -165,10 +211,9 @@ DECIMAL
     0 OVER !
     DUP 10000 MULTIPLY
     DUP @  0 <#  # # # #  #> TYPE SPACE
-\    OUT @ C/L @ > IF CR THEN  \ not needed for Camel99
-     ?TERMINAL ABORT" Print halted"
-    4  +LOOP
-  DROP  CR ;
+    ?TERMINAL ABORT" Print halted"
+  4 +LOOP
+  DROP CR ;
 
 : GetNumber ( -- n )
   CR ." How many digits do you want? "
@@ -182,6 +227,7 @@ DECIMAL
 
 : PI ( n -- )
   DECIMAL
+  ALWAYS ON
   PAGE GetNumber DUP TO NDIGIT
   \ array size = ceil(ndigit / log10(2^16))
   109 UM* 525 UM/MOD SWAP ( rem) IF  1+  THEN
@@ -189,6 +235,7 @@ DECIMAL
   2+  TO SIZE
 
   \ create arrays in un-allocated memory
+  BASE @ HEX
   .SIZE
   HERE TO POWER   SIZE 20 + CELLS ALLOT
   .POWER
@@ -197,12 +244,37 @@ DECIMAL
   HERE TO RESULT  SIZE 20 + CELLS ALLOT
   .RESULT
   50 ALLOT  ( hold buffer space)
+  BASE !
 
-  TIMER-RESET  CalcPi
-  CR
-  CR ." Done!"
-  CR .ELAPSED
+  TIMER-RESET
+  CR CalcPi
+  CR ." Done!" SPACE  .ELAPSED
   CR ." Press a key to see result" KEY DROP
   PRINT
 ;
+
+: TITLEPAGE
+PAGE ."  Compute PI in ANS Forth"
+CR
+CR ." DxForth Revised 2015-02-09  ES"
+CR ." Revised for Camel99 2025-09-5 BFox"
+CR
+CR ." Compute Pi to an arbitrary precision."
+CR
+CR ." Uses Machin's formula:"
+CR ." pi/4 = 4 arctan(1/5) - arctan(1/239)"
+CR
+CR
+CR ." Type  PI  to  run the program" ;
+
 \ end
+: START   WARM  TITLEPAGE TIMER-START ABORT ;
+
+LOCK
+\ Forth in RAM at >A000
+ INCLUDE DSK1.SAVESYS
+ ' START SAVESYS DSK3.PIDEMO
+
+\ Forth in SuperCart at >6000
+\ INCLUDE DSK1.SUPERSAVE
+\ ' START SUPERSAVE DSK3.PIDEMOSC
