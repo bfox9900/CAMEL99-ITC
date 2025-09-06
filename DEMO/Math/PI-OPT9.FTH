@@ -1,0 +1,311 @@
+\ PI.FTH from DxForth.
+\ Thanks to Ed from Australia for finding the bug in my D+
+\
+\ Revised 2015-02-09  es
+\
+\ Compute Pi to an arbitrary precision. Uses Machin's
+\ formula:  pi/4 = 4 arctan(1/5) - arctan(1/239)
+\
+\ Compile with 16-bit DX-Forth: FORTH - INCLUDE PI.F BYE
+\ Compile with CAMEL99 Forth: INCLUDE DSK*.PI  ( where * is your drive no.)
+\
+\ This 16-bit implementation allows up to 45,808 digits
+\ to be computed before arithmetic overflow occurs.
+\
+\ The code can be used on 32-bit targets with appropriate
+\ changes:
+\
+\   16-bit             32-bit
+\
+\   10000 Multiply     100000000 Multiply
+\   <# # # # # #>      <# # # # # # # # # #>
+\   4 +loop            8 +loop
+\   525 um/mod         1050 um/mod
+\                      remove 'digits > 45808' warning
+\
+\ Acknowledgements:
+\
+\   Roy Williams, Feb 1994
+\   J. W. Stumpel, May 1991
+\   E. Ford, Aug 2009
+\   R. Bishop, Aug 1978
+\
+\ This code is PUBLIC DOMAIN. Use at your own risk.
+
+\ Modified for Camel99 Forth  Mar 2021 Fox
+\ Sept 2025: Using 32bit timer for long duration measurements
+
+NEEDS DUMP   FROM DSK1.TOOLS
+NEEDS VALUE  FROM DSK1.VALUES
+NEEDS D=     FROM DSK1.DOUBLE
+NEEDS .R     FROM DSK1.UDOTR
+NEEDS ELAPSE FROM DSK1.ELAPSE32
+NEEDS MARKER FROM DSK1.MARKER
+NEEDS SCANW  FROM DSK1.SKIPSCANW
+
+
+\ B FOX changes
+\ improved +INDEX and -INDEX
+\ re-ordered args in ADDITION SUBTRACT DIVIDE AND MULTIPLY
+
+\ Machine Forth Instructions
+HEX
+: 2*,       0A14 ,  ;
+: +,        A136 ,  ;
+: @,        C114 ,  ;
+: PUSH,     0646 , ;
+: DUP,      PUSH,  C584 , ;
+: DROP,     C136 , ;
+: OVER,     0646 ,  C584 , C126 , 0002 , ;
+
+HEX
+\ add standard word CELLS+ to Camel99 forth
+CODE CELLS+  2*, +, NEXT, ENDCODE
+
+\ Now we can make Machine Forth Super instructions
+CODE CELLS+@   2*, +, @,   NEXT, ENDCODE
+CODE DUP@      DUP,  @,    NEXT, ENDCODE
+CODE OVER@     OVER, @,    NEXT, ENDCODE
+CODE 2DUP+@    OVER, OVER, +, @, NEXT, ENDCODE
+
+\ Performance changes from original
+\ 500 Digit Test
+\ Original Code         2:23.7
+\ Opt1                  2:21.6
+\ Opt2 fast erase       2:21.6
+\ Opt3 CARRY as value   2:13.5
+\ Opt4 CELLS+@          2:12.3
+\ Opt5 DUP@ ( 6 uses)   2:10.3
+\ Opt6 OVER@ (1 use)    2:09.1
+\ OpT7 2DUP+@
+\ Opt9 M+ as a macro
+
+\ : M+  S" DUP 0< D+" EVALUATE ; IMMEDIATE \ a bit faster
+
+DECIMAL
+0 VALUE POWER  ( adr)
+0 VALUE TERM   ( adr)
+0 VALUE RESULT ( adr)
+0 VALUE SIZE   ( n)
+
+0 VALUE CARRY
+
+: ADD ( -- )
+  0 TO CARRY
+  RESULT   0 SIZE 1-
+  DO
+    DUP  I CELLS+   DUP@ 0
+    TERM I CELLS+@  0 D+  CARRY M+
+    ( hi) TO CARRY
+    ( lo) SWAP ( res) !
+  -1 +LOOP
+  DROP ;
+
+: SUBTRACT ( -- )
+  0 TO CARRY
+  RESULT   0 SIZE 1-
+  DO
+    DUP  I CELLS+   DUP@ 0
+    TERM I CELLS+@  0  D-  CARRY M+
+    ( HI) TO CARRY
+    ( LO) SWAP ( RES) !
+  -1 +LOOP  DROP ;
+
+0 VALUE FACTOR
+
+\ scan forward for cell containing non-zero
+\ : +INDEX ( ADR -- ADR INDEX )
+\    -1
+\    BEGIN 1+ DUP SIZE -
+\    WHILE
+\       2DUP CELLS+ @
+\    UNTIL
+\    THEN ;
+
+\ this is a bit faster. B Fox
+: +INDEX (  adr -- adr' len')
+        DUP SIZE
+        BEGIN
+          DUP
+        WHILE ( len<>0)
+          OVER@ 0=
+        WHILE
+          2 /STRING
+        REPEAT
+        THEN
+        DROP OVER - 2/
+;
+
+: DIVIDE ( ADR FACTOR -- )
+  TO FACTOR
+  0 TO CARRY
+  +INDEX ( adr index ) SIZE SWAP
+  ?DO
+    DUP I CELLS+  ( res)
+    DUP@  CARRY  FACTOR UM/MOD
+    ( quot) ROT ( res) !
+    ( rem) TO CARRY
+  LOOP
+  DROP ;
+
+\ scan backward for cell containing non-zero
+\ : -INDEX ( adr -- adr index )
+\    SIZE
+\    BEGIN 1- DUP
+\    WHILE
+\       2DUP CELLS+ @
+\    UNTIL
+\    THEN ;
+
+\ a bit faster
+: -INDEX ( adr -- adr index )
+    SIZE CELLS
+    BEGIN 2- DUP
+    WHILE
+       2DUP+@
+    UNTIL
+    THEN ;
+
+: MULTIPLY ( adr factor -- )
+   TO FACTOR
+   0 TO CARRY
+  -INDEX ( adr index ) 0 SWAP
+  DO
+    DUP I CELLS+ ( res)
+    DUP@  FACTOR  UM*  CARRY M+
+    ( hi) TO CARRY
+    ( lo) SWAP ( res) !
+  -1 +LOOP
+  DROP ;
+
+\ : COPY ( -- ) POWER TERM SIZE  MOVE ;
+
+\ : ZERO? ( result -- f )  +INDEX NIP SIZE = ;
+: ZERO? ( result -- F ) SIZE CELLS 0 SKIP NIP 0= ;
+
+0 VALUE PASS
+VARIABLE EXP
+VARIABLE SIGN
+
+: DIVISOR ( -- N ) ( removed ELSE )
+  PASS 1 = IF  5  EXIT THEN  239 ;
+
+INCLUDE DSK1.ERASEW
+\ : ERASE  0 FILL ;
+
+: INITIALIZE ( -- )
+  POWER SIZE CELLS ERASEW
+  TERM  SIZE CELLS ERASEW
+  PASS 1 =
+  IF
+     RESULT SIZE CELLS ERASEW
+  THEN
+  16 PASS DUP * / POWER !
+  POWER  DIVISOR  DIVIDE
+  1 EXP !  PASS 1- SIGN ! ;
+
+HEX 83D6 CONSTANT ALWAYS
+
+CREATE SCHARS   CHAR | C, CHAR / C, CHAR - C, CHAR \ C,
+VARIABLE SPIN#
+: SPINCHAR ( -- char ) SPIN# @ 1+ 3 AND DUP SPIN# ! SCHARS + C@ ;
+: SPINNER    SPINCHAR VPUT ;
+
+0 VALUE NDIGIT
+
+: CalcPi ( -- )
+  NDIGIT 45800 U> IF
+    ." Warning: digits > 45808 will be in error " CR
+  THEN
+
+  2 1+ 1
+  DO
+    I TO PASS
+    INITIALIZE
+    BEGIN
+      SPINNER
+      POWER TERM SIZE MOVE
+      TERM  EXP @ DIVIDE
+      SIGN @  DUP IF  SUBTRACT  ELSE  ADD  THEN
+      0= SIGN !  2 EXP +!
+      POWER  DIVISOR DUP *  DIVIDE
+      POWER ZERO?
+    UNTIL
+  LOOP ;
+
+DECIMAL
+: PRINT ( -- )
+  CR
+  RESULT  DUP@ 0 .R  [CHAR] . EMIT CR
+  NDIGIT 0
+  ?DO
+    0 OVER !
+    DUP 10000 MULTIPLY
+    DUP@  0 <#  # # # #  #> TYPE SPACE
+    ?TERMINAL ABORT" Print halted"
+  4 +LOOP
+  DROP CR ;
+
+: GetNumber ( -- n )
+  CR ." How many digits do you want? "
+  PAD DUP 20 ACCEPT NUMBER? ABORT" Invalid" CR ;
+
+: .SIZE   CR ." Array size = " SIZE . ." bytes" ;
+: .POWER  CR ." POWER array is at  >" POWER U. ;
+: .TERM   CR ." TERM  array is at  >" TERM  U. ;
+: .RESULT CR ." RESULT array is at >" RESULT U. ;
+: .HERE   CR ." HERE is at " HERE U. ;
+
+: PI ( n -- )
+  DECIMAL
+  ALWAYS ON
+  PAGE GetNumber DUP TO NDIGIT
+  \ array size = ceil(ndigit / log10(2^16))
+  109 UM* 525 UM/MOD SWAP ( rem) IF  1+  THEN
+  ( extra for accurate last digits)
+  2+  TO SIZE
+
+  \ create arrays in un-allocated memory
+  .SIZE
+  BASE @ HEX
+  HERE TO POWER   SIZE 20 + CELLS ALLOT
+  .POWER
+  HERE TO TERM    SIZE 20 + CELLS ALLOT
+  .TERM
+  HERE TO RESULT  SIZE 20 + CELLS ALLOT
+  .RESULT
+  50 ALLOT  ( hold buffer space)
+  BASE !
+
+  TIMER-RESET
+  CR CalcPi
+  CR ." Done!" SPACE  .ELAPSED
+  CR ." Press a key to see result" KEY DROP
+  PRINT
+;
+
+: TITLEPAGE
+PAGE ."  Compute PI in ANS Forth Opt7"
+CR
+CR ." DxForth Revised 2015-02-09  ES"
+CR ." Revised for Camel99 2025-09-5 BFox"
+CR
+CR ." Compute Pi to an arbitrary precision."
+CR
+CR ." Uses Machin's formula:"
+CR ." pi/4 = 4 arctan(1/5) - arctan(1/239)"
+CR
+CR
+CR ." Type  PI  to  run the program" ;
+
+\ end
+: START   WARM  TITLEPAGE TIMER-START ABORT ;
+
+LOCK
+\ Forth in RAM at >A000
+ INCLUDE DSK1.SAVESYS
+ ' START SAVESYS DSK3.PIDEMO
+
+\ Forth in SuperCart at >6000
+\ INCLUDE DSK1.SUPERSAVE
+\ ' START SUPERSAVE DSK3.PIDEMOSC
