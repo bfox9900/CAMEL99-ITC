@@ -37,14 +37,13 @@
 
 \ Sept 6 2025 Speedups:
 \ - Removed CELLS in loop and index by 2 instead
-\   ( EXCEPT in DIVIDE where is did not improve times)
+\   ( except in DIVIDE where is did not improve times)
 \ - Expanded M+ with a TEXT macro
 \ - changed +INDEX to DO/LOOP. Big improvement.
 \ - replaced OVER with DUP and re-ordered arguments where possible
 
 \ Sept 7, 2025  Added machine Forth Optimizers
-
-
+\ make some Machine Forth Instructions
 
 NEEDS ERASEW FROM DSK1.ERASEW  \ 16 bit erase "words"
 NEEDS DUMP   FROM DSK1.TOOLS
@@ -58,44 +57,49 @@ NEEDS ELAPSE FROM DSK1.ELAPSE32
 \ for clarity
 : S>UD ( u -- ud ) POSTPONE 0 ; IMMEDIATE
 
+\ TI-99 screen timout address
+HEX 83D6 CONSTANT TIMEOUT
 
-\ make some Machine Forth Instructions
 HEX
 : PUSH,     0646 , ;
-: TOS>STK,   C584 ,  ;
+: TOS>STK,  C584 ,  ;
 : 2*,       0A14 ,  ;
 : +,        A136 ,  ;
 : @,        C114 ,  ;
 : DROP,     C136 , ;
 : R>TOS,    C117 , ;   \   *RP  TOS MOV,
 : (R)-,     6127 , , ; \ 2 (RP) TOS SUB,
-: 2DUP
+
+: 2DUP,
     0226 , -4 , \ SP -4 ADDI,
     C5A6 ,  4 , \ 4 (SP) *SP MOV,
-    C984 ,  2 . \ TOS  2 (SP) MOV,
+    C984 ,  2 , \ TOS  2 (SP) MOV,
 ;
 
 \ Combine them to make higher level isntructions
 : DUP,      PUSH,  TOS>STK, ;
-
-
 : OVER,     0646 ,  C584 , C126 , 0002 , ;
 : I,        DUP, R>TOS,  2 (R)-, ;
 
-HEX
+\ syntax sugar :-)
+: M:   CODE ;
+: ;M   NEXT,  ENDCODE ;
+
 \ Now we can make Machine Forth Super instructions
-CODE CELLS+     2*, +,      NEXT, ENDCODE
-CODE CELLS+@    2*, +, @,   NEXT, ENDCODE
-CODE DUP@       DUP,  @,    NEXT, ENDCODE
-CODE 2DUP+@     2DUP +, @,  NEXT, ENDCODE
-CODE I+,        I, +,       NEXT, ENDCODE ;
+M: CELLS+     2*, +,      ;M
+M: DUP@       DUP, @,     ;M
+M: 2DUP+@     2DUP, +, @, ;M
+M: I+         I, +,       ;M
 
+\ Performance changes from original
+\ 500 Digit Test
+\ Original Code     2:24
+\ Opt1              2:21  \ used CELLS+ primitive
+\ Opt1A             2:04  \ removed CELLS, loops index by 2
+\ Opt1B             1:59  \ machine Forth superinstructions
 
-\ TI-99 screen timout address
-HEX 83D6 CONSTANT TIMEOUT
-
+\ ================ PROGRAM BEGINS ===============
 DECIMAL
-
 0 VALUE POWER  ( adr)
 0 VALUE TERM   ( adr)
 0 VALUE RESULT ( adr)
@@ -109,8 +113,8 @@ VARIABLE CARRY
   RESULT
   0  SIZE CELLS 2-
   DO
-     DUP I + DUP @ S>UD
-    TERM I + @ 0  D+  CARRY @ M+
+    DUP I+ DUP@ S>UD  TERM I+ @ S>UD D+
+    CARRY @ M+
     ( hi) CARRY !
     ( lo) SWAP ( res) !
   -2 +LOOP
@@ -122,14 +126,12 @@ VARIABLE CARRY
   RESULT
   0  SIZE CELLS 2-
   DO
-    DUP  I + ( RES) DUP @ S>UD
-    TERM I + @ 0  D-  CARRY @ M+
+    DUP  I+ ( RES) DUP@ S>UD
+    TERM I+ @ S>UD  D-  CARRY @ M+
     ( HI) CARRY !
     ( LO) SWAP ( RES) !
   -2 +LOOP
   DROP ;
-
-0 VALUE FACTOR
 
 \ scan forward for cell containing non-zero
 \ : +INDEX ( adr -- adr index )
@@ -151,14 +153,15 @@ VARIABLE CARRY
     OVER - 2/
 ;
 
+0 VALUE FACTOR
 \ Using cell sized looping made this part slower.
 : DIVIDE ( ADR FACTOR -- )
     TO FACTOR
     CARRY OFF
     +INDEX ( adr index ) SIZE SWAP
     DO
-        DUP I CELLS + ( res)
-        DUP @  CARRY @  FACTOR  UM/MOD
+        DUP I CELLS+ ( res)
+        DUP@  CARRY @  FACTOR  UM/MOD
       ( quot) ROT
       ( res) !
       ( rem) CARRY !
@@ -178,8 +181,8 @@ VARIABLE CARRY
   TO FACTOR   CARRY OFF
   -INDEX ( adr index ) 0 SWAP
   DO
-    DUP I + ( res)
-    DUP @  FACTOR  UM*  CARRY @ M+
+    DUP I+ ( res)
+    DUP@  FACTOR  UM*  CARRY @ M+
     ( hi) CARRY !
     ( lo) SWAP ( res) !
   -2 +LOOP
@@ -195,7 +198,8 @@ VARIABLE EXP
 VARIABLE SIGN
 
 : DIVISOR ( -- N )
-  PASS 1 = IF  5  ELSE  239  THEN ;
+  PASS 1 = IF  5   EXIT THEN
+  239 ;
 
 \ : ERASE  0 FILL ;
 
@@ -245,12 +249,12 @@ VARIABLE SPIN#
 DECIMAL
 : PRINT ( -- )
   CR
-  RESULT  DUP @ 0 .R  [CHAR] . EMIT CR
+  RESULT  DUP@ 0 .R  [CHAR] . EMIT CR
   NDIGIT 0
   ?DO
     0 OVER !
     DUP 10000 MULTIPLY
-    DUP @  0 <#  # # # #  #> TYPE SPACE
+    DUP@  0 <#  # # # #  #> TYPE SPACE
     ?TERMINAL ABORT" Print halted"
   4 +LOOP
   DROP CR ;
