@@ -35,19 +35,64 @@
 \ Modified for Camel99 Forth  Mar 2021 Fox
 \ Sept 2025: Using 32bit timer for long duration measurements
 
+\ Sept 6 2025 Speedups:
+\ - Removed CELLS in loop and index by 2 instead
+\   ( EXCEPT in DIVIDE where is did not improve times)
+\ - Expanded M+ with a TEXT macro
+\ - changed +INDEX to DO/LOOP. Big improvement.
+\ - replaced OVER with DUP and re-ordered arguments where possible
+
+\ Sept 7, 2025  Added machine Forth Optimizers
+
+
+
+NEEDS ERASEW FROM DSK1.ERASEW  \ 16 bit erase "words"
 NEEDS DUMP   FROM DSK1.TOOLS
 NEEDS VALUE  FROM DSK1.VALUES
 NEEDS D=     FROM DSK1.DOUBLE
 NEEDS .R     FROM DSK1.UDOTR
 NEEDS ELAPSE FROM DSK1.ELAPSE32
-NEEDS LOCK   FROM DSK1.MARKER
-NEEDS JIT:   FROM DSK1.JIT
 
-\ by using the macro of primitives, the JIT can compile M+
+\ this macro improves speed by 2.6%
 : M+  S" DUP 0< D+" EVALUATE ; IMMEDIATE
-
 \ for clarity
 : S>UD ( u -- ud ) POSTPONE 0 ; IMMEDIATE
+
+
+\ make some Machine Forth Instructions
+HEX
+: PUSH,     0646 , ;
+: TOS>STK,   C584 ,  ;
+: 2*,       0A14 ,  ;
+: +,        A136 ,  ;
+: @,        C114 ,  ;
+: DROP,     C136 , ;
+: R>TOS,    C117 , ;   \   *RP  TOS MOV,
+: (R)-,     6127 , , ; \ 2 (RP) TOS SUB,
+: 2DUP
+    0226 , -4 , \ SP -4 ADDI,
+    C5A6 ,  4 , \ 4 (SP) *SP MOV,
+    C984 ,  2 . \ TOS  2 (SP) MOV,
+;
+
+\ Combine them to make higher level isntructions
+: DUP,      PUSH,  TOS>STK, ;
+
+
+: OVER,     0646 ,  C584 , C126 , 0002 , ;
+: I,        DUP, R>TOS,  2 (R)-, ;
+
+HEX
+\ Now we can make Machine Forth Super instructions
+CODE CELLS+     2*, +,      NEXT, ENDCODE
+CODE CELLS+@    2*, +, @,   NEXT, ENDCODE
+CODE DUP@       DUP,  @,    NEXT, ENDCODE
+CODE 2DUP+@     2DUP +, @,  NEXT, ENDCODE
+CODE I+,        I, +,       NEXT, ENDCODE ;
+
+
+\ TI-99 screen timout address
+HEX 83D6 CONSTANT TIMEOUT
 
 DECIMAL
 
@@ -57,8 +102,8 @@ DECIMAL
 0 VALUE SIZE   ( n)
 
 VARIABLE CARRY
-
 \ CHANGED ADD and SUBTRACT to step by 2 through arrays. B FOX
+\ 3% speed up on 100 digits, 9% on 500 digits
 : ADD ( -- )
   CARRY OFF
   RESULT
@@ -79,76 +124,65 @@ VARIABLE CARRY
   DO
     DUP  I + ( RES) DUP @ S>UD
     TERM I + @ 0  D-  CARRY @ M+
-    ( HI) CARRY !  ( LO) SWAP ( RES) !
+    ( HI) CARRY !
+    ( LO) SWAP ( RES) !
   -2 +LOOP
   DROP ;
 
 0 VALUE FACTOR
 
 \ scan forward for cell containing non-zero
-
-: +INDEX ( ADR -- ADR INDEX )
-    -1
-    BEGIN 1+ DUP SIZE -
-    WHILE
-       2DUP CELLS + @
-    UNTIL
-    THEN ;
-
-\ this is a bit faster. B Fox
-: +INDEX (  adr -- adr' len')
-    DUP SIZE
-    BEGIN
-      DUP
-    WHILE ( len<>0)
-      OVER @ 0=
-    WHILE
-      2 /STRING
-    REPEAT
-    THEN
-    DROP OVER - 2/
-;
-
-: DIVIDE ( ADR FACTOR -- )
-  TO FACTOR
-  CARRY OFF
-  +INDEX ( adr index ) SIZE SWAP
-  ?DO
-     I CELLS OVER + ( res)
-     DUP @  CARRY @  FACTOR  UM/MOD
-    ( quot) ROT ( res) !  ( rem) CARRY !
-  LOOP
-  DROP ;
-
-\ scan backward for cell containing non-zero
-\ : -INDEX ( adr -- adr index )
-\    SIZE
-\    BEGIN 1- DUP
+\ : +INDEX ( adr -- adr index )
+\    -1
+\    BEGIN 1+ DUP SIZE -
 \    WHILE
-\       2DUP CELLS+ @
+\       2DUP CELLS + @
 \    UNTIL
 \    THEN ;
 
-\ a bit faster
-: -INDEX
-( adr -- adr index )
+\ MUCH faster in Camel99 Forth
+: +INDEX
+    DUP
+    SIZE CELLS
+    BOUNDS
+    DO
+       I @ IF I LEAVE THEN
+    2 +LOOP
+    OVER - 2/
+;
+
+\ Using cell sized looping made this part slower.
+: DIVIDE ( ADR FACTOR -- )
+    TO FACTOR
+    CARRY OFF
+    +INDEX ( adr index ) SIZE SWAP
+    DO
+        DUP I CELLS + ( res)
+        DUP @  CARRY @  FACTOR  UM/MOD
+      ( quot) ROT
+      ( res) !
+      ( rem) CARRY !
+    LOOP
+    DROP ;
+
+\ scan backward for cell containing non-zero
+: -INDEX ( adr -- adr index )
     SIZE CELLS
     BEGIN 2- DUP
     WHILE
-       2DUP + @
+       2DUP+@
     UNTIL
-    THEN
-;
-
+    THEN ;
 
 : MULTIPLY ( adr factor -- )
   TO FACTOR   CARRY OFF
   -INDEX ( adr index ) 0 SWAP
   DO
-    I CELLS OVER + ( res)
+    DUP I + ( res)
     DUP @  FACTOR  UM*  CARRY @ M+
-    ( hi) CARRY !  ( lo) SWAP ( res) !
-  -1 +LOOP
+    ( hi) CARRY !
+    ( lo) SWAP ( res) !
+  -2 +LOOP
   DROP ;
 
 \ : COPY ( -- ) POWER TERM SIZE  MOVE ;
@@ -160,22 +194,25 @@ VARIABLE CARRY
 VARIABLE EXP
 VARIABLE SIGN
 
-: DIVISOR ( -- n )
-  PASS 1 = IF  5 EXIT THEN
-  239  ;
+: DIVISOR ( -- N )
+  PASS 1 = IF  5  ELSE  239  THEN ;
 
-: ERASE  0 FILL ;
+\ : ERASE  0 FILL ;
 
 : INITIALIZE ( -- )
-  POWER SIZE CELLS ERASE
-  TERM  SIZE CELLS ERASE
-  PASS 1 = IF  RESULT SIZE CELLS ERASE  THEN
+  POWER SIZE CELLS ERASEW
+  TERM  SIZE CELLS ERASEW
+  PASS 1 =
+  IF
+     RESULT SIZE CELLS ERASEW
+  THEN
   16  PASS DUP * / POWER !
   POWER  DIVISOR  DIVIDE
-  1 EXP !  PASS 1- SIGN ! ;
+  1 EXP !
+  PASS 1- SIGN ! ;
 
-HEX 83D6 CONSTANT ALWAYS
 
+DECIMAL
 CREATE SCHARS   CHAR | C, CHAR / C, CHAR - C, CHAR \ C,
 VARIABLE SPIN#
 : SPINCHAR ( -- char ) SPIN# @ 1+ 3 AND DUP SPIN# ! SCHARS + C@ ;
@@ -193,6 +230,8 @@ VARIABLE SPIN#
     I TO PASS
     INITIALIZE
     BEGIN
+      TIMEOUT OFF ( prevent screen from going blank)
+
       SPINNER
       POWER TERM SIZE MOVE
       TERM  EXP @ DIVIDE
@@ -228,7 +267,6 @@ DECIMAL
 
 : PI ( n -- )
   DECIMAL
-  ALWAYS ON
   PAGE GetNumber DUP TO NDIGIT
   \ array size = ceil(ndigit / log10(2^16))
   109 UM* 525 UM/MOD SWAP ( rem) IF  1+  THEN
@@ -255,10 +293,12 @@ DECIMAL
 ;
 
 : TITLEPAGE
-PAGE ."  Compute PI in ANS Forth Opt7"
+PAGE ."  Compute PI in ANS Forth"
 CR
 CR ." DxForth Revised 2015-02-09  ES"
 CR ." Revised for Camel99 2025-09-5 BFox"
+CR
+CR ." - Optimized with Machine Forth"
 CR
 CR ." Compute Pi to an arbitrary precision."
 CR
@@ -267,15 +307,3 @@ CR ." pi/4 = 4 arctan(1/5) - arctan(1/239)"
 CR
 CR
 CR ." Type  PI  to  run the program" ;
-
-\ end
-: START   WARM  TITLEPAGE TIMER-START ABORT ;
-
-LOCK
-\ Forth in RAM at >A000
- INCLUDE DSK1.SAVESYS
- ' START SAVESYS DSK3.PIDEMO
-
-\ Forth in SuperCart at >6000
-\ INCLUDE DSK1.SUPERSAVE
-\ ' START SUPERSAVE DSK3.PIDEMOSC

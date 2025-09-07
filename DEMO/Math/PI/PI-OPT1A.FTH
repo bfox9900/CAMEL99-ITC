@@ -35,9 +35,13 @@
 \ Modified for Camel99 Forth  Mar 2021 Fox
 \ Sept 2025: Using 32bit timer for long duration measurements
 
-\ Sept 6 2025: Improved time by 16% using only Forth changes. Fox
+\ Sept 6 2025 Speedups:
+\ - Removed CELLS in loop and index by 2 instead
+\   ( EXCEPT in DIVIDE where is did not improve times)
+\ - Expanded M+ with a TEXT macro
+\ - changed +INDEX to DO/LOOP. Big improvement.
+\ - replaced OVER with DUP and re-ordered arguments where possible
 
-\              Improved xx% by using ERASEW lib file
 NEEDS ERASEW FROM DSK1.ERASEW
 
 NEEDS DUMP   FROM DSK1.TOOLS
@@ -253,7 +257,7 @@ DECIMAL
 ;
 
 : TITLEPAGE
-PAGE ."  Compute PI in ANS Forth Opt7"
+PAGE ."  Compute PI in ANS Forth Opt 1A"
 CR
 CR ." DxForth Revised 2015-02-09  ES"
 CR ." Revised for Camel99 2025-09-5 BFox"
