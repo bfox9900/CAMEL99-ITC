@@ -95,6 +95,7 @@ M: I+         I, +,       ;M
 \ 500 Digit Test
 \ Original Code     2:24
 \ Opt1              2:21  \ used CELLS+ primitive
+\ Opt M+            2:17  \ Original with M+ as macro
 \ Opt1A             2:04  \ removed CELLS, loops index by 2
 \ Opt1B             1:59  \ machine Forth superinstructions
 
@@ -198,7 +199,7 @@ VARIABLE EXP
 VARIABLE SIGN
 
 : DIVISOR ( -- N )
-  PASS 1 = IF  5   EXIT THEN
+  PASS 1 = IF  5   EXIT THEN \ removed ELSE
   239 ;
 
 \ : ERASE  0 FILL ;
