@@ -46,7 +46,7 @@ NEEDS MARKER FROM DSK1.MARKER
 \ improved +INDEX and -INDEX
 \ re-ordered args in ADDITION SUBTRACT DIVIDE AND MULTIPLY
 
-\ add standard word CELLS+ to Camel99 forth
+\ add CELLS+ to Camel99 forth
 HEX           2*     +
 CODE CELLS+  0A14 , A136 , NEXT, ENDCODE
 
