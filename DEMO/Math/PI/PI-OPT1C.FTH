@@ -45,6 +45,8 @@
 \ Sept 7, 2025  Added machine Forth Optimizers
 \ make some Machine Forth Instructions
 
+\ Sept 8, 2025 Exanded D- to a macro. 6% further improvement
+
 NEEDS ERASEW FROM DSK1.ERASEW  \ 16 bit erase "words"
 \ NEEDS DUMP   FROM DSK1.TOOLS
 NEEDS VALUE  FROM DSK1.VALUES
@@ -103,6 +105,7 @@ M: I+         I, +,       ;M
 \ Opt M+            2:17  \ Original with M+ as macro
 \ Opt1A             2:04  \ removed CELLS, loops index by 2
 \ Opt1B             1:59  \ machine Forth superinstructions
+\ Opt1c D- MACRO    1:52  \ 6% improvement
 
 \ ================ PROGRAM BEGINS ===============
 DECIMAL
@@ -137,15 +140,7 @@ VARIABLE CARRY
 ;
 
 \ scan forward for cell containing non-zero
-\ : +INDEX ( adr -- adr index )
-\    -1
-\    BEGIN 1+ DUP SIZE -
-\    WHILE
-\       2DUP CELLS + @
-\    UNTIL
-\    THEN ;
-
-\ MUCH faster in Camel99 Forth
+\ BOUNDS & DO LOOP MUCH faster in Camel99 Forth
 : +INDEX
     DUP
     SIZE CELLS
@@ -164,7 +159,7 @@ VARIABLE CARRY
     +INDEX ( adr index ) SIZE SWAP
     DO
         DUP I CELLS+ ( res)
-        DUP@  CARRY @  FACTOR  UM/MOD
+        DUP@  CARRY @  FACTOR UM/MOD
       ( quot) ROT
       ( res) !
       ( rem) CARRY !

@@ -9,22 +9,22 @@ HEX
        POSTPONE LITERAL
        POSTPONE LITERAL ; IMMEDIATE
 
-CODE 2R@  ( -- d )  
+CODE 2R@  ( -- d )
        0646 ,        \ TOS PUSH,
        C5A4 , 0002 , \ 2 (RP) TOS MOV,
        C114 ,        \ *RP PUSH,
-       NEXT,    
+       NEXT,
 ENDCODE
- 
-CODE 2INVERT ( d -- -d) 
-       0556 , \ *SP INV,  
-       0544 , \ TOS INV, 
-       NEXT, 
-ENDCODE  
 
-CODE DSIGN   ( d -- d ?)  \ 2DUP XOR  
+CODE 2INVERT ( d -- -d)
+       0556 , \ *SP INV,
+       0544 , \ TOS INV,
+       NEXT,
+ENDCODE
+
+CODE DSIGN   ( d -- d ?)  \ 2DUP XOR
        0646 , C584 , \ TOS PUSH,
-       2926 , 0002 , \ 2 (SP) TOS XOR,  
+       2926 , 0002 , \ 2 (SP) TOS XOR,
        NEXT,
 ENDCODE
 
@@ -98,11 +98,11 @@ ENDCODE         \ 16 bytes
 \ : 2NIP   ( d d' -- d')    2SWAP 2DROP ;
 
 CODE 2NIP  ( d d' -- d')
-       C036 , \ *SP+ R0 MOV, 
-       05C6 , \      SP INCT, 
-       C580 , \  R0 *SP MOV, 
-       NEXT, 
-ENDCODE 
+       C036 , \ *SP+ R0 MOV,
+       05C6 , \      SP INCT,
+       C580 , \  R0 *SP MOV,
+       NEXT,
+ENDCODE
 
 : DMAX   ( d d -- d)  4DUP D< IF 2DROP ELSE 2NIP THEN ;
 : DMIN   ( d d -- d)  4DUP D< IF 2NIP  ELSE 2DROP THEN ;
