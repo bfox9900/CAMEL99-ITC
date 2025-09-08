@@ -148,7 +148,7 @@ SQUARE WHTSQR CHARDEF
            BLUSQR OF  W<->B
                       DECR W
                       DECR B  ENDOF
-           ENDCASE
+         ENDCASE
     REPEAT ;
 
 : WAIT   11 11 AT-XY ." Finished!" 1500 MS ;
