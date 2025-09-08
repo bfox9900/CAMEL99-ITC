@@ -144,6 +144,7 @@ FORTH DEFINITIONS
         ['] DOVAR    OF  >BODY   LIT, ENDOF
         ['] DOCON    OF  >BODY @ LIT, ENDOF
         ['] DOUSER @ OF  EXECUTE LIT, ENDOF
+\        ['] VALUE    OF  EXECUTE LIT, ENDOF
 \       ['] DOCOL    OF  >BODY RECURSE  ENDOF     \ future? :-)
         TRUE ABORT" Can't optimize word"
     ENDCASE

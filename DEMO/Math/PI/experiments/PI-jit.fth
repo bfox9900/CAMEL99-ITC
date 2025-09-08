@@ -37,22 +37,20 @@
 
 \ Sept 6 2025 Speedups:
 \ - Removed CELLS in loop and index by 2 instead
-\   ( except in DIVIDE where is did not improve times)
+\   ( EXCEPT in DIVIDE where is did not improve times)
 \ - Expanded M+ with a TEXT macro
 \ - changed +INDEX to DO/LOOP. Big improvement.
 \ - replaced OVER with DUP and re-ordered arguments where possible
 
-\ Sept 7, 2025  Added machine Forth Optimizers
-\ make some Machine Forth Instructions
+NEEDS ERASEW FROM DSK1.ERASEW
 
-NEEDS ERASEW FROM DSK1.ERASEW  \ 16 bit erase "words"
-\ NEEDS DUMP   FROM DSK1.TOOLS
+NEEDS DUMP   FROM DSK1.TOOLS
 NEEDS VALUE  FROM DSK1.VALUES
 NEEDS D=     FROM DSK1.DOUBLE
 NEEDS .R     FROM DSK1.UDOTR
 NEEDS ELAPSE FROM DSK1.ELAPSE32
-NEEDS MARKER FROM DSK1.MARKER
 
+NEEDS JIT:   FROM DSK1.JIT
 
 \ this macro improves speed by 2.6%
 : M+  S" DUP 0< D+" EVALUATE ; IMMEDIATE
@@ -62,47 +60,8 @@ NEEDS MARKER FROM DSK1.MARKER
 \ TI-99 screen timout address
 HEX 83D6 CONSTANT TIMEOUT
 
-HEX
-: PUSH,     0646 , ;
-: TOS>STK,  C584 ,  ;
-: 2*,       0A14 ,  ;
-: +,        A136 ,  ;
-: @,        C114 ,  ;
-: DROP,     C136 , ;
-: R>TOS,    C117 , ;   \   *RP  TOS MOV,
-: (R)-,     6127 , , ; \ 2 (RP) TOS SUB,
-
-: 2DUP,
-    0226 , -4 , \ SP -4 ADDI,
-    C5A6 ,  4 , \ 4 (SP) *SP MOV,
-    C984 ,  2 , \ TOS  2 (SP) MOV,
-;
-
-\ Combine them to make higher level isntructions
-: DUP,      PUSH,  TOS>STK, ;
-: OVER,     0646 ,  C584 , C126 , 0002 , ;
-: I,        DUP, R>TOS,  2 (R)-, ;
-
-\ syntax sugar :-)
-: M:   CODE ;
-: ;M   NEXT,  ENDCODE ;
-
-\ Now we can make Machine Forth Super instructions
-M: CELLS+     2*, +,      ;M
-M: DUP@       DUP, @,     ;M
-M: 2DUP+@     2DUP, +, @, ;M
-M: I+         I, +,       ;M
-
-\ Performance changes from original
-\ 500 Digit Test
-\ Original Code     2:24
-\ Opt1              2:21  \ used CELLS+ primitive
-\ Opt M+            2:17  \ Original with M+ as macro
-\ Opt1A             2:04  \ removed CELLS, loops index by 2
-\ Opt1B             1:59  \ machine Forth superinstructions
-
-\ ================ PROGRAM BEGINS ===============
 DECIMAL
+
 0 VALUE POWER  ( adr)
 0 VALUE TERM   ( adr)
 0 VALUE RESULT ( adr)
@@ -111,30 +70,33 @@ DECIMAL
 VARIABLE CARRY
 \ CHANGED ADD and SUBTRACT to step by 2 through arrays. B FOX
 \ 3% speed up on 100 digits, 9% on 500 digits
-: ADD ( -- )
+JIT: ADD
+( -- )
   CARRY OFF
   RESULT
   0  SIZE CELLS 2-
   DO
-    DUP I+ DUP@ S>UD  TERM I+ @ S>UD D+
-    CARRY @ M+
+     DUP I + DUP @ 0
+    TERM I + @ 0  D+  CARRY @ M+
     ( hi) CARRY !
     ( lo) SWAP ( res) !
   -2 +LOOP
   DROP
-;
+;JIT
 
 : SUBTRACT ( -- )
   CARRY OFF
   RESULT
   0  SIZE CELLS 2-
   DO
-    DUP  I+ ( RES) DUP@ S>UD
-    TERM I+ @ S>UD  D-  CARRY @ M+
+    DUP  I + ( RES) DUP @ S>UD
+    TERM I + @ 0  D-  CARRY @ M+
     ( HI) CARRY !
     ( LO) SWAP ( RES) !
   -2 +LOOP
   DROP ;
+
+0 VALUE FACTOR
 
 \ scan forward for cell containing non-zero
 \ : +INDEX ( adr -- adr index )
@@ -156,15 +118,14 @@ VARIABLE CARRY
     OVER - 2/
 ;
 
-0 VALUE FACTOR
 \ Using cell sized looping made this part slower.
 : DIVIDE ( ADR FACTOR -- )
     TO FACTOR
     CARRY OFF
     +INDEX ( adr index ) SIZE SWAP
     DO
-        DUP I CELLS+ ( res)
-        DUP@  CARRY @  FACTOR  UM/MOD
+        DUP I CELLS + ( res)
+        DUP @  CARRY @  FACTOR  UM/MOD
       ( quot) ROT
       ( res) !
       ( rem) CARRY !
@@ -176,7 +137,7 @@ VARIABLE CARRY
     SIZE CELLS
     BEGIN 2- DUP
     WHILE
-       2DUP+@
+       2DUP + @
     UNTIL
     THEN ;
 
@@ -184,8 +145,8 @@ VARIABLE CARRY
   TO FACTOR   CARRY OFF
   -INDEX ( adr index ) 0 SWAP
   DO
-    DUP I+ ( res)
-    DUP@  FACTOR  UM*  CARRY @ M+
+    DUP I + ( res)
+    DUP @  FACTOR  UM*  CARRY @ M+
     ( hi) CARRY !
     ( lo) SWAP ( res) !
   -2 +LOOP
@@ -201,8 +162,7 @@ VARIABLE EXP
 VARIABLE SIGN
 
 : DIVISOR ( -- N )
-  PASS 1 = IF  5   EXIT THEN \ removed ELSE
-  239 ;
+  PASS 1 = IF  5  ELSE  239  THEN ;
 
 \ : ERASE  0 FILL ;
 
@@ -252,12 +212,12 @@ VARIABLE SPIN#
 DECIMAL
 : PRINT ( -- )
   CR
-  RESULT  DUP@ 0 .R  [CHAR] . EMIT CR
+  RESULT  DUP @ 0 .R  [CHAR] . EMIT CR
   NDIGIT 0
   ?DO
     0 OVER !
     DUP 10000 MULTIPLY
-    DUP@  0 <#  # # # #  #> TYPE SPACE
+    DUP @  0 <#  # # # #  #> TYPE SPACE
     ?TERMINAL ABORT" Print halted"
   4 +LOOP
   DROP CR ;
@@ -280,13 +240,14 @@ DECIMAL
   ( extra for accurate last digits)
   2+  TO SIZE
 
-  .SIZE
   \ create arrays in un-allocated memory
+  .SIZE
   BASE @ HEX
   HERE TO POWER   SIZE 20 + CELLS ALLOT
   HERE TO TERM    SIZE 20 + CELLS ALLOT
   HERE TO RESULT  SIZE 20 + CELLS ALLOT
-  .POWER  .TERM  .RESULT
+  .POWER  .TERM .RESULT
+
   50 ALLOT  ( hold buffer space)
   BASE !
 
@@ -298,12 +259,10 @@ DECIMAL
 ;
 
 : TITLEPAGE
-PAGE ."  Compute PI in ANS Forth"
+PAGE ."  Compute PI in ANS Forth Opt 1A"
 CR
 CR ." DxForth Revised 2015-02-09  ES"
-CR ." Revised for Camel99 2025-09-7 BFox"
-CR
-CR ." - Optimized with Machine Forth"
+CR ." Revised for Camel99 2025-09-5 BFox"
 CR
 CR ." Compute Pi to an arbitrary precision."
 CR
@@ -312,16 +271,3 @@ CR ." pi/4 = 4 arctan(1/5) - arctan(1/239)"
 CR
 CR
 CR ." Type  PI  to  run the program" ;
-
-
-\ end
-: START   WARM  TITLEPAGE TIMER-START ABORT ;
-
-LOCK
-\ Forth in RAM at >A000
-\ INCLUDE DSK1.SAVESYS
-\ ' START SAVESYS DSK3.PIDEMO
-
-\ Forth in SuperCart at >6000
- INCLUDE DSK1.SUPERSAVE
- ' START SUPERSAVE DSK3.PIDEMOSC
