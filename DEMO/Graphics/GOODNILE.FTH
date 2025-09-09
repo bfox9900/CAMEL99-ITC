@@ -3,7 +3,7 @@
 
 NEEDS HCHAR FROM DSK1.GRAFIX
 NEEDS CHARSET FROM DSK1.CHARSET
-\ DSK1.STRINGS \ We don't strings for this version.
+\ DSK1.STRINGS \ We don't use strings for this version.
 
 \ CREATE  named character DATA patterns with numbers not strings
 HEX
