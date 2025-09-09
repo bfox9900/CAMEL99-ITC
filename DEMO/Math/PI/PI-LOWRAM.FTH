@@ -75,6 +75,7 @@ HEX
 83D6 CONSTANT TIMEOUT
 2000 CONSTANT LORAM
 
+\ machine code primitives for TMS9900
 HEX
 : PUSH,     0646 , ;
 : TOS>STK,  C584 ,  ;
