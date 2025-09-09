@@ -1,4 +1,9 @@
 \ PI.FTH from DxForth.
+
+\ *HEAVILY MODIFIED*
+\ This version moves the RESULT array into TI-99 low RAM.
+\ This gives us 8K for the results.
+
 \ Thanks to Ed from Australia for finding the bug in my D+
 \
 \ Revised 2015-02-09  es
@@ -66,7 +71,9 @@ NEEDS MARKER FROM DSK1.MARKER
 : ^2  S" DUP *" EVALUATE ; IMMEDIATE
 
 \ TI-99 screen timout address
-HEX 83D6 CONSTANT TIMEOUT
+HEX
+83D6 CONSTANT TIMEOUT
+2000 CONSTANT LORAM
 
 HEX
 : PUSH,     0646 , ;
@@ -261,11 +268,11 @@ DECIMAL
   4 +LOOP
   DROP CR ;
 
-: GetNumber ( -- n )
+: GetDigits ( -- n )
   CR ." How many digits do you want? "
   PAD DUP 20 ACCEPT NUMBER? ABORT" Bad number" CR ;
 
-: ".." ." .. " ;
+: ".."   ." .. " ;
 
 : .SIZE   CR ." Array size = " SIZE . ." bytes" ;
 : .POWER  CR ." POWER array is at  >" POWER  U. ".." POWER  SIZE + U. ;
@@ -279,21 +286,23 @@ DECIMAL
 \ Use the 32bit math to divide ndigit by 4.816...
 : /log10(2^16) ( n --  rem size) 109 UM* 525 UM/MOD ;
 
-: ARRAY_SIZE ( n -- )
+: ARRAY_SIZE ( #Digits -- )
    /log10(2^16) SWAP ( rem) IF  1+  THEN CELL+
    ( adds 1 extra cell for accurate last digits)
 ;
 
+DECIMAL
 : PI ( -- )
     DECIMAL
-    GetNumber DUP TO NDIGIT
+    GetDigits DUP TO NDIGIT
     ( n) ARRAY_SIZE TO SIZE
     .SIZE
 \ create arrays in un-allocated memory
     BASE @ HEX
     HERE TO POWER   SIZE 20 + CELLS ALLOT
     HERE TO TERM    SIZE 20 + CELLS ALLOT
-    HERE TO RESULT  SIZE 20 + CELLS ALLOT
+ \   HERE TO RESULT  SIZE 20 + CELLS ALLOT
+    LORAM TO RESULT
     .POWER  .TERM  .RESULT
     50 ALLOT  ( hold buffer space for number conversions)
     BASE !
