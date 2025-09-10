@@ -1,7 +1,5 @@
 CR .( Optional Double-Number word set)
-
 \ INCLUDE DSK1.TOOLS  \ for debugging
-
 HERE
 HEX
 : 2LITERAL  ( d -- )
