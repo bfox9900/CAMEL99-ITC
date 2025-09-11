@@ -1,6 +1,4 @@
-\ PI.FTH from DxForth. for Camel99 Forth over RS232 Sept 10 2025 BFox
-
-\ This code assumes the IDE card is installed and used the clock
+\ PI.FTH from DxForth.
 
 \ *HEAVILY MODIFIED*
 \ This version moves the RESULT array into TI-99 low RAM.
@@ -59,9 +57,9 @@ NEEDS ERASEW FROM DSK1.ERASEW  \ 16 bit erase "words"
 NEEDS VALUE  FROM DSK1.VALUES
 NEEDS D=     FROM DSK1.DOUBLE
 NEEDS .R     FROM DSK1.UDOTR
-NEEDS TIME@  FROM DSK1.IDECLOCK
+NEEDS ELAPSE FROM DSK1.ELAPSE32
 NEEDS MARKER FROM DSK1.MARKER
-
+NEEDS OPEN-OUTPUT FROM DSK1.OUTFILE
 
 \ these macros improve speed by 3%
 : M+ ( n n -- d) S" DUP 0< D+" EVALUATE ; IMMEDIATE
@@ -229,7 +227,12 @@ DECIMAL
 CREATE SCHARS   CHAR | C, CHAR / C, CHAR - C, CHAR \ C,
 VARIABLE SPIN#
 : SPINCHAR ( -- char ) SPIN# @ 1+ 3 AND DUP SPIN# ! SCHARS + C@ ;
-: SPINNER  VROW 2@  SPINCHAR EMIT AT-XY ;
+: SPINNER    SPINCHAR VPUT ;
+
+2VARIABLE ITERATIONS
+
+: ITERATIONS++   ITERATIONS 2@ 1 M+ ITERATIONS 2! ;
+: .ITERATIONS   VROW 2@  ITERATIONS 2@ UD.  AT-XY ;
 
 0 VALUE NDIGIT
 
@@ -237,7 +240,6 @@ VARIABLE SPIN#
   NDIGIT 45800 U> IF
     ." Warning: digits > 45808 will be in error " CR
   THEN
-
   3 1
   DO
     I TO PASS
@@ -245,7 +247,8 @@ VARIABLE SPIN#
     BEGIN
       TIMEOUT OFF ( prevent screen from going blank)
 
-      SPINNER
+    \  SPINNER
+      ITERATIONS++ .ITERATIONS
       POWER TERM SIZE MOVE
       TERM  EXP @ DIVIDE
       SIGN @ DUP
@@ -269,7 +272,9 @@ DECIMAL
     DUP@  0 <#  # # # #  #> TYPE SPACE
     ?TERMINAL ABORT" Print halted"
   4 +LOOP
-  DROP CR ;
+  DROP CR
+ \ OUTH IF CLOSE-OUTPUT THEN
+ ;
 
 : GetDigits ( -- n )
   CR ." How many digits do you want? "
@@ -294,23 +299,6 @@ DECIMAL
    ( adds 1 extra cell for accurate last digits)
 ;
 
-: TITLEPAGE
-PAGE ."  Compute PI in ANS Forth"
-CR
-CR ." DxForth Revised 2015-02-09  ES"
-CR ." Revised for Camel99 2025-09-7 BFox"
-CR
-CR ." - Optimized with Machine Forth"
-CR
-CR ." Compute Pi to an arbitrary precision."
-CR
-CR ." Uses Machin's formula:"
-CR ." pi/4 = 4 arctan(1/5) - arctan(1/239)"
-CR
-CR
-CR ." Type  PI  to  run the program" ;
-
-
 DECIMAL
 : PI ( -- )
     DECIMAL
@@ -327,23 +315,41 @@ DECIMAL
     50 ALLOT  ( hold buffer space for number conversions)
     BASE !
 
-  CR ." Start time: " .TIME
+  0 0 ITERATIONS 2!
+  TIMER-RESET
   CR CalcPi
-  CR ." Done!" SPACE  .TIME
+  CR ." Done!" SPACE  .ELAPSED
   CR ." Press a key to see result" KEY DROP
   PRINT
 ;
 
-.TITLEPAGE
+: FILE=  PARSE-NAME OPEN-OUTPUT  ;
+
+: TITLEPAGE
+PAGE ."  Compute PI in ANS Forth"
+CR
+CR ." DxForth Revised 2015-02-09  ES"
+CR ." Revised for Camel99 2025-09-7 BFox"
+CR
+CR ." - Optimized with Machine Forth"
+CR
+CR ." Compute Pi to an arbitrary precision."
+CR
+CR ." Uses Machin's formula:"
+CR ." pi/4 = 4 arctan(1/5) - arctan(1/239)"
+CR
+CR ." FILE= <PATH> to print file & screen"
+CR ." Type  PI  to  run the program" ;
+
 
 \ end
-\ : START   WARM  TITLEPAGE TIMER-START ABORT ;
+: START   WARM  TITLEPAGE TIMER-START ABORT ;
 
-\ LOCK
+LOCK
 \ Forth in RAM at >A000
 \ INCLUDE DSK1.SAVESYS
 \ ' START SAVESYS DSK3.PIDEMO
 
 \ Forth in SuperCart at >6000
-\ INCLUDE DSK1.SUPERSAVE
-\ ' START SUPERSAVE DSK3.PIDEMOSC
+ INCLUDE DSK1.SUPERSAVE
+ ' START SUPERSAVE DSK3.PIDEMOSC

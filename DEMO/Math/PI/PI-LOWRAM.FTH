@@ -229,13 +229,17 @@ VARIABLE SPIN#
 : SPINCHAR ( -- char ) SPIN# @ 1+ 3 AND DUP SPIN# ! SCHARS + C@ ;
 : SPINNER    SPINCHAR VPUT ;
 
+2VARIABLE ITERATIONS
+
+: ITERATIONS++   ITERATIONS 2@ 1 M+ ITERATIONS 2! ;
+: .ITERATIONS   VROW 2@  ITERATIONS 2@ UD.  AT-XY ;
+
 0 VALUE NDIGIT
 
 : CalcPi ( -- )
   NDIGIT 45800 U> IF
     ." Warning: digits > 45808 will be in error " CR
   THEN
-
   3 1
   DO
     I TO PASS
@@ -243,7 +247,8 @@ VARIABLE SPIN#
     BEGIN
       TIMEOUT OFF ( prevent screen from going blank)
 
-      SPINNER
+    \  SPINNER
+      ITERATIONS++ .ITERATIONS
       POWER TERM SIZE MOVE
       TERM  EXP @ DIVIDE
       SIGN @ DUP
@@ -308,6 +313,7 @@ DECIMAL
     50 ALLOT  ( hold buffer space for number conversions)
     BASE !
 
+  0 0 ITERATIONS 2!
   TIMER-RESET
   CR CalcPi
   CR ." Done!" SPACE  .ELAPSED
