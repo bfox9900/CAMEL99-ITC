@@ -51,9 +51,9 @@
 \ make some Machine Forth Instructions
 
 \ Sept 8, 2025 Exanded D- to a macro. 6% further improvement
+ NEEDS DUMP   FROM DSK1.TOOLS
 
 NEEDS ERASEW FROM DSK1.ERASEW  \ 16 bit erase "words"
-\ NEEDS DUMP   FROM DSK1.TOOLS
 NEEDS VALUE  FROM DSK1.VALUES
 NEEDS D=     FROM DSK1.DOUBLE
 NEEDS .R     FROM DSK1.UDOTR
@@ -231,32 +231,32 @@ VARIABLE SPIN#
 
 2VARIABLE ITERATIONS
 
-: ITERATIONS++   ITERATIONS 2@ 1 M+ ITERATIONS 2! ;
-: .ITERATIONS   VROW 2@  ITERATIONS 2@ UD.  AT-XY ;
+: ITERATIONS++   ITERATIONS 1+! ;
+: .ITERATIONS   VROW 2@  ITERATIONS @ U.  AT-XY ;
 
 0 VALUE NDIGIT
 
 : CalcPi ( -- )
   NDIGIT 45800 U> IF
-    ." Warning: digits > 45808 will be in error " CR
+    ." Warning: digits > 45808 will be in error "
   THEN
+  CR ." Iterations: "
   3 1
   DO
     I TO PASS
     INITIALIZE
     BEGIN
       TIMEOUT OFF ( prevent screen from going blank)
-
-    \  SPINNER
-      ITERATIONS++ .ITERATIONS
+      .ITERATIONS
       POWER TERM SIZE MOVE
       TERM  EXP @ DIVIDE
       SIGN @ DUP
-      IF  SUBTRACT
-      ELSE  ADD
+      IF   SUBTRACT
+      ELSE ADD
       THEN
       0= SIGN !  2 EXP +!
       POWER  DIVISOR ^2  DIVIDE
+      ITERATIONS++
       POWER ZERO?
     UNTIL
   LOOP ;
@@ -314,11 +314,10 @@ DECIMAL
     BASE !
 
   0 0 ITERATIONS 2!
-  TIMER-RESET
   CR CalcPi
   CR ." Done!" SPACE  .ELAPSED
-  CR ." Press a key to see result" KEY DROP
-  PRINT
+  CR
+  CR ." Type  PRINT  to see the results"
 ;
 
 : TITLEPAGE
@@ -335,7 +334,9 @@ CR ." Uses Machin's formula:"
 CR ." pi/4 = 4 arctan(1/5) - arctan(1/239)"
 CR
 CR
-CR ." Type  PI  to  run the program" ;
+CR ." Type  PI  to  run the program"
+CR ." Type  PRINT  to see the results"
+;
 
 
 \ end
