@@ -1,6 +1,7 @@
 \ PI.FTH from DxForth.
 
-\ *HEAVILY MODIFIED*
+\ *HEAVILY MODIFIED FOR TI-99 CAMEL99 FORTH*
+
 \ This version moves the RESULT array into TI-99 low RAM.
 \ This gives us 8K for the results.
 
@@ -87,8 +88,8 @@ HEX
 : +,        A136 ,  ;
 : @,        C114 ,  ;
 : DROP,     C136 , ;
-: R>TOS,    C117 , ;   \   *RP  TOS MOV,
-: (R)-,     6127 , , ; \ 2 (RP) TOS SUB,
+: R@,       C117 , ;   \   *RP  TOS MOV,
+: (R)-, ( n -- ) 6127 , , ; \ n (RP) TOS SUB,
 
 : 2DUP,
     0226 , -4 , \ SP -4 ADDI,
@@ -96,10 +97,10 @@ HEX
     C984 ,  2 , \ TOS  2 (SP) MOV,
 ;
 
-\ Combine them to make higher level isntructions
+\ Combine them to make higher level MACRO isntructions
 : DUP,      PUSH,  TOS>STK, ;
-: OVER,     0646 ,  C584 , C126 , 0002 , ;
-: I,        DUP, R>TOS,  2 (R)-, ;
+: OVER,     DUP,   TOS>STK, C126 , 0002 , ;
+: I,        DUP, R@,  2 (R)-, ;
 
 \ syntax sugar :-)
 : M:   CODE ;
@@ -154,15 +155,19 @@ VARIABLE CARRY
 
 \ scan forward for cell containing non-zero
 \ BOUNDS & DO LOOP MUCH faster in Camel99 Forth
-: +INDEX
-    DUP
-    SIZE CELLS
-    BOUNDS
-    DO
-       I @ IF I LEAVE THEN
-    2 +LOOP
-    OVER - 2/
-;
+\ : +INDEX ( addr -- addr n)
+\    DUP
+\    SIZE CELLS
+\    BOUNDS
+\    DO
+\       I @ IF I LEAVE THEN
+\    2 +LOOP
+\    OVER - 2/
+\ ;
+
+INCLUDE DSK1.SKIPSCANW
+\ 11% faster using SKIPW  (MUCH SLOWER using SKIP!)
+: +INDEX ( addr -- addr n) DUP SIZE CELLS  0 SKIPW DROP  OVER - 2/ ;
 
 0 VALUE FACTOR
 \ Using cell sized looping made this part slower.
@@ -228,15 +233,9 @@ VARIABLE SIGN
 
 
 DECIMAL
-CREATE SCHARS   CHAR | C, CHAR / C, CHAR - C, CHAR \ C,
-VARIABLE SPIN#
-: SPINCHAR ( -- char ) SPIN# @ 1+ 3 AND DUP SPIN# ! SCHARS + C@ ;
-: SPINNER    SPINCHAR VPUT ;
+VARIABLE ITERATIONS
 
-2VARIABLE ITERATIONS
-
-: ITERATIONS++   ITERATIONS 1+! ;
-: .ITERATIONS   VROW 2@  ITERATIONS @  U.  AT-XY ;
+: .ITERATIONS   VROW 2@  ITERATIONS @ U.  AT-XY ;
 
 0 VALUE NDIGIT
 
@@ -260,13 +259,21 @@ VARIABLE SPIN#
       THEN
       0= SIGN !  2 EXP +!
       POWER  DIVISOR ^2  DIVIDE
-      ITERATIONS++
+      ITERATIONS 1+!
       POWER ZERO?
     UNTIL
   LOOP ;
 
+: ?OPEN-FILE  PARSE-NAME DUP IF  MAKE-OUTPUT EXIT THEN  2DROP ;
+: ?CLOSE-FILE  OUTH IF CLOSE-OUTPUT THEN ;
+: ?BREAK  ?TERMINAL IF ?CLOSE-FILE TRUE ABORT" Print halted" THEN ;
+
 DECIMAL
-: PRINT ( -- )
+: PRINT ( [ <path> ] )  \ optional path can echo data to I/O device
+   ?OPEN-FILE
+\ I discovered that the was the place to allocate extra space
+\ for the "hold buffer" used for converting numbers for printing.
+  50 ALLOT
   CR
   RESULT  DUP@ 0 .R  [CHAR] . EMIT CR
   NDIGIT 0
@@ -274,9 +281,12 @@ DECIMAL
     0 OVER !
     DUP 10000 MULTIPLY
     DUP@  0 <#  # # # #  #> TYPE SPACE
-    ?TERMINAL ABORT" Print halted"
+    ?BREAK
   4 +LOOP
-  DROP CR ;
+  DROP CR
+  -50 ALLOT  \ deallocate space
+  ?CLOSE-FILE
+;
 
 : GetDigits ( -- n )
   CR ." How many digits do you want? "
@@ -296,8 +306,8 @@ DECIMAL
 \ Use the 32bit math to divide ndigit by 4.816...
 : /log10(2^16) ( n --  rem size) 109 UM* 525 UM/MOD ;
 
-: ARRAY_SIZE ( #Digits -- )
-   /log10(2^16) SWAP ( rem) IF  1+  THEN CELL+
+: ARRAY_SIZE ( #Digits -- n)
+   /log10(2^16) SWAP ( rem) IF  1+ ALIGNED THEN CELL+
    ( adds 1 extra cell for accurate last digits)
 ;
 
@@ -311,13 +321,12 @@ DECIMAL
     BASE @ HEX
     HERE TO POWER   SIZE 20 + CELLS ALLOT
     HERE TO TERM    SIZE 20 + CELLS ALLOT
- \   HERE TO RESULT  SIZE 20 + CELLS ALLOT
     LORAM TO RESULT
+
     .POWER  .TERM  .RESULT
-    255 ALLOT  ( hold buffer space for number conversions)
     BASE !
 
-  0 0 ITERATIONS 2!
+  ITERATIONS OFF
   CR CalcPi
   CR ." Done!" SPACE  .ELAPSED
   CR
