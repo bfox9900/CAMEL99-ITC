@@ -56,9 +56,13 @@
 NEEDS ERASEW FROM DSK1.ERASEW  \ 16 bit erase "words"
 NEEDS VALUE  FROM DSK1.VALUES
 NEEDS D=     FROM DSK1.DOUBLE
-NEEDS .R     FROM DSK1.UDOTR
 NEEDS ELAPSE FROM DSK1.ELAPSE32
 NEEDS MARKER FROM DSK1.MARKER
+
+\ for saving results to file
+NEEDS OUTH   FROM DSK1.OUTFILE
+
+NEEDS .R     FROM DSK1.UDOTR \ these words now can output to file & screen
 
 
 \ these macros improve speed by 3%
@@ -232,7 +236,7 @@ VARIABLE SPIN#
 2VARIABLE ITERATIONS
 
 : ITERATIONS++   ITERATIONS 1+! ;
-: .ITERATIONS   VROW 2@  ITERATIONS @ U.  AT-XY ;
+: .ITERATIONS   VROW 2@  ITERATIONS @  U.  AT-XY ;
 
 0 VALUE NDIGIT
 
@@ -310,7 +314,7 @@ DECIMAL
  \   HERE TO RESULT  SIZE 20 + CELLS ALLOT
     LORAM TO RESULT
     .POWER  .TERM  .RESULT
-    50 ALLOT  ( hold buffer space for number conversions)
+    255 ALLOT  ( hold buffer space for number conversions)
     BASE !
 
   0 0 ITERATIONS 2!
