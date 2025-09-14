@@ -205,8 +205,7 @@ INCLUDE DSK1.SKIPSCANW \ SKIP & SCAN for "9900 word width" (CELLS)
   -2 +LOOP
   DROP ;
 
-\ : COPY ( -- ) POWER TERM SIZE  MOVE ;
-
+\ scans the POWER array to determine if we are done.
 : ZERO? ( result -- f ) +INDEX NIP SIZE = ;
 
 0 VALUE PASS
@@ -265,9 +264,9 @@ VARIABLE ITERATIONS
     UNTIL
   LOOP ;
 
-: ?OPEN-FILE  PARSE-NAME DUP IF  MAKE-OUTPUT EXIT THEN  2DROP ;
+: ?OPEN-FILE   PARSE-NAME DUP IF  MAKE-OUTPUT EXIT THEN  2DROP ;
 : ?CLOSE-FILE  OUTH IF CLOSE-OUTPUT THEN ;
-: ?BREAK  ?TERMINAL IF ?CLOSE-FILE TRUE ABORT" Print halted" THEN ;
+: ?BREAK       ?TERMINAL IF ?CLOSE-FILE TRUE ABORT" Print halted" THEN ;
 
 DECIMAL
 : PRINT ( [ <path> ] )  \ optional path can echo data to I/O device
