@@ -200,6 +200,7 @@ VARIABLE SIGN
   PASS 1 <> IF  239  EXIT THEN \ removed ELSE
   5 ;
 
+ \ replaced ERASE with library ERASEW. 2x Faster
 \ : ERASE  0 FILL ;
 
 : INITIALIZE ( -- )
