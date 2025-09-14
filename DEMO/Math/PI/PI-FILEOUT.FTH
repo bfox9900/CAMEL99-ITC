@@ -52,7 +52,7 @@
 \ make some Machine Forth Instructions
 
 \ Sept 8, 2025 Exanded D- to a macro. 6% further improvement
- NEEDS DUMP   FROM DSK1.TOOLS
+\ NEEDS DUMP   FROM DSK1.TOOLS ( only needed for debugging)
 
 NEEDS ERASEW FROM DSK1.ERASEW  \ 16 bit erase "words"
 NEEDS VALUE  FROM DSK1.VALUES
@@ -165,8 +165,10 @@ VARIABLE CARRY
 \    OVER - 2/
 \ ;
 
-INCLUDE DSK1.SKIPSCANW
-: +INDEX ( addr -- addr n) DUP SIZE CELLS  0 SKIPW DROP  OVER - 2/ ;
+INCLUDE DSK1.SKIPSCANW \ SKIP & SCAN for "9900 word width" (CELLS)
+\ scan forward for cell containing non-zero
+: +INDEX ( addr -- addr n)
+    DUP SIZE CELLS  0 SKIPW DROP  OVER - 2/ ;
 
 0 VALUE FACTOR
 \ Using cell sized looping made this part slower.
@@ -205,8 +207,7 @@ INCLUDE DSK1.SKIPSCANW
 
 \ : COPY ( -- ) POWER TERM SIZE  MOVE ;
 
-\ : ZERO? ( result -- f )  +INDEX NIP SIZE = ;
-: ZERO? ( result -- F ) SIZE CELLS 0 SKIP NIP 0= ;
+: ZERO? ( result -- f ) +INDEX NIP SIZE = ;
 
 0 VALUE PASS
 VARIABLE EXP
@@ -216,6 +217,7 @@ VARIABLE SIGN
   PASS 1 <> IF  239  EXIT THEN \ removed ELSE
   5 ;
 
+\ replaced ERASE with ERASEW. 2x faster
 \ : ERASE  0 FILL ;
 
 : INITIALIZE ( -- )
