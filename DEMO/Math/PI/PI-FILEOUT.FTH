@@ -166,7 +166,6 @@ VARIABLE CARRY
 \ ;
 
 INCLUDE DSK1.SKIPSCANW
-\ 11% faster using SKIPW  (MUCH SLOWER using SKIP!)
 : +INDEX ( addr -- addr n) DUP SIZE CELLS  0 SKIPW DROP  OVER - 2/ ;
 
 0 VALUE FACTOR
@@ -273,7 +272,10 @@ DECIMAL
    ?OPEN-FILE
 \ I discovered that the was the place to allocate extra space
 \ for the "hold buffer" used for converting numbers for printing.
+
   50 ALLOT
+  CR ." Camel99 Forth"
+  CR ." PI calculated to " NDIGIT . ." digits"
   CR
   RESULT  DUP@ 0 .R  [CHAR] . EMIT CR
   NDIGIT 0
@@ -311,6 +313,11 @@ DECIMAL
    ( adds 1 extra cell for accurate last digits)
 ;
 
+HEX 13 CONSTANT GREEN
+    17 CONSTANT CYAN
+: SCREEN  7 VWTR ;
+
+
 DECIMAL
 : PI ( -- )
     DECIMAL
@@ -327,7 +334,9 @@ DECIMAL
     BASE !
 
   ITERATIONS OFF
+  GREEN SCREEN
   CR CalcPi
+  CYAN SCREEN
   CR ." Done!" SPACE  .ELAPSED
   CR
   CR ." Type  PRINT  to see the results"
@@ -337,7 +346,7 @@ DECIMAL
 PAGE ."  Compute PI in ANS Forth"
 CR
 CR ." DxForth Revised 2015-02-09  ES"
-CR ." Revised for Camel99 2025-09-7 BFox"
+CR ." Revised for Camel99 2025-09-13 BFox"
 CR
 CR ." - Optimized with Machine Forth"
 CR
@@ -346,20 +355,23 @@ CR
 CR ." Uses Machin's formula:"
 CR ." pi/4 = 4 arctan(1/5) - arctan(1/239)"
 CR
-CR
-CR ." Type  PI  to  run the program"
-CR ." Type  PRINT  to see the results"
+CR ." USER COMMANDS:"
+CR ." PI  to  run the program"
+CR ." PRINT  to see the results"
+CR ." PRINT <device> to save to file"
+CR ." COLD to reset program"
+CR ." BYE to exit program"
 ;
 
 
 \ end
-: RUN  ( WARM ) TITLEPAGE TIMER-START ABORT ;
+: START   WARM  TITLEPAGE TIMER-START ABORT ;
 
-\ LOCK
+ LOCK
 \ Forth in RAM at >A000
 \ INCLUDE DSK1.SAVESYS
 \ ' START SAVESYS DSK3.PIDEMO
 
 \ Forth in SuperCart at >6000
-\ INCLUDE DSK1.SUPERSAVE
-\ ' START SUPERSAVE DSK3.PIDEMOSC
+ INCLUDE DSK1.SUPERSAVE
+' START SUPERSAVE DSK3.PIDEMOSC
