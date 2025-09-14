@@ -1,10 +1,4 @@
 \ PI.FTH from DxForth.
-
-\ *HEAVILY MODIFIED FOR TI-99 CAMEL99 FORTH*
-
-\ This version moves the RESULT array into TI-99 low RAM.
-\ This gives us 8K for the results.
-
 \ Thanks to Ed from Australia for finding the bug in my D+
 \
 \ Revised 2015-02-09  es
@@ -52,11 +46,14 @@
 \ make some Machine Forth Instructions
 
 \ Sept 8, 2025 Exanded D- to a macro. 6% further improvement
-\ NEEDS DUMP   FROM DSK1.TOOLS ( only needed for debugging)
+\ Sept 14, 2025 iNCLUDED DSK1.SKIPSCANW to improve +INDEX and ZERO?
+
+\ NEEDS DUMP   FROM DSK1.TOOLS
 
 NEEDS ERASEW FROM DSK1.ERASEW  \ 16 bit erase "words"
 NEEDS VALUE  FROM DSK1.VALUES
 NEEDS D=     FROM DSK1.DOUBLE
+NEEDS .R     FROM DSK1.UDOTR
 NEEDS ELAPSE FROM DSK1.ELAPSE32
 NEEDS MARKER FROM DSK1.MARKER
 
@@ -65,22 +62,19 @@ NEEDS OUTH   FROM DSK1.OUTFILE
 
 NEEDS .R     FROM DSK1.UDOTR \ these words now can output to file & screen
 
-
 \ these macros improve speed by 3%
 : M+ ( n n -- d) S" DUP 0< D+" EVALUATE ; IMMEDIATE
 : D- ( d d -- d) S" 2INVERT 1 M+ D+" EVALUATE ; IMMEDIATE
 
-
 \ for clarity
-: S>UD ( u -- ud ) POSTPONE 0 ; IMMEDIATE
-: ^2  S" DUP *" EVALUATE ; IMMEDIATE
+: S>UD ( u -- ud ) POSTPONE 0 ; IMMEDIATE ( '0' is a word )
+: ^2   ( n -- n^2) S" DUP *" EVALUATE ; IMMEDIATE
 
 \ TI-99 screen timout address
-HEX
-83D6 CONSTANT TIMEOUT
-2000 CONSTANT LORAM
+HEX 83D6 CONSTANT TIMEOUT
+    2000 CONSTANT HEAP \ use for RESULT array
 
-\ machine code primitives for TMS9900
+
 HEX
 : PUSH,     0646 , ;
 : TOS>STK,  C584 ,  ;
@@ -88,8 +82,8 @@ HEX
 : +,        A136 ,  ;
 : @,        C114 ,  ;
 : DROP,     C136 , ;
-: R@,       C117 , ;   \   *RP  TOS MOV,
-: (R)-, ( n -- ) 6127 , , ; \ n (RP) TOS SUB,
+: R>TOS,    C117 , ;   \   *RP  TOS MOV,
+: (R)-,     6127 , , ; \ 2 (RP) TOS SUB,
 
 : 2DUP,
     0226 , -4 , \ SP -4 ADDI,
@@ -97,10 +91,10 @@ HEX
     C984 ,  2 , \ TOS  2 (SP) MOV,
 ;
 
-\ Combine them to make higher level MACRO isntructions
+\ Combine them to make higher level isntructions
 : DUP,      PUSH,  TOS>STK, ;
-: OVER,     DUP,   TOS>STK, C126 , 0002 , ;
-: I,        DUP, R@,  2 (R)-, ;
+: OVER,     0646 ,  C584 , C126 , 0002 , ;
+: I,        DUP, R>TOS,  2 (R)-, ;
 
 \ syntax sugar :-)
 : M:   CODE ;
@@ -120,6 +114,7 @@ M: I+         I, +,       ;M
 \ Opt1A             2:04  \ removed CELLS, loops index by 2
 \ Opt1B             1:59  \ machine Forth superinstructions
 \ Opt1c D- MACRO    1:52  \ 6% improvement
+\ Opt1D             1:41  \ Uses SKIPW. Removed PRINT from PI
 
 \ ================ PROGRAM BEGINS ===============
 DECIMAL
@@ -155,7 +150,7 @@ VARIABLE CARRY
 
 \ scan forward for cell containing non-zero
 \ BOUNDS & DO LOOP MUCH faster in Camel99 Forth
-\ : +INDEX ( addr -- addr n)
+\ : +INDEX
 \    DUP
 \    SIZE CELLS
 \    BOUNDS
@@ -205,8 +200,9 @@ INCLUDE DSK1.SKIPSCANW \ SKIP & SCAN for "9900 word width" (CELLS)
   -2 +LOOP
   DROP ;
 
-\ scans the POWER array to determine if we are done.
-: ZERO? ( result -- f ) +INDEX NIP SIZE = ;
+\ : COPY ( -- ) POWER TERM SIZE  MOVE ;
+
+: ZERO? ( result -- f )  +INDEX NIP SIZE = ;
 
 0 VALUE PASS
 VARIABLE EXP
@@ -216,7 +212,7 @@ VARIABLE SIGN
   PASS 1 <> IF  239  EXIT THEN \ removed ELSE
   5 ;
 
-\ replaced ERASE with ERASEW. 2x faster
+ \ replaced ERASE with library ERASEW. 2x Faster
 \ : ERASE  0 FILL ;
 
 : INITIALIZE ( -- )
@@ -233,38 +229,35 @@ VARIABLE SIGN
 
 
 DECIMAL
-VARIABLE ITERATIONS
+CREATE SCHARS   CHAR | C, CHAR / C, CHAR - C, CHAR \ C,
+VARIABLE SPIN#
+: SPINCHAR ( -- char ) SPIN# @ 1+ 3 AND DUP SPIN# ! SCHARS + C@ ;
+: SPINNER    SPINCHAR VPUT ;
 
-: .ITERATIONS   VROW 2@  ITERATIONS @ U.  AT-XY ;
 
 0 VALUE NDIGIT
 
 : CalcPi ( -- )
-  NDIGIT 45800 U> IF
-    ." Warning: digits > 45808 will be in error "
-  THEN
-  CR ." Computing..."
   3 1
   DO
     I TO PASS
     INITIALIZE
     BEGIN
       TIMEOUT OFF ( prevent screen from going blank)
-   \   .ITERATIONS
+      SPINNER
       POWER TERM SIZE MOVE
       TERM  EXP @ DIVIDE
       SIGN @ DUP
-      IF   SUBTRACT
-      ELSE ADD
+      IF  SUBTRACT
+      ELSE  ADD
       THEN
       0= SIGN !  2 EXP +!
       POWER  DIVISOR ^2  DIVIDE
-      ITERATIONS 1+!
       POWER ZERO?
     UNTIL
-  LOOP
-  CR .ITERATIONS ;
+  LOOP ;
 
+DECIMAL
 : ?OPEN-FILE   PARSE-NAME DUP IF  MAKE-OUTPUT EXIT THEN  2DROP ;
 : ?CLOSE-FILE  OUTH IF CLOSE-OUTPUT THEN ;
 : ?BREAK       ?TERMINAL IF ?CLOSE-FILE TRUE ABORT" Print halted" THEN ;
@@ -290,11 +283,11 @@ DECIMAL
   ?CLOSE-FILE
 ;
 
-: GetDigits ( -- n )
+: GetNumber ( -- n )
   CR ." How many digits do you want? "
   PAD DUP 20 ACCEPT NUMBER? ABORT" Bad number" CR ;
 
-: ".."   ." .. " ;
+: ".." ." .. " ;
 
 : .SIZE   CR ." Array size = " SIZE . ." bytes" ;
 : .POWER  CR ." POWER array is at  >" POWER  U. ".." POWER  SIZE + U. ;
@@ -308,41 +301,36 @@ DECIMAL
 \ Use the 32bit math to divide ndigit by 4.816...
 : /log10(2^16) ( n --  rem size) 109 UM* 525 UM/MOD ;
 
-: ARRAY_SIZE ( #Digits -- n)
-   /log10(2^16) SWAP ( rem) IF  1+ ALIGNED THEN CELL+
+: ARRAY_SIZE ( n -- )
    ( adds 1 extra cell for accurate last digits)
+   /log10(2^16) SWAP ( rem) IF  1+  THEN CELL+
 ;
 
-HEX 13 CONSTANT GREEN
-    17 CONSTANT CYAN
+: ?TOOMANY ( n )  DUP 20000 > ABORT" Not enough memory" ;
 
-: SCREEN  7 VWTR ;
-DECIMAL
-: PIDIGITS ( n ) \ Use for scripting
+: PIDIGITS ( n -- )
+    ?TOOMANY
+
     DUP TO NDIGIT
     ( n) ARRAY_SIZE TO SIZE
     .SIZE
 \ create arrays in un-allocated memory
+
     BASE @ HEX
-\ allocate space for arrays
     HERE TO POWER   SIZE 20 + CELLS ALLOT
     HERE TO TERM    SIZE 20 + CELLS ALLOT
-    LORAM TO RESULT
-
+    HEAP TO RESULT  SIZE 20 + CELLS H +!
     .POWER  .TERM  .RESULT
+    50 ALLOT  ( hold buffer space for number conversions)
     BASE !
 
-  ITERATIONS OFF
-  GREEN SCREEN
-  CR CalcPi
-  CYAN SCREEN
-  CR ." Done!" SPACE  .ELAPSED
-  CR
-  CR ." Type  PRINT  to see the results"
+    TIMER-RESET
+    CR CalcPi
+    CR ." Done! " .ELAPSED
 ;
 
+: PI ( -- ) DECIMAL  GetNumber PIDIGITS ;
 
-: PI ( -- ) DECIMAL  GetDigits  PIDIGITS ;
 
 : TITLEPAGE
 PAGE ."  Compute PI in ANS Forth"
@@ -358,6 +346,7 @@ CR ." Uses Machin's formula:"
 CR ." pi/4 = 4 arctan(1/5) - arctan(1/239)"
 CR
 CR ." USER COMMANDS:"
+CR ." ( n) PIDIGITS  for scripting"
 CR ." PI  to  run the program"
 CR ." PRINT  to see the results"
 CR ." PRINT <device> to save to file"
@@ -369,11 +358,11 @@ CR ." BYE to exit program"
 \ end
 : START   WARM  TITLEPAGE TIMER-START ABORT ;
 
- LOCK
+LOCK
 \ Forth in RAM at >A000
 \ INCLUDE DSK1.SAVESYS
 \ ' START SAVESYS DSK3.PIDEMO
 
 \ Forth in SuperCart at >6000
  INCLUDE DSK1.SUPERSAVE
-' START SUPERSAVE DSK3.PIDEMOSC
+ ' START SUPERSAVE DSK3.PIOPT1D
