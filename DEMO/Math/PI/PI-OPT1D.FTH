@@ -263,14 +263,13 @@ DECIMAL
 : ?BREAK       ?TERMINAL IF ?CLOSE-FILE TRUE ABORT" Print halted" THEN ;
 
 DECIMAL
-: PRINT ( [ <path> ] )  \ optional path can echo data to I/O device
-   ?OPEN-FILE
-\ I discovered that the was the place to allocate extra space
-\ for the "hold buffer" used for converting numbers for printing.
+CREATE ELAPSED$ 20 ALLOT \ storage for timer output
 
+: PRINT ( [ <path> ] )  \ optional path can echo data to I/O device
+  ?OPEN-FILE
   CR ." Camel99 Forth"
   CR ." PI calculated to " NDIGIT . ." digits"
-  CR
+  CR ." Processing time: " ELAPSED$ COUNT TYPE
   RESULT  DUP@ 0 .R  [CHAR] . EMIT CR
   NDIGIT 0
   ?DO
@@ -326,6 +325,7 @@ DECIMAL
 
     TIMER-RESET
     CR CalcPi
+    TIME$ ELAPSED$ PLACE
     CR ." Done! " .ELAPSED
 ;
 

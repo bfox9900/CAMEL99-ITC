@@ -28,10 +28,12 @@ DECIMAL
 : <.>     [CHAR] . HOLD ;
 : :00     DECIMAL # SEXTAL # <:> ;
 : .00     DECIMAL # # <.> ;
-: TIME$   ( d -- addr len) \ string output is more flexible
+
+CREATE TIME$  32 ALLOT
+: D>TIME   ( d -- addr len) \ string output is more flexible
           BASE @ >R
           \  100ths secs  minutes  hours
-          <# .00    :00   :00   DECIMAL # #  #>
+          <# .00    :00   :00   DECIMAL # #  #> TIME$ PLACE
           R> BASE ! ;
 
 : UD/MOD ( ud1 u2 -- u3 ud4) >R 0 R@ UM/MOD -ROT R> UM/MOD ROT ;
