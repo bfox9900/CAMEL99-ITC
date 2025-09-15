@@ -40,8 +40,8 @@ VARIABLE FOUT  \ byte counter for outfile
 
 : FLUSH-BUFFER ( -- )
     OUTH WRITE-PAB
-    0 [PAB CHARS] VC!         \ clear byte count
-  \  [PAB FBUFF] 80 0 VFILL  \ erase file buffer
+    0 [PAB CHARS] VC!       \ clear byte count
+    [PAB FBUFF] 80 BL VFILL \ erase file buffer with blanks
 ;
 
 : >= ( n n -- ?)  1- > ;

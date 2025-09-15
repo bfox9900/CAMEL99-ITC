@@ -263,14 +263,15 @@ DECIMAL
 : ?BREAK       ?TERMINAL IF ?CLOSE-FILE TRUE ABORT" Print halted" THEN ;
 
 DECIMAL
-CREATE ELAPSED$ 20 ALLOT \ storage for timer output
 
 : PRINT ( [ <path> ] )  \ optional path can echo data to I/O device
   ?OPEN-FILE
-  CR ." Camel99 Forth"
+  CR
+  CR ." Camel99 Forth PI Report"
   CR ." PI calculated to " NDIGIT . ." digits"
   CR ." Processing time: " ELAPSED$ COUNT TYPE
-  RESULT  DUP@ 0 .R  [CHAR] . EMIT CR
+  CR ." ---"
+  CR RESULT  DUP@ 0 .R  [CHAR] . EMIT CR
   NDIGIT 0
   ?DO
     0 OVER !
@@ -325,8 +326,7 @@ CREATE ELAPSED$ 20 ALLOT \ storage for timer output
 
     TIMER-RESET
     CR CalcPi
-    TIME$ ELAPSED$ PLACE
-    CR ." Done! " .ELAPSED
+    CR ." Done! " .ELAPSED ( this also captures time in ELAPSED$ )
 ;
 
 : PI ( -- ) DECIMAL  GetNumber PIDIGITS ;
@@ -335,7 +335,7 @@ CREATE ELAPSED$ 20 ALLOT \ storage for timer output
 PAGE ."  Compute PI in ANS Forth"
 CR
 CR ." DxForth Revised 2015-02-09  ES"
-CR ." Revised for Camel99 2025-09-14 BFox"
+CR ." Revised for Camel99 2025-09-15 BFox"
 CR
 CR ." - Optimized with Machine Forth"
 CR
