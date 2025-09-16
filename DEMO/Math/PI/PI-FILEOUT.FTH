@@ -235,8 +235,6 @@ VARIABLE SIGN
 DECIMAL
 VARIABLE ITERATIONS
 
-: .ITERATIONS   VROW 2@  ITERATIONS @ U.  AT-XY ;
-
 0 VALUE NDIGIT
 
 : CalcPi ( -- )
@@ -337,13 +335,13 @@ DECIMAL
     .POWER  .TERM  .RESULT
     BASE !
 
-  ITERATIONS OFF
-  GREEN SCREEN
-  CR CalcPi
-  CYAN SCREEN
-  CR ." Done!" SPACE  .ELAPSED
-  CR .ITERATIONS ." iterations"
-  CR
+    ITERATIONS OFF
+    GREEN SCREEN
+    CR CalcPi
+    CYAN SCREEN
+    CR ." Done!" SPACE  .ELAPSED
+    CR ITERATIONS @ U. ." iterations"
+    CR
 ;
 
 : PI ( -- ) DECIMAL  GetDigits  PIDIGITS ;
