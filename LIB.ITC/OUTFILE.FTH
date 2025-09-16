@@ -22,7 +22,7 @@ VARIABLE FOUT  \ byte counter for outfile
     FOUT OFF ;
 
 \ : W/A   APPEND FAM @ ;  \ Moved to DSK1.ANSFILES
-: .OUT  ( -- ) FOUT @ U. ." bytes output to file"  ;
+: .OUT  ( -- ) CR FOUT @ U. ." bytes output to file"  ;
 
 : OPEN-OUTPUT  ( a u -- ) \ open output file in APPEND mode
     OUTH ABORT" Output file is already open"
@@ -36,9 +36,12 @@ VARIABLE FOUT  \ byte counter for outfile
 
 : WRITE-PAB ( handle -- ) SELECT  3 FILEOP ?FILERR ;
 
+: [PABCHARS]+! ( n -- ) [PAB CHARS] VC@  +  [PAB CHARS] VC! ;
+: [OUTBUFF]    ( -- Vaddr) [PAB FBUFF] V@   [PAB CHARS] VC@ + ;
+
 : FLUSH-BUFFER ( -- )
     OUTH WRITE-PAB
-    0 [PAB CHARS] VC!         \ clear byte count
+    0 [PAB CHARS] VC!           \ clear byte count
     [PAB FBUFF] V@ 80 BL VFILL  \ erase file buffer
 ;
 
@@ -49,19 +52,24 @@ VARIABLE FOUT  \ byte counter for outfile
     [PAB RECLEN] VC@ >= \ compare to the maximum size
 ;
 
-: [PABCHARS]+! ( n -- ) [PAB CHARS] VC@  +  [PAB CHARS] VC! ;
-: [OUTBUFF]    ( -- Vaddr) [PAB FBUFF] V@   [PAB CHARS] VC@ + ;
-
-: FEMIT ( c --)
-    OVERFLOW? IF FLUSH-BUFFER THEN
-    [OUTBUFF] VC!
-    1 [PABCHARS]+!
-    FOUT 1+!
-;
+: OUT.TYPE ( caddr len -- )
+    OUTH 0= ABORT" Output file not open"
+    OUTH SELECT
+    DUP OVERFLOW? IF  FLUSH-BUFFER  THEN
+    TUCK  ( -- len caddr len )    \ get a copy of the length
+    [OUTBUFF] SWAP VWRITE         \ write string to PAB buffer
+    ( len) DUP [PABCHARS]+!       \ bump byte count in PAB
+    FOUT +! ;                     \ update Total Char count
 
 \ ==========================================
 \ redefine standard output words to echo to file if output handle<>0
-: EMIT  ( c --) OUTH IF FEMIT THEN  EMIT ;
+CREATE EMITBUFF 0 ,
+: EMIT  ( c --)
+    OUTH IF DUP EMITBUFF C!
+                EMITBUFF 1 OUT.TYPE
+    THEN EMIT ;
+
+: TYPE  ( a u --) OUTH IF 2DUP  OUT.TYPE  THEN TYPE ;
 
 : ."  (  ccc" -- )
     POSTPONE S"
@@ -74,17 +82,6 @@ VARIABLE FOUT  \ byte counter for outfile
     OUTH IF \ file is open
        [PAB CHARS] VC@  0= IF SPACE THEN FLUSH-BUFFER
     THEN CR  ;
-
-: OUT.TYPE ( caddr len -- )
-    OUTH 0= ABORT" Output file not open"
-    OUTH SELECT
-    DUP OVERFLOW? IF  CR  THEN
-    TUCK  ( -- len caddr len )    \ get a copy of the length
-    [OUTBUFF] SWAP VWRITE         \ write string to PAB buffer
-    ( len) DUP [PABCHARS]+!       \ bump byte count in PAB
-    FOUT +! ;                     \ update Total Char count
-
-: TYPE  ( a u --) OUTH IF 2DUP  OUT.TYPE  THEN TYPE ;
 
 \ number output with echo
 : UD.  ( d -- ) <#  #S  #> TYPE SPACE ;

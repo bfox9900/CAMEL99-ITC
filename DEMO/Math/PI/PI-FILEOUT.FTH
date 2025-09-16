@@ -71,7 +71,6 @@ NEEDS .R     FROM DSK1.UDOTR \ these words now can output to file & screen
 : M+ ( n n -- d) S" DUP 0< D+" EVALUATE ; IMMEDIATE
 : D- ( d d -- d) S" 2INVERT 1 M+ D+" EVALUATE ; IMMEDIATE
 
-
 \ for clarity
 : S>UD ( u -- ud ) POSTPONE 0 ; IMMEDIATE
 : ^2  S" DUP *" EVALUATE ; IMMEDIATE
@@ -264,7 +263,7 @@ VARIABLE ITERATIONS
       POWER ZERO?
     UNTIL
   LOOP
-  CR .ITERATIONS ;
+;
 
 : ?OPEN-FILE   PARSE-NAME DUP IF  MAKE-OUTPUT EXIT THEN  2DROP ;
 : ?CLOSE-FILE  OUTH IF CLOSE-OUTPUT THEN ;
@@ -277,22 +276,23 @@ DECIMAL
 : ?CR    VCOL @ C/L@ 6 - > IF CR THEN ;
 
 : PRINT ( [ <path> ] )  \ optional path can echo data to I/O device
-   ?OPEN-FILE
-  CR S" Camel99 Forth" TYPE
-  CR S" PI calculated to " TYPE  NDIGIT 0 .R  S"  digits" TYPE
+  ?OPEN-FILE
   CR
-  RESULT  DUP@ 0 .R  [CHAR] . EMIT CR
+  CR ." Camel99 Forth PI Report"
+  CR ." PI calculated to " NDIGIT 0 .R ." digits"
+  CR ." Processing time: " ELAPSED$ COUNT TYPE
+  CR ." ---"
+  CR RESULT  DUP@ 0 .R  [CHAR] . EMIT CR
   NDIGIT 0
   ?DO
     0 OVER !
     DUP 10000 MULTIPLY
-    DUP@  0 <#  # # # #  #> TYPE SPACE ?CR
-
+    DUP@ 0 <#  # # # #  #> TYPE SPACE ?CR
     ?BREAK
   4 +LOOP
   DROP
   CR
-  FLUSH-BUFFER
+  CR ." --end--"
   ?CLOSE-FILE
 ;
 
@@ -342,31 +342,36 @@ DECIMAL
   CR CalcPi
   CYAN SCREEN
   CR ." Done!" SPACE  .ELAPSED
+  CR .ITERATIONS ." iterations"
   CR
-  CR ." Type  PRINT  to see the results"
 ;
 
 : PI ( -- ) DECIMAL  GetDigits  PIDIGITS ;
 
+: HELP
+  CR
+  CR ." USER COMMANDS:"
+  CR ." PI  to  run the program"
+  CR ." PRINT  to see the results"
+  CR ." PRINT <device> to save to file"
+  CR ." COLD to reset program"
+  CR ." BYE to exit program"
+  CR ." HELP to see this list"
+;
+
 : TITLEPAGE
-PAGE ."  Compute PI in ANS Forth"
-CR
-CR ." DxForth Revised 2015-02-09  ES"
-CR ." Revised for Camel99 2025-09-16 BFox"
-CR
-CR ." - Optimized with Machine Forth"
-CR
-CR ." Compute Pi to an arbitrary precision."
-CR
-CR ." Uses Machin's formula:"
-CR ." pi/4 = 4 arctan(1/5) - arctan(1/239)"
-CR
-CR ." USER COMMANDS:"
-CR ." PI  to  run the program"
-CR ." PRINT  to see the results"
-CR ." PRINT <device> to save to file"
-CR ." COLD to reset program"
-CR ." BYE to exit program"
+  PAGE ."  Compute PI in ANS Forth"
+  CR
+  CR ." DxForth Revised 2015-02-09  ES"
+  CR ." Revised for Camel99 2025-09-16 BFox"
+  CR
+  CR ." - Optimized with Machine Forth"
+  CR
+  CR ." Compute Pi to an arbitrary precision."
+  CR
+  CR ." Uses Machin's formula:"
+  CR ." pi/4 = 4 arctan(1/5) - arctan(1/239)"
+  HELP
 ;
 
 
