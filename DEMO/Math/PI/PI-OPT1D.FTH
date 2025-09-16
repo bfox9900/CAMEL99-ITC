@@ -53,14 +53,14 @@
 NEEDS ERASEW FROM DSK1.ERASEW  \ 16 bit erase "words"
 NEEDS VALUE  FROM DSK1.VALUES
 NEEDS D=     FROM DSK1.DOUBLE
-NEEDS .R     FROM DSK1.UDOTR
 NEEDS ELAPSE FROM DSK1.ELAPSE32
 NEEDS MARKER FROM DSK1.MARKER
+NEEDS MORE   FROM DSK1.MORE
 
 \ for saving results to file
 NEEDS OUTH   FROM DSK1.OUTFILE
+NEEDS .R     FROM DSK1.UDOTR
 
-NEEDS .R     FROM DSK1.UDOTR \ these words now can output to file & screen
 
 \ these macros improve speed by 3%
 : M+ ( n n -- d) S" DUP 0< D+" EVALUATE ; IMMEDIATE
@@ -263,12 +263,11 @@ DECIMAL
 : ?BREAK       ?TERMINAL IF ?CLOSE-FILE TRUE ABORT" Print halted" THEN ;
 
 DECIMAL
-
 : PRINT ( [ <path> ] )  \ optional path can echo data to I/O device
   ?OPEN-FILE
   CR
   CR ." Camel99 Forth PI Report"
-  CR ." PI calculated to " NDIGIT . ." digits"
+  CR ." PI calculated to " NDIGIT 0 .R ." digits"
   CR ." Processing time: " ELAPSED$ COUNT TYPE
   CR ." ---"
   CR RESULT  DUP@ 0 .R  [CHAR] . EMIT CR
@@ -276,10 +275,12 @@ DECIMAL
   ?DO
     0 OVER !
     DUP 10000 MULTIPLY
-    DUP@  0 <#  # # # #  #> TYPE SPACE
+    DUP@ 0 <#  # # # #  #> TYPE SPACE
     ?BREAK
   4 +LOOP
-  DROP CR
+  DROP
+  CR
+  CR ." --end--"
   ?CLOSE-FILE
 ;
 

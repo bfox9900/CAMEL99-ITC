@@ -59,6 +59,7 @@ NEEDS VALUE  FROM DSK1.VALUES
 NEEDS D=     FROM DSK1.DOUBLE
 NEEDS ELAPSE FROM DSK1.ELAPSE32
 NEEDS MARKER FROM DSK1.MARKER
+NEEDS MORE   FROM DSK1.MORE
 
 \ for saving results to file
 NEEDS OUTH   FROM DSK1.OUTFILE
@@ -272,11 +273,8 @@ VARIABLE ITERATIONS
 DECIMAL
 : PRINT ( [ <path> ] )  \ optional path can echo data to I/O device
    ?OPEN-FILE
-\ I discovered that the was the place to allocate extra space
-\ for the "hold buffer" used for converting numbers for printing.
-
-  CR ." Camel99 Forth"
-  CR ." PI calculated to " NDIGIT . ." digits"
+  CR S" Camel99 Forth" TYPE
+  CR S" PI calculated to " TYPE  NDIGIT 0 .R  S"  digits" TYPE
   CR
   RESULT  DUP@ 0 .R  [CHAR] . EMIT CR
   NDIGIT 0
@@ -286,7 +284,9 @@ DECIMAL
     DUP@  0 <#  # # # #  #> TYPE SPACE
     ?BREAK
   4 +LOOP
-  DROP CR
+  DROP
+  CR
+  FLUSH-BUFFER
   ?CLOSE-FILE
 ;
 
@@ -328,7 +328,6 @@ DECIMAL
     HERE TO POWER   SIZE 20 + CELLS ALLOT
     HERE TO TERM    SIZE 20 + CELLS ALLOT
     LORAM TO RESULT
-
     .POWER  .TERM  .RESULT
     BASE !
 
@@ -340,7 +339,6 @@ DECIMAL
   CR
   CR ." Type  PRINT  to see the results"
 ;
-
 
 : PI ( -- ) DECIMAL  GetDigits  PIDIGITS ;
 
