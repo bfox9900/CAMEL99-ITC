@@ -337,9 +337,10 @@ DECIMAL
 
     ITERATIONS OFF
     GREEN SCREEN
+    TIMER-RESET
     CR CalcPi
-    CYAN SCREEN
     CR ." Done!" SPACE  .ELAPSED
+    CYAN SCREEN
     CR ITERATIONS @ U. ." iterations"
     CR
 ;
