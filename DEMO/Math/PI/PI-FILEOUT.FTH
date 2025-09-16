@@ -271,6 +271,11 @@ VARIABLE ITERATIONS
 : ?BREAK       ?TERMINAL IF ?CLOSE-FILE TRUE ABORT" Print halted" THEN ;
 
 DECIMAL
+\ This turned out to be critical to make a good output file.
+\ in DSK1.OUTFILE, CR causes the file buffer to write to disk.
+\ It only works if I used C/L@ 6 -  as the record length cutoff. ??
+: ?CR    VCOL @ C/L@ 6 - > IF CR THEN ;
+
 : PRINT ( [ <path> ] )  \ optional path can echo data to I/O device
    ?OPEN-FILE
   CR S" Camel99 Forth" TYPE
@@ -281,7 +286,8 @@ DECIMAL
   ?DO
     0 OVER !
     DUP 10000 MULTIPLY
-    DUP@  0 <#  # # # #  #> TYPE SPACE
+    DUP@  0 <#  # # # #  #> TYPE SPACE ?CR
+
     ?BREAK
   4 +LOOP
   DROP
@@ -346,7 +352,7 @@ DECIMAL
 PAGE ."  Compute PI in ANS Forth"
 CR
 CR ." DxForth Revised 2015-02-09  ES"
-CR ." Revised for Camel99 2025-09-14 BFox"
+CR ." Revised for Camel99 2025-09-16 BFox"
 CR
 CR ." - Optimized with Machine Forth"
 CR
