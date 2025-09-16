@@ -53,16 +53,29 @@
 \ make some Machine Forth Instructions
 
 \ Sept 8, 2025 Exanded D- to a macro. 6% further improvement
+NEEDS DUMP   FROM DSK1.TOOLS
 
 NEEDS ERASEW FROM DSK1.ERASEW  \ 16 bit erase "words"
-\ NEEDS DUMP   FROM DSK1.TOOLS
 NEEDS VALUE  FROM DSK1.VALUES
 NEEDS D=     FROM DSK1.DOUBLE
 NEEDS .R     FROM DSK1.UDOTR
 NEEDS TIME@  FROM DSK1.IDECLOCK
 NEEDS MARKER FROM DSK1.MARKER
 
+\ TTY Kernel 2.71 does not have MOVE cell wide mover
+HEX
+CODE MOVE  ( src dst n -- ) \ n= no. of bytes to move
+   C036 , \ *SP+ R0 MOV,
+   C076 , \ *SP+ R1 MOV,
+          \  BEGIN,
+   CC31 , \     R1 *+ R0 *+ MOV,
+   0644 , \     TOS DECT,
+   16FD , \  EQ UNTIL,
+   C136 , \  TOS POP,
+   NEXT,
+ENDCODE
 
+DECIMAL
 \ these macros improve speed by 3%
 : M+ ( n n -- d) S" DUP 0< D+" EVALUATE ; IMMEDIATE
 : D- ( d d -- d) S" 2INVERT 1 M+ D+" EVALUATE ; IMMEDIATE
@@ -245,7 +258,7 @@ VARIABLE SPIN#
     BEGIN
       TIMEOUT OFF ( prevent screen from going blank)
 
-      SPINNER
+      [CHAR] . EMIT
       POWER TERM SIZE MOVE
       TERM  EXP @ DIVIDE
       SIGN @ DUP
@@ -334,7 +347,7 @@ DECIMAL
   PRINT
 ;
 
-.TITLEPAGE
+TITLEPAGE
 
 \ end
 \ : START   WARM  TITLEPAGE TIMER-START ABORT ;
