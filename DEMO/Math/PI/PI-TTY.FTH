@@ -65,13 +65,13 @@ NEEDS MARKER FROM DSK1.MARKER
 \ TTY Kernel 2.71 does not have MOVE cell wide mover
 HEX
 CODE MOVE  ( src dst n -- ) \ n= no. of bytes to move
-   C036 , \ *SP+ R0 MOV,
-   C076 , \ *SP+ R1 MOV,
-          \  BEGIN,
-   CC31 , \     R1 *+ R0 *+ MOV,
-   0644 , \     TOS DECT,
-   16FD , \  EQ UNTIL,
-   C136 , \  TOS POP,
+   C036 , ( *SP+ R0 MOV,)
+   C076 , ( *SP+ R1 MOV,)
+          (  BEGIN, )
+   CC31 , (     R1 *+ R0 *+ MOV, )
+   0644 , (     TOS DECT,)
+   16FD , (  EQ UNTIL,)
+   C136 , (  TOS POP,)
    NEXT,
 ENDCODE
 
@@ -337,7 +337,6 @@ DECIMAL
  \   HERE TO RESULT  SIZE 20 + CELLS ALLOT
     LORAM TO RESULT
     .POWER  .TERM  .RESULT
-    50 ALLOT  ( hold buffer space for number conversions)
     BASE !
 
   CR ." Start time: " .TIME
