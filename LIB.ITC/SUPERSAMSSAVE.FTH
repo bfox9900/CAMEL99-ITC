@@ -4,7 +4,7 @@ CR .( SUPERSAVE.FTH for SUPERCART Camel99 Forth  Nov2022 B Fox)
 
 \ For SUPERCART we must save the kernel at >6000 as the primary file.
 \ IF the heap is used (H<>$2000) the HEAP is also saved.
-\ ALL the memory from >A000 to end of dictioanry is saved as secondary files
+\ ALL the memory from >A000 to end of dictionary is saved as secondary files
 
 \ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 \ nothing past here will be in the image.

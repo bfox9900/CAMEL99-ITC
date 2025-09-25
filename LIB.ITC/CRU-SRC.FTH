@@ -65,7 +65,7 @@ CODE LDCR ( data bits CRU-- )
     ENDIF,
     R1 06 SLA,      \ slide bits to correct instruction field 
     R1 3000 ORI,    \ create: R0 bits LDCR,
-    R1 X,           \ execute the intruction
+    R1 X,           \ execute the instruction
     TOS POP,
     NEXT,
 ENDCODE
@@ -81,7 +81,7 @@ CODE STCR ( bits cru --- n )
     R1 R2 MOV,
     R1 06 SLA,
     R1 3404 ORI,   \ create R4 bits STCR,
-    R1 X,          \ execute the intruction
+    R1 X,          \ execute the instruction
     R2 R2 MOV, NE  \ #bits<>0  
     IF,         
         R2 08 CI, LTE  \ #bits<=8 

@@ -19,7 +19,7 @@ DECIMAL
    CREATE OVER , +
    DOES> @  + ;
 
-\ using +field you can make your own field desciptors.
+\ using +field you can make your own field descriptors.
 : FIELD:    ( n1 "name" -- n2 ; addr1 -- addr2 ) ALIGNED 1 CELLS +FIELD ;
 : 2FIELD:   ( d1 "name" -- d2 ; addr1 -- addr2 ) ALIGNED 2 CELLS +FIELD ;
 : CFIELD:   ( n1 "name" -- n2 ; addr1 -- addr2 )         1 CHARS +FIELD ;

@@ -2,7 +2,7 @@
 
 \ Line editor Short commands
 
-\ L  ( -- )  Re-list currect block
+\ L  ( -- )  Re-list current block
 \ >>  ( -- )  List next block
 \ <<  ( -- )  List previous block
 \ P   ( l# -- <text>) Put <text> into line# ( 5 P This goes to line 5 )

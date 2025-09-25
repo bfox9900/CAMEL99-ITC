@@ -10,7 +10,7 @@ HERE
          ELSE  ' ( -- XT) DEFER!
          THEN ; IMMEDIATE
 
-\ CAMEL99 ABORTs if defered word is not defined using 'IS'
+\ CAMEL99 ABORTs if deferred word is not defined using 'IS'
 : ?DEFER  ( -- ) TRUE ABORT" Undefined DEFER"  ;
 
 : DEFER   ( -- <text>)

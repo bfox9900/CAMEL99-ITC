@@ -1,4 +1,4 @@
-\ NOCASE.FTH   allows case insensitve code for Camel99   Fox  June 2021
+\ NOCASE.FTH   allows case insensitive code for Camel99   Fox  June 2021
 : LOWER? ( c -- c')  [CHAR] a [ CHAR z 1+ ] LITERAL WITHIN ;
 HEX
 : TOUPPER ( addr len -- addr len) \ change string  in place

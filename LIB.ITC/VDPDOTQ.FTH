@@ -15,7 +15,7 @@ INCLUDE DSK1.VDPMEM
 \ Print a VDP stack string
 : VDPTYPE   ( vdp_addr len -- ) BOUNDS ?DO   I VC@ (EMIT)  LOOP ;
 
-\ Compile a VDP string, that types itself. Overides regular ." word
+\ Compile a VDP string, that types itself. Overrides regular ." word
 : ."   ( <tex> )
         ?COMP                 \ Abort if not compiling
 \ Do these compile time actions "immediately"

@@ -73,7 +73,7 @@ CHAR " CONSTANT '"'
 : .SQUOTE   ( addr -- addr' )
             CR TAB
             [CHAR] S EMIT '"' EMIT SPACE
-            CELL+ COUNT 2DUP TYPE '"' EMIT SPACE     \ emit closeing quote
+            CELL+ COUNT 2DUP TYPE '"' EMIT SPACE     \ emit closing quote
             + ALIGNED  2-    \ compute address past the string
             NIP ;             \ remove old address
 

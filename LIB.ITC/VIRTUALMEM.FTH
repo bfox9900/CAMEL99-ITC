@@ -17,7 +17,7 @@ VARIABLE SDP  \ sams dictionary pointer for 1 64K segment
 
 : ?SEGMENT ( n -- ) 255 1 WITHIN ABORT" Bad segment" ;
 
-\ create arrays in a specifc segment
+\ create arrays in a specific segment
 \ The return virtual addresses so are used with !L  @L  C!l C@l
 : FAR-ARRAY ( cells segment -- <name>)
      DUP ?SEGMENT

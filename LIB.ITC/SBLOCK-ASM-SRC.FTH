@@ -1,4 +1,4 @@
-\ SAMS memmory access as BLOCK from Forth.  Source code   Brian Fox
+\ SAMS memory access as BLOCK from Forth.  Source code   Brian Fox
 
 NEEDS DUMP FROM DSK1.TOOLS
 NEEDS MOV, FROM DSK1.ASM9900
@@ -75,7 +75,7 @@ ENDCODE
 : !L    ( n virtual --) >REAL ! ;
 : C!L   ( c virtual --) >REAL C! ;
 : @L    ( virtual -- n) >REAL @ ;
-: C@L   ( virtaul -- c) >REAL C@ ;
+: C@L   ( virtual -- c) >REAL C@ ;
 
 \ test code 
 HEX 

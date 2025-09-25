@@ -1,6 +1,6 @@
 \ Multi-User memory management experiment 
 
-\ Method: Map contigous pages into all 4K sections of TI-99 RAM
+\ Method: Map contiguous pages into all 4K sections of TI-99 RAM
 
 NEEDS MOV,  FROM DSK1.ASM9900
 NEEDS DUMP  FROM DSK1.TOOLS

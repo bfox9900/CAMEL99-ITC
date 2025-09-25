@@ -8,7 +8,7 @@ functional ISO/Forth system for the TI-99 computer that implements all of the
 CORE wordset, much of the EXTENDED wordset.
 
 Rather than starting from scratch CAMEL99 uses CAMEL Forth by Dr. Brad Rodriguez
-for the hi-level Forth code. This has been "tweeked" and dare I say improved a
+for the hi-level Forth code. This has been "tweaked" and dare I say improved a
 little to better fit the very slow TI-99 computer. (More things written in
 Assembler was the answer). There are also a couple of ideas "borrowed" from 
 GForth. 
@@ -50,7 +50,7 @@ The first place to look is the file FORTHITC.MAK which is a Forth file that cont
 
 - The file HILEVEL.HSF uses the assembler primitives to create the high level Forth words in the target memory segment.
 
-- As each piece is added to the TARGET system less of the Cross-compiler is used. It's truly an excerise in boot-strapping.
+- As each piece is added to the TARGET system less of the Cross-compiler is used. It's truly an exercise in boot-strapping.
 
 ### For the Forth Tech
 CAMEL99 is an indirect threaded Forth with the top of stack cached in Register 4 of the CPU. This has shown to give similar performance to the TI-99 system Turbo Forth, which is the benchmark system for speed on TI-99 but CAMEL99 uses less assembler code in the overall system. In comparison to legacy implementations like Fig-Forth CAMEL99 is about 20% faster in high-level Forth operations.

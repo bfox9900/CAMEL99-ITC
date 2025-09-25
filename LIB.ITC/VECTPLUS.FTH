@@ -1,6 +1,6 @@
 \ VECTPLUS.FTH
 
-\ Vector addition of current postion with offset
+\ Vector addition of current position with offset
 \ : VECT+ ( dx dy x y -- x' y') ROT +  -ROT +  SWAP ;
 HEX
 CODE VECT+ ( dx dy x y -- x' y')  \ 6x FASTER than Forth version

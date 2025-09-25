@@ -10,7 +10,7 @@ HERE
 \ 3. Uses the TMS9901 timer to control sound duration
 \ 4. It can Queue 20 sound lists to play
 \ 5. Player puts itself to sleep when sound Queue is empty
-\ 6. Three end user comands:  ( sound_list ) >SNDQ   PLAYQ  KILLQ
+\ 6. Three end user commands:  ( sound_list ) >SNDQ   PLAYQ  KILLQ
 
 \ ========================================================
 \ VDP byte string compiler

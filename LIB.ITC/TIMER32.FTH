@@ -9,7 +9,7 @@
 
 : RESET32  ( -- )  0 0 T 2! ;
 
-HERE  \ headless code fragement begins HERE 
+HERE  \ headless code fragment begins HERE 
    T CELL+ @@ INC,
    OC IF,
         T @@ INC,

@@ -1,4 +1,4 @@
-\ CMOVE CMOVE>  for compatbility with older Forth systems
+\ CMOVE CMOVE>  for compatibility with older Forth systems
 
 NEEDS MOV,  FROM DSK1.ASM9900
 

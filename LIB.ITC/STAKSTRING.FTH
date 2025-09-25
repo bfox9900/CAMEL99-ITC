@@ -90,7 +90,7 @@ DECIMAL
 : CLEAN$   ( addr len -- addr len) -LEADING -TRAILING  ;
 : DELIMIT$ ( addr len char -- addr' len') >R 2DUP R> SCAN NIP - 0 MAX ;
 
-\ *EXTRA*  compile or interpret string assigment
+\ *EXTRA*  compile or interpret string assignment
 \ : :="       ( addr len -- <text> )
 \            [CHAR] " PARSE
 \            STATE @

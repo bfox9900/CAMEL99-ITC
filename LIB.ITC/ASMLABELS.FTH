@@ -16,7 +16,7 @@ CREATE LABELS   #LABELS CELLS ALLOT
 
 : ]LBL  ( n -- addr) CELLS LABELS + ;  \ array of label addresses
 
-FS0 CREATE FSP ,   \ fwd stack pointer, initialzed to FS0
+FS0 CREATE FSP ,   \ fwd stack pointer, initialized to FS0
 
 : NEWLABELS  ( -- )
     LABELS  #LABELS CELLS 0 FILL  \ clear label array

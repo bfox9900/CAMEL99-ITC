@@ -1,7 +1,7 @@
 \ 32bit isr accumulating timer using 9901          Feb 2022 Brian Fox
 
-\ Idea: In Camel99 Forth the 9901 timer runs continously.
-\ The 9901 timer is independant of the CPU.
+\ Idea: In Camel99 Forth the 9901 timer runs continuously.
+\ The 9901 timer is independent of the CPU.
 \ In the program we make an ISR that reads the 9901 timer every 1/60 
 \ of second. The timer difference between the last sample and the 
 \ current sample is added to the 32bit variable T32. 

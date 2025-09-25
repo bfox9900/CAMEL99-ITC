@@ -1,5 +1,5 @@
 \ string table Concept from Rosetta Code  Date format problem.
-\ with some sytax sugar added
+\ with some syntax sugar added
 
 : []  ( n addr -- addr(n)) SWAP CELLS + ; \ my name for this array calculator
 
