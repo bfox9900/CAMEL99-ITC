@@ -49,7 +49,7 @@ CODE LDCR ( data bits CRU-- )
                    \ ENDIF,
      0A61 ,        \ R1 06 SLA,
      0261 , 3000 , \ R1 3000 ORI,   \ create: R0 bits LDCR,
-     0481 ,        \ R1 X,          \ execute the intruction
+     0481 ,        \ R1 X,          \ execute the instruction
      C136 ,        \ TOS POP,
      NEXT,
      ENDCODE
@@ -64,7 +64,7 @@ CODE STCR ( bits cru --- n )
      C081 ,        \ R1 R2 MOV,
      0A61 ,        \ R1 06 SLA,
      0261 , 3400 , \ R1 3400 ORI,  \ create R0 bits STCR,
-     0481 ,        \ R1 X,         \ execute the intruction
+     0481 ,        \ R1 X,         \ execute the instruction
      C082 ,        \ R2 R2 MOV,
      1304 ,        \ NE IF,
      0282 , 08 ,   \     R2 08 CI,

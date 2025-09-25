@@ -1,4 +1,4 @@
-\ ELAPSE.FTH  elapsed time measurment words
+\ ELAPSE.FTH  elapsed time measurement words
 \ Thanks to Tom Zimmer for the good ideas in FPC circa 1990
 \ Ported to HsForth 08MAR91  Brian Fox Canada
 

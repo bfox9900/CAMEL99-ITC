@@ -27,7 +27,7 @@ T3 CELL+ CONSTANT T4
 
 \ =====================================================
 \ There are no 32 bit numbers in the CAMEL99 compiler
-\ so we create a double variable with primtives
+\ so we create a double variable with primitives
 : >DOUBLE  ( addr len -- d ) 0 0 2SWAP >NUMBER 2DROP ;
 
 DECIMAL

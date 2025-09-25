@@ -1,4 +1,4 @@
-\ loadfile/ savefile utilties for CAMEL99 Forth 
+\ loadfile/ savefile utilities for CAMEL99 Forth 
 \ Update: Jan 25, 2023: LOAD-FONT will load a 2K font file
 
 \ The TI-99 file system does not support an exact command for

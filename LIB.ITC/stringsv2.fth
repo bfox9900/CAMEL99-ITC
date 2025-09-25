@@ -15,7 +15,7 @@
 \ String functions output the intermediate result as a stack string which
 \ means the next string function can pick it up and process further.
 
-\ A temporary buffer is therefore only needed for concatentation.
+\ A temporary buffer is therefore only needed for concatenation.
 \ The TOP$ is used for that purpose as part of a stack of buffers
 
 

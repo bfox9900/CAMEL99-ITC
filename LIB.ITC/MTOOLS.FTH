@@ -35,7 +35,7 @@ VARIABLE PEAK
 
 : .TASKS ( -- )
        .HDR
-       1 >R    \ intial count is 1 (USER0)
+       1 >R    \ initial count is 1 (USER0)
        MYSELF
        BEGIN
             NEXTJOB DUP MYSELF <>

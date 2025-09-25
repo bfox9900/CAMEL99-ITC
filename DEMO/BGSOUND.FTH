@@ -8,7 +8,7 @@ NEEDS MULTI FROM DSK1.MTASK99
 \ 3. Uses the TMS9901 timer to control sound duration
 \ 4. It can Queue up to 16 sound lists to play
 \ 5. Player goes to sleep when sound Queue is empty
-\ 6. User comands: >SNDQ  PLAYQ  KILLQ
+\ 6. User commands: >SNDQ  PLAYQ  KILLQ
 
 \ ========================================================
 \ sound list player

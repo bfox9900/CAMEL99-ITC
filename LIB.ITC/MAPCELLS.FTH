@@ -70,7 +70,7 @@ DEFER ACTION
     THEN  ;
 
 DECIMAL
-: FOREACH  ( inital addr size xt-- n) \ primary iterator
+: FOREACH  ( initial addr size xt-- n) \ primary iterator
     OVER 0= ABORT" REDUCE: size=0"
     ACTOR @ >R  \ allow variable to be re-entrant
     ACTOR !     \ set the XT of action on each cell
@@ -78,7 +78,7 @@ DECIMAL
     R> ACTOR !
 ;
 
-: REDUCE ( inital addr size xt-- n)
+: REDUCE ( initial addr size xt-- n)
     ['] REDUCER IS ACTION  FOREACH ;
 
 \ Use REDUCE to do something real
@@ -98,7 +98,7 @@ DECIMAL
 
 \ TEST DATA
 \ ==========================================================
-\ Exmaple Usage:
+\ Example Usage:
 [[  20 CELLS ALLOT  ]] DATA: B[] ( un-initialzed data example)
 [[  1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 , 10 , ]] DATA: A[]
 

@@ -126,7 +126,7 @@ HEX
 .( ..)
 : READ-LINE ( addr u1 fid -- u2 flag ior|0 )
 \ *G Read one record into addr, expecting u1 bytes.
-\ ** Return bytes read in U2, TRUE if data was recieved and error no,
+\ ** Return bytes read in U2, TRUE if data was received and error no,
   NIP              \ don't need u1 for TI file system
   SELECT 2 FILEOP ( addr ior)
   SWAP FGET ( -- ior u2)

@@ -5,7 +5,7 @@ Although I wrote the cross-compiler to jump start this project, as with all acco
 ### I would be remiss...
 
 if I did not give a word of thanks to: The original authors of TI-Forth in the
-1980s, who opened my eyes to the wonderous simplicity of the Forth language.
+1980s, who opened my eyes to the wondrous simplicity of the Forth language.
 Brad Rodriguez who gave the world CAMEL Forth, a simple system that gave me a
 big leg up. Lee Stewart who gave the world a new and improved version of
 TI-Forth called FB-Forth and who reviews my posts and finds every mistake I

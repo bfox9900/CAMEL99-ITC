@@ -4,7 +4,7 @@
 \ You use CALL, exactly the same as you would use BL, but you can nest
 \ sub-routine calls with CALL,
 
-\ Return from CALL, is done with psuedo instruction RT, just like BL,
+\ Return from CALL, is done with pseudo instruction RT, just like BL,
 
 \ See Xassembler   : RT,    *R11 B, ;             \ 12 cycles
 

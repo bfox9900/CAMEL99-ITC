@@ -216,7 +216,7 @@ OPTIMIZER: OPTC!,
 0204 CONSTANT "LI" \ load imm. to R4
 
 OPTIMIZER: OPT+, ( xt -- )
-\ 2 literal number added togther
+\ 2 literal number added together
     2 LOOKBACK "LI" =  6 LOOKBACK "LI" = AND
     CASE:
        1 LOOKBACK 5 LOOKBACK + ( -- sum) \ read literals and add them
@@ -253,7 +253,7 @@ OPTIMIZER: OPT+, ( xt -- )
 
 : OTHERS, ( xt -- ) \
     DUP
-    @     \ FETCH the "executor" addres
+    @     \ FETCH the "executor" address
     CASE  \ compare to executor words
         ['] DOVAR    OF  >BODY   >ARG  ENDOF \ push address onto literal stack
         ['] DOCON    OF  >BODY @ LIT,  ENDOF
