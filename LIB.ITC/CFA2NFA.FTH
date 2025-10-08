@@ -1,5 +1,5 @@
 \ nfa>cfa
-\ algorythm:    
+\ algorithm:    
 \ look backwards until you see a '0' or '40'
 \ This puts you at the precedence bit field
 

@@ -6,7 +6,7 @@ CR .( MTASK99.FTH  for CAMEL99 FORTH Apr 2022 Brian Fox)
 \             - USIZE now 152 bytes
 \             -RESTART command now POPs local Rstack. It was overflowing
 \             -with repeated RESTARTs.
-\ Apr 2018    Ported to V2 and used machine code. No need for assember
+\ Apr 2018    Ported to V2 and used machine code. No need for assembler
 \ May 17, 2018  fixed RESTART, BYE, COLD.
 \ Jun  8. 2018  replaced assembler with machine code
 \ Aug 2022    Added RESET-STACKS to improve RESTART

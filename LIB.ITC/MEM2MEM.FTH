@@ -1,6 +1,6 @@
 \ D I R E C T   M E M O R Y   O P E R A T I O N S
 \ TMS9900 indirect addressing mode we can do things faster to variables
-\ by transfering: memory->memory  verus  memory->stack->memory
+\ by transferring: memory->memory  versus  memory->stack->memory
 \ or by doing a function on the memory itself rather than via TOS register.
 
 \ * THESE ARE EXAMPLES. DO NOT LOAD THEM ALL UNLESS YOU NEED THEM ALL *

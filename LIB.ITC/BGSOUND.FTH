@@ -7,7 +7,7 @@ NEEDS FORK  FROM DSK1.MTASK99
 \ 3. Uses the TMS9901 timer to control sound duration
 \ 4. It can Queue up to 16 sound lists to play
 \ 5. Player goes to sleep when sound Queue is empty
-\ 6. TWO end user comands: BGPLAY  >SNDQ
+\ 6. TWO end user commands: BGPLAY  >SNDQ
 
 \ ========================================================
 \ sound list player

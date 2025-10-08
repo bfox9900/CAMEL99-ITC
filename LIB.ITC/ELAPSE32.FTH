@@ -1,11 +1,11 @@
-\ ELAPSE2.FTH  elapsed time measurment words
+\ ELAPSE2.FTH  elapsed time measurement words
 \ Thanks to Tom Zimmer for the good ideas in FPC circa 1990
 \ This timer installs a 32bit timer but only uses 16bits.
 \ This allows timing up to 18 minutes long
 
 NEEDS INSTALL FROM DSK1.ISRSUPPORT
 
-\ Installs an independant 32 bit timer on the interrupt
+\ Installs an independent 32 bit timer on the interrupt
 \ so you can time programs for long periods or create
 \ a time of day clock.
 

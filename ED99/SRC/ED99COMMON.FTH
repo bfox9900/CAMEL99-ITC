@@ -62,7 +62,7 @@ BLUE VALUE BG
 \ utility words
 : GETXY   ( -- COL ROW)  VROW 2@ ;
 HEX
-CODE FILL16 ( adr len char) \ fills 2 bytes per interation
+CODE FILL16 ( adr len char) \ fills 2 bytes per iteration
     C004 , 06C0 , E100 , C036 , 0580 ,
     0810 , C076 , CC44 , 0600 , 16FD ,
     C136 , NEXT,
@@ -304,7 +304,7 @@ VARIABLE SH   \ save handle var is simpler inside DO/LOOP
      WIDTH ECOL @ -        ( -- addr vdpaddr bytes-to-end)
      VWRITE  ;
 .( .)
-: |MARGINS|  ( n -- n')  0 WIDTH CLIP ;  \ 40 COLUMN verion
+: |MARGINS|  ( n -- n')  0 WIDTH CLIP ;  \ 40 COLUMN version
 \ left/right text window scrolling
 : SOL+!      ( n -- ) SOL  @ +  |MARGINS| SOL ! ; \ 40 col. version
 : HORIZONTAL ( n -- ) SOL+! LIST ;  \ +n  slide right, -n slide left

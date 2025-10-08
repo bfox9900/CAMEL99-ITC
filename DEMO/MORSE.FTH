@@ -37,7 +37,7 @@ DECIMAL
 : MORSE-EMIT  ( char -- )
         DUP  BL =  IF  DROP WORDGAP  EXIT THEN  \ check for space character
         PAD C!                    \ write char to buffer
-        0LIMI  \ makes more accurate timing with no interupts
+        0LIMI  \ makes more accurate timing with no interrupts
         PAD 1 EVALUATE            \ evaluate 1 character string
         LETTERGAP
 ;

@@ -51,7 +51,7 @@ Jan 2022
 Changed build method to use a building file FORTHITC.MAK
 Changed TI99IO file to use sub-routines for some operations.
 This is to allow future linking to Assembler if needed.
-Found bug in how to build SuperCart verion so CAML99SC running out of memory
+Found bug in how to build SuperCart version so CAML99SC running out of memory
 at HEX 6000 if the E/A SuperCart is installed. Works in Classic99 Emulator as
 well.
 

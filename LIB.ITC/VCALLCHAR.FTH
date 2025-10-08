@@ -20,6 +20,6 @@ NEEDS V, FROM DSK1.VDPMEM
 
 : CALLCHAR ( addr len char --)
          VP @ >R
-         ]pdt VP !          \ set VDP memory pointer to pattern decriptor
+         ]pdt VP !          \ set VDP memory pointer to pattern descriptor
          8 CHOP 2SWAP HEX64V,
          R> VP ! ;

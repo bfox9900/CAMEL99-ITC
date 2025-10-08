@@ -1,5 +1,5 @@
 \ Traditional Forth array words                  Updated Apr 6 2021 Fox
-\ These work as expected but were a litte slow due to DOES> overhead
+\ These work as expected but were a little slow due to DOES> overhead
 \ *G Replaced runtime Forth with machine code that is ~2X faster
 
 \ CARRAY  creates a byte size array.

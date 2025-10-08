@@ -1,4 +1,4 @@
-\ DEFER opimized for TI-99
+\ DEFER optimized for TI-99
 \ taken from  http://forth-standard.org/standard/core/IS
 
 HERE
@@ -9,7 +9,7 @@ HERE
          ELSE  ' ( -- XT) DEFER!
          THEN ; IMMEDIATE
 
-\ CAMEL99 ABORTs if defered word is not defined using 'IS'
+\ CAMEL99 ABORTs if deferred word is not defined using 'IS'
 : ?DEFER  ( -- ) HERE COUNT CR TYPE TRUE ABORT" Undefined DEFER"  ;
 
 \ fastest running DEFER words

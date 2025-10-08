@@ -47,7 +47,7 @@ HEX
 
 \ MASK: TOS 7FFF ANDI,
 CODE MASK   ( n -- n)  0244 , 7FFF ,   NEXT, ENDCODE
-\ optimzer: and saves 12 bytes
+\ optimizer: and saves 12 bytes
 CODE DUP@   ( addr -- addr n) 0646 , C584 , C114 , NEXT, ENDCODE
 
 \ move file pointer to start of block (One BLOCK= 8 sectors)

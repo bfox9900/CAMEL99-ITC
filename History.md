@@ -6,7 +6,7 @@
 - Found a bug where the new faster scroll obliterated first two sprite records when scrolling. Repaired.
 
 ### May 9 2018
-- Committed change in 2.0.13 which fixes an old bug that caused difference entry address for DOVAR between cross-compiler varibles and TI-99 created variables. Homemade cross-compilers... what are you gonna do?
+- Committed change in 2.0.13 which fixes an old bug that caused difference entry address for DOVAR between cross-compiler variables and TI-99 created variables. Homemade cross-compilers... what are you gonna do?
 
 ### Jun 3 2018 V2.0.15
 - SND! is now a code word. Speeds up writes to the sound chip by 75% for a 2 byte penalty.(more important with background players)
@@ -43,7 +43,7 @@ It now loads in the DSK.START file as a library file: TOBODY.F
 - Put MOVE in the kernel which is used by PLACE. This makes PLACE a little slower but means it can be used in more dynamic memory environments (PLaying with lists)
 - Fixed silly bug with FUSE
 - changes to MOTION.F, a simple sprite motion control wordset (not automotion)
-- Uploaded DEMO/ELIZA/ELIZA2.FTH a preliminary verion of the classic lisp psychotherapist (bugs)
+- Uploaded DEMO/ELIZA/ELIZA2.FTH a preliminary version of the classic lisp psychotherapist (bugs)
 - fixed bug in POS$ (STRINGS.FTH)
 
 ### Sept 1, 2018 V2.0.22
@@ -84,7 +84,7 @@ It now loads in the DSK.START file as a library file: TOBODY.F
 sometimes Forth is smaller and sometimes Assembler code is smaller.
 - Version G has a code word for DIGIT? to improved compile times
 - The word ?SIGN is now PRIVATE, no visible in the dictionary to save space
-- The word >NUMBER has been changed slighly from the original CAMEL FORTH that speeds
+- The word >NUMBER has been changed slightly from the original CAMEL FORTH that speeds
 it for the 9900 cpu.
 - The ELAPSE.FTH program has been significantly improved for accuracy and the
 code size has been reduced.
@@ -135,7 +135,7 @@ Indirect Threaded Version
 - Added DSK1.TRAILING. (-TRAILING -LEADING TRIM)
 - Added DSK1.HEXNUMBER. H# is a prefix word to interpret numbers as radix 16.
 - DSK1.TOOLS now includes VDUMP for VDP ram and SDUMP code for SAMS card.
-  (HEX and BINARY numbers alway print unsigned after tools are loaded.)
+  (HEX and BINARY numbers always print unsigned after tools are loaded.)
 - DSK1.CODEMACROS provides native 9900 indexed addressing arrays.
 - DSK1.VTYPE improved VTYPE updates VCOL. AT" ( x,y) placing text.
 - DSK1.AUTOMOTION provides Automatic sprite motion like Extended BASIC

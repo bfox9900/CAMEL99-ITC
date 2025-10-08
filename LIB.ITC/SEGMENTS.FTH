@@ -1,7 +1,7 @@
 \ SEGMENTS.FTH   a SAMS card memory management tool   Jun 2022
 
 \ Concept: Using 32bit addressing is awkward in a 16 bit Forth.
-\          Partioning 1Mbyte into SEGMENTS from 4K to 64K in size is practical.
+\          Partitioning 1Mbyte into SEGMENTS from 4K to 64K in size is practical.
 NEEDS DUMP FROM DSK1.TOOLS
 NEEDS MOV, FROM DSK1.ASM9900
 NEEDS SAMSINI FROM DSK1.SBLOCKS

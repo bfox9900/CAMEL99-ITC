@@ -7,7 +7,7 @@ NEEDS .S FROM DSK1.TOOLS
 
 HEX
 \ Camel Forth dictionary needs help to get from an XT (CFA) back to the NFA
-\ Algorythm:    look backwards until you see a '0' or '01'
+\ Algorithm:    look backwards until you see a '0' or '01'
 \               This puts you at the precedence bit field. ( immediate flag)
 \               Then go FORWARD 1 byte to get to the NFA
 : CFA>NFA ( cfa -- nfa)

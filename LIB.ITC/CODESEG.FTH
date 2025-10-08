@@ -1,5 +1,5 @@
 CR .( CODESEG.FTH  swappable code segment in upper RAM  May 2020  B Fox )
-\ Concept: Use 8K segement from E000 to EFFF as a mapped space for Forth code
+\ Concept: Use 8K segment from E000 to EFFF as a mapped space for Forth code
 NEEDS DUMP   FROM DSK1.TOOLS
 NEEDS FORGET FROM DSK1.FORGET
 NEEDS TRANSIENT FROM DSK1.TRANSIENT

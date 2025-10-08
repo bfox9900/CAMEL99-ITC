@@ -139,7 +139,7 @@ FORTH DEFINITIONS
 
 : OTHERS ( xt -- ) \
     DUP
-    @     \ FETCH the "executor" addres
+    @     \ FETCH the "executor" address
     CASE  \ compare to executor words
         ['] DOVAR    OF  >BODY   LIT, ENDOF
         ['] DOCON    OF  >BODY @ LIT, ENDOF

@@ -1,5 +1,5 @@
 \ CASEBFOX   uses EXIT to jump out as soon as match is found.
-\ like a switch statment
+\ like a switch statement
 
 \ INCLUDE DSK1.TOOLS
 \ hi level Forth

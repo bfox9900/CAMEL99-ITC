@@ -2,7 +2,7 @@
 
 \ http://www.unige.ch/medecine/nouspikel/ti99/ints.htm#hook
 
-\ The TI-99 interrup service routine (ISR_ checks the word at >83C4
+\ The TI-99 interrupt service routine (ISR_ checks the word at >83C4
 \ (the interrupt hook). If it contains a non-zero value the ISR uses this
 \ value as a pointer to a user-defined routine. It branches to this routine
 \ via a BL instruction, with >83E0 as the workspace.
