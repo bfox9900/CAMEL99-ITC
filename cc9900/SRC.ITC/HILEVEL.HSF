@@ -36,7 +36,7 @@
 \ Jan 2022     create FORTHITC.MAK to build the project
 \ Oct 2022     Added META vocabulary
 \ Dec 2022     Changed FGET to return stack string ( buffer -- addr len)
-\ May 2024     Reduced ASM code in CONSOLE driver. Kernel is 118 bytes smaller. 
+\ May 2024     Reduced ASM code in CONSOLE driver. Kernel is 118 bytes smaller.
 
 TARGET-COMPILING
 \ ======================================================================
@@ -53,11 +53,11 @@ TARGET-COMPILING
      0 CONSTANT FALSE
     -1 CONSTANT TRUE
 
-\ These are 3% faster but 4 bytes bigger each 
-\ CODE FALSE   TOS PUSH,  TOS CLR,  NEXT, ENDCODE  
-\ CODE TRUE    TOS PUSH,  TOS SETO, NEXT, ENDCODE 
+\ These are 3% faster but 4 bytes bigger each
+\ CODE FALSE   TOS PUSH,  TOS CLR,  NEXT, ENDCODE
+\ CODE TRUE    TOS PUSH,  TOS SETO, NEXT, ENDCODE
 
-      0 CONSTANT 0 
+      0 CONSTANT 0
       1 CONSTANT 1
      20 CONSTANT BL
 
@@ -68,8 +68,8 @@ TARGET-COMPILING
 \ *G User VARIABLEs begin at >8320 for the primary Forth task
 \ ** User VARIABLE 0 .. 1F are workspace registers.
 
-      20 USER TFLAG \ used for multi-tasker  
-      22 USER JOB   \ used for multi-tasker 
+      20 USER TFLAG \ used for multi-tasker
+      22 USER JOB   \ used for multi-tasker
       24 USER DP
       26 USER HP
       28 USER CSP
@@ -79,15 +79,15 @@ TARGET-COMPILING
       30 USER OUT
       32 USER VROW
       34 USER VCOL
-\      36 USER 'KEY     \ for vectored char input
-\      38 USER 'EMIT    \ for vectored char output
+      36 USER 'KEY     \ for vectored char input
+      38 USER 'EMIT    \ for vectored char output
       3A USER LP
       3C USER SOURCE-ID
       3E USER 'SOURCE
-\     40 USER 'SOURCE   \ uses 2 locations 
+\     40 USER 'SOURCE   \ uses 2 locations
 
       46 USER TPAD      \ holds offset from HERE for TASK PADs
-      7E USER VPG       \ Each task can have it's own video page 
+      7E USER VPG       \ Each task can have it's own video page
 
 \ ======================================================================
 \ V A R I A B L E S
@@ -139,7 +139,7 @@ SLOWER [IF]
 [ELSE]
 
 ( faster HERE speeds up the compiler)
-CODE HERE   ( -- addr) 
+CODE HERE   ( -- addr)
       TOS PUSH,
       TOS STWP,
       24 (TOS) TOS MOV,
@@ -190,11 +190,11 @@ ENDCODE
 : TUCK  ( w1 w2 --  w2 w1 w2 ) SWAP OVER ; \ 4 bytes, Go Forth!
 
 \ CODE TUCK ( w1 w2 --  w2 w1 w2 )
-\              SP DECT, 
-\      2 (SP) *SP MOV, 
-\       TOS 2 (SP) MOV,     \ 10 bytes 
+\              SP DECT,
+\      2 (SP) *SP MOV,
+\       TOS 2 (SP) MOV,     \ 10 bytes
 \      NEXT,
-\ ENDCODE       
+\ ENDCODE
 
 
 \ *G NOT standard forth. Nice native 9900 instructions
@@ -251,7 +251,7 @@ ENDCODE  \ 2 bytes bigger than Forth
 
 : */MOD  ( n1 n2 n3 -- n4 n5) >R UM* R> M/MOD ;
 : S>D    ( n -- d)  DUP 0< ;
-: M+     ( d n -- d) S>D  D+ ;    \ * removed S>D AUG2024 
+: M+     ( d n -- d) S>D  D+ ;    \ * removed S>D AUG2024
 : /MOD   ( n1 n2 -- n3 n4) >R S>D R> M/MOD ;
 : /      ( n n -- n)   /MOD NIP  ;
 : MOD    ( n n -- n)   /MOD DROP ;
@@ -262,7 +262,7 @@ ENDCODE  \ 2 bytes bigger than Forth
 
 TARGET-COMPILING
 
-: PLACE   ( src n dst -- ) 2DUP C! 1+ SWAP MOVE ;
+: PLACE   ( src n dst -- ) 2DUP C! 1+ SWAP 1+ CMOVE ;
 
 SLOWER [IF]
 : /STRING ( caddr1 u1 n - caddr2 u2 ) TUCK - >R + R> ;  \ 10 bytes
@@ -286,7 +286,7 @@ TARGET-COMPILING
 \ : NFA>LFA   ( nfa -- lfa)  3 - ;
 CODE NFA>LFA    TOS -3 ADDI, NEXT, ENDCODE  ( faster, same size)
 
-\ Changed 7F to 1F . 31 character max name length. 
+\ Changed 7F to 1F . 31 character max name length.
 \ Other bits for future use
 : NFA>CFA     ( nfa -- cfa ) COUNT  1F AND + ALIGNED ;
 : RECURSE     ( -- ) LATEST @ NFA>CFA , ; IMMEDIATE
@@ -372,20 +372,20 @@ CODE DIGIT?   ( char -- n f )
 
 : UD*      ( ud1 u2 -- ud3) DUP>R * SWAP R> UM* ROT + ;
 
-\ simplified with double while construct B. Fox 
+\ simplified with double while construct B. Fox
 : >NUMBER  ( ud adr u -- ud' adr' u' )
       BEGIN
-        DUP 
+        DUP
       WHILE
         OVER C@ DIGIT?
       WHILE
-           >R 
-           2SWAP 
-           BASE@ UD*  R> M+ 
+           >R
+           2SWAP
+           BASE@ UD*  R> M+
            2SWAP
            1 /STRING
       REPEAT
-      DROP 
+      DROP
       THEN
 ;
 
@@ -441,7 +441,7 @@ CODE >DIGIT  ( n -- c)   \ ASM is 9 bytes, 4X faster
       TOS *R1 MOVB,   \ store char in address in R1
       TOS POP,
       NEXT,
-      ENDCODE  \ 16 bytes 
+      ENDCODE  \ 16 bytes
 [then]
 
 : #      ( u -- ud2 ) 0 BASE@ UM/MOD >R  BASE@ UM/MOD SWAP >DIGIT HOLD R> ;
@@ -453,7 +453,7 @@ CODE >DIGIT  ( n -- c)   \ ASM is 9 bytes, 4X faster
 \ ======================================================================
 \  S C R E E N   D R I V E R
 
-TTYI/O 
+TTYI/O
 [if]   [cc] include cc9900\src.itc\TTY-IOf.HSF
 
 [else] [cc] include cc9900\src.itc\CONSOLE2.HSF
@@ -461,8 +461,8 @@ TTYI/O
 [then]
 
 \ ======================================================================
-\ N U M B E R  O U T P U T 
-TARGET-COMPILING 
+\ N U M B E R  O U T P U T
+TARGET-COMPILING
 
 : UD.    ( d -- ) <#  #S  #> TYPE SPACE ;
 : U.     ( u -- ) 0 UD. ;
@@ -475,18 +475,18 @@ TARGET-COMPILING
 TARGET-COMPILING
 
 \ write a byte to address of TMS9919 chip
-\ added PAUSE for multi-tasking improvement 
-: SND!   ( c -- ) PAUSE 8400 C!  ;  
+\ added PAUSE for multi-tasking improvement
+: SND!   ( c -- ) PAUSE 8400 C!  ;
 
-[CC] HEX 
+[CC] HEX
 
 TTYI/O
 [if]
- [TC] 
+ [TC]
       : BEEP   7 EMIT ;
-      : HONK    BEEP ; 
-   
-[ELSE] 
+      : HONK    BEEP ;
+
+[ELSE]
 [TC]
       : BEEP     ( -- )
         80 SND! 5 SND!    \ pre-calculated values for OSC1 1390Hz
@@ -510,7 +510,7 @@ TTYI/O
 
 \ ======================================================================
 \ Q U I T :  The  O U T E R   I N T E R P R E T E R
-
+-1 [IF]
 : QUIT     ( -- )
       RP0 RP! L0 LP !
       SOURCE-ID OFF
@@ -520,9 +520,34 @@ TTYI/O
         ( addr len) INTERPRET
         STATE @ 0= IF  ."  ok"  THEN CR
       AGAIN ;
+[ELSE]
+DECIMAL
+\ need to re-order the includes: DSRLNK, FILESYS2
+: REFILL ( -- ?) \ len=0 means no input
+  TIB DUP        \ read input into terminal input buffer
+  SOURCE-ID @
+  IF   2 FILEOP ?FILERR FGET ( addr len)
+  ELSE 80 ACCEPT ( addr len)
+  THEN
+  DUP IF
+       'SOURCE 2!  >IN OFF  TRUE
+        EXIT
+  THEN NIP
+;
+
+: QUIT
+( Closer to Forth 2012 version )
+   POSTPONE [
+   BEGIN
+     REFILL
+   WHILE
+     INTERPRET  \ INTERPRET must change to use 'SOURCE
+   REPEAT
+;
+[THEN]
 
 : EVALUATE ( c-addr u -- j*x)
-      SOURCE-ID DUP @ >IN @ 2>R  ON 
+      SOURCE-ID DUP @ >IN @ 2>R  ON
       SOURCE 2>R
       INTERPRET
       2R> 'SOURCE 2!
@@ -573,7 +598,7 @@ true [IF]  \ MULTI-STRING version
  : S" ( cccc" -- )  \ OLD VERSION
       [CHAR] " PARSE
       STATE @
-      IF  COMPILE (S")  S,  EXIT 
+      IF  COMPILE (S")  S,  EXIT
       THEN PAD DUP>R PLACE R> COUNT
 ; IMMEDIATE
 
@@ -709,7 +734,7 @@ TARGET-COMPILING
              CURRENT @ !  \ Also store in the current 'WID'
 ;
 
-: HEADER ( <TEXT> )  BL PARSE-WORD HEADER, ; 
+: HEADER ( <TEXT> )  BL PARSE-WORD HEADER, ;
 
 \ =======================================================
 \ T A R G E T   S Y S T E M   D E F I N I N G   W O R D S
@@ -786,8 +811,8 @@ ENDCODE
 
 
  [CC] CODESEG 6000 =
- [IF]    [TC] : .VER   ." V2.78 2MAR25 SuperCart" ;
- [ELSE]  [TC] : .VER   ." V2.78 2MAR25" ;
+ [IF]    [TC] : .VER   ." V2.82 10Oct25 SuperCart" ;
+ [ELSE]  [TC] : .VER   ." V2.82 10Oct25" ;
  [THEN]
 
 [CC]
@@ -796,7 +821,7 @@ ENDCODE
 \ *G  WARM initializes variables and vectors
 
 \ debugging word
-\ CODE HALT  BEGIN, R13 INC, AGAIN,  NEXT, ENDCODE 
+\ CODE HALT  BEGIN, R13 INC, AGAIN,  NEXT, ENDCODE
 
 HEX
 VDPI/O [IF]
@@ -804,7 +829,7 @@ TARGET-COMPILING
 : WARM  ( -- )
         80 83C2 C!
         26 TPAD !
-        1000 VP !  ( Free VDP memory start ) 
+        1000 VP !  ( Free VDP memory start )
         2000 H !   ( heap starts in low RAM)
         3FFF TMR!
         VDPTOP ^PAB !
@@ -816,6 +841,7 @@ TARGET-COMPILING
         ['] <FIND>   'FIND !
 
         DECIMAL
+\ ORGDP is needed because USER VAR DP lives in scratchpad RAM
         ORGDP @ DP !
         ORGLAST @ LATEST !
         LATEST DUP CONTEXT ! CURRENT !
@@ -824,19 +850,18 @@ TARGET-COMPILING
 
 [ELSE]
 \ RS232 WARM BOOT is slightly different over RS232
-\ NOTE: Change baud rate to 4800 because that is the fastest speed 
-\       That TI can handle with zero character delays. 
+\ NOTE: Change baud rate to 4800 because that is the fastest speed
+\       That TI can handle with zero character delays.
 \       Teraterm has a minimum delay of 1mS which is too slow.
 
 TARGET-COMPILING
-\ write to CRT and over RS232 
-
+\ write to CRT and over RS232
 : ECHO  ( addr len -- ) CR 2DUP  VROW @ 20 *  SWAP VWRITE TYPE ;
 
-: WARM  ( -- ) 
+: WARM  ( -- )
       26 TPAD !
       1000 VP !
-      50 C/L !  
+      50 C/L !
       H @ 2000 MAX 3FFF MIN  H !
       3FFF TMR!
       VDPTOP ^PAB !
@@ -846,18 +871,18 @@ TARGET-COMPILING
 
       ['] <INTERP> 'IV !
       ['] <FIND>   'FIND !
-     
-      RS232 /TTY1  BA=4800 8,N,1 OPEN-TTY         
-      
+
+      RS232 /TTY1  BA=4800 8,N,1 OPEN-TTY
+
       DECIMAL
       ORGDP @ DP !
       ORGLAST @ LATEST !
       LATEST DUP CONTEXT ! CURRENT !
-      
-      VROW OFF  VCOL OFF 
-      CR 
+
+      VROW OFF  VCOL OFF
+      CR
       S" CAMEL99 Forth TTY -e " ECHO .VER
-      S" 4800,8,n,1 "          ECHO 
+      S" 4800,8,n,1 "          ECHO
 ;
 [THEN]
 
@@ -865,7 +890,7 @@ TARGET-COMPILING
 : LOADSYS
       WARM
       S" DSK1.START" INCLUDED
-      CR QUIT 
+      CR QUIT
 ;
 
 \ =====================================================================

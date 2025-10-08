@@ -1,5 +1,62 @@
 \ T I - 9 9   C A M E L   F O R T H   P R I M I T I V E S   Mar 2022
 
+\ Oct 2022 Removed CMOVE and CMOVE>  replaced with MOVE code word
+\ June 2025 went back to CMOVE and CMOVE> but added MOVE per Forth 2012
+
+\ This code, compiled with a cross compiler built on HSF2012
+\ a re-build of HS/Forth for DOS by Brian Fox is
+\ for the TI-99 4/A Home Computer
+
+\ Copyright (c) 2017 Brian Fox Ontario Canada
+\ brian.fox@brianfox.ca
+
+\ This program is free software; you can redistribute it and/or modify
+\ it under the terms of the GNU General Public License as published by
+\ the Free Software Foundation; either version 3 of the License, or
+\ (at your option) any later version.
+\ You should have received a copy of the GNU General Public License
+\ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+\
+\ This program is distributed in the hope that it will be useful,
+\ but WITHOUT ANY WARRANTY; without even the implied warranty of
+\ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+\ GNU General Public License for more details.
+
+\ The work derived from CAMEL Forth under the GNU General Public License.
+\ CamelForth (c) 2009 Bradford J. Rodriguez.
+\ Commercial inquiries for Camel Forth should be directed to:
+\ 115 First St., #105, Collingwood, Ontario L9Y 4W3 Canada
+\ or via email to bj@camelforth.com
+\ -----------------------------------------------------------
+
+\ *G Overview:
+\ ** This implementation creates an Indirect Threaded Code System with the
+\ ** Top of stack (TOS) cached in Register 4 for a speed increase.
+\ ** We have also tried to use less space where possible. Some primitives
+\ ** are smaller in Assembly language but some are smaller in Forth.
+\ ** We chose smaller is better except where performance would really suffer.
+
+\ ASM Macros are to code the Forth Virtual Machine in a slightly CPU
+\ independant manner. They make sense to a Forth programmer but may
+\ be less clear to someone new to Forth.
+\ (see FORTHVM.HSF for detailS)
+
+\ *G Multi-tasking ready:
+\ ** CAMEL99 commandeers R13,R14 & R15 to allow the smallest multi-tasker
+\ ** ever made. 3 instructions lets us jump to a task in about 20uS.
+\ ** see: MTASKS99
+
+\ CREDITS:
+\      Special thanks Mark Wills for giving the world TurboForth
+\      It provided examples of how to deal with the crazy TI-99/4a
+
+\      Also thanks go to Lee Stewart atariage.com who can spot
+\      a bug a nautical mile away.
+
+\      Big thanks to Dr. Brad Rodriguez for Camel Forth MSP430
+\      The MSP430 provides other code examples that sometimes
+\      translate nicely to the TMS9900.
+
 \ ==============================================================
 \ *G C A M E L 9 9   R E G I S T E R   N A M E S   A N D  U S A G E
 
@@ -8,7 +65,7 @@
 \ ** R2      general purpose register
 \ ** R3      general purpose register
 \ ** R4      TOP of stack cache
-\ ** R5      Temp for NEXT, overflow for '*' and '/',  general purpose 
+\ ** R5      Temp for NEXT, overflow for '*' and '/',  general purpose register
 \ ** R6      parameter stack pointer
 \ ** R7      return stack pointer
 \ ** R8      Forth 'W' register OR general purpose in a system CODE word
@@ -25,10 +82,10 @@
 \ F O R T H   V I R T U A L   M A C H I N E  S U P P O R T
 \ contains macros: PUSH, POP, CALL, etc...
 
-CR 
+CR
 CR .( **** REQUIRES FCC99E.EXE **** )
 CR
-CR  .( Press a key to proceed...)  KEY DROP 
+CR  .( Press a key to proceed...)  KEY DROP
 
 CR ." Defining Forth Virtual machine MACROs ..."
      include CC9900\SRC.ITC\FORTHVM.HSF
@@ -83,7 +140,7 @@ l: _enter   IP RPUSH,       \ push IP register onto the return stack
             @@9 JMP,
 
 \ This code is for the most critical primitives.
-\ They are copied into 16 bit RAM to run at full CPU speed. 
+\ They are copied into 16 bit RAM to run at full CPU speed.
 l: _?branch \ Faster way to avoid penalty of TOS refill
             TOS DEC,        \ After DEC if tos=0, this will cause a carry flag                     10
             TOS POP,        \ refill TOS changes L> A> EQ flags, BUT does not change carry flag    22
@@ -97,14 +154,21 @@ l: _lit          TOS PUSH,   \ 28
             *IP+ TOS MOV,    \ 22
              @@9 JMP,
 
+l: _fetch   *TOS TOS MOV,
+            @@9 JMP,
+
 l: _drop    TOS POP,
             @@9 JMP,
 
 l: _DUP     TOS PUSH,
             @@9 JMP,
 
+\ L: _incr    TOS INC,
+\            @@9 JMP,
+
 l: _PLUS    *SP+ TOS ADD,     \ ADD 2nd item to TOS and incr stack pointer.
             @@9 JMP,
+
 l: _HSend    \ this label tells the compiler where the high speed code ends
 
 \ ==============================================================
@@ -227,14 +291,15 @@ CODE BRANCH
 CR .( MEMORY FETCH & STORE)
 
 CODE !      ( n addr -- )
-            *SP+ *TOS MOV,   \ 20
+            *SP+ *TOS MOV,   \ 26
             TOS POP,         \ 22
-             NEXT,           \ 42
+             NEXT,           \ = 48
              ENDCODE
 
 CODE @      ( a -- w )
-            *TOS TOS MOV,
-            NEXT,
+            _fetch >HSRAM CFA!
+\            *TOS TOS MOV,
+\            NEXT,
             ENDCODE
 
 \ Aug 4 2018: fixed order of data to be ANS compliant
@@ -309,13 +374,30 @@ CODE R>     ( -- w )
             NEXT,
             ENDCODE          \ 50
 
-\ CODE RDROP  RP INCT, NEXT, ENDCODE            
+\ CODE RDROP  RP INCT, NEXT, ENDCODE
 
 CODE R@     ( -- w )
             TOS PUSH,
             *RP TOS MOV,
             NEXT,
             ENDCODE
+
+\ double Rstack Forth2012
+CODE 2>R    ( d -- ) ( r-- n n)
+      RP -4 ADDI,          \ 14
+      TOS    *RP MOV,      \ 22
+      *SP+ 2 (RP) MOV,     \ 26
+      TOS POP,             \ 22
+      NEXT,              \ = 84
+ENDCODE
+
+CODE 2R>     ( -- d )
+      TOS PUSH,            \ 28
+      SP DECT,             \ 10
+      TOS RPOP,            \ 22
+      *SP  RPOP,            \ 26
+      NEXT,              \ = 88
+ENDCODE
 
 \ ==================================================================
 CR .( DATA STACK)
@@ -339,9 +421,9 @@ CODE DROP   ( w -- )
             ENDCODE
 
 CODE NIP    ( n n' -- n')
-            SP INCT,             \ 10
-            NEXT,
-            ENDCODE
+           SP INCT,             \ 10
+           NEXT,
+           ENDCODE
 
 CODE ?DUP   ( x -- 0 | x x)       \ ?DUP interleaved with DUP to save space
             TOS TOS MOV,          \ test for TOS<>0
@@ -359,7 +441,7 @@ CODE DUP    ( w -- w w )          \ create a Forth Header for DUP
 
 CODE SWAP   ( w1 w2 -- w2 w1 )
             TOS   W MOV,          \ 14
-            *SP  TOS MOV,          \ 18
+            *SP TOS MOV,          \ 18
             W   *SP MOV,          \ 18
             NEXT,                 \ 50
             ENDCODE
@@ -405,17 +487,17 @@ CODE 2DROP  ( n n -- )
             NEXT,            \ = 38
             ENDCODE
 
-\ 3 instructions 62 clocks vs 6 instructions 100 clocks for OVER OVER 
+\ 3 instructions 62 clocks vs 6 instructions 100 clocks for OVER OVER
 CODE 2DUP  ( n1 n2 -- n1 n2 n1 n2 )
             SP -4 ADDI,       \  14   make room for 2 cells
             4 (SP) *SP MOV,   \  26   n1->*SP
             TOS  2 (SP) MOV,  \  22   n2 -> next stack location
-            NEXT,            \   62   
+            NEXT,            \   62
             ENDCODE
 
 CODE 2SWAP  ( n1 n2 n3 n4-- n3 n4 n1 n2)
-             TOS       R0 MOV,    \ n4  14
-            *SP        R1 MOV,    \ n3  14
+             TOS      R0 MOV,    \ n4  14
+            *SP       R1 MOV,    \ n3  14
             2 (SP)   TOS MOV,    \ n2  22
             4 (SP)   *SP MOV,    \ n1  26
             R0    2 (SP) MOV,    \     22
@@ -474,7 +556,7 @@ CODE 2/     ( n -- n)   TOS 1 SRA,    NEXT, ENDCODE
 \ =================================================================
 CR .( ANS Shift operations)
 
-CODE RSHIFT ( n bits -- n')  \ shift right logical. ANS/ISO Forth requirement 
+CODE RSHIFT ( n bits -- n')  \ shift right logical. ANS/ISO Forth requirement
             TOS R0 MOV,      \ the shift bits MUST be in R0 to do this
             TOS POP,
             R0 R0 MOV,       \ ANS:  1 0 LSHIFT -> 1
@@ -555,13 +637,13 @@ CODE *      ( n n -- n)      \ same size as  : *  UM* DROP ; but faster
             ENDCODE
 
 CODE UM/MOD ( ud u1 -- u2 u3 ) \ numerator(32bits), divisor -- rem,quot
-              TOS  R0 MOV,     \ divisor->R0                 14
-             *SP+ TOS MOV,     \ POP high word into TOS      22
-             *SP   R5 MOV,     \ MOVE low word to r5         18
-              R0  TOS DIV,     \ perform unsigned division  124
-              R5  *SP MOV,     \ push remainder              22
-              NEXT,            \                            200
-              ENDCODE
+            TOS  R0 MOV,     \ divisor->R0                 14
+           *SP+ TOS MOV,     \ POP high word into TOS      22
+           *SP   R5 MOV,     \ MOVE low word to r5         18
+            R0  TOS DIV,     \ perform unsigned division  124
+            R5  *SP MOV,     \ push remainder              22
+            NEXT,            \                            200
+            ENDCODE
 
 \ Signed divide using either Floored or Symmetric Integer Division.
 \ Adapted with permission, from FBForth by Lee Stewart
@@ -709,7 +791,7 @@ CODE <      ( n1 n2 -- flag)
              ENDCODE
 
 \ ==================================================================
-CR .( MIN & MAX )
+CR .( MIN & MAX )  \ added NIP HEADER. saves 6 bytes
 CODE MIN    ( n1 n2 -- n)
             *SP TOS CMP,    \ compare n1 & n2
             @@1 JLT,       \ if n1 < n2 goto @@1:
@@ -720,12 +802,13 @@ CODE MIN    ( n1 n2 -- n)
             @@2 JGT,       \ if n1 > n2 goto @@1:
             SP INCT,       \ otherwise NIP n1
             NEXT,
-@@1: @@2:   TOS POP,       \ DROP n1, refill TOS
+@@1: @@2:   TOS POP,       \ DROP n2, refill TOS
             NEXT,
             ENDCODE
 
 \ ==================================================================
-CR .( MOVE FILL )
+0 [if]
+CR .( ANS FORTH 94 MOVE )
 CODE MOVE   ( src dst n -- )   \ forward character move
             *SP+ R0  MOV,      \ pop DEST into R0
             *SP+ R1  MOV,      \ pop source into R1
@@ -740,7 +823,7 @@ CODE MOVE   ( src dst n -- )   \ forward character move
                 R1  R2 SUB,
                 R3  R2 CMP,
                 HI IF, \ do cmove> ............
-                
+
                     TOS W MOV,      \ dup n
                         W DEC,      \ compute n-1
                     W  R1 ADD,      \ point to end of source
@@ -762,7 +845,58 @@ CODE MOVE   ( src dst n -- )   \ forward character move
             TOS POP,
             NEXT,
             ENDCODE
+
+[ELSE]
+CR .( Forth 2012 MOVE CMOVE CMOVE>)
+HEX
+CODE MOVE  ( src dst u -- ) \ u = no. of *CELLS* to move
+    R0 POP,
+    R1 POP,
+    BEGIN,
+       TOS DEC,
+    OC WHILE,
+       *R1+ *R0+ MOV, \ 9900 auto increments by 2 with MOV instruction
+    REPEAT,
+    TOS POP,
+    NEXT,
+ENDCODE
+
+\ FORTH 2012: CMOVE and CMOVE> are part of the optional string word set
+CODE CMOVE  ( src dst n -- )   \ forward character move
+      R0 POP,       \ pop DEST into R0
+      R1 POP,       \ pop source into R1
+      BEGIN,
+         TOS DEC,          \ test it before the loop starts
+      OC WHILE,
+         *R1+ *R0+ MOVB, \ byte move, with auto increment by 1.
+      REPEAT,
+      TOS POP,
+      NEXT,
+      ENDCODE
+
+\ OCT 5 2020 Fixed computation for end of strings and inner loop.
+CODE CMOVE>  ( src dst n -- )  \ move chars from end of string and go backwards
+      R2 POP,      \ DEST into R2
+      R1 POP,      \ source into R1
+      TOS W MOV,   \ dup n
+      W DEC,       \ compute n-1
+      W R1 ADD,    \ point to end of source
+      W R2 ADD,    \ point to end of destination
+      BEGIN,
+         TOS DEC,  \ decr the counter in TOS (R5)
+      OC WHILE,
+         *R1 *R2 MOVB,
+          R1 DEC,   \ move pointers back (NO auto decrement, damn)
+          R2 DEC,
+      REPEAT,
+      TOS POP,
+      NEXT,
+      ENDCODE
+
+[THEN]
+
 0 [IF]
+\ marginally faster but no protection for char=0
 CODE FILL   ( addr cnt char -- )
             *SP+ R0 MOV,      \ pop cnt->R0                   22
             *SP+ R1 MOV,      \ pop addr->R1                  22
@@ -774,27 +908,27 @@ CODE FILL   ( addr cnt char -- )
             TOS POP,          \ refill the TOS register       22
             NEXT,             \                             =116
             ENDCODE
-[ELSE]            
+[ELSE]
 CODE FILL   ( addr cnt char -- )
             *SP+ R0 MOV,      \ pop cnt->R0                   22
             *SP+ R1 MOV,      \ pop addr->R1                  22
             TOS SWPB,         \                               10
             BEGIN,
               R0 DEC,         \ decr. count                   10
-            OC WHILE, 
+            OC WHILE,
               TOS *R1+ MOVB,  \ char is in TOS                20
-            REPEAT, 
+            REPEAT,
             TOS POP,          \ refill the TOS register       22
             NEXT,             \                             =116
             ENDCODE
 [THEN]
 
-0 [IF]
+-1 [IF]
 CODE ERASE ( addr cnt  -- )  \ 2x faster than 0 FILL
            *SP+ R1 MOV,
            BEGIN,
               TOS DECT,
-           OC WHILE,   
+           OC WHILE,
               *R1+ CLR,
            REPEAT,
            TOS POP,
@@ -863,10 +997,10 @@ CODE <+LOOP>
 ENDCODE
 
 CODE I      ( -- n)
-            TOS PUSH,        
-            *RP    TOS MOV, 
-            2 (RP) TOS SUB,    
-            NEXT,             
+            TOS PUSH,
+            *RP    TOS MOV,
+            2 (RP) TOS SUB,
+            NEXT,
             ENDCODE
 
 CODE J      ( -- n)
@@ -885,23 +1019,23 @@ CODE BOUNDS ( adr len -- adr2 adr1)  \ same size as Forth version
             ENDCODE
 
 \ ===========================================================
-[CC] CR .( ON / OFF) 
+[CC] CR .( ON / OFF)
 
 [TC]
 CODE ON   ( adr -- )
-          *TOS SETO, 
+          *TOS SETO,
           TOS POP,
           NEXT,
           ENDCODE
 
 CODE OFF  ( adr -- )
-          *TOS CLR, 
-          TOS POP, 
-          NEXT, 
-          ENDCODE 
+          *TOS CLR,
+          TOS POP,
+          NEXT,
+          ENDCODE
 
 \ ===========================================================
-[CC] cr .( SKIP SCAN ) 
+[CC] cr .( SKIP SCAN )
 
 \ used CAMEL Forth MSP430 as reference code
 
@@ -986,52 +1120,50 @@ CODE SCAN  ( adr len char -- adr' len' )    \ find matching char
 
 
 CODE (FIND) ( Caddr NFA -- XT ? )
-      TOS R3 MOV,                 \ R3 = NFA which is a counted string
-      TOS CLR,                    \ TOS is the output flag, init to zero
-     *SP R8 MOV,                  \ R8 = caddr which is a counted string
-      NE IF,                      \ if count<>0 do the search
-        \ get the length byte of Caddr
-          *R8 R5 MOVB,             \ caddr C@ -> R5 is string length
-          R5 8 SRL,               \ get the byte on the correct side right
-          R5 INC,                 \ skip length byte
-          BEGIN,
-               \ load char compare registers
-                 R5 R0 MOV,           \ load R0 with length of caddr string
-                 R8 R1 MOV,           \ load R1 with caddr string address
-                 R3 R2 MOV,           \ load R2 with the NFA to compare
-               \ inner character comparator loop
-                 BEGIN,
-                   *R1+ *R2+ CMPB,    \ compare char by char including the length byte
-                    @@1 JNE,          \ ANY mismatch found, goto @@1
-                    R0 DEC, EQ        \ decr. loop counter
-                 UNTIL,               \ loop until R0=0
-                 \ we found the word !!!
-                 \ convert NFA in R3 to CFA -> R2
-                  R3 R2 MOV,              \ if found R3 has a name field address (NFA), copy to R2
-                 *R3 R0 MOVB,             \ get the length of the name to R0
-                  R0 SWPB,                \ fix the #$%!@$ byte order again
-                  R0 R2 ADD,              \ add length to R2, gets past the string to the CFA
-                  R2 INCT,                \ inc 1 for the count byte, 1 more for even address evaluation
-                  R2 -2 ANDI,             \ align R2 to even address boundary
+    TOS R3 MOV,                 \ R3 = NFA which is a counted string
+    TOS CLR,                    \ TOS is the output flag, init to zero
+    *SP R8 MOV,                 \ R8 = caddr which is a counted string
+    *R8 R5 MOVB,                \ caddr C@ -> R5 is string length
+    R5 8 SRL,                   \ get the byte on the correct side right
+    BEGIN,
+\ Oct 10 2025: ** this comparison improves compile times by 14%
+        *R8 *R3 CMPB,          \ TEST length bytes
+        EQ IF,
+           \ load char compare registers
+            R5 R0 MOV,           \ load R0 with length of caddr string
+            R8 R1 MOV, R1 INC,   \ load R1 with caddr of 1ST char
+            R3 R2 MOV, R2 INC,   \ load R2 with NFA first char
+\ inner character comparator loop
+            BEGIN,
+              *R1+ *R2+ CMPB,    \ compare char by char
+              @@1 JNE,           \ ANY mismatch found, goto @@1
+              R0 DEC,            \ decr. loop counter
+            EQ UNTIL,            \ loop until R0=0
+\ we found the word !!!
 
-                \ test for immediate or normal word -> TOS
-                  TOS SETO,               \ we found a word so set TOS to true
-                 -1 (R3) R0 MOVB,        \ R3 has the NFA. Fetch NFA-1 (immediate field)
+\ convert NFA in R3 to CFA -> R2
+            R3 R2 MOV,            \ if found R3 has a name field address (NFA), copy to R2
+            *R3 R0 MOVB,          \ get the length of the name to R0
+            R0 SWPB,              \ fix the #$%!@$ byte order again
+            R0 R2 ADD,            \ add length to R2, gets past the string to the CFA
+            R2 INCT,              \ inc 1 for the count byte, 1 more for even address evaluation
+            R2 -2 ANDI,           \ align R2 to even address boundary
+            R2 *SP MOV,           \ replace Caddr with the XT in R2
 
-                \ Oct 2020 added mask to support hashed threads
-                  R0 0100 ANDI,          \ test the immediate bit, (mask the hash code)
-                  NE IF,
-                       TOS NEG,          \ if non zero negate the TOS from -1 to 1
-                  ENDIF,                 \ and head for home
-                  R2 *SP MOV,            \ replace Caddr with the found XT in R2
-                  NEXT,                  \ Return to Forth
-
-                \ traverse link list to next NFA
-@@1:            -3 (R3) R3 MOV, EQ    \ fetch LFA, R3 now has new NFA
-          UNTIL,
-      ENDIF,
-      NEXT,                     \ we got zero. End of the list! Go back to Forth
-      ENDCODE                  \ 42 BYTES
+\ test for immediate or normal word -> TOS
+            TOS SETO,               \ we found a word so set TOS to -1
+            -1 (R3) R0 MOVB,        \ R3 has the NFA. Fetch NFA-1 (immediate field)
+            \ Oct 2020 added mask to support hashed threads
+            R0 0100 ANDI,           \ test the immediate bit, (mask the hash code)
+            NE IF,
+                TOS ABS,            \ if non zero change TOS from -1 to 1
+            ENDIF,                  \ and head for home
+            NEXT,                   \ Return to Forth
+        ENDIF,
+@@1:    -3 (R3) R3 MOV,      \ fetch LFA, R3 now has new NFA
+    EQ UNTIL,
+    NEXT,                    \ we got zero. End of the list! Go back to Forth
+    ENDCODE                  \ 42 BYTES
 
 \ ===========================================================
 [CC] cr .( CAMEL99 custom primitives)
@@ -1059,4 +1191,4 @@ CODE PAUSE  ( -- )             \ MULTI-TASKER switcher needed by I/O words in Ke
 
 \ CODE GOTO    *IP IP MOV,  NEXT, ENDCODE \ used for tail-call optimization
 
-[CC] cr .( Code primitives complete) 
+[CC] cr .( Code primitives complete)

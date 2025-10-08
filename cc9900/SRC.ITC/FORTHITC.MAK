@@ -1,5 +1,5 @@
 \ MAKE CAMEL99 ITC Forth                            Mar 2022 Brian Fox
-\ *** NOT A "MAKE" FILE  This is just more Forth 
+\ *** NOT A "MAKE" FILE  This is just more Forth
 
 \ **********************************************************************
 \      compiler switches to control the system build
@@ -7,14 +7,14 @@
 CROSS-COMPILING
 TRUE  VALUE ITC          \ used to prevent directly compiling HILEVEL.HSF
 FALSE VALUE SLOWER       \ TRUE saves 64 bytes, FALSE -> 14% FASTER compile times
-FALSE VALUE FAST_TYPE    \ 22% faster SCREEN I/O    
+FALSE VALUE FAST_TYPE    \ 22% faster SCREEN I/O
 FALSE VALUE HASHING      \ Not working yet
 
 \ ======================================================================
-\              *** CONSOLE I/O SELECTION *** 
- 
-TRUE       VALUE VDPI/O        \ select VDP chip console driver 
- VDPI/O 0= VALUE TTYI/O        \ selects 9902 RS232 console driver 
+\              *** CONSOLE I/O SELECTION ***
+
+TRUE       VALUE VDPI/O        \ select VDP chip console driver
+ VDPI/O 0= VALUE TTYI/O        \ selects 9902 RS232 console driver
 
 
 \ ======================================================================
@@ -28,18 +28,16 @@ EMEM TIBSIZE -  EQU 'TIB     \ Terminal input buffer just below
      'TIB  2 -  EQU 'SP0     \ FORTH DATA stack base address
      'SP0 6E -  EQU 'RP0     \ FORTH RETURN stack base address
 
-\ big stack version 
+\ big stack version
 \     3FFE       EQU 'SP0    \ FORTH DATA stack base address
 \     FE80       EQU 'RP0    \ FORTH RETURN stack base address
 
 \ ======================================================================
-\             *** TARGET MEMORY LOCATION ***
-
-0 \ true= standard kernel ;  false=non-standard kernel
+-1    \ true= standard kernel ;  false=non-standard kernel
 [IF]
     A000 VALUE CODESEG
     2000 VALUE HEAPSEG
-  \  FALSE TO FAST_TYPE   \ save 52 bytes 
+  \  FALSE TO FAST_TYPE   \ save 52 bytes
 [ELSE]
 		6000 VALUE CODESEG   \ 6000 is the supercart RAM
 		2000 VALUE HEAPSEG   \ initial HEAP address when kernel boots
@@ -58,13 +56,13 @@ EMEM TIBSIZE -  EQU 'TIB     \ Terminal input buffer just below
  [cc] include cc9900\src.itc\9900CODN.HSF  \ asm primitives. M version has move
 
  TTYI/O
- [IF]   [cc] include cc9900\src.itc\VDPCHIP.HSF \ small VDP lib for file i/o 
+ [IF]   [cc] include cc9900\src.itc\VDPCHIP.HSF \ small VDP lib for file i/o
  [ELSE] [cc] include cc9900\src.itc\ti99ioY.hsf \ ALL vdp primitives & key
  [THEN]
 
  [cc] include cc9900\src.itc\bootstrx.hsf  \ cross-compiler loops & branch
  [cc] include cc9900\src.itc\ticktock.hsf  \ 9901 hardware timer
- 
+
  [cc] include cc9900\src.itc\hilevel.hsf   \ core forth words
 
 \ ======================================================================
@@ -75,7 +73,7 @@ EMEM TIBSIZE -  EQU 'TIB     \ Terminal input buffer just below
 \ Use [CC] and [TC] to explicately select compiler or target variables
 \
 
-[CC] XLATEST @ DUP   [TC] LATEST T! ORGLAST T!
+[CC] XLATEST @ DUP   [TC] LATEST T!  ORGLAST T!
 
 [CC] CODESEG A000 <>
 [IF]    [CC] HEX A004 DUP
@@ -90,19 +88,19 @@ EMEM TIBSIZE -  EQU 'TIB     \ Terminal input buffer just below
 \ =============================================================
 \ P A T C H   T A R G E T   I M A G E  F I L E   H E A D E R
 
-\ COLD create the Forth VM and loads R10 with NEXT 
+\ COLD create the Forth VM and loads R10 with NEXT
  T' COLD >BODY BOOT-ADDRESS T!
 
 CROSS-COMPILING HEX
-VDPI/O 
+VDPI/O
 [IF]
-  CODESEG A000 = [IF]  FILENAME: CAMEL99  [THEN]
+  CODESEG A000 = [IF]  FILENAME: CAMEL99 [THEN]
   CODESEG 6000 = [IF]  FILENAME: CAML99SC [THEN]
   CODESEG 2000 = [IF]  FILENAME: CAML99LR [THEN]
 [THEN]
 
 CROSS-COMPILING HEX
-TTYI/O 
+TTYI/O
 [IF]
   CODESEG A000 = [IF]  FILENAME: CAMELTTY [THEN]
   CODESEG 6000 = [IF]  FILENAME: CMLTTYSC [THEN]
