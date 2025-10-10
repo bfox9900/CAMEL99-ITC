@@ -1,4 +1,4 @@
-\ DIRECTIV.HSF   commands to managed saving program image
+\ TIFILES.FTH save program image in TIFILES Format.
 
 \ T I - 9 9   E A 5   F I L E   F O R M A T   S E C R E T S
 
@@ -11,7 +11,7 @@
 \ There is an extra header used for files on a PC called V9T9 format.
 \ So.. you have to create the V9T9 header in your memory image too !!!
 
-\ Sept 27, 2018: I now know more abit the V9T9 FORMAT.
+\ Sept 27, 2018: I now know more bit the V9T9 FORMAT.
 \ Here is the back story from Arcadeshopper on Atariage.com
 \ History:
 \ "When we started uploading files to BBS's they had to come up with a way to
@@ -21,17 +21,17 @@
 \ to store files on the PC drive with the TI directory information as well,
 \ so instead of using the standard, they made up their own.."
 
-\ Actual Header of DEMO file from Classic99 Emulator
-\ ----------------------------------------------------------------------------
-\ 2D9B:0000  44 45 4D 4F 20 20 20 20  20 20 00 00 01 00 00 20  DEMO      .....  <----first 10 bytes contain the file name)
-\ 2D9B:0010  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  ................
-\ 2D9B:0020  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  ................
-\ 2D9B:0030  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  ................
-\ 2D9B:0040  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  ................
-\ 2D9B:0050  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  ................
-\ 2D9B:0060  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  ................
-\ 2D9B:0070  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  ................ <--- V9T9 header ends here
-\ 2D9B:0080  FF FF 20 00 A0 00 04 60  CC 00 C8 0B A1 0E 02 02  .. ....`........
+\ [TI FILES FORMAT]
+\ -------------------------
+\ 00000000 07 54 49 46 49 4C 45 53 00 21 01 00 00 00 00 00 .TIFILES.!......
+\ 00000010 CA 53 CA 53 CA 53 CA 53 CA 53 CA 53 CA 53 CA 53 .S.S.S.S.S.S.S.S
+\ 00000020 CA 53 CA 53 CA 53 CA 53 CA 53 CA 53 CA 53 CA 53 .S.S.S.S.S.S.S.S
+\ 00000030 CA 53 CA 53 CA 53 CA 53 CA 53 CA 53 CA 53 CA 53 .S.S.S.S.S.S.S.S
+\ 00000040 CA 53 CA 53 CA 53 CA 53 CA 53 CA 53 CA 53 CA 53 .S.S.S.S.S.S.S.S
+\ 00000050 CA 53 CA 53 CA 53 CA 53 CA 53 CA 53 CA 53 CA 53 .S.S.S.S.S.S.S.S
+\ 00000060 CA 53 CA 53 CA 53 CA 53 CA 53 CA 53 CA 53 CA 53 .S.S.S.S.S.S.S.S
+\ 00000070 CA 53 CA 53 CA 53 CA 53 CA 53 CA 53 CA 53 CA 53 .S.S.S.S.S.S.S.S
+\ 00000080 FF FF 20 00 A0 00 04 60  CC 00 C8 0B A1 0E 02 02  .. ....`........
 \            ^     ^     ^     ^
 \ more flag--|     |     |     |______CODE STARTS HERE.
 \ file size--------      |            This compiler puts a Branch instruction here by default.
@@ -298,21 +298,17 @@ cr .( TI-99 file control directives)
 \ I have extended the header by 2 words.
 \ The very first instruction that runs is a branch to the entry address.
 
-
+CROSS-COMPILING
 HEX
 \ DIRECTIVES TO create the "Editor Assembler 5" binary program header in the memory image
 \ This code adds a 2 byte branch instruction as the first code that runs
 \ so you can jump to a startup routine anywhere in memory
-
-: TI-99.EA5  ( -- )
+: TIFILES.EA5  ( -- )
         orgflag @ 0= ABORT" missing ORIGIN. directive"   \ ORIGIN. directive MUST precede this directive to set the load address
-        header@ DUP  header-size 0 tfill                 \ init header memory with zero
-        ( -- addr ) 0A BL TFILL  0A TALLOT               \ FILL space for the file name with blanks (for debugging)
-
-        0000 T,                                          \ lay in some data after the FILENAME
-        0100 T,    ( byte 12,13)                         \ >100 bytes per record ?
-        0020 T,    ( byte 14,15)                         \ DOS file size? hex2000
-        70 TALLOT                                        \ move pointer to end of header
+        header@ DUP  10 0 tfill                 \ init header memory with zero
+        TEXT' TIFILES'                          \
+        0021 t, 0100 T, 0000 t, 0000 t,         \ lay in some data after the text
+        60 0 DO  CA53 T,  2 +LOOP               \ file the rest of the header
 
         FALSE DATA,                                      \ the "MORE-FIELD"= true (-1) if there are more files to load
         BEEF DATA,                                       \ place holder for the PROG-SIZE  (in bytes)
@@ -375,9 +371,9 @@ HEX
 : END.  \ finish off and create a report of what happened
          FILENAME$ LEN 0= ABORT" Missing FILENAME:"
          TCODE-SIZE  2000 MIN PROG-SIZE T!
-         IMAGE-SIZE >EVEN-SECTOR CSWAP HEADER@ 0E + T!    \ intel number in header
-      \   0  data,                                        \ put a 0 after the last memory word of the program
-         ?header                                          \ check that the header is correct
+         IMAGE-SIZE >EVEN-SECTOR CSWAP HEADER@ 0E + T! \ intel number in header
+      \   0  data,          \ put a 0 after the last memory word of the program
+         ?header           \ check that the header is correct
          DECIMAL
          CR ." >>>> CROSS-ASSEMBLY COMPLETED <<<<<"
          .elapsed
