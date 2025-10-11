@@ -29,7 +29,7 @@
 \                          Kernel will not have space for branching.
 \                          Will have to load with system file.
 
-\           Jun 14,2023 - Removed CREATE: CODE: VARIABLE:  These are in ITCTYPES.hsf FILE 
+\           Jun 14,2023 - Removed CREATE: CODE: VARIABLE:  These are in ITCTYPES.hsf FILE
 
 \ ============================================================================
 \ ==                 F O R T H   H E A D E R   D E S I G N                  ==
@@ -472,14 +472,14 @@ HOST-COMPILING
 \ T A R G E T   C O D E - W O R D   C R E A T I O N
 
 
- \                 ** REMOVED ***  
- 
+ \                 ** REMOVED ***
+
  \ Word creation is now a loadable file so you can make different
- \ Threading mechanisms for your Forth syste, 
- 
- \ SEE: itctypes.hsf DTCTYPES.HSF 
- 
- \ These are LOADED when you build a program. 
+ \ Threading mechanisms for your Forth syste,
+
+ \ SEE: itctypes.hsf DTCTYPES.HSF
+
+ \ These are LOADED when you build a program.
 
 
 
@@ -856,7 +856,7 @@ HOST-COMPILING
 
 cr .( Saving cross-compiler EXE file...)
 
-SAVE-EXE FCC99e.EXE  STARTUP
+SAVE-EXE FCC99X.EXE  STARTUP
 CR
 CR
 BYE

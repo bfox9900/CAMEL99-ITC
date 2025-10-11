@@ -149,7 +149,6 @@ HEX 2000 80 + CONSTANT MAX-PROG           \ 8K bytes is a big as we can go with 
 \ l: scrbuf    BSS 24 32 *           SCRBUF   BSS 24*32
 \ l: buffer    BSS HEX 100           BUFFER   BSS >100
 
-
 : BSS         ( n -- <text-name> )
               1 parse evaluate ( n) bytes, ; \ Parse up to Carriage return,
                                              \ allocate the space and fill with zeros
@@ -304,6 +303,7 @@ HEX
 \ This code adds a 2 byte branch instruction as the first code that runs
 \ so you can jump to a startup routine anywhere in memory
 
+-1 [IF]
 : TI-99.EA5  ( -- )
         orgflag @ 0= ABORT" missing ORIGIN. directive"   \ ORIGIN. directive MUST precede this directive to set the load address
         header@ DUP  header-size 0 tfill                 \ init header memory with zero
@@ -320,6 +320,23 @@ HEX
         DEAD @@ B,                                       \ 2 BYTES:  branch to address where the program starts
 ;
 
+[ELSE]
+: TI-99.EA5  ( -- )
+        orgflag @ 0= ABORT" missing ORIGIN. directive"   \ ORIGIN. MUST precede this directive to set the load address
+        THERE >R
+        ORG-ADDR@ 80 - TDP !
+
+        S" TIFILES" TS,                           \
+        0021 t, 0100 T, 0000 t, 0000 t,         \ lay in some data after the text
+        60 0 DO  CA53 T,  2 +LOOP               \ fill the rest of the header
+
+        ORG-ADDR@ TDP !
+        FALSE DATA,                             \ the "MORE-FIELD"= true (-1) if there are more files to load
+        BEEF DATA,                              \ place holder for the PROG-SIZE  (in bytes)
+        ORG-ADDR@ DATA,                         \ record the load address in the file
+        DEAD @@ B,                              \ 2 BYTES:  branch to address where the program starts
+;
+[THEN]
 
 : FILE!  ( caddr -- )                                             \ c" MYFILE" FILE!
          dup len 0A > ABORT" File name too long. >10 chars"
