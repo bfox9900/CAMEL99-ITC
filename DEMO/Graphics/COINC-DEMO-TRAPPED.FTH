@@ -6,19 +6,43 @@ NEEDS AUTOMOTION FROM DSK1.AUTOMOTION
 NEEDS HZ         FROM DSK1.SOUND
 NEEDS MARKER     FROM DSK1.MARKER
 NEEDS RND        FROM DSK1.RANDOM
+NEEDS VBYTE      FROM DSK1.ISRSOUND
 
 MARKER /TEST
 HEX
 CODE 0LIMI   0300 , 0000 ,  NEXT, ENDCODE
 CODE 2LIMI   0300 , 0002 ,  NEXT, ENDCODE
 
-\ stop interrupts during sound duration time
-: MS    0LIMI   MS   2LIMI  ;
 
+\ SOUND COMPILERS, put data VDP memory to build sound lists
+DECIMAL
+: HZ,     ( f -- )     (HZ) SPLIT VC, VC,   ;
+: DB,     ( level -- ) (DB) VC,  ;
+: MUTE,   ( -- )       -30 DB,   ;
+: MS,     ( n -- )     4 RSHIFT  VC, ;  \ ms/16 = 1/60
+
+\ compile bytes to turn all sound off
+HEX
+: SILENT, ( -- )  9F VC,  BF VC,  DF VC,  FF VC, ;
+
+\ noise channel selects generator 4 by default
+: NOISE,  ( n -- )  0F AND  GEN4 OSC @ OR  VC,  ;
 
 DECIMAL
-: TINK    GEN1  1500 HZ  -6 DB  500 TICKS MUTE ;
-: BONK    GEN2   110 HZ  -4 DB  80 MS MUTE ;
+\ create a named sound list in VDP RAM that plays when executed
+: SOUND: ( <text> -- ) CREATE  VHERE ,   !CSP  DOES> @ ISRPLAY SILENT ;
+: ;SOUND ( -- )  0 VC,  ?CSP ;
+
+\ start/end a VDP byte string.
+: $[     ( -- vaddr)   VHERE 0 VC, ;
+: ]$     ( vaddr -- )  VHERE OVER - 1- SWAP VC! ;
+
+\ end a sound string with a duration. Stores duration at end
+: MS]     ( vaddr dur -- ) SWAP ]$   MS, ;
+: [MUTE]      $[ MUTE, ]$ ;
+
+SOUND: TINK  $[ GEN1 1500 HZ,  -6 DB,  60 MS] [MUTE] ;SOUND
+SOUND: BONK  $[ GEN2  110 HZ   -4 DB,  80 MS] [MUTE] ;SOUND
 
 : CLIP   ( n lo hi -- n) S" ROT MIN MAX" EVALUATE ; IMMEDIATE
 
@@ -34,8 +58,8 @@ DECIMAL
 : BOUNCE    ( spr# --) DUP BOUNCE.X BOUNCE.Y  ;
 
 \ flag=true if x or y are outside limits
-: XLIMIT? ( x -- ?) 239 3 WITHIN ;
-: YLIMIT? ( Y -- ?) 182 3 WITHIN ;
+: XLIMIT? ( x -- ?) 245 8 WITHIN ;
+: YLIMIT? ( Y -- ?) 182 8 WITHIN ;
 
 : TRAPX ( spr# -- )
       DUP SP.X VC@
@@ -48,13 +72,16 @@ DECIMAL
       DROP  ;
 
 \ keep a sprite inside 4 walls
-: TRAP ( spr# -- ) DUP TRAPX TRAPY   ;
+: TRAP ( spr# -- ) S" DUP TRAPX TRAPY" EVALUATE ; IMMEDIATE
 
 DECIMAL
-: RNDV   ( -- x y)   50 RND 25 -  ( -30 MAX 30 MIN)  ;
-: RNDXY  ( -- dx dy) \ dx dy are never zero
-    BEGIN RNDV ?DUP UNTIL
-    BEGIN RNDV ?DUP UNTIL ;
+: RNDSPEED   ( -- x y) 60 RND 30 -  ;
+: RNDX   ( -- x) 240 RND 15 + ;
+: RNDY   ( -- y) 185 RND 12 + ;
+
+: RND-DXY  ( -- dx dy) \ dx dy are never zero
+    BEGIN RNDSPEED ?DUP UNTIL
+    BEGIN RNDSPEED ?DUP UNTIL ;
 
 HEX
 CREATE PAT127 3C42 , A581 , A599 , 423C ,
@@ -62,16 +89,11 @@ CREATE PAT127 3C42 , A581 , A599 , 423C ,
 DECIMAL
 : SPRITES ( -- ) \ makes n sprites
     ( char      colr  x    y  sp#         X/Y  spr#   )
-      127       11   10    90  0 SPRITE  RNDXY  0 MOTION
-    [CHAR] 1     4   20    90  1 SPRITE  RNDXY  1 MOTION
-    [CHAR] 2     5   33    90  2 SPRITE  RNDXY  2 MOTION
-    [CHAR] 3     6   56    90  3 SPRITE  RNDXY  3 MOTION
-    [CHAR] 4     7   125   90  4 SPRITE  RNDXY  4 MOTION
-    [CHAR] 5     8   200   90  5 SPRITE  RNDXY  5 MOTION
-    [CHAR] 6     3   10   190  6 SPRITE  RNDXY  6 MOTION
-    [CHAR] 7    10   20   140  7 SPRITE  RNDXY  7 MOTION
-    [CHAR] 8    12   33   130  8 SPRITE  RNDXY  8 MOTION
-    [CHAR] 9    14   56   120  9 SPRITE  RNDXY  9 MOTION
+      127       11   10    90  0 SPRITE  RND-DXY  0 MOTION
+    20 1
+    DO
+        I [CHAR] 0 +  I 2 + 3 MAX  RNDX RNDY  I SPRITE  RND-DXY I MOTION
+    LOOP
 ;
 
 \ test sprite coincidence and bounce if detected
@@ -82,14 +104,9 @@ DECIMAL
 
 \ Putting coicidence code in a DO LOOP is slower
 \ than "unwinding" the loop as separate lines of code
-: COLLIDER
+: TRAPPER
     0LIMI
-    0 TRAP   1 0 ?BUMP
-    1 TRAP   2 0 ?BUMP
-    2 TRAP    3 0 ?BUMP
-    3 TRAP   4 0 ?BUMP
-    4 TRAP    5 0 ?BUMP
-    5 TRAP  6 TRAP  7 TRAP  8 TRAP  9 TRAP
+    SPR# @ 1+ 0 DO I TRAP  LOOP ;
     2LIMI
 ;
 
@@ -100,12 +117,12 @@ DECIMAL
     1 MAGNIFY
     4 19  16 1 COLORS
     PAGE ." CAMEL99 Forth Sprite Automotion"
-    CR   ." Trap All. Coinc 0 with 1..5"
+    CR   ." Trap All Sprites
     CR
     SPRITES
     AUTOMOTION
     BEGIN
-        COLLIDER
+        TRAPPER
         ?TERMINAL
     UNTIL
     STOPMOTION

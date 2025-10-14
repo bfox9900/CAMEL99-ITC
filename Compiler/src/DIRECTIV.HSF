@@ -326,7 +326,7 @@ HEX
         THERE >R
         ORG-ADDR@ 80 - TDP !
 
-        S" TIFILES" TS,                           \
+        S" TIFILES" TS,                         \ compile this text as a byte counted string
         0021 t, 0100 T, 0000 t, 0000 t,         \ lay in some data after the text
         60 0 DO  CA53 T,  2 +LOOP               \ fill the rest of the header
 
