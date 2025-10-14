@@ -75,7 +75,7 @@ SOUND: BONK  $[ GEN2  110 HZ   -4 DB,  80 MS] [MUTE] ;SOUND
 : TRAP ( spr# -- ) S" DUP TRAPX TRAPY" EVALUATE ; IMMEDIATE
 
 DECIMAL
-: RNDSPEED   ( -- x y) 60 RND 30 -  ;
+: RNDSPEED   ( -- x y) 70 RND 35 -  ;
 : RNDX   ( -- x) 240 RND 15 + ;
 : RNDY   ( -- y) 185 RND 12 + ;
 
