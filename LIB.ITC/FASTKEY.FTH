@@ -4,18 +4,42 @@
 \ It takes 1.2 mS to run even if no key is pressed!
 \ This slows down cooperative multi-tasking by slowing down
 \ the context switch time while waiting for a key keypress.
-\ KEYCHECK scans the keyboard in 191 uS or 8 times faster 
+\ KEYCHECK scans the keyboard in 191 uS or 8 times faster
 
 
-NEEDS WORDLIST FROM DSK1.SUPERTOOLS
+\ NEEDS WORDLIST FROM DSK1.SUPERTOOLS
+ NEEDS DUMP FROM DSK1.LOWTOOLS
 
 \ Source:
 \ http://www.unige.ch/medecine/nouspikel/ti99/keyboard.htm#quick%20scan
+\ *--------------------------------------------
+\ * Quick-and-dirty check to see if a key is pressed.
+\ * If not return in a hurry,
+\ * else call the standard scanning routine.
+\ * Uses R1, R2 and R12.
+\ *--------------------------------------------
+\ KCHECK CLR  R1                 Start with column 0
+\ LP1    LI   R12,>0024          R12-address for column selection
+\        LDCR R1,3               Select a column
+\        LI   R12,>0006          R12-address to read rows
+\        SETO R2                 Make sure all bits are 1
+\        STCR R2,8               Get 8 row values
+\        INV  R2                 Since pressed keys read as 0
+\        JNE  KPR                A key was pressed
+\        AI   R1,>0100           Next column
+\        CI   R1,>0600           Are we done
+\        JNE  LP1                Not yet
+\        B    *R11               No key pressed: return (with EQ bit set)
 
-FORTH DEFINITIONS ALSO ASSEMBLER
+\ KPR    BLWP @KSCAN             Call KSCAN routine
+\        INCT R11               (either) signal key by skipping a jump
+\ *      MOV  R2,R2             (or) signal key by clearing the EQ bit
+\        B    *R11               Return
+
+
 HERE
 HEX
-CODE KEYCHECK ( -- ?)      \ return TRUE if any key pressed
+CODE KEYCHECK ( -- ?)    \ return TRUE if any key pressed
       TOS PUSH,          \
       TOS CLR,           \ TOS=false
       R1 CLR,            \ Start with column 0
@@ -36,7 +60,9 @@ CODE KEYCHECK ( -- ?)      \ return TRUE if any key pressed
       NEXT,              \ Return to Forth
  ENDCODE
 
-: FLUSHKEY  ( -- )  BEGIN KEYCHECK WHILE REPEAT ;
+:  TEST   BEGIN  KEYCHECK .   ?TERMINAL UNTIL ;
+
+: FLUSHKEY  ( -- )  BEGIN KEYCHECK UNTIL ;
 
 HEX
 : WAITKEY   ( -- )
@@ -53,5 +79,5 @@ HEX
 
 HERE SWAP - DECIMAL .  .( bytes)
 
-\ test measure KEYCHECK using the 9901 timer 
-\ : TIMEIT  TMR@  KEYCHECK  TMR@ NIP - 2130 100 */ . ." uS"   ; 
+\ test measure KEYCHECK using the 9901 timer
+\ : TIMEIT  TMR@  KEYCHECK  TMR@ NIP - 2130 100 */ . ." uS"   ;
