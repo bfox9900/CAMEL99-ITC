@@ -38,9 +38,6 @@ VARIABLE LAST[]
 
 : sizeof  '  >BODY @ @    POSTPONE LITERAL ; IMMEDIATE
 : #items  '  >BODY @ @ 2/ POSTPONE LITERAL ; IMMEDIATE
-\ TEST DATA
-\ [[  20 CELLS ALLOT  ]] DATA: B[] ( un-initialzed data example)
-[[  1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 , 10 , -1 , -2 , ]] DATA: A[]
 
 \ Explanation:
 \ ACTOR holds the execution token (XT) for the operation that will be done
@@ -94,6 +91,10 @@ DECIMAL
 : FILTER  ( addr size inital xt-- addr' size')
  [[  >R   ['] FILTRATION IS ACTION  FOREACH  DROP R> ]]  SIZE ;
 \ ======================= ITERATORS ENDS ===========================
+
+\ TEST DATA
+\ [[  20 CELLS ALLOT  ]] DATA: B[] ( un-initialzed data example)
+[[  1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 , 10 , -1 , -2 , ]] DATA: A[]
 
 \  TEST CODE
 A[] ..
