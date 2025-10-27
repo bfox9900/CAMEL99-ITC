@@ -1,6 +1,5 @@
 \ JOYST.FTH  from http://www.unige.ch/medecine/nouspikel/ti99/joystick.htm
 \ Tested on REAL TI-99, CAMEL99 TTY Jan 8 2020
-\ NEEDS  LDCR,  FROM DSK1.ASM9900
 
 \ HEX Outputs in TOS register
 \ 01 = Fire
