@@ -55,7 +55,7 @@ CODE NEG!  ( adr -- )   *TOS NEG,                     TOS POP, /CODE
 
 CODE :=    *SP+ R0 MOV,  R0 ** TOS ** MOV,            TOS POP, /CODE
 
-\ : XCHG1     OVER @  OVER @  SWAP ROT !  SWAP ! ;  (18bytes)
+\ : XCHG1     OVER @  OVER @  SWAP ROT !  SWAP ! ;  (18bytes 600+ clocks)
 
 \  X Y XCHG1  is 703uS
 \  X Y XCHG   IS 256 uS   270% faster
@@ -65,4 +65,4 @@ CODE XCHG   ( adr1 adr2 -- ) \ exchange values of 2 variables
              *TOS *R0 MOV,    \ mem2me m move  adr2 to adr1  22
               W  *TOS MOV,    \ move value adr1 to adr2      18
               TOS POP,        \                              22
-              /CODE           \ 10 bytes                     92 clocks
+/CODE                         \ 10 bytes                     92 clocks
