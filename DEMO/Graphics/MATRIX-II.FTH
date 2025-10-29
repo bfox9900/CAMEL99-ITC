@@ -86,6 +86,7 @@ DECIMAL
 \ \\\\\\\\\\\\\\\\\\\\\ BACKGROUND TASKS ///////////////////
 : FALLER
        BEGIN
+         PAUSE
          RNDLEN  RNDX  0 FALLING
        AGAIN ;
 
@@ -150,6 +151,7 @@ DECIMAL
     Japanese 176 ]PDT  30 8* VWRITE  \ WHITE charset
 
     INIT-MULTI
+    ." Spawning tasks... "
     SPAWN-JOBS
 
     128 SET# 168 SET#  4 1 COLORS   ( green)
