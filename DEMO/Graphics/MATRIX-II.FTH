@@ -75,11 +75,10 @@ DECIMAL
           AT-XY
           ( len ) 0
           ?DO
-             PAUSE
-             RNDCHAR VPUT
+             RNDCHAR PAUSE VPUT
              VROW++
-             RNDCHAR >WHITE VPUT
-             2000 RND 90 + TICKS
+             RNDCHAR >WHITE PAUSE VPUT
+             150 RND 10 + MS
           LOOP
 ;
 
@@ -98,7 +97,7 @@ DECIMAL
              PAUSE
              BL VPUT
              VROW++
-             2000 RND 1+ TICKS
+             4000 RND 300 + MS
           LOOP
        AGAIN ;
 
@@ -146,14 +145,14 @@ DECIMAL
 : RUN
     GRAPHICS
     CLEAR
-    1 SCREEN
     Japanese 128 ]PDT  30 8* VWRITE  \ GREEN charset
     Japanese 176 ]PDT  30 8* VWRITE  \ WHITE charset
 
     INIT-MULTI
-    ." Spawning tasks... "
+    CR ." Spawning tasks... "
     SPAWN-JOBS
 
+    1 SCREEN
     128 SET# 168 SET#  4 1 COLORS   ( green)
     176 SET# 228 SET# 16 1 COLORS   ( white)
     MULTI
