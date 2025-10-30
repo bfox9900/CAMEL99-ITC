@@ -58,10 +58,10 @@ DECIMAL
 
 : TESTLINE2
    MULTICOLOR
-   BEGIN
+   \ BEGIN
       CLEAR
       RNDX RNDY MOVETO
-      20 0
+      50 0
       DO
          RNDCOLOR RNDX RNDY LINETO
          ?TERMINAL
@@ -69,7 +69,8 @@ DECIMAL
            UNLOOP TEXT ABORT
          THEN
       LOOP
-   AGAIN
+  \ AGAIN
+  TEXT
 ;
 
 : RNDSHAPE
