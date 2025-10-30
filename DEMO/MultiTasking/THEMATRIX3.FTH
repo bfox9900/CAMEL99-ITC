@@ -157,9 +157,9 @@ DECIMAL
 : TWINKLE ( colorset -- )
     PAUSE
     DUP 15 1 COLOR
-    15 DREAMS
+    5 DREAMS
     16 1 COLOR   \ back to white
-    15 DREAMS
+    5 DREAMS
 ;
 
 : TWINKLER
@@ -209,11 +209,12 @@ DECIMAL
 : RUN
     WARM
     GRAPHICS
-    1 SCREEN
     DO-CHARS
     INIT-MULTI
+    ." Spawning tasks..."
     SPAWN-JOBS
 
+    1 SCREEN
     MULTI
     ALWAYS ON  \ prevent screen timeout
     AUTOMOTION
