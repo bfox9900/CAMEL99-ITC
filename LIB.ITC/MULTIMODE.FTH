@@ -1,20 +1,17 @@
-\ multicolor.fth   for Camel99 Forth    2024 Brian Fox 
-\ based on code from TI-Forth  
+\ multicolor.fth   for Camel99 Forth    2024 Brian Fox
+\ based on code from TI-Forth
+NEEDS DUMP FROM DSK1.LOWTOOLS
+NEEDS CHARSET FROM DSK1.CHARSET
+HERE
 
-INCLUDE DSK1.TOOLS 
-INCLUDE DSK1.ASM9900
-
-NEEDS CHARSET FROM DSK1.CHARSET 
-HERE 
-
-HEX 
+HEX
 800 CONSTANT PDT
 300 CONSTANT SPRITE_ATTR
-380 CONSTANT SPRITE_TAB 
-\ 000 CONSTANT NAME_TAB 
+380 CONSTANT SPRITE_TAB
+\ 000 CONSTANT NAME_TAB
 
 \ Name vdp registers
-HEX 
+HEX
 \ : VDPMODE     0 VWTR ;
 \ : VDPCONTROL  1 VWTR ;
 \ : NAMETABLE   2 VWTR ;
@@ -24,15 +21,15 @@ HEX
 \ : SPRITEPATT  6 VWTR ;
 \ : SCREENCOLOR 7 VWTR ;
 
-: SETVDP2 ( n -- ) 
+: SETVDP2 ( n -- )
     0  0 VWTR
     0  2 VWTR
     0E 3 VWTR
-    1  4 VWTR 
+    1  4 VWTR
     6  5 VWTR
     3E0 836E !      \ VSPTR  routine
     0 837A C!
-    DUP 83D4 C! 1 VWTR ; 
+    DUP 83D4 C! 1 VWTR ;
 
 : HIDESCREEN ( --) 0B0 1 VWTR ;
 
@@ -40,77 +37,76 @@ HEX
 
 : MINIT    ( -- ) -1  18 0 DO  I NIBBLES  LOOP DROP ;
 
-\ like call clear but cursor homes to 0,0 
-: CLEAR    PDT 800 0 VFILL 0 0 AT-XY ;  \ erase char patterns 
+\ like call clear but cursor homes to 0,0
+: CLEAR    PDT 800 0 VFILL 0 0 AT-XY ;  \ erase char patterns
 
 HEX
-: MULTICOLOR      
+: MULTICOLOR
     HIDESCREEN
-    MINIT 
-    CLEAR 
-    SPRITE_ATTR  80   0 VFILL    \ erase sprite table 
-    SPRITE_TAB   20 0F4 VFILL    \   
-    20 C/L!  
-    300 C/SCR ! 
-    0 TOPLN ! 
+    MINIT
+    SPRITE_ATTR  80   0 VFILL    \ erase sprite table
+    SPRITE_TAB   20 0F4 VFILL    \
+    20 C/L!
+    300 C/SCR !
+    0 TOPLN !
     3 VMODE !
-    4  6 VWTR 
+    4  6 VWTR
     11 7 VWTR
-    0EB SETVDP2 
+    0EB SETVDP2
+    CLEAR
 ;
 
 \ After MULTI mode, we need to restore character pattern in VDP
-\ CHARSET reads in the default characters from GROM 
+\ CHARSET reads in the default characters from GROM
 
 : TEXT   TEXT CHARSET PAGE ;
 
-\ MCHAR for Camel99 Forth   Sept 14 2024 Brian fox 
-\ Derived from code by Lee Stewart 
-HEX 
+\ MCHAR for Camel99 Forth   Sept 14 2024 Brian fox
+\ Derived from code by Lee Stewart
+HEX
 CODE >NAME ( col row -- Vaddr)
-    C076 , \ *SP+ R1 MOV, 
-    0911 , \  R1   1 SRL,  \ 2/ 
-    0914 , \  TOS  1 SRL,  \ 2/  
-    0A54 , \  TOS  5 SLA,  \ 32* 
-    A101 , \  R1 TOS ADD, 
+    C076 , \ *SP+ R1 MOV,
+    0911 , \  R1   1 SRL,  \ 2/
+    0914 , \  TOS  1 SRL,  \ 2/
+    0A54 , \  TOS  5 SLA,  \ 32*
+    A101 , \  R1 TOS ADD,
     NEXT,
-ENDCODE         
+ENDCODE
 
 CODE ]PATTERN ( row char -- Vaddr)  \ address of color byte
     0A34 ,          \ TOS  3 SLA,   \ char index 8*
-    0224 , PDT ,    \ TOS PDT AI,   \ add the base address 
-    C0B6 ,          \ *SP+ R2 MOV,  \ row -> R2 
+    0224 , PDT ,    \ TOS PDT AI,   \ add the base address
+    C0B6 ,          \ *SP+ R2 MOV,  \ row -> R2
     0242 , 0007 ,   \ R2  7  ANDI,  \ row 8 MOD (faster with AND)
-    A102 ,          \ R2  TOS ADD,  \ add pattern offset         
+    A102 ,          \ R2  TOS ADD,  \ add pattern offset
     NEXT,
-ENDCODE      
+ENDCODE
 
-HEX 
-CODE NYBBLES ( color Vaddr colorbyte -- colorbyte')   
-                                        \ colorbyte in TOS 
-    C0B6 ,          \ *SP+ R2 MOV,      \ Vaddr to R2
-    C0F6 ,          \ *SP+ R3 MOV,      \ color to R3 
-    0243 , 000F ,   \ R3  0F ANDI,      \ insure color is legal
-    0242 , 0001 ,   \ R2  1  ANDI, 
-    1303 ,          \ NE IF, 
-    0244 , 00F0 ,   \        TOS F0 ANDI,  
-    1003 ,          \ ELSE,
-    0244 , 000F ,   \        TOS 0F ANDI,
-    0A43 ,          \         R3  4 SLA, 
-                    \ ENDIF, 
-    A103 ,          \ R3 TOS ADD, 
+HEX
+CODE NYBBLES ( color column colorbyte -- colorbyte')
+    R2 POP,          \ column to R2
+    R3 POP,          \ new color to R3
+    R3  0F ANDI,     \ insure color is legal
+    R2  1  ANDI,
+    NE IF,
+        TOS F0 ANDI,
+    ELSE,
+       TOS 0F ANDI,
+       R3  4 SLA,
+    ENDIF,
+    R3 TOS ADD,
     NEXT,
-ENDCODE        
+ENDCODE
 
 : MCHAR  ( color col row --)
     2DUP >NAME VC@ ]PATTERN DUP>R VC@  NYBBLES  R> VC! ;
 
-VARIABLE MCOLOR       \ holds active color 
+VARIABLE MCOLOR       \ holds active color
 
-: ENUM-COLOR  ( 0 <text> -- n) 
-  DUP CREATE   , 1+  DOES> @ MCOLOR ! ;   
+: ENUM-COLOR  ( 0 <text> -- n)
+  DUP CREATE   , 1+  DOES> @ MCOLOR ! ;
 
-\ named TI-99 colors set MCOLOR when invoked 
+\ named TI-99 colors set MCOLOR when invoked
 0 ( set 1st color)
 ENUM-COLOR TRANS    ENUM-COLOR BLACK    ENUM-COLOR GREEN    ENUM-COLOR LIME
 ENUM-COLOR BLUE     ENUM-COLOR SKY      ENUM-COLOR RED      ENUM-COLOR CYAN
@@ -120,19 +116,18 @@ DROP
 
 : MM.PLOT  ( x y -- ) MCOLOR @ -ROT  MCHAR ;
 
-: XY@      ( -- x y) VROW 2@ ; 
-: HLINE    ( n x y --) AT-XY 0 DO  MCOLOR @ XY@ MCHAR  VCOL 1+!  LOOP ;
-: VLINE    ( n x y --) AT-XY 0 DO  MCOLOR @ XY@ MCHAR  VROW 1+!  LOOP ; 
+: XY@      ( -- x y) VROW 2@ ;
+: HLINE    ( n x y --) AT-XY 0 DO MCOLOR @ XY@ MCHAR  VCOL 1+! LOOP ;
+: VLINE    ( n x y --) AT-XY 0 DO MCOLOR @ XY@ MCHAR  VROW 1+!  LOOP ;
+DECIMAL
+\ Text macros make LINE clearer but run full speed
+: 2ROT ( d1 d2 d3 -- d2 d3 d1)
+       S" 2>R 2SWAP 2R> 2SWAP" EVALUATE ; IMMEDIATE
+\ : 4DUP ( a b c d -- a b c d a b c d)
+\       S" 3 PICK 3 PICK 3 PICK 3 PICK" EVALUATE ; IMMEDIATE
 
-DECIMAL 
-\ Text macros make LINE clearer but run full speed 
-: 2ROT ( d1 d2 d3 -- d2 d3 d1) 
-       S" 2>R 2SWAP 2R> 2SWAP" EVALUATE ; IMMEDIATE 
-\ : 4DUP ( a b c d -- a b c d a b c d) 
-\       S" 3 PICK 3 PICK 3 PICK 3 PICK" EVALUATE ; IMMEDIATE 
-
-HEX 
-CODE 4DUP ( a b c d -- a b c d a b c d)
+ HEX
+ CODE 4DUP ( a b c d -- a b c d a b c d)
    C046 ,          \ SP  R1 MOV,  \ dup stack pointer    \  14
    0646 , C584 ,   \ TOS PUSH,    ( -- a b c d d)        \  28
    0226 , FFFA ,   \ SP -6 AI,    \ make some room       \  12
@@ -140,54 +135,20 @@ CODE 4DUP ( a b c d -- a b c d a b c d)
    C9B1 , 0002 ,   \ R1 *+ 2 (SP) MOV,                   \  30
    C9B1 , 0004 ,   \ R1 *+ 4 (SP) MOV,                   \  30
    NEXT,                                           \ TOTAL 142
-ENDCODE     
+ ENDCODE
 
-HEX
-\ : DXY  ( x y x2 y2 -- dY dX) ROT - ABS -ROT - ABS  ;
-CODE DXY?   ( x y x2 y2 -- ?)
-    R0  POP,   \ X2 
-    R1  POP,   \ Y 
-    R2  POP,   \ X 
-    TOS PUSH,   \ Y2->*SP 
-    R2 TOS MOV, \ X->TOS 
+INCLUDE DSK1.TAILCALL
 
-    R0 TOS SUB, \ x2 x - 
-    TOS ABS,    \ abs(dx)
-
-    R1 *SP SUB,  \ y2-y  
-    *SP ABS,     \ abs(dy)
-\ MAX     
-    *SP TOS CMP, 
-    LO IF,  SP INCT, 
-    ELSE,   TOS POP, 
-    ENDIF, 
-\ 2 < 
-    TOS 2 CI, 
-    LO IF, TOS SETO, 
-    ELSE,   TOS CLR, 
-    ENDIF,
-    NEXT,
-ENDCODE
-
-  \ : MID  + 1+ 2/    \ compute mid points 
-  \  + 1+ 2/ R>           
-
-CODE MID ( x1 y1 x2 y2 -- n )
-    A136 , \ *SP+ TOS ADD, \ +
-    0584 , \      TOS INC, \ 1+
-    0814 , \ TOS  1  SRA, \ 2/
-    NEXT,
-ENDCODE     
-
-DECIMAL 
+DECIMAL
 : LINE ( x1 y1 x2 y2 -- )
 \ ANS version of Dr. Ting's recursive line.  R.I.P.
-    4DUP ( DXY MAX 2 <) 
-    DXY? IF  2DROP MM.PLOT  EXIT THEN 
+    4DUP  ROT - ABS >R - ABS R>  ( -- dx dy )
+    MAX 2 < IF  2DROP MM.PLOT  EXIT THEN \ nothing do, get out
 
-    4DUP ROT 
-    MID >R MID R> 
-    2DUP 2ROT RECURSE RECURSE ;
+    4DUP ROT ( x1 x2 y2 y1 )
+    + 1+ 2/ >R    \ compute mid points
+    + 1+ 2/ R>
+    2DUP 2ROT RECURSE RECURSE -; \ modest speedup with tailcall optimizer
 
 : MOVETO ( x y -- ) S" AT-XY" EVALUATE ; IMMEDIATE ( alias)
 : LINETO ( x y -- ) 2DUP XY@ LINE MOVETO ;
