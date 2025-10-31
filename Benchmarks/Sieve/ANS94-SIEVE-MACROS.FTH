@@ -1,6 +1,8 @@
 \ ANSified Sieve of Eratosthenes by Leo Wong
 \ from http://www.murphywong.net/hello/01234th.htm#marker
 
+\ Used Leo Wong's MACRO  word to speed up short definitions
+
 \ CAMEL99 Harness
 NEEDS ELAPSE FROM DSK1.ELAPSED
 NEEDS VALUE FROM DSK1.VALUES
@@ -23,8 +25,7 @@ MACRO ODD " 2* 3 +"  ( u -- n)  \ number n of flag u
 0 VALUE SIFT  \ to sift or not to sift
 
 \ calculate offset of prime**2
-: NEXT-SQUARE  ( u1 -- u2 )
-   DUP SQUARED 2*  SWAP 6 * +  3 + ;
+MACRO NEXT-SQUARE  " DUP SQUARED 2*  SWAP 6 * +  3 +"  ( u1 -- u2 )
 
 \ reset flags of multiples of a prime
 : RESET-FLAGS

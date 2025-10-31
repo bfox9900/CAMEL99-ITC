@@ -30,8 +30,8 @@ FLAGS SIZE + CONSTANT EFLAG
            IF
                 EFLAG SWAP
                 DO
-                  INLINE[ 0 I C! ]
-                DUP +LOOP
+                  INLINE[ 0 I C! DUP ]
+                +LOOP
            ELSE
                  DROP
            THEN
