@@ -84,17 +84,17 @@ ENDCODE
 
 HEX
 CODE NYBBLES ( color column colorbyte -- colorbyte')
-    R2 POP,          \ column to R2
-    R3 POP,          \ new color to R3
-    R3  0F ANDI,     \ insure color is legal
-    R2  1  ANDI,
-    NE IF,
-        TOS F0 ANDI,
-    ELSE,
-       TOS 0F ANDI,
-       R3  4 SLA,
-    ENDIF,
-    R3 TOS ADD,
+C0B6 ,          \    R2 POP,          \ column to R2
+C0F6 ,          \    R3 POP,          \ new color to R3
+0243 , 000F ,   \    R3  0F ANDI,     \ insure color is legal
+0242 , 0001 ,   \    R2  1  ANDI,
+1303 ,          \    NE IF,
+0244 , 00F0 ,   \        TOS F0 ANDI,
+1003 ,          \    ELSE,
+0244 , 000F ,   \       TOS 0F ANDI,
+0A43 ,          \      R3  4 SLA,
+                \    ENDIF,
+A103 ,          \    R3 TOS ADD,
     NEXT,
 ENDCODE
 
