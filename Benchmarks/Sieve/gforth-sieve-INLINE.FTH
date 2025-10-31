@@ -25,19 +25,20 @@ FLAGS SIZE + CONSTANT EFLAG
   FLAGS SIZE 1 FILL
   0 3   ( -- accumulator 1st-offset)
   EFLAG FLAGS  \ end-address, start-address
-  DO  INLINE[ I C@ ]   \ I is the array address
-       IF  INLINE[ DUP I + DUP EFLAG < ]
-           IF
-                EFLAG SWAP
-                DO
-                  INLINE[ 0 I C! DUP ]
-                +LOOP
-           ELSE
-                 DROP
-           THEN
-           INLINE[ SWAP 1+ SWAP  ]
-        THEN
-        CELL+            \ inc. offset by 2
+  DO
+      INLINE[ I C@ ]   \ I is the array address
+      IF  INLINE[ DUP I + DUP EFLAG < ]
+          IF
+              EFLAG SWAP
+              DO
+                INLINE[ 0 I C! DUP ]
+              +LOOP
+          ELSE
+              DROP
+          THEN
+          INLINE[ SWAP 1+ SWAP  ]
+      THEN
+      CELL+            \ inc. offset by 2
     LOOP
     DROP ;
 
