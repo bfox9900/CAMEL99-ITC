@@ -3,7 +3,8 @@
 
 \ Used Leo Wong's MACRO  word to speed up short definitions
 
-\ Run time 51 seconds.
+\ Run time   : 52 seconds.
+\ With macros: 51 seconds
 
 \ CAMEL99 Harness
 NEEDS ELAPSE  FROM DSK1.ELAPSE

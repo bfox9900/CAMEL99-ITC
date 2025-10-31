@@ -2,7 +2,9 @@
 \ from http://www.murphywong.net/hello/01234th.htm#marker
 
 \ CAMEL99 Harness
+NEEDS ELAPSE FROM DSK1.ELAPSE
 NEEDS VALUE FROM DSK1.VALUES
+
 : UNDER+  ( a b c --a' b ) ROT + SWAP ;
 : SQUARED ( a -- a^2) DUP * ;
 
