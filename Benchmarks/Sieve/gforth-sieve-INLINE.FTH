@@ -5,8 +5,8 @@ NEEDS INLINE[  FROM DSK1.INLINE
 
 \ Running on Camel99 Forth
 \ Byte Magazine version:  120 seconds
-\ GForth version       :   74.1 seconds (38% faster)
-\ with inline              63.5
+\ GForth version       :   73 seconds (38% faster)
+\ with inline              54 seconds
 
 \ DECIMAL
 \ 8190 CONSTANT SIZE
