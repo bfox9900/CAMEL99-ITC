@@ -3,6 +3,9 @@
 \ * KONAMI Game Font - from Konami's Athletic Land for MSX
 \ * Letter A-Z
 \ ****************************************************************
+
+\ here we are using the DATABYTE library which gives use syntax
+\ similar to Assembler for BYTE and DATA
 INCLUDE DSK1.DATABYTE
 INCLUDE DSK1.GRAFIX
 

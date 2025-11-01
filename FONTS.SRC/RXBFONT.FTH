@@ -2,6 +2,9 @@
 
 INCLUDE DSK1.VDPMEM
 \ VDP VBYTE string compiler
+\ Here show to create VDP byte directive that lets you compile
+\ nice looking lists of data into VDP RAM
+
 HEX
 : ?BYTE ( n -- ) FF00 AND  ABORT" Not a VBYTE" ;
 
@@ -13,10 +16,13 @@ HEX
          REPEAT
          2DROP ;
 
-\ set VDP pointer to pattern descriptor table, ASCII char 31
-DECIMAL 31 8*  HEX 800 + 1- VP !
+DECIMAL
+\ compute the VDP address for ASCII char 31
+\ and set VDP memory pointer 'VP' to that address
+   31 8*  HEX 800 + 1-  VP !
 
-\ compile data directly into VDP RAM
+\ Now we can compile data directly into VDP RAM
+HEX
        VBYTE 00,00,00,00,00,00,00,00    \   31
        VBYTE 00,00,00,00,00,00,00,00    \   32
        VBYTE 00,10,10,10,10,10,00,10    \ ! 33
