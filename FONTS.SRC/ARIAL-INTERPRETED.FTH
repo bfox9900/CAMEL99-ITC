@@ -2,6 +2,9 @@
 \ This method consumes NO program space but is slow
 
 \ ARIAL style font (SANS Serif)
+DECIMAL
+\ tool to see your font
+: .FONT  CR  128 30 DO  I EMIT LOOP  ;
 
 NEEDS MARKER FROM DSK1.MARKER
 
@@ -16,6 +19,7 @@ HEX
 
 1E ]PDT  VP !   \ set VDP memory pointer to character 1E location
 
+\ compile these numbers directly into VDP RAM with V,
  7C7C V, 7C7C V, 7C7C V, 7C00 V,  \ solid cursor
  0000 V, 0000 V, 0000 V, 7C7C V,  \ underline cursor
  0000 V, 0000 V, 0000 V, 0000 V,  \ " " 32
