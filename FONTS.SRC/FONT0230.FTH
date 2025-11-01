@@ -1,5 +1,5 @@
 \ FONT0230  pattern source code with additions for CAMEL99 Forth
-NEEDS CALLCHAR   FROM DSK1.CALLCHAR
+NEEDS CALLCHAR   FROM DSK1.GRAFIX
 NEEDS SAVE-FONT  FROM DSK1.LOADSAVE
 CR
 CR .( This program will create FONT0230)
