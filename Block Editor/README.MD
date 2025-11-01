@@ -31,6 +31,16 @@ You must open a block file to get started like this:
 ```
 USE DSK2.BLOCKS
 ```
+#### Make a New Block File
+If you don't have a block file you need to make one. Select a size that
+works for your disk system. A stock single-side Ti-99 floppy-disk is 90K bytes,
+Double sided are 180K bytes. If you wish you can make the block file one entire disk.
+On a single-side disk the command to do that is below. The numeric argument '90' is
+the number of 1K blocks to allocate for your block file.
+
+```
+90 S" DSK2.MYBLOCKS"  MAKE-BLOCKS
+```
 
 To display and edit a block use the EDIT command prefaced with the block number:
 ```
