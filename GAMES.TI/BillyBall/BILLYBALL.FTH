@@ -288,9 +288,8 @@ DECIMAL
       LOOP
     AGAIN ;
 
-
 DECIMAL
-: DELAY  0 ?DO  PAUSE LOOP ;
+: DELAY  0 ?DO  400 TICKS  LOOP ;
 
 : BOUNCER ( spr# speed --)
     SPEED !  \ each task has it's own bounce speed
@@ -305,7 +304,6 @@ DECIMAL
 DECIMAL
 : LASER-ON    GEN1 141 HZ 14 DB     GEN2 143 HZ 14 DB ;
 : LASER-OFF   GEN1 MUTE             GEN2 MUTE ;
-
 
 DECIMAL
 : EXPLODE ( spr# -- )
@@ -322,7 +320,6 @@ DECIMAL
     DROP
     SILENT
 ;
-
 
 : FIRE_THE_LASER
     4 NOISE 0 DB                  \ initial shot NOISE
