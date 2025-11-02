@@ -18,7 +18,7 @@ ONLY FORTH DEFINITIONS
 
 
 HERE
-
+\ slightly faster case statement. Exits immediately on match
 : :CASE  ( n --) POSTPONE OVER=  POSTPONE IF  POSTPONE DROP ; IMMEDIATE
 : BREAK; ( -- )  POSTPONE EXIT  POSTPONE THEN ; IMMEDIATE
 
