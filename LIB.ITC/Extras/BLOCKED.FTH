@@ -1,5 +1,4 @@
-\ simple block editor words based on HsForth circa 1992
-\ ported and heavily modified for CAMEL99 Forth Mar 2021 Fox
+\ VDP BLOCK EDITOR   Nov 2025 Brian Fox
 
 NEEDS DUMP  FROM DSK1.TOOLS
 NEEDS BLOCK FROM DSK1.BLOCKS
@@ -8,80 +7,150 @@ NEEDS -TRAILING FROM DSK1.TRAILING
 NEEDS 80COLS FROM DSK1.80COL
 
 80COLS
-
-VARIABLE #LINE
-VARIABLE SCR
+\ VDP Screen editor edits a line of VDP memory
+\ outputs stack string  Aug 31 2025 B Fox
+NEEDS CASE      FROM DSK1.CASE
+NEEDS RKEY      FROM DSK1.RKEY
 
 DECIMAL
-: LINE  ( l# -- addr n)  64 *  SCR @ BLOCK + 64 -TRAILING  ;
-: .LINE   ( l# -- addr) LINE TYPE ;
+HERE
+13 CONSTANT ^M     \ enter key
+VARIABLE INSERT    \ insert/over-write flag
 
+: BLANK    BL FILL ;
+: BLKCURS  30 CURS ! ;
+: BOXCURS  31 CURS ! ;
+
+\ auto-limited cursor movement controls
+\ : CUP       VROW @ 1-  0 MAX VROW ! ;
+\ : CDOWN     VROW @ 1+  L/SCR 1- MIN  VROW ! ;
+: CRIGHT    VCOL @ 1+  64 MIN VCOL ! ;
+: CLEFT     VCOL @ 1-  0 MAX  VCOL ! ;
+
+: INS/DEL \ toggle insert mode
+    INSERT DUP @ -1 XOR OVER !
+    @ IF BOXCURS  ELSE BLKCURS THEN ;
+
+\ ========================
+\ Screen text functions
+: VLINE      ( -- VDPaddr) VROW @ C/L@ * ;
+: EOL        ( -- VDPaddr)  VLINE C/L@ 1- + ;
+: RIGHTSIDE  ( -- VDPaddr len) VLINE C/L@  VCOL @ /STRING ;
+\ : LEFTSIDE   ( -- VDPaddr len) VLINE VCOL @ ;
+: VCOPY      ( vaddr len addr -- ) SWAP VREAD ;
+: READVDP    ( addr -- ) VLINE 64 ROT VCOPY ;
+
+\ =======================
+\ text manipulation
+: DELCHAR    ( -- )
+    RIGHTSIDE 1 /STRING TUCK     \ cut 1st char of RIGHTSIDE, tuck length
+    PAD VCOPY                    \ copy to temp buffer
+    PAD VPOS ROT VWRITE          \ write buffer back to CURSOR position
+    BL EOL VC!                   \ erase last char on line
+;
+
+: PUSHRIGHT ( -- )
+    RIGHTSIDE TUCK               \ tuck length for later
+    PAD VCOPY                    \ read right side of line into PAD
+    BL VPUT                      \ put a blank at cursor position
+    PAD VPOS 1+ ROT VWRITE       \ write PAD back at VPOS+1
+;
+
+HEX
+: KEYHANDLER ( char -- )
+    CASE
+        08 OF  CLEFT        ENDOF
+        09 OF  CRIGHT       ENDOF
+        03 OF  DELCHAR      ENDOF
+        04 OF  INS/DEL      ENDOF
+               BEEP
+    ENDCASE
+;
+
+: PRINTABLE? ( char -- ?) BL [CHAR] ~ 1+ WITHIN ;
+: WRITE-CHAR ( char -- ) INSERT @ IF PUSHRIGHT THEN VPUT CRIGHT ;
+
+: VDP-EDITLINE ( addr -- addr n)
+    DUP>R C/L@ BLANK \ save address on Rstack & erase
+    INSERT OFF       \ overwriting mode
+    BLKCURS
+    RKEY? DROP       \ clear the key reader
+    BEGIN
+        RKEY DUP ^M <>
+    WHILE
+        DUP PRINTABLE?
+        IF   WRITE-CHAR
+        ELSE KEYHANDLER
+        THEN
+    REPEAT
+    DROP               \ enter key
+    [CHAR] _ CURS !    \ Camel99 cursor
+    R@ READVDP
+    R> 64 -TRAILING
+;
+\ -----------------------------------------------
+\ block editor begins
+VARIABLE #LINE
+VARIABLE SCR
+VARIABLE PAGE#
+VARIABLE ELINE#
+
+\ PRIMITIVES
+DECIMAL
+: CELL-  S" 2-" EVALUATE ; IMMEDIATE
+: TAB   VCOL @ 8 +  C/L@ MIN  VCOL ! ;
+: BLANK ( addr n -- ) BL FILL ;
+
+: LINE  ( l# -- addr n)  64 *  SCR @ BLOCK + 64 ;
+: LINE! ( addr n l# -- ) 64 *  SCR @ BLOCK + SWAP CMOVE UPDATE  ;
+: GETXY ( -- x y) VROW 2@ ;
+: .SCR# ( -- )   ." SCR#"  SCR @  U. ;
+: .FILE   ACTIVE COUNT TYPE ;
+: .HEADER  .SCR# TAB TAB .FILE ;
+: .LINE ( l# --) DECIMAL DUP 3 .R  SPACE LINE -TRAILING TYPE ;
+
+\ USER COMMANDS
 : LIST  ( s# - )
-        CR
-        DUP SCR ! ." SCR#"  U.
-        16 0
-        DO
-          CR  I 3 .R  SPACE  I .LINE
-        LOOP
-        CR ;
+  SCR ! PAGE .HEADER 16 0 DO  CR I .LINE   LOOP CR ;
 
-: PP  ( line# -- <TEXT> )
-        1 PARSE  PAD PLACE
-        PAD COUNT LINE SWAP CMOVE UPDATE ;
+: USE   PARSE-NAME  OPEN-BLOCKS ;
+: LL    SCR @ LIST ; \ re-list
+: >>    SCR DUP 1+! @ LIST ;
+: <<    SCR DUP 1-! @ LIST ;
+: GO    DUP SCR @ LIST ;
 
-: PL
-        DUP SCR @ <LINE> PAD 2DUP C! 1+ SWAP CMOVE $ACCEPT
-        1+ SWAP scr @ <LINE> CMOVE UPDATE ;
-
-: .INDEX ( blk# --)   0 SWAP .LINE ;
 : CLEAR ( n -- ) BUFFER B/BUF BLANK  UPDATE ;
+: COPY  ( src dst -- ) FLUSH SWAP  BLOCK  CELL- !  UPDATE ;
 
-: COPY  ( src dst -- ) FLUSH SWAP  BLOCK  2- !  UPDATE ;
+: PL  ( line# -- <TEXT> ) >R 1 PARSE R> LINE! LL ; \ put line
 
-: CR'S  ( n -- )
-        0 DO
-             CR #LINE 1+!
-          LOOP ;
+: ATLINE  ( -- )  1+ 4 SWAP AT-XY ; \ place cursor on line 0
+: CUP       VROW @ 1-  1 MAX   VROW ! ;
+: CDOWN     VROW @ 1+  16 MIN  VROW ! ;
+: ELINE     VROW @ 1+ ;
+: /CR       CDOWN   4 VCOL ! ; \ editor carriage return
 
-: FORM-FEED
-        0C EMIT  #PAGE 1+!   #LINE 0!  ;
+: EDITLINE
+  VCOL @ >R           \ start of VDP line is saved
+  PAD VDP-EDITLINE
+  R> /STRING          \ cut off string at VCOL location
+  VROW @ 1- LINE! /CR     \ write it back to block
+;
 
-: .PAGE#
-        #PAGE @ IF ." page:" #PAGE @ 3 .R THEN ;
+: EDIT ( scr# -- )
+     LIST
+     0 ATLINE
+     BEGIN
+       KEY
+       CASE
+        [CHAR] i OF EDITLINE                   ENDOF
+        [CHAR] I OF EDITLINE                   ENDOF
+              10 OF CDOWN                      ENDOF
+              13 OF CDOWN                      ENDOF
+              11 OF CUP                        ENDOF
+              15 OF 0 18 AT-XY ." Forth " QUIT ENDOF
+       ENDCASE
+     AGAIN
+;
 
-: .HEADER
-        CR  ACTIVE $.
-        TAB  TAB  TIME@ TIME->$ $. SPACE SPACE DATE@ DATE->$ $. ;
-
-: .FOOTER
-        CR  CR
-        L/PAGE #LINE @ -  CR'S
-        0F CTAB ." HS/FORTH V5.0" 10 SPACES ." Intelect Systems"
-        CR 40 CTAB .PAGE#
-        FORM-FEED ;
-
-: ?FORMFEED  #LINE @  L/PAGE > IF .FOOTER .HEADER  THEN ;
-
-: INDEX    ( from,to -- )
-           DECIMAL
-           HIGHBLK @ 1- MIN
-           OVER L/PAGE / 1+ #PAGE !      \ calculate page# for 1st blk
-           #LINE 0!
-           .HEADER CR CR
-           1+ SWAP
-           DO  CR  I 4 .R  4 SPACES  I .INDEX  ?FORMFEED  1 /LOOP
-          .FOOTER ;
-
-: 3'S    3 / 3 * ;
-
-: TRIAD  ( scr# -- )
-        DECIMAL
-        #PAGE 0! .HEADER
-        3'S DUP 3 + SWAP
-        DO CR I LIST LOOP
-        .FOOTER ;
-
-: TRIADS  ( from,to -- )
-           3'S  1+ SWAP  3'S   DO  I TRIAD  3 +LOOP ;
-
-: LISTING  0 HIGHBLK @ 2 - TRIADS ;
+HERE SWAP - DECIMAL . .( bytes )
