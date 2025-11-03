@@ -28,7 +28,7 @@ VARIABLE y
 
 : PLOTLINE ( x0 y0  x1 y1 -- )
         SETUP
-        ( -- x0 x1) 
+        ( -- x0 x1)
         DO
            ( -- i y ) PLOT
            D @ 0>
