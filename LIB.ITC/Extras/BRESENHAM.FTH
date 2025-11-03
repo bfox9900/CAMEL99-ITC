@@ -22,8 +22,8 @@ VARIABLE y
 : SETUP ( x0 y0  x1 y1 -- )
         OVER 4 PICK - DUP >r dx !   \  dx = x1 - x0
         DUP  3 PICK - DUP dy !      \  dy = y1 - y0
-        2* R> - D!                  \  D = 2*dy - dx
-
+        2* R> - D !                  \  D = 2*dy - dx
+;
 
 
 : PLOTLINE ( x0 y0  x1 y1 -- )

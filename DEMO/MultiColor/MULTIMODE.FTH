@@ -147,7 +147,8 @@ ENDCODE
 DECIMAL
 : LINE ( x1 y1 x2 y2 -- )
 \ ANS version of Dr. Ting's recursive line.  R.I.P.
-    4DUP  ROT - ABS -ROT - ABS           \ compute dx dy
+    4DUP
+    ROT - ABS >R - ABS R>                \ compute dx dy
     MAX 2 < IF  2DROP MM.PLOT  EXIT THEN \ nothing do, get out
 
     4DUP ROT

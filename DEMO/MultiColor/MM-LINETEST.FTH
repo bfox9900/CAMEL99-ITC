@@ -30,7 +30,7 @@ DECIMAL
     DO
        I MCOLOR !
        32 12
-       DO  I  I J +  MM.PLOT  LOOP
+       DO  I DUP J +  MM.PLOT  LOOP
        100 MS
     LOOP
 ;

@@ -1,6 +1,7 @@
 \ multicolor.fth   for Camel99 Forth    2024 Brian Fox
 \ based on code from TI-Forth
 
+NEEDS .S      FROM DSK1.TOOLS   \ debugging
 NEEDS CHARSET FROM DSK1.CHARSET
 HERE
 
@@ -129,20 +130,27 @@ NEEDS VALUE     FROM DSK1.VALUES
 0 VALUE dy
 0 VALUE y
 
+: SETUP ( x0 y0  x1 y1 -- )
+        OVER 4 PICK - DUP>R TO dx    \  dx = x1 - x0
+        DUP  3 PICK - DUP   TO dy    \  dy = y1 - y0
+        2* R> - TO D                 \  D = 2*dy - dx
+;
+
+: SETUP ( x0 y0  x1 y1 -- )
+;
+
 : LINE ( x0 y0  x1 y1 -- )
-    ROT -  TO dy    \  dy = y1 - y0
-    -ROT -  TO dx    \  dx = x1 - x0
-    dy 2* dx - TO D  \  D = 2*dy - dx
-    ( -- x0 x1)
-    DO
-        ( -- i y ) MM.PLOT
-        D 0>
-        IF
-            1 +TO y
-            D dx 2* - TO D
-        THEN
-        D dy 2* +   TO D
-    LOOP ;
+        SETUP
+        ( -- x0 x1)
+        DO
+           ( -- i y ) MM.PLOT
+           D 0>
+           IF
+             1 +TO y
+             D dx 2* - TO D
+           THEN
+           D dy 2* +   TO D
+        LOOP ;
 
 : MOVETO ( x y -- ) S" AT-XY" EVALUATE ; IMMEDIATE ( alias)
 : LINETO ( x y -- ) 2DUP XY@ LINE MOVETO ;
