@@ -122,35 +122,61 @@ DROP
 : VLINE    ( n x y --) AT-XY 0 DO MCOLOR @ XY@ MCHAR  VROW 1+!  LOOP ;
 DECIMAL
 
-\ values are faster at getting a number onto the stack
-NEEDS VALUE     FROM DSK1.VALUES
+\ *************************************************************
+\ bresenham from rosettacode.com
 
-0 VALUE D
-0 VALUE dx
-0 VALUE dy
-0 VALUE y
+\ libraries needed by Camel99 forth
+NEEDS .S     FROM DSK1.TOOLS
+NEEDS DEFER  FROM DSK1.DEFER
+NEEDS VALUE  FROM DSK1.VALUES
 
-: SETUP ( x0 y0  x1 y1 -- )
-        OVER 4 PICK - DUP>R TO dx    \  dx = x1 - x0
-        DUP  3 PICK - DUP   TO dy    \  dy = y1 - y0
-        2* R> - TO D                 \  D = 2*dy - dx
-;
+\ these words change based on the input coordinates
+DEFER STEEP         \ noop or swap
+DEFER YSTEP         \ 1+ OR 1-
 
-: SETUP ( x0 y0  x1 y1 -- )
-;
+\ replaced local variables with VALUEs for Camel99 Forth
+0 VALUE Y
+0 VALUE DY
+0 VALUE DX
 
-: LINE ( x0 y0  x1 y1 -- )
-        SETUP
-        ( -- x0 x1)
-        DO
-           ( -- i y ) MM.PLOT
-           D 0>
-           IF
-             1 +TO y
-             D dx 2* - TO D
-           THEN
-           D dy 2* +   TO D
-        LOOP ;
+: 2OVER  3 PICK  3 PICK ;
+
+CODE NOOP  NEXT, ENDCODE
+
+: LINE ( x0 y0 x1 y1  -- )
+  ROT SWAP   ( x0 x1 y0 y1 )
+
+\ test if line is vertical or horizontal ?
+  2DUP  - ABS >R
+  2OVER - ABS R> <
+  IF         ['] SWAP \ SWAP USE OF X AND Y
+  ELSE 2SWAP ['] NOOP
+  THEN       IS STEEP \ change action of STEEP
+
+  ( Y0 Y1 X0 X1 )
+  2DUP >
+  IF SWAP 2SWAP SWAP  \ ENSURE X1 > X0
+  ELSE    2SWAP
+  THEN
+
+  ( x0 x1 y0 y1 )
+  2DUP >         \ is Y descending
+  IF   ['] 1-    \ choose a decrementer
+  ELSE ['] 1+    \ choose the incremter
+  THEN IS YSTEP  \ set YSTEP's action
+
+  OVER - ABS       TO DY  TO Y
+  SWAP 2DUP - DUP  TO DX
+  2/ ROT 1+ ROT
+  ( ERROR X1+1 X0 )
+  DO  I Y STEEP MM.PLOT
+      DY -
+      DUP 0<
+      IF   Y YSTEP TO Y
+           DX +
+      THEN
+  LOOP
+  DROP ;
 
 : MOVETO ( x y -- ) S" AT-XY" EVALUATE ; IMMEDIATE ( alias)
 : LINETO ( x y -- ) 2DUP XY@ LINE MOVETO ;

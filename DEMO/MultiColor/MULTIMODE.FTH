@@ -143,7 +143,7 @@ CODE MIDPOINT ( x y -- n)
     0814 ,   \ 2/
     NEXT,
 ENDCODE
-
+INCLUDE DSK1.TAILCALL
 DECIMAL
 : LINE ( x1 y1 x2 y2 -- )
 \ ANS version of Dr. Ting's recursive line.  R.I.P.
@@ -153,7 +153,7 @@ DECIMAL
 
     4DUP ROT
     MIDPOINT >R MIDPOINT R>
-    2DUP 2ROT RECURSE RECURSE ;
+    2DUP 2ROT RECURSE RECURSE -;
 
 : MOVETO ( x y -- ) S" AT-XY" EVALUATE ; IMMEDIATE ( alias)
 : LINETO ( x y -- ) 2DUP XY@ LINE MOVETO ;
