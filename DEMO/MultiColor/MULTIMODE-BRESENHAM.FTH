@@ -130,6 +130,7 @@ NEEDS .S     FROM DSK1.TOOLS
 NEEDS DEFER  FROM DSK1.DEFER
 NEEDS VALUE  FROM DSK1.VALUES
 
+
 \ these words change based on the input coordinates
 DEFER STEEP         \ noop or swap
 DEFER YSTEP         \ 1+ OR 1-
@@ -152,15 +153,13 @@ CODE NOOP  NEXT, ENDCODE
   IF         ['] SWAP \ SWAP USE OF X AND Y
   ELSE 2SWAP ['] NOOP
   THEN       IS STEEP \ change action of STEEP
-
-  ( Y0 Y1 X0 X1 )
+  ( -- Y0 Y1 X0 X1 )
   2DUP >
-  IF SWAP 2SWAP SWAP  \ ENSURE X1 > X0
+  IF SWAP 2SWAP SWAP  \ ensure x1 > x0
   ELSE    2SWAP
   THEN
-
-  ( x0 x1 y0 y1 )
-  2DUP >         \ is Y descending
+  ( -- x0 x1 y0 y1 )
+  2DUP >         \ is Y ascending
   IF   ['] 1-    \ choose a decrementer
   ELSE ['] 1+    \ choose the incremter
   THEN IS YSTEP  \ set YSTEP's action

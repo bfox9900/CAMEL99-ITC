@@ -23,12 +23,12 @@ CODE NOOP  NEXT, ENDCODE
   2DUP  - ABS >R  ( r: -- dy)
   2OVER - ABS R>  ( dx dy )
   < IF       ['] SWAP
-  ELSE 2SWAP ['] NOOP \ change direction of line
+  ELSE 2SWAP ['] NOOP \ change direction we draw
   THEN       IS STEEP \ change action of STEEP
 ;
 
 : ASCEND/DESCEND ( x0 x1 y0 y1 )
-  2DUP >         \ is Y descending
+  2DUP >         \ is Y ascending?
   IF   ['] 1-    \ choose a decrementer
   ELSE ['] 1+    \
   THEN IS YSTEP  \ set YSTEP's action
@@ -42,7 +42,6 @@ CODE NOOP  NEXT, ENDCODE
 ;
 
 : LINE ( x0 y0 x1 y1  -- )
-
   CHECK-DIRECTION
   ASCEND/DESCEND
   ADJUST-X
@@ -51,11 +50,12 @@ CODE NOOP  NEXT, ENDCODE
   SWAP 2DUP - DUP  TO DX
   2/ ROT 1+ ROT
   ( ERROR X1+1 X0 )
-  DO  I Y STEEP MM.PLOT
-      DY -
-      DUP 0<
-      IF   Y YSTEP TO Y
-           DX +
-      THEN
+  DO
+    I Y STEEP MM.PLOT
+    DY -
+    DUP 0<
+    IF  Y YSTEP TO Y
+        DX +
+    THEN
   LOOP
   DROP ;
