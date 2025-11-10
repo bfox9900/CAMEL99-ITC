@@ -25,4 +25,24 @@ CODE KCHECK ( -- 0 | n) \ 191 uS
        R12 RPOP,               \ restore R12
        NEXT,                   \ No key pressed: return (with EQ bit set)
        ENDCODE
-       
+
+\ this would work well in a multi-tasking program
+\ the PAUSE loop is 11 times faster than using KEY?
+: CLEARKEYS  BEGIN KCHECK 0= UNTIL ;
+
+: FASTKEY ( -- char)
+  CLEARKEYS
+  VPOS VC@
+   BEGIN
+      PAUSE
+      DUP
+      TMR@ 1FFF >
+      IF  DROP  CURS @
+      THEN VPUT
+      KCHECK
+  UNTIL
+  KEY?
+  SWAP VPUT
+;
+
+: TEST  BEGIN  FASTKEY .  ?TERMINAL UNTIL ;
