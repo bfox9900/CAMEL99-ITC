@@ -1,17 +1,17 @@
-\ BYTE MAGAZINE SIEVE with optimization examples
+\ BYTE MAGAZINE SIEVE with easy optimization examples
 \ 10 ITERATION TIMINGS
 \                          Seconds
 \ Original code             120
-\ ]FLAGS 2* 2DROP           108
+\ ]FLAGS 2* 2DROP           108    11% better
 
 NEEDS ELAPSE FROM DSK1.ELAPSE
 NEEDS AI,    FROM DSK1.LOWTOOLS
 
 DECIMAL
- 8190 CONSTANT SIZE
+8190 CONSTANT SIZE
 0 VARIABLE FLAGS   SIZE ALLOT  0 FLAGS !
 
-\ Forth arrays are simple addition
+\ Forth arrays are simple addition done in code
 CODE ]FLAGS ( n -- addr)   TOS FLAGS AI,   NEXT, ENDCODE
 
 : DO-PRIME

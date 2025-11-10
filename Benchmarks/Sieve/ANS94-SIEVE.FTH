@@ -1,6 +1,16 @@
 \ ANSified Sieve of Eratosthenes by Leo Wong
 \ from http://www.murphywong.net/hello/01234th.htm#marker
 
+\ Camel99 Forth ITC       Seconds
+\ Original code             120
+\ ]FLAGS 2* 2DROP           108    11% better
+
+\ Wong version               52   130% better !
+\ with macros
+
+
+
+
 \ CAMEL99 Harness
 NEEDS ELAPSE FROM DSK1.ELAPSE
 NEEDS VALUE FROM DSK1.VALUES

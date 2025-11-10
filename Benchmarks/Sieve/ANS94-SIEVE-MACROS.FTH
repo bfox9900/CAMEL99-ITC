@@ -2,9 +2,13 @@
 \ from http://www.murphywong.net/hello/01234th.htm#marker
 
 \ Used Leo Wong's MACRO  word to speed up short definitions
+\ Camel99 Forth ITC       Seconds
+\ BYTE Mag. code            120
+\ ]FLAGS 2* 2DROP           108    11% better
 
-\ Run time   : 52 seconds.
-\ With macros: 51 seconds
+\ Wong version               52   130% better !
+\ with macros                50.7
+
 
 \ CAMEL99 Harness
 NEEDS ELAPSE  FROM DSK1.ELAPSE
