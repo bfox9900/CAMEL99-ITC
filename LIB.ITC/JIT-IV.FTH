@@ -92,6 +92,7 @@ VARIABLE TOSFREE  \ TRUE = TOS REGISTER IS FREE TO USE
 : LOOKBACK ( n -- u) CELLS NEGATE HERE + @ ; \ read existing code
 : REMOVE   ( n -- )  CELLS NEGATE ALLOT ; \ removes cells of code
 
+\ push/pop optimizer
 HEX
 C136 CONSTANT "DROP"  \ *SP+ R4 MOV,
 
@@ -104,10 +105,10 @@ C136 CONSTANT "DROP"  \ *SP+ R4 MOV,
 
 
 \ =================================================
-
 HEX
 \ compile code to load TOS ( r4 ) with n
-: LIT,   ( n -- )  COMPILES DUP  0204 ,  , ; \ LI R4,<n>
+: #,     0204 ,  ,  ; \ LI R4,<n>
+: LIT,   ( n -- )  DUP, #, ;
 
 \ store a byte offset in odd byte of addr.
 \ Addr is the location of Jump instruction
@@ -250,7 +251,7 @@ OPTIMIZER: OPT+, ( xt -- )
 
         ['] +  OF  OPT+,    ENDOF
 
-        ['] DUP OF ?DUP,    ENDOF
+\        ['] DUP OF ?DUP,    ENDOF
 
                     CODE,  \ default, compile kernel code
     ENDCASE
@@ -325,7 +326,7 @@ VARIABLE JSTATE
     ENDCODE
 ; IMMEDIATE
 
-HERE SWAP - SPACE DECIMAL . .( bytes)
+HERE SWAP - SPACE DECIMAL CR . .( bytes)
 
 
 \ test program
@@ -353,8 +354,6 @@ JIT: JITTEST
 ;JIT
 
 
-\ ' TEST1 >BODY
-\ .S
 SP@ SP!
 
 
@@ -370,6 +369,9 @@ SP@ SP!
     CR .S
 ; IMMEDIATE
 
+
+JIT: LOOPTEST 2000 0 DO  LOOP ;JIT
+JIT: #TEST  2000 ;JIT
 
    : FORTHADD  2000 0 DO  2  3 +  DROP  LOOP ;
 JIT: JITADD    2000 0 DO  2  3 +  DROP  LOOP ;JIT
