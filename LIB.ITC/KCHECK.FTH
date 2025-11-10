@@ -28,11 +28,12 @@ CODE KCHECK ( -- 0 | n) \ 191 uS
 
 \ this would work well in a multi-tasking program
 \ the PAUSE loop is 11 times faster than using KEY?
-: CLEARKEYS  BEGIN KCHECK 0= UNTIL ;
+
+: CLEARKEYS  BEGIN KCHECK 0= UNTIL ; \ wait until hardware is stable
 
 : FASTKEY ( -- char)
-  CLEARKEYS
-  VPOS VC@
+   CLEARKEYS
+   VPOS VC@
    BEGIN
       PAUSE
       DUP
@@ -41,8 +42,8 @@ CODE KCHECK ( -- 0 | n) \ 191 uS
       THEN VPUT
       KCHECK
   UNTIL
+  VPUT
   KEY?
-  SWAP VPUT
 ;
 
-: TEST  BEGIN  FASTKEY .  ?TERMINAL UNTIL ;
+: TEST     BEGIN  FASTKEY .  AGAIN ;
