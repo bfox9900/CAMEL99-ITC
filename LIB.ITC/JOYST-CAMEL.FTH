@@ -1,7 +1,7 @@
 \ JOYST.FTH  from http://www.unige.ch/medecine/nouspikel/ti99/joystick.htm
 \ Tested on REAL TI-99, CAMEL99 TTY Jan 8 2020
 
-\ HEX Outputs in TOS register
+\ HEX Output in TOS register ( mask bit 0 for fire detection )
 \ 01 = Fire
 \ 02 = Left
 \ 04 = Right
@@ -19,17 +19,28 @@ DECIMAL
 
 HEX
 CODE 3CRU!  ( CRU -- )  ( TOS 3 LDCR,) 30C4 ,  NEXT, ENDCODE
-CODE 8CRU@  ( -- data)  ( TOS 8 STCR,) 3604 ,  NEXT, ENDCODE
+CODE CRUC@  ( -- data)  ( TOS 8 STCR,) 3604 ,  NEXT, ENDCODE
 
 HEX
-: JOYST ( joyst# -- n)
-        6 +  ><      \
-        24 'R12 !
-        3CRU!
-        6 'R12 !
-        8CRU@  >< INVERT 1F AND
-        0 83D6 C!
+: JOYST ( joyst# -- n) \ compare to Assembler version
+        6 +         \ TOS  06 AI,     \ joyst# to real CRU adress
+        ><          \ TOS     SWPB,
+        24 'R12 !   \ R12  24 LI,     \ joystick i/o address
+        3CRU!       \ TOS  03 LDCR,   \ write 3 bits to enable joystick#
+        6 'R12 !    \ R12  06 LI,     \ select column 6
+        CRUC@       \ TOS  08 STCR,   \ read 8 bits
+        ><          \ TOS     SWPB,   \ swap byte
+        INVERT      \ TOS     INV,    \ change to positive logic
+        1F AND      \ TOS 01F ANDI,   \ mask off the junk
+        83D6 OFF    \ 83D6 @@ CLR,    \ reset screen timeout
 ;
 
-
-: TESTJOYST  BEGIN  0 JOYST  .   ?TERMINAL UNTIL ;
+: TESTJOYST
+        BEGIN
+          0 JOYST
+          DUP 0001 AND
+          IF   DROP ." >>FIRE!<<"
+          ELSE .
+          THEN
+          ?TERMINAL
+        UNTIL ;
