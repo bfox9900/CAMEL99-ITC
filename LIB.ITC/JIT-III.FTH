@@ -7,7 +7,8 @@
 
 \ Version II compiles code into dictionary ram as CODE definitions.
 
-\ Version III uses a literal stack to allow optimizing
+\ Version III uses a literal stack to allow optimizing AND
+\ It replaces fetches and stores with symbolic addressing
 
 NEEDS .S     FROM DSK1.TOOLS   \ debug
 NEEDS ELAPSE FROM DSK1.ELAPSE  \ execution timing
@@ -57,6 +58,25 @@ CODE @      C114 ,         NEXT, ENDCODE
 CODE C@     D114 , 0984 ,  NEXT, ENDCODE
 CODE +      A136 ,         NEXT, ENDCODE
 
+\ ================================================
+\     ATTEMPT TO OPTIMIZE DROP/DUP sequences
+
+VARIABLE TOSFREE  \ TRUE = TOS REGISTER IS FREE TO USE
+
+: DUP,    0646 , C584 ,   TOSFREE ON  ;
+: DROP,   C136 ,          TOSFREE OFF ;
+
+: LOOKBACK ( n -- u) CELLS NEGATE HERE + @ ; \ read existing code
+: REMOVE   ( n -- )  CELLS NEGATE ALLOT ; \ removes cells of code
+
+HEX
+C136 CONSTANT "DROP"  \ *SP+ R4 MOV,
+
+: ?DUP,
+    ['] DUP <>
+    IF  1 LOOKBACK "DROP" = IF  1 REMOVE  TOSFREE ON  ELSE DUP, THEN
+    THEN
+;
 
 045A CONSTANT 'NEXT'  \ 9900 CODE for B *R10   Camel99 Forth's NEXT code
 
@@ -213,7 +233,8 @@ OPTIMIZER: OPTC!,
         ;CASE
 ;OPTIMIZER
 
-0204 CONSTANT "LI" \ load imm. to R4
+0204 CONSTANT "LI"    \ load imm. to R4
+C136 CONSTANT "DROP"
 
 OPTIMIZER: OPT+, ( xt -- )
 \ 2 literal number added together
@@ -234,6 +255,7 @@ OPTIMIZER: OPT+, ( xt -- )
 
 ;OPTIMIZER
 
+
 \ specific CODE word and optimizers
 \ If the case statemente can't find it, just compile kernel code
 : OPT-CODE,
@@ -246,6 +268,8 @@ OPTIMIZER: OPT+, ( xt -- )
         ['] C! OF  OPTC!,   ENDOF
 
         ['] +  OF  OPT+,    ENDOF
+
+        ['] DUP OF ?DUP,    ENDOF
 
                     CODE,  \ default, compile kernel code
     ENDCASE

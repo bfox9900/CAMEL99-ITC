@@ -109,5 +109,3 @@ DECIMAL
 
 CLEAR
 CR ." TYPE RUN to start"
-
-
