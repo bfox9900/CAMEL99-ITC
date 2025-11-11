@@ -6,16 +6,60 @@
 \ The biggest speed up is when used with structured assembler loops.
 \ Forth loops is always 5X slower than native code loops
 
-NEEDS BEGIN,   FROM DSK1.ASM9900
+NEEDS .S       FROM DSK1.TOOLS
 NEEDS INLINE   FROM DSK1.INLINE
 
- : CALL,     ( dst -- )   \ 6 bytes per call
+NEEDS VOCABULARY FROM DSK1.WORDLISTS
+
+VOCABULARY ASSEMBLER
+ONLY FORTH ALSO ASSEMBLER DEFINITIONS
+NEEDS BEGIN,   FROM DSK1.ASM9900
+
+ONLY FORTH DEFINITIONS
+HEX
+\ Words in scratchpad RAM end in a JMP instruction, not NEXT
+\ Might change this, but for now make some conventional versions.
+CODE DUP    0646 , C584 ,  NEXT, ENDCODE
+CODE DROP   C136 ,         NEXT, ENDCODE
+CODE !      C536 , C136 ,  NEXT, ENDCODE
+CODE @      C114 ,         NEXT, ENDCODE
+CODE C@     D114 , 0984 ,  NEXT, ENDCODE
+CODE +      A136 ,         NEXT, ENDCODE
+
+
+045A CONSTANT 'NEXT'  \ 9900 CODE for B *R10   Camel99 Forth's NEXT code
+
+: ?CODE ( xt --) DUP @ 2- - ABORT" Not a primitive"  ;
+
+: CODE,  ( xt --)  \ Read code word from kernel, compile into target memory
+    DUP ?CODE
+    >BODY 80 CELLS  \ 128 bytes is max size we will try to compile
+    BOUNDS    ( -- IPend IPstart)
+    BEGIN
+        DUP @ 'NEXT' <>  \ the instruction is not 'NEXT'
+    WHILE
+        DUP @  ( -- IP instruction)
+        ,      \ compile instruction
+        CELL+  \ advance IP
+        2DUP < ABORT" End of code not found"
+    REPEAT
+    2DROP
+;
+
+\ we can steal primitives from the kernel
+: STEAL ( <codeword> )
+   POSTPONE [']   POSTPONE CODE, ; IMMEDIATE
+
+VOCABULARY MACHINE
+ONLY FORTH ALSO ASSEMBLER ALSO MACHINE DEFINITIONS
+
+ : CALL     ( dst -- )   \ 6 bytes per call
               R11 RPUSH,       \ 28 save R11 on forth return stack
             ( addr) @@ BL,     \ 16   branch & link saves the PC in R11
 ;
 
-: RET,        R11 RPOP,        \  6 bytes per return
-              R11 ** B,
+: RET        R11 RPOP,        \  6 bytes per return
+             R11 ** B,
 ;
 
 \ CALL/RET Overhead:   ITC vs STC on 9900
@@ -30,249 +74,138 @@ CR .( M E M O R Y  F E T C H  &  S T O R E)
 
 \ ** colon words  compile inline code in a CODE word
 
-: !,      ( n addr -- ) S" INLINE[ ! ]" EVALUATE ;
-: @,      ( a -- w )    S" INLINE[ @ ]" EVALUATE ;
-: 2!,     ( d addr -- ) S" INLINE[ 2! ]" EVALUATE ;
-: 2@,     ( addr -- d)  S" INLINE[ 2@ ]" EVALUATE ;
-: C!,     ( c addr -- )
-             *SP+  W MOV,
-              W SWPB,
-              W *TOS MOVB,
-              TOS POP,
-              ;
+: !      ( n addr -- ) STEAL ! ;
+: @      ( a -- w )    STEAL @ ;
+: 2!     ( d addr -- ) STEAL 2! ;
+: 2@     ( addr -- d)  STEAL 2@ ;
 
-: C@,      ( addr -- c )            \ this is code for C@ interleaved with COUNT (saves 2 bytes)
-            *TOS TOS MOVB,
-             TOS 8 SRL,
-             ;
+: C!     ( c addr -- ) *SP+  W MOV, W SWPB, W *TOS MOVB, TOS POP, ;
 
-: COUNT,  ( addr -- addr' u)
-             TOS PUSH,              \ make a copy of addr
-             *SP INC,               \ inc. past the count byte
-             C@                     \ compile code for C@ here
-             ;
-: +!,      ( n addr --)
-             *SP+ *TOS ADD,         \ 14+8+4 = 26 cycles
-              TOS POP,              \          22 cycles
-              ;
+: C@      ( addr -- c ) *TOS TOS MOVB,  TOS 8 SRL, ;
 
-: 1+!,      ( addr -- ) *TOS INC, ;
-: 2+!,      ( addr -- ) *TOS INCT, ;
-: 1-!,      ( addr -- ) *TOS DEC, ;
-: 2-!,      ( addr -- ) *TOS DECT, ;
-
-: @@?       ( var var -- ) \ compare 2 variables
-             @@ SWAP @@ SWAP CMP, ;
+: COUNT    STEAL COUNT ;
+: +!      ( n addr --) STEAL +! ;
+: 1+!     ( addr -- )  STEAL 1+! ;
+: 1-!     ( addr -- )  STEAL 1-! ;
+: 2+!,    ( addr -- ) *TOS INCT, ;
+: 2-!,    ( addr -- ) *TOS DECT, ;
 
 \ ===================================================================
 CR .( D A T A   S T A C K)
+: SP@    ( -- a ) STEAL SP@ ;
+: SP!    ( a -- ) STEAL SP! ;
+: DROP   ( w -- ) STEAL DROP ;
+: NIP    ( n n' -- n') STEAL NIP ;
+: DUP    ( w -- w w ) STEAL DUP ;
+: OVER   ( w1 w2 -- w1 w2 w1 ) STEAL OVER ;
+: SWAP   ( w1 w2 -- w2 w1 ) STEAL SWAP ;
+: ROT    ( n1 n2 n3 --  n2 n3 n1) STEAL ROT ;
+: -ROT   STEAL -ROT ;
+: ><     ( aabb -- bbaa)  STEAL >< ;
+: SPLIT  ( AABB --  BB AA ) STEAL SPLIT ;
 
-: SP@,     ( -- a )
-              TOS PUSH,
-              SP TOS MOV,
-              ;
-
-: SP!,     ( a -- )
-              TOS SP MOV,
-              TOS POP,
-              ;
-
-: DROP,    ( w -- )
-              TOS POP,
-              ;
-
-: NIP,     ( n n' -- n')
-              SP INCT,
-              ;
-
-: DUP,    ( w -- w w )
-             TOS PUSH,
-             ;
-
-: OVER,      ( w1 w2 -- w1 w2 w1 )
-              TOS PUSH,             \ 28
-              2 (SP) TOS MOV,       \ 22
-              ;
-
-: SWAP,    ( w1 w2 -- w2 w1 )
-              TOS   W MOV,          \ 14
-             *SP  TOS MOV,          \ 18
-              W   *SP MOV,          \ 18
-              ;
-
-: ROT    ( n1 n2 n3 --  n2 n3 n1)
-              2 (SP)    W MOV,      \ move bottom n1 to TEMP             14+8 =   22
-             *SP   2 (SP) MOV,      \ move n2 to bottom position         14+4+8 = 26
-              TOS     *SP MOV,      \ n3 moves to second                 14+4   = 18
-              W       TOS MOV,      \ n1 goes to top of stack register   14+0   = 14
-              ;
-
-: ><,      ( n -- n )            \ swap bytes in n
-              TOS SWPB,             \ handy and only 1 instruction
-              ;
-
-: SPLIT,  ( AABB --  BB AA )     \ needed to create V!  VDP store integer
-             TOS W MOV,             \ make a copy
-             TOS 8 SRL,             \ slide 'AA' to the right
-             W 00FF ANDI,           \ mask out AA from the copy
-             W PUSH,
-             ;
-
-\ used in number conversion. Same size as DROP DROP Much faster as CODE
-: 2DROP,   ( n n -- )
-              SP INCT,
-              TOS POP,
-              ;
-
-\ used 10x in the CAMEL Forth Kernel. Provides good speedup on some critical words
-: 2DUP,   ( n1 n2 -- n1 n2 n1 n2 )
-              *SP W MOV,           \ copy n1
-              TOS PUSH,            \ copy n2 onto stack
-              W PUSH,              \ push onto task
-              ;
-
-: 2SWAP   ( n1 n2 n3 n4-- n3 n4 n1 n2)
-              TOS       R0 MOV,     \ n4  14
-             *SP        R1 MOV,     \ n3  14
-              2 (SP)   TOS MOV,     \ n2  22
-              4 (SP)   *SP MOV,     \ n1  26
-              R0    2 (SP) MOV,     \     22
-              R1    4 (SP) MOV,     \     22
-              ;
-
-: 2OVER  ( d1 d2 -- d1 d2 d1)
-             *SP W MOV,             \ d2 lsb -> temp                             18
-              W   PUSH,             \ push temp                                  28
-              TOS PUSH,             \ push d2 MSBits                             28
-              4 (SP) TOS MOV,       \ pick 4th item, d1 MSBits to TOS            22
-              6 (SP) *SP MOV,       \ pick 6th item, d1 LSBits to next on stack  26
-              ;
-
-: PICK   ( n -- n)             \ interesting: GForth ITC takes 10 intel instructions for PICK
-              TOS W MOV,
-              W 1 SLA,   \ 2*
-              SP W ADD,
-             *W TOS MOV,
-              ;
+: 2DROP  ( n n -- ) STEAL 2DROP ;
+: 2DUP   ( n1 n2 -- n1 n2 n1 n2 ) STEAL 2DUP ;
+: 2SWAP   ( n1 n2 n3 n4-- n3 n4 n1 n2) STEAL 2SWAP ;
+: PICK   ( n -- n) STEAL PICK ;
 
 \ ==========================================================================
 CR .( R E T U R N   S T A C K)
 
-: RP@,     ( -- a )
-              TOS PUSH,
-              RP TOS MOV,
-              ;
-
-: RP!,     ( a -- )
-              TOS RP MOV,
-              TOS POP,
-              ;
-
-: >R,      ( w -- )
-              TOS RPUSH,            \ 28
-              TOS POP,              \ 22
-              ;              \ 50 vs 36 in TurboForth
-
-: R>,      ( -- w )
-              TOS PUSH,             \ 28
-             *RP+ TOS MOV,          \ 22
-              ;              \ 50 vs 36 in TurboForth
-
-: R@,      ( -- w )
-              TOS PUSH,
-             *RP TOS MOV,
-              ;
+: RP@     ( -- a ) STEAL RP@ ;
+: RP!     ( a -- ) STEAL RP! ;
+: >R      ( w -- ) STEAL >R ;
+: R>      ( -- w ) STEAL R> ;
+: R@      ( -- w ) STEAL R@ ;
 
 \ ==========================================================================
 CR .( Shift right & left)
 
-: RSHIFT  ( n bits -- n')
-              TOS R0  MOV,            \ 14 the shift bits MUST be in R0 to do this
-             *SP+ W   MOV,            \ 22
-              W   R0 SRL,             \ x
-              W   TOS MOV,            \ 14
-              ;
-
-: LSHIFT  ( n bits -- n')
-               TOS R0 MOV,            \ the shift bits MUST be in R0 to do this
-              *SP+ W  MOV,
-               W  R0  SLA,
-               W TOS  MOV,
-               ;
+: RSHIFT  ( n bits -- n') STEAL RSHIFT ;
+: LSHIFT  ( n bits -- n') STEAL LSHIFT ;
 
 \ ===================================================================
 CR .( A R I T H M E T I C)
-                                     \ All TOS in place math is 40% faster with TOS in register
-: 1+,      ( n -- n)
-              TOS INC,
-              ;
+: 1+      ( n -- n) STEAL 1+;
+: 1-      ( n -- n) STEAL 1- ;
+: 2+      ( n -- n) STEAL 2+ ;
+: 2-      ( n -- n) STEAL 2+ ;
+: 2*      ( n -- n) STEAL 2* ;
+: 2/      ( n -- n) STEAL 2/ ;
+: INVERT  ( w w -- w) STEAL INVERT ;
+: +       ( u1 u2 -- u ) STEAL + ;
+: *      ( n n -- n) STEAL * ;
 
-: 1-,      ( n -- n)
-              TOS DEC,
-              ;
+: UM+    ( u u -- u cy ) STEAL UM+ ;        \ or ( u u -- ud )
+: M+      ( d n -- d )  STEAL M+ ;        \ add single to double
+: UM*     ( n n -- d)   STEAL UM* ;
+: UM/MOD  ( ud u1 -- u2 u3 ) STEAL UM/MOD ;
 
-: 2+,      ( n -- n)
-              TOS INCT,
-              ;
+HEX
+\ compile code to load TOS ( r4 ) with n
+: #   ( n -- )  DUP  0204 ,  , ; \ LI R4,<n>
 
-: 2-,      ( n -- n)
-              TOS DECT,
-              ;
+\ store a byte offset in odd byte of addr.
+\ Addr is the location of Jump instruction
+: RESOLVE ( addr offset --) 2- 2/ SWAP 1+ C! ;
 
-: 2*,      ( n -- n)
-              TOS TOS ADD,             \ mpy instruction is 52 clocks minimum
-              ;
+\ compute offset from addr to addr' & complete the jump instruction
+: <BACK   ( addr addr' -- ) TUCK -  RESOLVE ;
 
-: 2/,      ( n -- n)                \ div instruction is 52 clocks minimum
-              TOS 1 SRA,
-              ;
+: ?BYTE ( c -- c)  DUP FF00 AND ABORT" Jump out of range" ;
 
-: INVERT,  ( w w -- w)
-              TOS INV,
-              ;
+\ compile "raw" jump instructions with no offset byte
+: JMP,  ( c --) ?BYTE 1000 + , ;
+: JNO,  ( c --) ?BYTE 1900 + , ;
+: JNC,  ( c --) ?BYTE 1700 + , ;
 
-: UM+,    ( u u -- u cy )          \ or ( u u -- ud )
-              W CLR,
-             *SP TOS ADD,
-              OC POSTPONE IF,
-                 W INC,
-              POSTPONE ENDIF,
-              W *SP MOV,
-              ;  IMMEDIATE
+\ ===============================================================
+\               >>> BRANCHING AND LOOPING <<<
 
-: +,       ( u1 u2 -- u )
-             *SP+ TOS ADD,
-              ;
+\ small CONTROL FLOW STACK for loops and branching
+8 LIFO: CS
+: >CS     ( n -- ) CS PUSH ;
+: CS>     ( -- n ) CS POP ;
+: CS>SWAP ( -- )   CS> CS> SWAP >CS >CS ;
+: ?CS     CS STACK-DEPTH ABORT" Un-matched IF or loop words" ;
 
+: BEGIN    HERE >CS ; IMMEDIATE  \ push location onto control stack
 
-: M+,      ( d n -- d )   \ add single to double
-              TOS  2 (SP) ADD,
-              OC POSTPONE IF,
-               *SP INC,
-              POSTPONE ENDIF,
-              *SP+  TOS  MOV,
-              ; IMMEDIATE
+\ <DO> is CODE preamble to setup return stack.
+: DO  ( -- HERE)  STEAL <DO>   POSTPONE BEGIN  ; IMMEDIATE
 
+: LOOP
+    0597 ,                   \ *RP INC,
+    CS> HERE  0 JNO, <BACK   \ compute offset, compile into JNO
+    STEAL UNLOOP             \ collapse stack frame
+; IMMEDIATE
 
-: UM*,     ( n n -- d)
-             *SP  TOS MPY,
-              R5  *SP MOV,
-              ;
+: +LOOP
+    0A5CA ,          \ TOS *RP ADD,
+    STEAK DROP       \ don't need TOS value anymore
+    POSTPONE LOOP    \ compile loop code
+; IMMEDIATE
 
-: *,      ( n n -- n)
-             *SP+ TOS MPY,
-              R5  TOS MOV,
-              ;
+: I  STEAL I ;  IMMEDIATE
+: J  STEAK J ;  IMMEDIATE
 
-: UM/MOD,  ( ud u1 -- u2 u3 )
-             *SP+ R1 MOV,
-             *SP  R2 MOV,
-              TOS R1 DIV,
-              R1 TOS MOV,
-              R2 *SP MOV,
-              ;
+: AGAIN   CS> HERE 0 JMP, <BACK ; IMMEDIATE
 
+: UNTIL
+    1-
+    DROP
+    CS> HERE 0 JNC, <BACK ; IMMEDIATE
 
+: IF    ( n -- )
+    1-,       \ If tos=0, DEC will cause a carry
+    DROP
+    HERE >CS 0 JNC, ; IMMEDIATE
 
+: THEN  CS> HERE OVER - RESOLVE ; IMMEDIATE
 
+: ELSE  HERE >CS  0 JMP,
+        CS>SWAP POSTPONE THEN ; IMMEDIATE
 
+: WHILE  ( n -- ) POSTPONE IF CS>SWAP ; IMMEDIATE
+
+: REPEAT  POSTPONE AGAIN  POSTPONE THEN ; IMMEDIATE
