@@ -49,6 +49,9 @@ CODE A!+   TOS AREG *+ MOV,  TOS POP, NEXT, ENDCODE
 \ x -   Write to the memory pointed to by B, and update B.
 CODE B!+   TOS BREG *+ MOV,  TOS POP, NEXT, ENDCODE
 
+\ Not always needed, but it is safer to save registers before using
+CODE {   AREG RPUSH,  BREG RPUSH,  NEXT, ENDCODE \ Save A & B
+CODE }   BREG RPOP,   AREG RPOP,   NEXT, ENDCODE \ restore A & B
 
 \ TEST CODE
 HEX
@@ -63,10 +66,12 @@ HEX
 ;
 
 : ABCOPY ( addr addr len --)
+  {
     -ROT >B >A
     2/ 0 DO  \ iterate len/2 times because auto-incr. moves 2 bytes
        A@+ B!+
     LOOP
+  }
 ;
 
 \ COPY 8k bytes
@@ -78,10 +83,12 @@ HEX
 CODE A@+>B!+   AREG *+ BREG *+ MOV,  NEXT, ENDCODE
 
 : FASTCOPY ( addr addr len --)
+  {
     -ROT >B >A
     2/ 0 DO   \ interate len/2 times
        A@+>B!+
     LOOP
+  }
 ;
 
 : TEST3   A000 2000 2000 FASTCOPY ; \ 0.40

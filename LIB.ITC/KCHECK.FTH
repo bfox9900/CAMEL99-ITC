@@ -2,6 +2,8 @@
 \ * FAST key pressed check  5X faster
 \ *--------------------------------------------
 
+\ *NOTE: Not found to useful. Maybe you will.
+
 NEEDS  MOV,  FROM DSK1.ASM9900
 
 CODE KCHECK ( -- 0 | n) \ 191 uS
@@ -26,8 +28,8 @@ CODE KCHECK ( -- 0 | n) \ 191 uS
        NEXT,                   \ No key pressed: return (with EQ bit set)
        ENDCODE
 
-\ this would work well in a multi-tasking program
-\ the PAUSE loop is 11 times faster than using KEY?
+\ this would work in a multi-tasking program
+\ the PAUSE loop is faster than using KEY?
 
 : CLEARKEYS  BEGIN KCHECK 0= UNTIL ; \ wait until hardware is stable
 
