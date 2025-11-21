@@ -41,7 +41,7 @@ XY       CONSTANT ROW
 : EMPTY   ( addr -- ) BUFFSIZE BL FILL ;
 : BUFFER$ ( -- adr len) 'TEXT MAX$LEN -TRAILING ;
 : >BUFFER ( adr len --) 'TEXT EMPTY 'TEXT SWAP CMOVE ;
-: .BUFFER ( -- ) XY 2@ AT-XY  BUFFER$ -TRAILING 2+ TYPE ;
+\ : .BUFFER ( -- ) XY 2@ AT-XY  BUFFER$ 2+ TYPE ;
 
 \ ========================
 \ auto-limited cursor movement
@@ -53,9 +53,8 @@ XY       CONSTANT ROW
 : 'CURSOR  ( -- adr) 'TEXT CP @ + ;
 : !CHAR    ( c -- ) 'CURSOR C!  1 CP+! ;
 
-\ set system cursor to ACCEPTLN location
+\ set system cursor to ACCEPTLN cursor location
 : @CURSOR ( -- ) COL @ CP @ +  ROW @  AT-XY ;
-
 \ ========================
 \ toggle insert mode
 HEX
@@ -70,6 +69,9 @@ HEX
 DECIMAL
 : RIGHTSIDE  ( adr len -- adr len') CP @ /STRING 0 MAX ;
 : LEFTSIDE   ( adr len -- adr len') DROP CP @ ;
+
+\ print buffer at cursor. 2+ puts extra spaces at end
+: RELINE  ( -- ) BUFFER$ RIGHTSIDE 2+  TYPE ;
 
 \ =======================
 \ text manipulation
@@ -96,7 +98,7 @@ HEX
     RKEY? DROP      \ clear last key press
     INSERT OFF  HOME
     BEGIN
-        .BUFFER
+        @CURSOR RELINE
         @CURSOR RKEY DUP ^M <>
     WHILE
         DUP BL [CHAR] ~ 1+ WITHIN
@@ -117,6 +119,7 @@ HEX
         THEN
     REPEAT
     DROP
+    [CHAR] _ CURS !
     BUFFER$ -TRAILING
 ;
 
