@@ -1,5 +1,5 @@
 \ forth-94 version of klaus schleisiek's dynamic memory allocation
-\ (forml'88) uh 2016-10-28 
+\ (forml'88) uh 2016-10-28
 
 \ This is a full implementation using 780 bytes. Rather big for TI-99.
 

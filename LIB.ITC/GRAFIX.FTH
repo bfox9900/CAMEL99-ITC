@@ -92,7 +92,7 @@ GRAPHICS
 
 .( .)
 HEX
-CODE VWRAP   \ 4x faster than Forth
+CODE VWRAP ( addr -- addr')  \ 4x faster than Forth
   02A1 ,               \ R1 STWP,
   0202 , C/SCR @ 1- ,  \ R2 C/SCR @ 1- LI,
   A121 , 002E ,        \ 2E R1 () TOS ADD,  ( C/L@ TOS + )
@@ -105,7 +105,7 @@ ENDCODE
 
 : VCHAR ( col row char cnt --)
   DUP 0= IF 2DROP 2DROP EXIT THEN
-  2SWAP >VPOS  SWAP 0 DO  2DUP VC!  VWRAP  LOOP 2DROP ;
+  2SWAP >VPOS  SWAP 0 DO  2DUP VC! VWRAP  LOOP 2DROP  ;
 
 DECIMAL
 0 32 2 1 COLORS

@@ -55,6 +55,7 @@ XY       CONSTANT ROW
 
 \ set system cursor to ACCEPTLN cursor location
 : @CURSOR ( -- ) COL @ CP @ +  ROW @  AT-XY ;
+
 \ ========================
 \ toggle insert mode
 HEX
@@ -120,7 +121,7 @@ HEX
     REPEAT
     DROP
     [CHAR] _ CURS !
-    BUFFER$ -TRAILING
+    BUFFER$
 ;
 
 HERE SWAP - DECIMAL CR .  .( bytes)

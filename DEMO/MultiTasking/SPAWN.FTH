@@ -24,6 +24,7 @@ VARIABLE X   \ used to test if tasks are running
             STKSIZE 0 DO PAUSE BEEF  LOOP
             STKSIZE DROPS
             1 X +!
+
           AGAIN ;
 
 \ create and wake n tasks.
