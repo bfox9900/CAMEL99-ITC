@@ -1,14 +1,15 @@
 \ dictionary examples   2025 Brian Fox
 
-DICTIONARY: VFORTH  \ Init a dictionary in VDP RAM
+DICTIONARY: VFORTH  \ Init a new dictionary in VDP RAM
 
 HEX
+\ copy Forth dictionary into VDP RAM dictionary
 : COPY-DICTIONARY
     CR
     LATEST @
     BEGIN
         DUP COUNT VFORTH ADD$
-        NFA>LFA @ DUP    \ follow link in Forth dictionary to next word
+        NFA>LFA @ DUP  \ follow link in Forth dictionary to next word
     0= UNTIL
     DROP
 ;
