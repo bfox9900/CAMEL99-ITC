@@ -3,6 +3,9 @@
 \ Using VDP RAM is slower but saves valuable program space if you
 \ have large tables to store.
 
+\ You can use the phrase FATAL ON or FATAL OFF to cottrol is duplicate
+\ dictionary entry causes an ABORT or just a 'not unique' warning.
+
 INCLUDE DSK1.TOOLS
 INCLUDE DSK1.VDPMEM  \ primary VDP memory manager
 
