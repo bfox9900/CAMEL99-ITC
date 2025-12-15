@@ -2,22 +2,25 @@
 
 NEEDS VHERE  FROM DSK1.VDPMEM
 
+\ convert a VDP counted string to a stack string (in VDPMEM file)
+\ : VCOUNT  ( vdp$adr -- vdpadr len ) DUP 1+ SWAP VC@ ;
+
 \ compile stack string into VDP memory
 : VS,     ( $adr len-- )  VHERE OVER CHAR+  VALLOT VPLACE ;
 
-\ convert a VDP counted string to a stack string
-: VCOUNT  ( vdp$adr -- vdpadr len ) DUP 1+ SWAP VC@ ;
 
 \ Print a VDP stack string
 : VTYPE   ( vdp_addr len -- ) BOUNDS ?DO   I VC@ EMIT   LOOP ;
 
+: V.$   ( V$ -- ) VCOUNT VTYPE ;
+
 \ Compile a VDP string, that types itself
-: V."          ( -- )
-        VHERE
-        [CHAR] " PARSE VS,
-        POSTPONE LITERAL
-        POSTPONE VCOUNT
-        POSTPONE VTYPE ; IMMEDIATE
+: V."  ( -- )
+    ?COMP
+    VHERE
+    [CHAR] " PARSE VS,  POSTPONE LITERAL
+    POSTPONE V.$
+; IMMEDIATE
 
 : MENU   PAGE
          CR V." *** Main Menu ****"
