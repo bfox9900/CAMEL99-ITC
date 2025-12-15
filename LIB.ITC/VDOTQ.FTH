@@ -7,7 +7,7 @@ NEEDS VHERE  FROM DSK1.VDPMEM
 
 \ compile stack string into VDP memory
 : VS,     ( $adr len-- )  VHERE OVER CHAR+  VALLOT VPLACE ;
-
+: VSLITERAL  VS, POSTPONE LITERAL ;
 
 \ Print a VDP stack string
 : VTYPE   ( vdp_addr len -- ) BOUNDS ?DO   I VC@ EMIT   LOOP ;
@@ -18,7 +18,7 @@ NEEDS VHERE  FROM DSK1.VDPMEM
 : V."  ( -- )
     ?COMP
     VHERE
-    [CHAR] " PARSE VS,  POSTPONE LITERAL
+    [CHAR] " PARSE  VSLITERAL
     POSTPONE V.$
 ; IMMEDIATE
 
