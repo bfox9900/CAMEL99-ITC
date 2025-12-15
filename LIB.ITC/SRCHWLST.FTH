@@ -1,16 +1,33 @@
-\ SEARCHWORDLIST.fth we need find-name to patch some CONTEXT values
+\ SEARCH-WORDLIST  16.6.1.2192
+\ Find the definition identified by the string c-addr u in
+\ the word list identified by wid. If the definition is not found,
+\ return zero. If the definition is found, return its execution
+\ token xt and one (1) if the definition is immediate,
+\ minus-one (-1) otherwise.
 
-NEEDS S=     FROM DSK1.COMPARE
+NEEDS .S     FROM DSK1.LOWTOOLS
+NEEDS ELAPSE FROM DSK1.ELAPSE
+NEEDS COMPARE FROM DSK1.COMPARE
 
-: 2OVER    ( a b c d -- a b c d a b) 3 PICK  3 PICK ;
-: 2NIP     ( a b c -- c) NIP NIP ;
+: FIND-NAME ( addr len wid -- nfa )
+   BEGIN
+      DUP>R
+   WHILE
+      2DUP R@ COUNT COMPARE
+   WHILE
+      R> NFA>LFA @
+   REPEAT
+   THEN
+   2DROP
+   R>
+;
 
-: SEARCH-WORDLIST ( addr len -- nfa ) \ nfa is "name field address"
-           BEGIN
-              DUP 1+ 2OVER S=
-              0= IF  2NIP  EXIT THEN
-              NFA>LFA @   ( next name in dictionary)
-              DUP
-           WHILE
-           REPEAT
-           2NIP  ;
+: NFA>XT ( nfa -- XT -1|0|1)
+   ?DUP 0= IF 0 EXIT THEN
+   DUP NFA>CFA
+   SWAP 1- C@ DUP 0= OR
+;
+
+: SEARCH-WORDLIST ( c-addr u wid -- 0 | xt 1 | xt -1)
+   FIND-NAME NFA>XT
+;
