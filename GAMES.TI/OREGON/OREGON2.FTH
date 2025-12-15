@@ -1,7 +1,9 @@
 \ OREGON TRAIL GAME FILE: DSK3.OREGON2
+
+
 \ ====================================================
 \ VDP STRING and PRINT
- Replaces ." so that it compiles literal strings in VDP RAM.
+\ Replaces ." so that it compiles literal strings in VDP RAM.
 \ Also adds PRINT." which is like BASIC print with leading CR
 
 NEEDS VCOUNT FROM DSK1.VDPMEM
