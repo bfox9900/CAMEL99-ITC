@@ -1,28 +1,26 @@
 \ GAMELANG.FTH                       Brian Fox 2024
-\ This file is extracted from the Oregon game. 
-\ It provides some useful words for making games. 
+\ This file is extracted from the Oregon game.
+\ It provides some useful words for making games.
 
-\ VDP STRING and PRINT
+\ ====================================================
+\ VDP string support
 \ compile stack string into VDP memory
-: VS,     ( $adr len-- )  VHERE OVER CHAR+  VALLOT VPLACE ;
+: VS,     ( $adr len -- )  VHERE OVER CHAR+  VALLOT VPLACE ;
+: VSLITERAL ( $adr len --) VHERE -ROT VS, POSTPONE LITERAL ;
 
 \ Print a VDP stack string
-: VTYPE   ( vdp_addr len -- ) BOUNDS ?DO   I VC@ EMIT   LOOP ;
+: VTYPE   ( vdp_addr len -- ) BOUNDS ?DO  I VC@ EMIT  LOOP ;
 
-\ Compile a VDP string, that types itself.
-\ ### Overides regular FORTH ." word ###
-: ."   ( <text> )
-        ?COMP                 \ for compiling only
-\ Do these compile time actions "immediately"
-        VHERE [CHAR] " PARSE VS,
+: V.$   ( V$ -- ) VCOUNT VTYPE ;
 
-\ later, when we run the word, do these things
-        POSTPONE LITERAL
-        POSTPONE VCOUNT
-        POSTPONE VTYPE ; IMMEDIATE
+\ Compile a VDP string, that types itself
+: ."  ( -- )
+    ?COMP
+    [CHAR] " PARSE  VSLITERAL
+    POSTPONE V.$
+; IMMEDIATE
 
-\ Behaves like BASIC print statement. Compiles text in VDP RAM.
-: PRINT."  POSTPONE CR  POSTPONE ." ; IMMEDIATE
+: PRINT."   POSTPONE CR  POSTPONE ." ; IMMEDIATE
 
 \ Print a stack string centered on the screen
 : CENTERTYPE  ( addr len -- ) DUP C/L@ SWAP - 2/ 1- SPACES TYPE ;
@@ -45,10 +43,10 @@
 
 DECIMAL
 \ compile addresses
-: CHOICES,  ( addr... addr[n] n -- ) 0 ?DO  COMPILE, LOOP ;  
+: CHOICES,  ( addr... addr[n] n -- ) 0 ?DO  COMPILE, LOOP ;
 
 \ get a copy of 3rd item on the stack
-: 3RD     ( a b c -- a b c a ) 2 PICK ; 
+: 3RD     ( a b c -- a b c a ) 2 PICK ;
 
 \ text game language extensions
 : BETWEEN ( n lo hi -- ?) 1+ WITHIN ;
@@ -65,4 +63,3 @@ DECIMAL
 \ syntax sugar
 : ENDIF     POSTPONE THEN ; IMMEDIATE
 : CHOICE:  :NONAME ;
-
