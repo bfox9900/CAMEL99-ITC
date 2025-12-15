@@ -1,25 +1,31 @@
 \ OREGON TRAIL GAME FILE: DSK3.OREGON2
 \ ====================================================
 \ VDP STRING and PRINT
+ Replaces ." so that it compiles literal strings in VDP RAM.
+\ Also adds PRINT." which is like BASIC print with leading CR
+
+NEEDS VCOUNT FROM DSK1.VDPMEM
+
+\ ====================================================
+\ VDP string support
 \ compile stack string into VDP memory
 : VS,     ( $adr len-- )  VHERE OVER CHAR+  VALLOT VPLACE ;
+: VSLITERAL  VS, POSTPONE LITERAL ;
 
 \ Print a VDP stack string
 : VTYPE   ( vdp_addr len -- ) BOUNDS ?DO   I VC@ EMIT   LOOP ;
 
-\ Compile a VDP string, that types itself.
-\ ### Overides regular ." word ###
-: ."   ( <text> )
-        ?COMP                 \ for compiling only
-\ Do these compile time actions "immediately"
-        VHERE [CHAR] " PARSE VS,
+: V.$   ( V$ -- ) VCOUNT VTYPE ;
 
-\ later, when we run the word, do these things
-        POSTPONE LITERAL
-        POSTPONE VCOUNT
-        POSTPONE VTYPE ; IMMEDIATE
+\ Compile a VDP string, that types itself
+: ."  ( -- )
+    ?COMP
+    VHERE
+    [CHAR] " PARSE  VSLITERAL
+    POSTPONE V.$
+; IMMEDIATE
 
-: PRINT."  POSTPONE CR  POSTPONE ." ; IMMEDIATE
+: PRINT."   POSTPONE CR  POSTPONE ." ; IMMEDIATE
 
 \ Print a stack string centered on the screen
 : CENTERTYPE  ( addr len -- ) DUP C/L@ SWAP - 2/ 1- SPACES TYPE ;
@@ -78,7 +84,7 @@ DECIMAL
 : .R      ( n width -- )  \ print n right justified
           >R DUP ABS 0 <# #S ROT SIGN #> R> OVER - SPACES  TYPE ;
 
-: DEBIT     ( n variable -- ) DUP >R @ SWAP NEGATE + 0 MAX  R> ! ; 
+: DEBIT     ( n variable -- ) DUP >R @ SWAP NEGATE + 0 MAX  R> ! ;
 : CREDIT    ( n variable -- ) +! ;
 
 \ set screen color with black letters
@@ -233,7 +239,7 @@ CASE: MONTHS ( 1..12 -- )
 
 : .Y/N     ( ? --) IF ." Yes" ELSE ." No"  ENDIF ;
 
-: .SUPPLIES 
+: .SUPPLIES
       CR
       PRINT."     -- Supplies Report --"
       CR    .DATE
@@ -394,8 +400,8 @@ CASE: DISEASES  7 CHOICES,  ;CASE
                1 OXEN# DEBIT
           ;CHANCE
 
-          10 %CHANCE:  
-              WOUNDED ON 
+          10 %CHANCE:
+              WOUNDED ON
           ;CHANCE
 ;
 
@@ -410,7 +416,7 @@ CASE: DISEASES  7 CHOICES,  ;CASE
                PRINT." Hey you pulled through!"
                10 HEALTH CREDIT
           OTHERWISE
-              18 %CHANCE: 
+              18 %CHANCE:
                    PRINT." I got some bad news partner" ...
                    PRINT." You didn't make it. :-("
                    HEALTH OFF
