@@ -49,9 +49,11 @@ NEEDS VCOUNT FROM DSK1.VDPMEM
 \ G A M E  L A N G U A G E
 
 DECIMAL
-: CHOICES,  ( addr... addr[n] n -- ) 0 ?DO  COMPILE, LOOP ;  \ compile addresses
+ \ compile addresses
+: CHOICES,  ( addr... addr[n] n -- ) 0 ?DO  COMPILE, LOOP ;
 
-: 3RD     ( a b c -- a b c a ) 2 PICK ;  \ get a copy of 3rd item on the stack
+ \ get a copy of 3rd item on the stack
+: 3RD     ( a b c -- a b c a ) 2 PICK ;
 
 \ text game language extensions
 : BETWEEN ( n lo hi -- ?) 1+ WITHIN ;
