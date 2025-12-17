@@ -22,12 +22,12 @@ DECIMAL
       ?CSP
 ; IMMEDIATE
 
-\ EXAAMPLE CODE
- : WORD1 CR ." word 1 " ;
- : WORD2 CR ." word 2 " ;
- : WORD3 CR ." word 3 " ;
- : WORD4 CR ." word 4 " ;
+\ EXAMPLE CODE
+\ : WORD1 CR ." word 1 " ;
+\ : WORD2 CR ." word 2 " ;
+\ : WORD3 CR ." word 3 " ;
+\ : WORD4 CR ." word 4 " ;
 
-VARIABLE X
- : TEST   WORD1  WORD2 WORD3 WORD4 -;
- : TEST2  99 X  WORD1  WORD2 WORD3 WORD4 ! -; \ aborts
+\ VARIABLE X
+\ : TEST   WORD1  WORD2 WORD3 WORD4 -;
+\ : TEST2  99 X  WORD1  WORD2 WORD3 WORD4 ! -; \ aborts
