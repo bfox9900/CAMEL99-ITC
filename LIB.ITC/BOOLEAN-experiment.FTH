@@ -16,31 +16,43 @@ HEX
 
 \ compute bit# in a cell & cell address in memory
 \ Note: 28% in this usage with UM/MOD.( 5 instructions vs /MOD has 29
-: BITFLD  ( bit# bits[] -- bit#' addr) SWAP 0 BITS/CELL UM/MOD CELLS ROT + ;
+\ : BITFLD  ( bit# bits[] -- bit#' addr) SWAP 0 BITS/CELL UM/MOD CELLS ROT + ;
 
-\ : BITMASK ( bit# -- n )  1 SWAP LSHIFT ;  \ for little endian CPU (x86)
-\ : BITMASK ( bit# -- n )  1 SWAP LSHIFT >< ; \ For Big endian TMS9900
-\ using this code word speeds things up only 9%
- CODE BITMASK ( bit# -- mask) \ shift left arithmetic
-            TOS R0  MOV,    \ the shift bits MUST be in R0 to do this
-            TOS 1 LI,
-            R0 R0 MOV,
-            NE IF,
-               TOS R0 SLA,
-            ENDIF,
-            NEXT,
-ENDCODE
+: BITFLD  ( bit# bits[] -- bit#' addr) SWAP 0 BITS/CELL UM/MOD ROT + ;
 
+\ : BITMASK ( bit# -- n )  1 SWAP LSHIFT ;   \ use for BIG endian
+ : BITMASK ( bit# -- n )  1 SWAP LSHIFT >< ; \ For TMS9900
+
+\ Using these code words makes everything about 24% faster
+\ ADDS 12 bytes
+HEX
+ CODE BITMASK ( bit# -- n)
+      C004 ,        \ TOS R0 MOV,
+      0204 , 0001 , \ TOS 1 LI,
+      C000 ,        \ R0 R0 MOV,
+      1301 ,        \ NE IF,
+      0A04 ,        \   TOS R0 SLA,
+                   \ ENDIF,
+      06C4 ,        \ TOS SWPB,
+      NEXT,
+ ENDCODE
+
+ CODE OVER@ ( addr mask --)
+      *SP R0 MOV,
+      TOS PUSH,
+      R0 ** TOS MOV,
+      NEXT,
+ ENDCODE
 
 \ API
 : BIT@ ( bit# bits[] -- ?) BITFLD @ SWAP RSHIFT 0001 AND ;  \ return 1 bit
-: BSET ( bit# bits[] -- )  BITFLD SWAP BITMASK        OVER @  OR SWAP ! ;
-: BRST ( bit# bits[] -- )  BITFLD SWAP BITMASK INVERT OVER @ AND SWAP ! ;
-: BTOG ( bit# bits[] -- )  BITFLD SWAP BITMASK        OVER @ XOR SWAP ! ;
+: BSET ( bit# bits[] -- )  BITFLD SWAP BITMASK        OVER@ OR  SWAP ! ;
+: BRST ( bit# bits[] -- )  BITFLD SWAP BITMASK INVERT OVER@ AND SWAP ! ;
+: BTOG ( bit# bits[] -- )  BITFLD SWAP BITMASK        OVER@ XOR SWAP ! ;
 
-\ DEMO CODE
-\ DECIMAL
- 1024 CONSTANT size \ # of bits we want
+\ TEST CODE
+ DECIMAL
+2048 CONSTANT size \ # of bits we want
  size BITS: ]X      \ make array X of size bits
 
 \ set and reset each bit using the BSET BRST BIT@ words.
