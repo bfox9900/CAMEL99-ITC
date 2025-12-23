@@ -2,11 +2,11 @@
 ( Uses power of 2 size buffers only!.  2 4 8 16 32 64 etc.
 ( Ported to Camel99 forth  11JUN2020, revised for ISO compliance June 13 2022 )
 
-: ?POT ( n --) DUP 0> SWAP DUP 1- AND AND  ABORT" Not power of 2" ;  
+: ?POT ( n --) DUP 0> SWAP DUP 1- AND AND  ABORT" Not power of 2" ;
 
 HEX
 : BYTEQ: ( n -- <text>)
-    DUP ?POT 
+    DUP ?POT
     CREATE
         0 ,          ( write pointer {TAIL} )
         0 ,          ( read  pointer {HEAD} )
@@ -15,7 +15,7 @@ HEX
 ;
 
 (Field offsets to the Queue data structure )
-: ->HEAD ( q -- adr )      ;  \ syntax sugar
+: ->HEAD ( q -- adr )      ;  IMMEDIATE  \ syntax sugar
 : ->TAIL ( q -- adr ) [ 1 CELLS ] LITERAL + ;
 : ->MSK  ( q -- adr ) [ 2 CELLS ] LITERAL + ;
 : ->DATA ( q -- adr ) [ 3 CELLS ] LITERAL + ;
@@ -23,7 +23,7 @@ HEX
 \ Circular pointer incrementing
 : HEAD++ ( q -- )  DUP>R ->HEAD @ 1+  R@ ->MSK @ AND R> ->HEAD ! ;
 : TAIL++ ( q -- )  DUP>R ->TAIL @ 1+  R@ ->MSK @ AND R> ->TAIL ! ;
-: QMORE? ( q -- ?) 2@ <> ; 
+: QMORE? ( q -- ?) 2@ <> ;
 
 : QC@    ( q -- c )
        DUP>R TAIL++
@@ -44,7 +44,7 @@ HEX
 
 : PRINTQ  ( queue -- )
         BEGIN
-           DUP QMORE? 
+           DUP QMORE?
         WHILE
            DUP QC@ EMIT
         REPEAT
