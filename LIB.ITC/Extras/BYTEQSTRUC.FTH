@@ -6,6 +6,7 @@
 \ NEEDS DUMP    FROM DSK1.TOOLS
 NEEDS FIELD:  FROM DSK1.STRUC12
 
+HERE
 \ Queue data structure
 0
 FIELD: ->HEAD
@@ -26,9 +27,6 @@ HEX
         ALLOT   ( header size + data space)
 ;
 
-: CLEARQ  ( q -- ) 0 0 ROT 2! ;
-: QMORE?  ( q -- ?) 2@ <> ;
-
 \ Circular pointer incrementing head & tail
 : 'HEAD ( q -- addr)
       DUP ->HEAD DUP>R     \ get head field addr and save a copy
@@ -45,8 +43,12 @@ HEX
       SWAP ->DATA  + ;     \ advance to data addr and add ndx
 
 
+: CLEARQ  ( q -- ) 0 0 ROT 2! ;
+: QMORE?  ( q -- ?) 2@ <> ;
 : QC!    ( c q -- ) 'HEAD C! ;  \ store the byte at head
 : QC@    ( q -- c ) 'TAIL C@ ;  \ fetch the byte at tail
+
+HERE SWAP - CR DECIMAL . .( bytes)
 \ /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
 \ DEMO code
