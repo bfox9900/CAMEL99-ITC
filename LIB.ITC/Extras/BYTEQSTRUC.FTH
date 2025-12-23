@@ -44,7 +44,7 @@ HEX
       SWAP ->DATA  + ;     \ advance to data addr and add ndx
 
 \ API
-: CLEARQ  ( q -- ) 0 0 ROT 2! ;
+: CLEARQ  ( q -- ) 3 CELLS  0 FILL ;
 : QROOM?  ( q -- ?) DUP ->COUNT @ SWAP ->SIZE @ 1- <> ;
 
 : QC!    ( c q -- ) DUP>R 'HEAD C!  R> ->COUNT 1+! ;  \ store the byte at head
@@ -69,16 +69,17 @@ HERE SWAP - CR DECIMAL . .( bytes)
    NIP ;
 
 : PRINTQ  ( queue -- )
-      BEGIN
-         DUP ->COUNT @
-      WHILE
-         DUP QC@ EMIT
-      REPEAT
-      DROP ;
+   BEGIN
+      DUP ->COUNT @
+   WHILE
+      DUP QC@ EMIT
+   REPEAT
+   DROP ;
 
  DECIMAL 256 BYTEQ: Q1
 
 : FILLQ
+   Q1 CLEARQ
    BEGIN
       13 Q1 QC!  ( CR put into queue)
       S" Now is the time for all good men...  " Q1 WRITEQ
