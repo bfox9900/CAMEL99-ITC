@@ -1,4 +1,5 @@
 ( Circular byte queue using structure words Dec 2025)
+( This version is safer as it counts bytes in and out)
 
 NEEDS DUMP    FROM DSK1.TOOLS
 NEEDS FIELD:  FROM DSK1.STRUC12
@@ -47,15 +48,15 @@ HEX
 : CLEARQ  ( q -- ) 3 CELLS  0 FILL ;
 : QROOM?  ( q -- ?) DUP ->COUNT @ SWAP ->SIZE @ 1- <> ;
 
-: QC!    ( c q -- ) DUP>R 'HEAD C!  R> ->COUNT 1+! ;  \ store the byte at head
+: QC!    ( c q -- ) DUP>R 'HEAD C!   R> ->COUNT 1+! ;  \ store the byte at head
 : QC@    ( q -- c ) DUP  'TAIL C@  SWAP ->COUNT 1-! ;  \ fetch the byte at tail
 
 HERE SWAP - CR DECIMAL . .( bytes)
-\ /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
+\ ================================
 \ DEMO code
 
-: WRITEQ  ( addr len queue -- ?) \ ?=0 means all good
+: QPLACE  ( addr len queue -- ?) \ ? = 0 means all good
    >R
    BEGIN
       R@ QROOM?
@@ -82,15 +83,16 @@ HERE SWAP - CR DECIMAL . .( bytes)
    Q1 CLEARQ
    BEGIN
       13 Q1 QC!  ( CR put into queue)
-      S" Now is the time for all good men...  " Q1 WRITEQ
+      S" Now is the time for all good men...  " Q1 QPLACE
    UNTIL
 ;
 
 : TEST
-    BEGIN
-       PAGE
-       FILLQ
-       CR Q1 PRINTQ
-       ?TERMINAL
-    UNTIL
+   PAGE
+   BEGIN
+      CR CR ." Filling..."
+      FILLQ
+      CR Q1 PRINTQ
+      ?TERMINAL
+   UNTIL
 ;
