@@ -82,3 +82,11 @@ HEX
 ;
 
 : SEEQ   Q1 PRINTQ ;
+
+: TEST
+    BEGIN
+       FILLQ FILLQ FILLQ
+       CR SEEQ
+       ?TERMINAL
+    UNTIL
+;
