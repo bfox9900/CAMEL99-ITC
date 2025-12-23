@@ -12,13 +12,12 @@ NEEDS FORK  FROM DSK1.MTASK99
 HEX
 50 USER MAILBOX  \ one 16 bit mailbox per task
 
-: CLEAR2SEND? ( -- ?) MAILBOX LOCAL @ 0=  ;
-
 : SEND-MAIL  ( n PID -- ) \ PID (process ID) is task's workspace address
    BEGIN
-      PAUSE               \ if not pass control to the next task
-      DUP CLEAR2SEND?     \ check PID mailbox is empty
-   UNTIL
+      DUP MAILBOX LOCAL @ \ check PID mailbox has something in it
+   WHILE
+      PAUSE               \ if yes pass control to the next task
+   REPEAT
    MAILBOX LOCAL ! ;      \ store n into PID's mailbox
 
 \ read my mailbox and reset mailbox
