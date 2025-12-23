@@ -12,17 +12,38 @@ NEEDS FORK  FROM DSK1.MTASK99
 HEX
 50 USER MAILBOX  \ one 16 bit mailbox per task
 
-: SEND-MAIL  ( n PID --) \ PID (process ID) is task's workspace address
-        BEGIN
-           DUP MAILBOX LOCAL @   \ check PID mailbox is empty
-        WHILE
-           PAUSE                 \ if not pass control to the next task
-        REPEAT
-        MAILBOX LOCAL ! ;        \ store n into PID's mailbox
+: CLEAR2SEND? ( -- ?) MAILBOX LOCAL @ 0=  ;
 
-: GET-MAIL ( -- n ) \ read mailbox of the active task
-        BEGIN
-          PAUSE
-          MAILBOX @ ?DUP
-        UNTIL
-        MAILBOX OFF ;
+: SEND-MAIL  ( n PID -- ) \ PID (process ID) is task's workspace address
+   BEGIN
+      PAUSE               \ if not pass control to the next task
+      DUP CLEAR2SEND?     \ check PID mailbox is empty
+   UNTIL
+   MAILBOX LOCAL ! ;      \ store n into PID's mailbox
+
+\ read my mailbox and reset mailbox
+: MAILKEY? ( -- c|0) MAILBOX @  MAILBOX OFF ;
+
+\ read my mailbox. *warning* Loops forever if there is no message
+: GET-MAIL ( -- n )
+   BEGIN
+      PAUSE
+      MAILKEY? ?DUP  \ read my mailbox
+   UNTIL
+;
+\ /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
+
+\ ** OPTIONS **
+
+\ Wait for n context switches for a message
+: WAIT-MAIL ( n -- c|0)
+   BEGIN
+      PAUSE
+      1- DUP
+   WHILE
+      MAILKEY?
+      ?DUP
+   UNTIL
+   NIP EXIT
+   THEN
+;
