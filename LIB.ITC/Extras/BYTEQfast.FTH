@@ -1,7 +1,7 @@
 ( Circular byte queue for general purpose stuff  21MAR94 FOX )
 ( Uses power of 2 size buffers only!.  2 4 8 16 32 64 etc. )
 ( Ported to Camel99 forth  11JUN2020, revised for ISO compliance June 13 2022 )
-( Re-write in Assembler. It's smaller and 3x faster. )
+( Re-write in Assembler. It's 30% smaller and 20% faster. )
 
 HERE
 : ?PO2 ( n --) DUP 1- AND ABORT" Not power of 2" ;
@@ -63,7 +63,7 @@ HERE SWAP - CR DECIMAL .  .( bytes)
 
 : PRINTQ  ( queue -- )
       BEGIN
-         DUP QMORE?
+         DUP 2@ - ABS
       WHILE
          DUP QC@ EMIT
       REPEAT
@@ -73,17 +73,16 @@ HERE SWAP - CR DECIMAL .  .( bytes)
  DECIMAL 256 BYTEQ: Q1
 
 : FILLQ
-   13 Q1 QC!  \ write a CR into Q1
-   S" Now is the time for all good men...  "  Q1 WRITEQ ?ERR
-   13 Q1 QC!
-   S" to come to the aid of their country.  " Q1 WRITEQ ?ERR
-   13 Q1 QC!
+   BEGIN
+      13 Q1 QC!
+      S" Now is the time for all good men...  "  Q1 WRITEQ
+    UNTIL
 ;
 
 : TEST
     10 0 DO
        PAGE
-       FILLQ FILLQ FILLQ
+       FILLQ
        CR Q1 PRINTQ
     LOOP
 ;

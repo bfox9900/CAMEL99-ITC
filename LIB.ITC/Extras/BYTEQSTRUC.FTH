@@ -1,9 +1,6 @@
-( Circular byte queue for general purpose stuff  21MAR94 FOX )
-( Uses power of 2 size buffers only.  2 4 8 16 32 64 etc. )
-( Ported to Camel99 forth  11JUN2020)
-( Re-write using structure words DEc 2025)
+( Circular byte queue using structure words Dec 2025)
 
-\ NEEDS DUMP    FROM DSK1.TOOLS
+NEEDS DUMP    FROM DSK1.TOOLS
 NEEDS FIELD:  FROM DSK1.STRUC12
 
 HERE
@@ -11,6 +8,8 @@ HERE
 0
 FIELD: ->HEAD
 FIELD: ->TAIL
+FIELD: ->COUNT
+FIELD: ->SIZE
 FIELD: ->MSK
 FIELD: ->DATA
 CONSTANT QHEADER \ size of the header
@@ -21,10 +20,12 @@ HEX
 : BYTEQ: ( n -- <text>)
     DUP ?PO2
     CREATE
-        0 ,          ( write pointer {head} )
-        0 ,          ( read  pointer {tail} )
-        DUP 1- ,     ( mask value    )
-        ALLOT   ( header size + data space)
+        0 ,       ( write pointer {head} )
+        0 ,       ( read  pointer {tail} )
+        0 ,       ( counter )
+        DUP ,     ( Q size)
+        DUP 1- ,  ( mask value    )
+        ALLOT     ( allocate n bytes for data)
 ;
 
 \ Circular pointer incrementing head & tail
@@ -42,11 +43,12 @@ HEX
       DUP R> !             \ DUP new tail ndx & store in tail field
       SWAP ->DATA  + ;     \ advance to data addr and add ndx
 
-
+\ API
 : CLEARQ  ( q -- ) 0 0 ROT 2! ;
-: QMORE?  ( q -- ?) 2@ <> ;
-: QC!    ( c q -- ) 'HEAD C! ;  \ store the byte at head
-: QC@    ( q -- c ) 'TAIL C@ ;  \ fetch the byte at tail
+: QROOM?  ( q -- ?) DUP ->COUNT @ SWAP ->SIZE @ 1- <> ;
+
+: QC!    ( c q -- ) DUP>R 'HEAD C!  R> ->COUNT 1+! ;  \ store the byte at head
+: QC@    ( q -- c ) DUP  'TAIL C@  SWAP ->COUNT 1-! ;  \ fetch the byte at tail
 
 HERE SWAP - CR DECIMAL . .( bytes)
 \ /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
@@ -56,7 +58,7 @@ HERE SWAP - CR DECIMAL . .( bytes)
 : WRITEQ  ( addr len queue -- ?) \ ?=0 means all good
    >R
    BEGIN
-      R@ QMORE?
+      R@ QROOM?
    WHILE
       OVER C@  R@ QC!
       1 /STRING
@@ -68,7 +70,7 @@ HERE SWAP - CR DECIMAL . .( bytes)
 
 : PRINTQ  ( queue -- )
       BEGIN
-         DUP QMORE?
+         DUP ->COUNT @
       WHILE
          DUP QC@ EMIT
       REPEAT
@@ -77,18 +79,17 @@ HERE SWAP - CR DECIMAL . .( bytes)
  DECIMAL 256 BYTEQ: Q1
 
 : FILLQ
-   13 Q1 QC!  \ write a CR into the queue
-   S" Now is the time for all good men...  "  Q1 WRITEQ ?ERR
-   S" to come to the aid of their country.  " Q1 WRITEQ ?ERR
-   13 Q1 QC!
+   BEGIN
+      13 Q1 QC!  ( CR put into queue)
+      S" Now is the time for all good men...  " Q1 WRITEQ
+   UNTIL
 ;
-
-: SEEQ   Q1 PRINTQ ;
 
 : TEST
     BEGIN
-       FILLQ FILLQ FILLQ
-       CR SEEQ
+       PAGE
+       FILLQ
+       CR Q1 PRINTQ
        ?TERMINAL
     UNTIL
 ;
