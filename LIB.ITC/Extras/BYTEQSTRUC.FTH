@@ -48,8 +48,8 @@ HEX
 : CLEARQ  ( q -- )  3 CELLS  0 FILL ;
 : QROOM?  ( q -- ?) DUP ->COUNT @ SWAP ->SIZE @ 1- <> ;
 
-: QC!    ( c q -- ) DUP>R 'HEAD C!   R> ->COUNT 1+! ;  \ store the byte at head
-: QC@    ( q -- c ) DUP  'TAIL C@  SWAP ->COUNT 1-! ;  \ fetch the byte at tail
+: QC!    ( c q -- ) DUP>R 'HEAD C!    R> ->COUNT 1+! ;  \ store the byte at head
+: QC@    ( q -- c ) DUP   'TAIL C@  SWAP ->COUNT 1-! ;  \ fetch the byte at tail
 
 HERE SWAP - CR DECIMAL . .( bytes)
 
