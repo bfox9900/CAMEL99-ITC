@@ -45,7 +45,7 @@ HEX
       SWAP ->DATA  + ;     \ advance to data addr and add ndx
 
 \ API
-: CLEARQ  ( q -- ) 3 CELLS  0 FILL ;
+: CLEARQ  ( q -- )  3 CELLS  0 FILL ;
 : QROOM?  ( q -- ?) DUP ->COUNT @ SWAP ->SIZE @ 1- <> ;
 
 : QC!    ( c q -- ) DUP>R 'HEAD C!   R> ->COUNT 1+! ;  \ store the byte at head
