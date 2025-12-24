@@ -56,7 +56,8 @@ HERE SWAP - CR DECIMAL . .( bytes)
 \ ================================
 \ DEMO code
 
-: QPLACE  ( addr len queue -- ?) \ ? = 0 means everthing went into the queue
+: QPLACE  ( addr len queue -- ?)
+\ ? = 0 means everthing went into the queue
    >R
    BEGIN
       R@ QROOM?
