@@ -1,20 +1,10 @@
-\ simplest busy spinner
+\ busy spinner updates Dec 26 2025
 
 VARIABLE SPIN#
+: SCHARS   S" |/-\" ;
+: SPINCHAR ( -- char ) SPIN# @ 3 AND  SCHARS DROP + C@   SPIN# 1+! ;
 
-CREATE SCHARS   CHAR | C, CHAR / C, CHAR - C, CHAR \ C,
+\ VPUT writes to screen but does not change cursor
+: SPINNER    SPINCHAR VPUT ;
 
-\ returns a different character when called 
-: SPINCHAR ( -- char) 
-  SPIN# @ 1+  3 AND DUP SPIN# ! SCHARS + C@  ;
-
-
-: TESTSPIN
-    VROW 2@ 
-     BEGIN  
-        2DUP AT-XY  SPINCHAR VPUT 
-        60 MS 
-        ?TERMINAL
-    UNTIL   
-;
-
+\ : TEST  0 0 AT-XY BEGIN  SPINNER  75 MS  ?TERMINAL UNTIL ;
