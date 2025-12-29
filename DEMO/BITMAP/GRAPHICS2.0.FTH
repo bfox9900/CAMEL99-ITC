@@ -3,6 +3,7 @@
 \ Referenced TI-FORTH: ( CONVERT TO GRAPHICS2 MODE CONFIG 14SEP82 LAO)
 \ 2025 Added TABLE: for faster access into VDP tables
 \ COMPILES under ITC and DTC systems
+
 CR .( Two colour bit map mode )
 
 NEEDS DUMP        FROM DSK1.TOOLS
@@ -60,7 +61,7 @@ BITS TABLE: ]BIT
 
 \ drawing code ...
 HEX
-: VAND  ( c Vaddr -- ) S" DUP>R VC@ AND  R> VC!" EVALUATE ; IMMEDIATE
+: VAND  ( c Vaddr -- ) DUP>R VC@ AND  R> VC! ;
 
 \ PENCIL and ERASER are "execution tokens"
 :NONAME ( VOR)     ( c Vaddr -- ) DUP>R VC@  OR  R> VC! ; CONSTANT PENCIL
@@ -94,38 +95,42 @@ DEFER STYLUS   \ usage:  PENCIL IS STYLUS    ERASER IS STYLUS
 
 \ Compute offset into pattern table per:
 \ TI Video Display Processors, Programmer's Guide
+\ -----------------------------------------------
+\ BYTE_ADDRESS = 8(INT(X/8)) + 256(INT(Y/8)) + (Y MOD 8)
+\ Remainder X mod 8 = is index to array of bit values ;
+
 \ *note: We use UM/MOD because it is the fastest divide in the system
 : PIXPOS ( x y -- bit PDT_addr)
       SWAP
-      FF AND                \ mask X is required
+ ( X) FF AND                \ mask X is required
       0 8 UM/MOD 8*         \ compute X offset into VDP memory
       SWAP ]BIT C@          \ convert remainder to bit mask
       SWAP
-      ROT 0FF AND
+      ROT
+ ( Y) 0FF AND
       0 8 UM/MOD             \ compute Y offset into VDP memory
       FUSE                   \ fuse bytes x y into one integer
       +                      \ add the remainder
       ]PDT ;                 \ use integer as index PDT
 ;
 
-: PLOT   ( x y -- ) S" PIXPOS STYLUS" EVALUATE ; IMMEDIATE
+: PLOT   ( x y -- ) PIXPOS STYLUS ;
 
 DECIMAL
-: 2ROT ( d1 d2 d3 -- d2 d3 d1) S" 2>R 2SWAP 2R> 2SWAP" EVALUATE ; IMMEDIATE
-: 4DUP ( d1 d2 -- d1 d2 d1)    S" 4TH 4TH 4TH 4TH" EVALUATE ; IMMEDIATE
-
-: DXY  ( x y x2 y2 -- dx dy) ROT - ABS >R - ABS R> ; \ compute dx dy
+\ Text macros make a big difference in LINE function speed
+: 2ROT ( d1 d2 d3 -- d2 d3 d1) 2>R 2SWAP 2R> 2SWAP ;
+: 4DUP ( d1 d2 -- d1 d2 d1)  4TH 4TH 4TH 4TH ;
+: DXY  ( x y x2 y2 -- dx dy) ROT - ABS >R - ABS R> ;
+: MID  ( x y -- n) + 1+ 2/ ;
 
 DECIMAL
 : LINE ( x1 y1 x2 y2 -- )
 \ ANS version of Dr. Ting's recursive line.  R.I.P.
-    4DUP DXY
-    MAX 2 < IF  2DROP PLOT  EXIT THEN
+    4DUP DXY  MAX 2 < IF  2DROP PLOT  EXIT THEN
     4DUP
    \ compute mid points
-     ROT + 1+ 2/
-    -ROT + 1+ 2/ SWAP
-    2DUP 2ROT RECURSE RECURSE ;
+     ROT MID >R  MID R>
+    2DUP 2ROT RECURSE RECURSE ; \ tail call optimization helps this
 
 0 VALUE x
 0 VALUE y

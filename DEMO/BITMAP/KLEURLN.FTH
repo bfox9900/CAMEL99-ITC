@@ -22,5 +22,5 @@
 
 
 
-NEEDS HLINE  FROM DSK1.GRAPHICS2 \ slower Forth code version
+NEEDS PLOT   FROM DSK1.GRAPHICS2 \ slower Forth code version
 NEEDS RDN    FROM DSK1.RANDOM
