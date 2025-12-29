@@ -94,7 +94,7 @@ DEFER STYLUS   \ usage:  PENCIL IS STYLUS    ERASER IS STYLUS
 
 \ Compute offset into pattern table per:
 \ TI Video Display Processors, Programmer's Guide
-\ *note: We use UM/MOD because it is the fastest divide in the system.
+\ *note: We use UM/MOD because it is the fastest divide in the system
 : PIXPOS ( x y -- PDT_addr)
       SWAP
       FF AND                \ mask X is required
