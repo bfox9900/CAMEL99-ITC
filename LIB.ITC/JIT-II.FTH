@@ -202,4 +202,5 @@ FORTH DEFINITIONS
     ?CS              \ check control flow stack
 ; IMMEDIATE
 
-HERE SWAP - SPACE DECIMAL . .( bytes)
+HERE SWAP -
+CR DECIMAL . .( bytes)
