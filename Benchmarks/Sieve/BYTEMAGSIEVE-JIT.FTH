@@ -6,7 +6,7 @@
 \ Camel99 ITC     120    117       75.6      49
 \ FbForth 2.0:13  174
 
-NEEDS JIT:   FROM DSK1.JIT-II
+NEEDS JIT:   FROM DSK1.JITIII
 NEEDS ELAPSE FROM DSK1.ELAPSE
 NEEDS FILLW  FROM DSK1.FILLW
 NEEDS VTYPE  FROM DSK1.VTYPE
@@ -14,30 +14,33 @@ NEEDS VTYPE  FROM DSK1.VTYPE
 HEX
 0101 CONSTANT $0101
 \ Use 8K in low RAM for the array
-2000 CONSTANT FLAGS   0 FLAGS !
+\ 2000 CONSTANT FLAGS   0 FLAGS !
 
 DECIMAL
 8190 CONSTANT SIZE
+CREATE FLAGS  2000 ALLOT
 
+MESSAGES ON
 HERE
 JIT: DO-PRIME
    FLAGS SIZE  $0101 FILLW  ( set array )
    0        ( counter )
    SIZE 0
-   DO I FLAGS  + C@
-     IF
-        I 2*  3 +  DUP I +
-        BEGIN
-          DUP SIZE <
-        WHILE
-           0 OVER FLAGS +  C!
-           OVER +
-        REPEAT
-        2DROP
-        1+
-     THEN
+   DO I FLAGS + C@ DROP
+\      IF
+\         I 2*  3 +  DUP I +
+\        BEGIN
+\          DUP SIZE <
+\        WHILE
+\           0 OVER FLAGS +  C!
+\           OVER +
+\        REPEAT
+\        2DROP
+\        1+
+\     THEN
    LOOP
 ;JIT
+
 HERE SWAP - DECIMAL .
 
 : PRIMES ( -- )

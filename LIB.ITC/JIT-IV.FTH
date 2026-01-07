@@ -230,11 +230,13 @@ OPTIMIZER: OPT+, ( xt -- )
 \ case of literal and address argument (ie: a variable)
     2 LOOKBACK "LI" =  ARG? AND
     CASE:
-       1 LOOKBACK ARG> + ( sum ) \ literal + address
-       4 REMOVE
-       LIT,
+        1 LOOKBACK ARG> + ( sum ) \ literal + address
+        4 REMOVE
+        LIT,
     ;CASE
 
+   \ address pending on argument stack
+     ARG? CASE:  TOS ARG> AI,   ;CASE  \ 22 clocks
 ;OPTIMIZER
 
 
@@ -306,7 +308,7 @@ VARIABLE JSTATE
     DROP
 ;
 
-: JIT-COMPILER    ['] <JIT>    'IV ! ;
+: JIT-COMPILER    ['] <JIT>  'IV ! ;
 
 : JIT: ( -- JIT-xt)
     ALSO JITS         \ put JITS VOCABULARY first in search order
@@ -327,54 +329,3 @@ VARIABLE JSTATE
 ; IMMEDIATE
 
 HERE SWAP - SPACE DECIMAL CR . .( bytes)
-
-
-\ test program
-VARIABLE X
-VARIABLE Y
-VARIABLE Z
-
-JIT: Z:=X+Y   X @ Y @ + Z ! ;JIT
-
-
-HEX
-: FORTHTEST
-    2000 0
-    DO
-       I X !
-       X C@ Y !
-       Y @ Z !
-    LOOP
-;
-
-JIT: JITTEST
-    2000 0
-    DO
-       I X !
-       X C@ Y !
-       Y @ Z !
-    LOOP
-;JIT
-
-
-SP@ SP!
-
-
-
-\ DEBUG VERSION
-: ;JIT ( JIT-XT -- )
-    PREVIOUS          \ restore previous search order
-    FORTH-COMPILER
-    JSTATE OFF
-    NEXT,            \ compile NEXT at end of new code word
-    ARG? IF CR ." WARNING: LIT stack contains " CR ." >> ".ARGS THEN
-    ?CS              \ check control flow stack
-    CR .S
-; IMMEDIATE
-
-
-JIT: LOOPTEST 2000 0 DO  LOOP ;JIT
-JIT: #TEST  2000 ;JIT
-
-   : FORTHADD  2000 0 DO  2  3 +  DROP  LOOP ;
-JIT: JITADD    2000 0 DO  2  3 +  DROP  LOOP ;JIT

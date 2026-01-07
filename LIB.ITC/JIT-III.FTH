@@ -25,10 +25,14 @@ ONLY FORTH ALSO ASSEMBLER ALSO FORTH DEFINITIONS
 
 
 HERE
+\ messages help with debugging ...
+VARIABLE MESSAGES
+: ?TYPE  MESSAGES @ IF CR ." -- " TYPE EXIT THEN 2DROP ;
+: MSG"   POSTPONE S"  POSTPONE ?TYPE ; IMMEDIATE
 
 10 LIFO: ARGSTK
-: >ARG    ARGSTK PUSH ;
-: ARG>    ARGSTK POP ;
+: >ARG    ARGSTK PUSH  MSG" ARG pushed" ;
+: ARG>    ARGSTK POP   MSG" ARG popped" ;
 : ARG?  ( -- n) ARGSTK STACK-DEPTH ;
 : /ARGS  ARGSTK DUP @  SWAP CELL+ ! ;
 : .ARGS   ARG? 0 DO ARG> U. LOOP ;
@@ -97,14 +101,12 @@ C136 CONSTANT "DROP"  \ *SP+ R4 MOV,
 
 : ?DUP,
     1 LOOKBACK  "DROP" =
-    IF   1 REMOVE  TOSFREE ON
+    IF   1 REMOVE
     ELSE DUP,
-    THEN
+    THEN TOSFREE ON
 ;
 
-
 \ =================================================
-
 HEX
 \ compile code to load TOS ( r4 ) with n
 : LIT,   ( n -- )  COMPILES DUP  0204 ,  , ; \ LI R4,<n>
@@ -195,14 +197,17 @@ VARIABLE XT-TYPE  \ future ...
 : CASE:       POSTPONE IF POSTPONE DROP ; IMMEDIATE
 : ;CASE       POSTPONE EXIT POSTPONE THEN ; IMMEDIATE
 
+: DEFAULT: ;  IMMEDIATE
+
 OPTIMIZER: OPT@, ( xt --)
     ARG? CASE:  ?DUP, ARG> @@ TOS MOV,   ;CASE
 ;OPTIMIZER
 
 OPTIMIZER: OPTC@, ( xT 'XT)
-    ARG? CASE:  ?DUP,  ARG> @@ TOS MOVB,  TOS 8 SRA,   ;CASE
+  ARG? CASE:    ?DUP,   TOS CLR,  ARG> @@ TOS MOVB, TOS SWPB,  ;CASE
 ;OPTIMIZER
 
+\ *NOTE: DROP, at end of definition is "refill TOS" operation
 OPTIMIZER: OPT!,
     ARG? CASE:  TOS ARG> @@ MOV, DROP,   ;CASE
 ;OPTIMIZER
@@ -217,22 +222,20 @@ OPTIMIZER: OPTC!,
 0204 CONSTANT "LI"    \ load imm. to R4
 C136 CONSTANT "DROP"
 
-OPTIMIZER: OPT+, ( xt -- )
-\ 2 literal number added together
+OPTIMIZER: OPT+, ( xt -- ) \ constant folding :-)
+\ 2 literal numbers added together
     2 LOOKBACK "LI" =  6 LOOKBACK "LI" = AND
     CASE:
-       1 LOOKBACK 5 LOOKBACK + ( -- sum) \ read literals and add them
-       8 REMOVE \ get rid of old code
+       1 LOOKBACK  5 LOOKBACK + ( -- sum) \ get literals and add them
+       8 REMOVE \ remove old code
        ( -- sum) LIT,     \ compile sum as a literal
    ;CASE
 
-\ case of literal and address argument (ie: a variable)
-    2 LOOKBACK "LI" =  ARG? AND
-    CASE:
-       1 LOOKBACK ARG> + ( sum ) \ literal + address
-       4 REMOVE
-       LIT,
-    ;CASE
+   \ address pending on argument stack
+   ARG? CASE:  TOS ARG> AI,          ;CASE
+
+ \  ARG? 2 = CASE:  ARG> @@ TOS MOV,
+ \                  ARG> @@ TOS ADD,      ;CASE
 
 ;OPTIMIZER
 
@@ -242,15 +245,15 @@ OPTIMIZER: OPT+, ( xt -- )
 : OPT-CODE,
     DUP
     CASE
-        ['] @ OF    OPT@,   ENDOF
-        ['] C@ OF  OPTC@,   ENDOF
+        ['] @ OF    OPT@,  MSG" Opt @"  ENDOF
+        ['] C@ OF  OPTC@,  MSG" Opt C@"  ENDOF
 
-        ['] ! OF    OPT!,   ENDOF
-        ['] C! OF  OPTC!,   ENDOF
+        ['] ! OF    OPT!,  MSG" Opt !" ENDOF
+        ['] C! OF  OPTC!,  MSG" Opt C!" ENDOF
 
-        ['] +  OF  OPT+,    ENDOF
+        ['] +  OF  OPT+,   MSG" Opt +"  ENDOF
 
-        ['] DUP OF ?DUP,    ENDOF
+        ['] DUP OF ?DUP,   ENDOF
 
                     CODE,  \ default, compile kernel code
     ENDCASE
@@ -322,54 +325,9 @@ VARIABLE JSTATE
     NEXT,            \ compile NEXT at end of new code word
     ARG? IF CR ." WARNING: LIT stack contains " CR ." >> ".ARGS THEN
     ?CS              \ check control flow stack
-    ENDCODE
-; IMMEDIATE
-
-HERE SWAP - SPACE DECIMAL . .( bytes)
-
-
-\ test program
-VARIABLE X
-VARIABLE Y
-VARIABLE Z
-
-HEX
-: FORTHTEST
-    2000 0
-    DO
-       I X !
-       X C@ Y !
-       Y @ Z !
-    LOOP
-;
-
-JIT: JITTEST
-    2000 0
-    DO
-       I X !
-       X C@ Y !
-       Y @ Z !
-    LOOP
-;JIT
-
-
-\ ' TEST1 >BODY
-\ .S
-SP@ SP!
-
-
-
-\ DEBUG VERSION
-: ;JIT ( JIT-XT -- )
-    PREVIOUS          \ restore previous search order
-    FORTH-COMPILER
-    JSTATE OFF
-    NEXT,            \ compile NEXT at end of new code word
-    ARG? IF CR ." WARNING: LIT stack contains " CR ." >> ".ARGS THEN
-    ?CS              \ check control flow stack
     CR .S
+ \   ENDCODE
 ; IMMEDIATE
 
-
-   : FORTHADD  2000 0 DO  2  3 +  DROP  LOOP ;
-JIT: JITADD    2000 0 DO  2  3 +  DROP  LOOP ;JIT
+HERE SWAP - SPACE DECIMAL
+CR . .( bytes)
