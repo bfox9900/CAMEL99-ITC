@@ -23,36 +23,55 @@ NEEDS SEARCH FROM DSK1.SEARCH
 ;
 
 HEX
-\ create the problem instruction machine code
-CREATE DUP$  C136 , 0646 , C584 ,
+\ create the problem instructions as byte-counted binary strings
+CREATE DROP/DUP$  06 C,  C1 C, 36 C, 06 C, 46 C, C5 C, 84 C, 0 C,  ALIGN
 
-: DROP/DUP ( -- addr n)  DUP$  6 ;
+: "DROP/DUP" ( -- addr len) DROP/DUP$ COUNT ;
+: "NEXT"                   NEXT$ COUNT ;
 
-: CODE-BLOCK ( xt -- addr len ) >BODY DUP   100  'NEXT' SCANW DROP  OVER -  ;
-
-: COMPUTE-LENGTH ( adr len bytes)
-    >R  2DUP R> /STRING
-    ROT DROP
-    ROT SWAP
-;
+: CODE-LENGTH ( xt -- addr' len )
+  >BODY DUP 200  'NEXT' SCANW DROP  OVER -  ;
 
 \ remove bytes from the data pair (addr len)
 \ returning the rest of the string
 : REMOVE ( addr len bytes -- addr' len' )
-     CMOVE
+    >R
+    OVER SWAP        ( -- srcaddr srcaddr len )
+    R> /STRING       ( -- srcaddr dest len' )
+    >R SWAP R>       ( -- dest src len' )
+    CMOVE
 ;
 
+: REMOVE1   CODE-LENGTH "DROP/DUP" SEARCH  3 CELLS REMOVE ;
 
 VARIABLE #DUPS
 VARIABLE #BYTESWAPS
 
-: TOSOPT ( addr size -- )
+: COUNT-POP/PUSH
     #DUPS OFF
+    CODE-LENGTH
     BEGIN
-        DROP/DUP SEARCH ( addr len ?)
+        "DROP/DUP" SEARCH ( addr len ?)
+    WHILE
+        3 CELLS /STRING
+        #DUPS 1+!
+    REPEAT
+    2DROP
+    CR #DUPS @ .  ." pop/push problems"
+;
+
+
+
+: STACK-OPT ( XT -- )
+    #DUPS OFF
+    CODE-LENGTH
+    BEGIN
+        "DROP/DUP" SEARCH ( addr len ?)
     WHILE
         3 CELLS REMOVE    \ remove the code
         #DUPS 1+!
     REPEAT
     2DROP
+    CR #DUPS @ DUP . ." POP/PUSH ops remove"
+    CR CELLS . ." bytes removes"
 ;

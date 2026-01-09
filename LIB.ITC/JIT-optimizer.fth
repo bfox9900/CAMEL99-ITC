@@ -15,7 +15,11 @@ HEX
 \ create the problem instructions as byte-counted binary strings
 CREATE DROP/DUP$ ALIGN  06 C,  C1 C, 36 C, 06 C, 46 C, C5 C, 84 C,  0 C, ALIGN
 
+CREATE <NEXT>  2 C, NEXT,  ALIGN
+
+
 : "DROP/DUP" ( -- addr len) DROP/DUP$ COUNT ;
+: "NEXT"                   <NEXT> COUNT ;
 
 \ remove bytes from the data pair (addr len)
 \ returning the rest of the string

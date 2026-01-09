@@ -10,8 +10,8 @@ HEX
 : ]ASM   \ Back to high-level Forth
    0209 , HERE 4 + ,    \ LI R9,HERE+4  (move Forth IP to after NEXT,)
    NEXT,                \ NEXT, in ASSEMBLER vocabulary in kernel
-    ]                   \ back to FORTH vocabulary and switch ON compiler
+   ]                    \ back to FORTH vocabulary and switch ON compiler
 ;  IMMEDIATE
 DECIMAL
 
-: TEST    ASM[  TOS INCT, ]ASM ;
+: 2+    ASM[  TOS INCT, ]ASM ;

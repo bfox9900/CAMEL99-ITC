@@ -16,6 +16,7 @@ NEEDS BEGIN,   FROM DSK1.ASM9900
 
 ONLY FORTH DEFINITIONS ALSO ASSEMBLER
 HEX
+
 \ Words in scratchpad RAM end in a JMP instruction, not NEXT
 \ Might change this, but for now make some conventional versions.
 CODE DUP    0646 , C584 ,  NEXT, ENDCODE
@@ -193,7 +194,6 @@ CR .( Inline code compilers are "stolen" from the kernel)
 : 1-!     ( addr -- )  STEAL 1-! ;
 : 2+!,    ( addr -- ) *TOS INCT, ;
 : 2-!,    ( addr -- ) *TOS DECT, ;
-
 \ ===================================================================
 CR .( D A T A   S T A C K)
 : SP@    ( -- a ) STEAL SP@ ;

@@ -1,0 +1,113 @@
+\ jit output code for DO-PRIME in BYTEMAGSIEVE.FTH
+
+\ start of the DO/LOOP section, after FILLW
+
+   B06C  0646  dect R6                     (14)
+   B06E  C584  mov  R4,*R6                 (30)
+   B070  0204  li   R4,>0000        # 0        ( counter )
+
+   B074  0646  dect R6                     (14)
+   B076  C584  mov  R4,*R6                 (30)
+   B078  0204  li   R4,>1ffe       # SIZE
+
+   B07C  0646  dect R6                     (14)
+   B07E  C584  mov  R4,*R6                 (30)
+   B080  0204  li   R4,>0000       # 0     (20)
+
+   B084  0200  li   R0,>8000      <DO>     (20)
+   B088  6036  s    *R6+,R0                (30)
+   B08A  A100  a    R0,R4                  (18)
+   B08C  0647  dect R7                     (14)
+   B08E  C5C0  mov  R0,*R7                 (30)
+   B090  0647  dect R7                     (14)
+   B092  C5C4  mov  R4,*R7                 (30)
+   B094  C136  mov  *R6+,R4     ( drop)
+   B096  0646  dect R6          ( DUP )
+   B098  C584  mov  R4,*R6
+   B09A  C117  mov  *R7,R4           I
+   B09C  6127  s    @>0002(R7),R4
+
+>  B0A0  0646  dect R6
+   B0A2  C584  mov  R4,*R6
+   B0A4  0204  li   R4,>2000       # FLAGS
+
+   B0A8  A136  a    *R6+,R4         +
+   B0AA  D114  movb *R4,R4          C@
+   B0AC  0984  srl  R4,8
+
+   B0AE  0604  dec  R4              IF
+   B0B0  C136  mov  *R6+,R4
+   B0B2  173A  jnc  >b128
+
+   B0B4  0646  dect R6              I
+   B0B6  C584  mov  R4,*R6
+   B0B8  C117  mov  *R7,R4
+   B0BA  6127  s    @>0002(R7),R4
+
+   B0BE  0A14  sla  R4,1             2*
+   B0C0  0646  dect R6             # 3
+   B0C2  C584  mov  R4,*R6
+   B0C4  0204  li   R4,>0003
+
+   B0C8  A136  a    *R6+,R4          +
+   B0CA  0646  dect R6               DUP
+   B0CC  C584  mov  R4,*R6
+   B0CE  0646  dect R6                     (14)
+   B0D0  C584  mov  R4,*R6                 (30)
+>  B0D2  C117  mov  *R7,R4
+   B0D4  6127  s    @>0002(R7),R4
+   B0D8  A136  a    *R6+,R4
+                              <BEGIN>
+   B0DA  0646  dect R6        DUP
+   B0DC  C584  mov  R4,*R6
+
+   B0DE  0646  dect R6         # SIZE
+   B0E0  C584  mov  R4,*R6
+   B0E2  0204  li   R4,>1ffe
+
+   B0E6  8136  c    *R6+,R4     <
+   B0E8  0704  seto R4
+   B0EA  1101  jlt  >b0ee
+   B0EC  04C4  clr  R4
+   B0EA  1101  jlt  >b0ee                  (14)
+
+   B0EE  0604  dec  R4          WHILE      (14)
+   B0F0  C136  mov  *R6+,R4     (DROP)
+   B0F2  1717  jnc  >b122                  (12)
+
+   B0F4  0646  dect R6          (DUP)
+   B0F6  C584  mov  R4,*R6
+   B0F8  0204  li   R4,>0000     # 0
+         0000
+   B0FC  0646  dect R6           OVER
+   B0FE  C584  mov  R4,*R6
+   B100  C126  mov  @>0002(R6),R4
+
+   B104  0646  dect R6           # FLAGS
+   B106  C584  mov  R4,*R6
+   B108  0204  li   R4,>2000
+   B10C  A136  a    *R6+,R4          +
+
+   B10E  D526  movb @>0001(R6),*R4   C!
+   B112  05C6  inct R6
+   B114  C136  mov  *R6+,R4       ( drop)
+
+>  B116  0646  dect R6            (dup )
+   B118  C584  mov  R4,*R6
+   B11A  C126  mov  @>0002(R6),R4   OVER
+
+   B11E  A136  a    *R6+,R4         +
+
+   B120  10DC  jmp  >b0da         REPEAT
+
+   B122  05C6  inct R6            2DROP
+   B124  C136  mov  *R6+,R4
+
+   B126  0584  inc  R4            1+
+
+                                THEN
+   B128  0597  inc  *R7      LOOP
+   B12A  19B5  jno  >b096
+   B12C  0227  ai   R7,>0004
+
+   B130  045A  b    *R10

@@ -53,7 +53,6 @@ CODE +      A136 ,         NEXT, ENDCODE
 ;
 
 HEX
-
 \ new interpreter loop for inlining *future* make this the Forth compiler
 : OPT[ ( -- addr)  \ Returns address where code has been copied
          BEGIN
@@ -83,7 +82,7 @@ HEX
          NEXT,    \ compile NEXT at end of code
 ;  IMMEDIATE
 
-HERE SWAP - SPACE DECIMAL . .( bytes) HEX CR
+HERE SWAP - CR SPACE DECIMAL . .( bytes) HEX CR
 
 VARIABLE X
 VARIABLE Y

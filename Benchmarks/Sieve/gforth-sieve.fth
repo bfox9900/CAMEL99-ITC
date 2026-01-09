@@ -14,7 +14,7 @@ NEEDS .S    FROM DSK1.TOOLS
 NEEDS FILLW   FROM  DSK1.FILLW
 
 \ Use 8K in low RAM for the array
-HEX CREATE FLAGS  2000 ALLOT  0 FLAGS !
+HEX 2000 CONSTANT FLAGS    0 FLAGS !
 HEX 0101 CONSTANT $0101
 
 DECIMAL
@@ -24,7 +24,7 @@ FLAGS SIZE + CONSTANT EFLAG
 
 : DO-PRIME  ( -- n )
  \ FLAGS SIZE 1 FILL
-    FLAGS SIZE  $0101 FILLW  ( set array )
+   FLAGS SIZE  $0101 FILLW  ( set array )
 
   0 3   ( -- accumulator 1st-offset)
   EFLAG FLAGS  \ end-address, start-address
@@ -36,14 +36,13 @@ FLAGS SIZE + CONSTANT EFLAG
                     0 I C!
                 DUP +LOOP
            ELSE
-                 DROP
+                DROP
            THEN
            SWAP 1+ SWAP  \ inc. the accumulator
         THEN
         CELL+            \ inc. offset by 2
     LOOP
     DROP ;
-
 
 : PRIMES ( -- )
    PAGE ."  10 Iterations"

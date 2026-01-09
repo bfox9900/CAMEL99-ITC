@@ -10,6 +10,10 @@
 \ Version III uses a literal stack to allow optimizing AND
 \ It replaces fetches and stores with symbolic addressing
 
+\ Version IV adds stuff to the optimizers.
+
+\ Version 5 puts CONSTANTS and addresses on the ARG stack
+
 NEEDS .S     FROM DSK1.TOOLS   \ debug
 NEEDS ELAPSE FROM DSK1.ELAPSE  \ execution timing
 NEEDS CASE   FROM DSK1.CASE
@@ -32,9 +36,9 @@ VARIABLE 1STVAR
 10 LIFO: ARGSTK
 : >ARG    ARGSTK PUSH  1STVAR  OFF ;
 : ARG>    ARGSTK POP ;
-: ARG?  ( -- n) ARGSTK STACK-DEPTH ;
+: #ARGS  ( -- n) ARGSTK STACK-DEPTH ;
 : /ARGS  ARGSTK DUP @  SWAP CELL+ ! ;
-: .ARGS   ARG? 0 DO ARG> U. LOOP ;
+: .ARGS   #ARGS 0 DO ARG> U. LOOP ;
 
 8 LIFO: CS     \ small CONTROL FLOW STACK for loops and branching
 : >CS     ( n -- ) CS PUSH ;
@@ -93,11 +97,14 @@ HEX
 
 \ ================================================
 \     ATTEMPT TO OPTIMIZE DROP/DUP sequences
+VARIABLE TOSFREE
 
-VARIABLE TOSFREE  \ TRUE = TOS REGISTER IS FREE TO USE
+VARIABLE #DUPS  \ TRUE = TOS REGISTER IS FREE TO USE
+: #DUPS++  #DUPS 1+! ;
+: #DUPS--  #DUPS DUP @ 0= ABORT" #DUPS = 0"  1-! ;
 
-: DUP,   COMPILES DUP    TOSFREE ON  ;
-: DROP,  COMPILES DROP   TOSFREE OFF ;
+: DUP,   COMPILES DUP    #DUPS++  TOSFREE ON ;
+: DROP,  COMPILES DROP   #DUPS--  TOSFREE OFF ;
 
 : LOOKBACK ( n -- u) CELLS NEGATE HERE + @ ; \ read existing code
 : REMOVE   ( n -- )  CELLS NEGATE ALLOT ; \ removes cells of code
@@ -201,19 +208,20 @@ VARIABLE XT-TYPE  \ future ...
 
 
 OPTIMIZER: OPT@, ( xt --)
-    ARG? CASE:  ?DUP, ARG> @@ TOS MOV,   ;CASE
+    #ARGS 1 = CASE:  ARG> @ LIT,   ;CASE \ replace address with value
 ;OPTIMIZER
 
-OPTIMIZER: OPTC@, ( xT 'XT)
-    ARG? CASE:  ?DUP,  ARG> @@ TOS MOVB,  TOS 8 SRA,   ;CASE
+OPTIMIZER: OPTC@, ( xt -- )
+    #ARGS 1 = CASE:   ARG> C@ LIT,   ;CASE
 ;OPTIMIZER
 
 OPTIMIZER: OPT!,
-    ARG? CASE:  TOS ARG> @@ MOV, DROP,   ;CASE
+    #ARGS 1 = CASE:  TOS ARG> @@ MOV, DROP,   ;CASE
+
 ;OPTIMIZER
 
 OPTIMIZER: OPTC!,
-    ARG? CASE:
+    #ARGS CASE:
            1 (SP) ARG> @@ MOVB,  SP INCT,  DROP,
         ;CASE
 ;OPTIMIZER
@@ -231,7 +239,7 @@ OPTIMIZER: OPT+, ( xt -- )
    ;CASE
 
 \ case of literal and address argument (ie: a variable)
-    2 LOOKBACK "LI" =  ARG? 0> AND
+    2 LOOKBACK "LI" =  #ARGS 0> AND
     CASE:
         1 LOOKBACK ARG> + ( sum ) \ literal + address
         4 REMOVE
@@ -239,7 +247,7 @@ OPTIMIZER: OPT+, ( xt -- )
     ;CASE
 
    \ address pending on argument stack
-     ARG? CASE:  TOS ARG> AI,   ;CASE  \ 22 clocks
+     #ARGS CASE:  TOS ARG> AI,   ;CASE  \ 22 clocks
 ;OPTIMIZER
 
 
@@ -290,7 +298,7 @@ OPTIMIZER: OPT+, ( xt -- )
     ENDCASE
 ;
 
-: JITCOMPILE,  ( xt -- )
+: JITCOMPILE,  ( xt -- )=
     DUP CODE?
     IF
       OPT-CODE,   \ compile kernel code inline
@@ -342,7 +350,7 @@ VARIABLE JSTATE
     FORTH-COMPILER
     JSTATE OFF
     NEXT,            \ compile NEXT at end of new code word
-    ARG? IF CR ." WARNING: LIT stack contains " CR ." >> ".ARGS THEN
+    #ARGS IF CR ." WARNING: LIT stack contains " CR ." >> ".ARGS THEN
     ?CS              \ check control flow stack
     ENDCODE
 ; IMMEDIATE
