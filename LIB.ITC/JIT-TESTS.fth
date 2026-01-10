@@ -1,15 +1,36 @@
 
 \ test programs
+
 VARIABLE X
 VARIABLE Y
 VARIABLE Z
+
+DECIMAL
+CREATE Q 100 CELLS  ALLOT
+
+JIT: ADDTEST
+    2 2 +   \ two lits
+;JIT
+
+JIT: BASE+TEST
+    Q 2 +   \ two lits
+;JIT
+
+JIT: MULTEST
+    3 3 *
+;JIT
+
+JIT: MULADDTEST
+    2 3 4 + *
+;JIT
+
+
+
 
 JIT: C@TEST \ pass
     X C@
 ;JIT
 
-DECIMAL
-CREATE Q 100 CELLS  ALLOT
 
 JIT: ]Q \ pass
    2* Q +

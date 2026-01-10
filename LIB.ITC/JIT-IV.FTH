@@ -25,6 +25,13 @@ ONLY FORTH ALSO ASSEMBLER ALSO FORTH DEFINITIONS
 
 
 HERE
+\ debug messages
+VARIABLE MESSAGES \ messages switch
+: ?TYPE  MESSAGES @ IF CR ." -- "  TYPE EXIT THEN  DROP ;
+: MSG"   POSTPONE S" POSTPONE ?TYPE ; IMMEDIATE
+
+MESSAGES ON
+
 \ *If the 1st word in a JIT: definition is a variable
 \  we need to force it into the TOS.
 VARIABLE 1STVAR
@@ -32,9 +39,9 @@ VARIABLE 1STVAR
 10 LIFO: ARGSTK
 : >ARG    ARGSTK PUSH  1STVAR  OFF ;
 : ARG>    ARGSTK POP ;
-: ARG?  ( -- n) ARGSTK STACK-DEPTH ;
+: #ARGS  ( -- n) ARGSTK STACK-DEPTH ;
 : /ARGS  ARGSTK DUP @  SWAP CELL+ ! ;
-: .ARGS   ARG? 0 DO ARG> U. LOOP ;
+: .ARGS   #ARGS 0 DO ARG> U. LOOP ;
 
 8 LIFO: CS     \ small CONTROL FLOW STACK for loops and branching
 : >CS     ( n -- ) CS PUSH ;
@@ -101,6 +108,14 @@ VARIABLE TOSFREE  \ TRUE = TOS REGISTER IS FREE TO USE
 
 : LOOKBACK ( n -- u) CELLS NEGATE HERE + @ ; \ read existing code
 : REMOVE   ( n -- )  CELLS NEGATE ALLOT ; \ removes cells of code
+
+: LOOKAHEAD ( -- $ len)
+    >IN @ >R
+    BL WORD
+    BL WORD COUNT PAD PLACE  PAD COUNT
+    R> >IN !
+    BL WORD COUNT TYPE
+;
 
 \ push/pop optimizer
 HEX
@@ -201,19 +216,19 @@ VARIABLE XT-TYPE  \ future ...
 
 
 OPTIMIZER: OPT@, ( xt --)
-    ARG? CASE:  ?DUP, ARG> @@ TOS MOV,   ;CASE
+    #ARGS CASE:  ?DUP, ARG> @@ TOS MOV,   ;CASE
 ;OPTIMIZER
 
 OPTIMIZER: OPTC@, ( xT 'XT)
-    ARG? CASE:  ?DUP,  ARG> @@ TOS MOVB,  TOS 8 SRA,   ;CASE
+    #ARGS CASE:  ?DUP,  ARG> @@ TOS MOVB,  TOS 8 SRA,   ;CASE
 ;OPTIMIZER
 
 OPTIMIZER: OPT!,
-    ARG? CASE:  TOS ARG> @@ MOV, DROP,   ;CASE
+    #ARGS CASE:  TOS ARG> @@ MOV, DROP,   ;CASE
 ;OPTIMIZER
 
 OPTIMIZER: OPTC!,
-    ARG? CASE:
+    #ARGS CASE:
            1 (SP) ARG> @@ MOVB,  SP INCT,  DROP,
         ;CASE
 ;OPTIMIZER
@@ -221,44 +236,66 @@ OPTIMIZER: OPTC!,
 0204 CONSTANT "LI"    \ load imm. to R4
 C136 CONSTANT "DROP"
 
-OPTIMIZER: OPT+, ( xt -- )
-\ 2 literal number added together
+VARIABLE XT
+
+: FOLDING ( xt -- )
+     XT !
+
+\ 2 literals added together
     2 LOOKBACK "LI" =  6 LOOKBACK "LI" = AND
     CASE:
-       1 LOOKBACK 5 LOOKBACK + ( -- sum) \ read literals and add them
+       MSG" 2 lits found"
+       1 LOOKBACK 5 LOOKBACK  XT PERFORM
        8 REMOVE \ get rid of old code
        ( -- sum) LIT,     \ compile sum as a literal
    ;CASE
 
-\ case of literal and address argument (ie: a variable)
-    2 LOOKBACK "LI" =  ARG? 0> AND
+\ literal and address argument (ie: a variable)
+    2 LOOKBACK "LI" =  #ARGS 0> AND
     CASE:
-        1 LOOKBACK ARG> + ( sum ) \ literal + address
+        MSG" LIT and ARG found"
+        1 LOOKBACK ARG>   XT PERFORM
         4 REMOVE
         LIT,
     ;CASE
 
    \ address pending on argument stack
-     ARG? CASE:  TOS ARG> AI,   ;CASE  \ 22 clocks
-;OPTIMIZER
+     #ARGS CASE:  TOS ARG> AI,   ;CASE  \ 22 clocks
+
+     XT @ CODE,
+;
+
+: FOLD-OP: ( xt --) CREATE   ,  DOES> @ FOLDING ;
+
+\ create optimizing versions of math operations
+' + FOLD-OP: OPT+,
+' * FOLD-OP: OPT*,
+' - FOLD-OP: OPT-,
+' / FOLD-OP: OPT/,
+
 
 
 \ specific CODE word and optimizers
 \ If the case statemente can't find it, just compile kernel code
-: OPT-CODE,
+: OPT-CODE, ( xt -- )
     DUP
     CASE
-        ['] @ OF    OPT@,   ENDOF
-        ['] C@ OF  OPTC@,   ENDOF
+    \    ['] @ OF    OPT@,   ENDOF
+    \    ['] C@ OF  OPTC@,   ENDOF
 
-        ['] ! OF    OPT!,   ENDOF
-        ['] C! OF  OPTC!,   ENDOF
+    \    ['] ! OF    OPT!,   ENDOF
+    \    ['] C! OF  OPTC!,   ENDOF
 
         ['] +  OF  OPT+,    ENDOF
+        ['] -  OF  OPT-,    ENDOF
 
-\        ['] DUP OF ?DUP,    ENDOF
+        ['] *  OF  OPT*,    ENDOF
+        ['] /  OF  OPT/,    ENDOF
 
-             CODE,  \ default, compile kernel code
+\       ['] DUP OF ?DUP,    ENDOF
+
+       \ default, compile kernel code
+            CODE,
     ENDCASE
 ;
 
@@ -274,7 +311,7 @@ OPTIMIZER: OPT+, ( xt -- )
     CASE
        0 OF  ?DUP,  TOS CLR,  ENDOF
       -1 OF  ?DUP,  TOS SETO, ENDOF
-             DUP LIT,
+              DUP LIT,
     ENDCASE
 ;
 
@@ -282,8 +319,8 @@ OPTIMIZER: OPT+, ( xt -- )
     DUP
     @     \ FETCH the "executor" address
     CASE  \ compare to executor words
-        ['] DOVAR    OF  VAR-HANDLER   ENDOF \ push address onto literal stack
-        ['] DOCON    OF  CONST-HANDLER  ENDOF
+        ['] DOVAR    OF  VAR-HANDLER  ENDOF \ push address onto literal stack
+        ['] DOCON    OF  CONST-HANDLER ENDOF
         ['] DOUSER @ OF  EXECUTE LIT,  ENDOF
 \       ['] DOCOL    OF  >BODY RECURSE  ENDOF \ future? :-)
         TRUE ABORT" Can't optimize word"
@@ -293,7 +330,7 @@ OPTIMIZER: OPT+, ( xt -- )
 : JITCOMPILE,  ( xt -- )
     DUP CODE?
     IF
-      OPT-CODE,   \ compile kernel code inline
+      OPT-CODE,   \ optimize specific code words
     ELSE
       OPT-DATA    \ handle everything else
     THEN
@@ -342,9 +379,10 @@ VARIABLE JSTATE
     FORTH-COMPILER
     JSTATE OFF
     NEXT,            \ compile NEXT at end of new code word
-    ARG? IF CR ." WARNING: LIT stack contains " CR ." >> ".ARGS THEN
+    #ARGS IF CR ." WARNING: LIT stack contains " CR ." >> ".ARGS THEN
     ?CS              \ check control flow stack
-    ENDCODE
+   \ ENDCODE
+   CR .S
 ; IMMEDIATE
 
 HERE SWAP - SPACE DECIMAL CR . .( bytes)

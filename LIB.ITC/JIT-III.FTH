@@ -259,7 +259,7 @@ OPTIMIZER: OPT+, ( xt -- ) \ constant folding :-)
     ENDCASE
 ;
 
-: OTHERS, ( xt -- ) \
+: OPT-DATA, ( xt -- ) \
     DUP
     @     \ FETCH the "executor" address
     CASE  \ compare to executor words
@@ -276,7 +276,7 @@ OPTIMIZER: OPT+, ( xt -- ) \ constant folding :-)
     IF
        OPT-CODE,    \ compile kernel code inline
     ELSE
-       OTHERS,   \ handle everything else
+       OPT-DATA,   \ handle everything else
     THEN
 ;
 
