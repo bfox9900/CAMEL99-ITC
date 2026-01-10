@@ -15,7 +15,7 @@
 HERE
 HEX
 CODE LOCALS ( n --) \ build a stack frame n cells deep
-\ RP R0 MOV, TOS 1 SLA, TOS RP SUB, R0 RPUSH,      TOS POP,
+\ RP R0 MOV, TOS 1 SLA, TOS RP SUB,  R0 RPUSH,      TOS POP,
   C007 ,     0A14 ,     61C4 ,      0647 , C5C0 ,  C136 ,  NEXT,  ENDCODE
 
 CODE /LOCALS  ( -- ) \ collapse stack frame
