@@ -39,7 +39,8 @@ ENDCODE
 \      TOS SWAP CELLS (RP) ADD,  TOS POP,
   CODE    A9C4 ,   CELLS ,      C136 ,  NEXT, ;
 
-HERE SWAP - DECIMAL . .( bytes )
+HERE SWAP - DECIMAL
+CR . .( bytes )
 
 \ USAGE
 \ Make your locals as FETCH/STORE pairs
