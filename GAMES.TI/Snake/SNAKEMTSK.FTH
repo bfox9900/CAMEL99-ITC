@@ -13,9 +13,14 @@ INCLUDE DSK1.ARRAYS
 INCLUDE DSK1.UDOTR
 INCLUDE DSK1.SOUND
 INCLUDE DSK1.MARKER
+INCLUDE DSK1.JOYST
+INCLUDE DSK1.DEFER
 INCLUDE DSK1.MTASK99
 
 MARKER /SNAKE \ removes snake from the system
+
+\ Simple manager for low RAM block as a heap
+
 
 CR .( compiling Snake...)
 DECIMAL
@@ -76,7 +81,7 @@ CREATE CLAY   007E , 6A56 , 6A56 , 7E00 ,
 CREATE VIPER  3C5E , EBF7 , EBDD , 7E3C ,
 CREATE MOUSE  0004 , 3E7B , 7FFC , 8270 ,
 CREATE MOUSE2 0008 , 3F7B , 7EFC , 8270 ,  \ mouse looking up
-CREATE JUMPMS 84BE , FB7F , 3C42 , 0000 ,
+CREATE MOUSE2 84BE , FB7F , 3C42 , 0000 ,
 
 DECIMAL
 \ get random x or y position within playable area
@@ -159,8 +164,10 @@ DECIMAL
 : TURN-DOWN      HORIZONTAL? IF DOWN  FACE  THEN ;
 : TURN-RIGHT     VERTICAL?   IF RIGHT FACE  THEN ;
 
+DEFER READ-DIRECTION
+
 HEX
-: READ-DIRECTION ( key -- )
+: READ-KEYBOARD ( key -- )
   \   83C8 OFF   \ set continuous key reading
      KEY?
      CASE
@@ -171,18 +178,34 @@ HEX
     ENDCASE
 ;
 
+\ HEX Outputs from JOYST word
+\ 01 = Fire
+\ 02 = Left
+\ 04 = Right
+\ 08 = Down
+\ 10 = Up
+\ 0A = down+left
+\ 0C = down+right
+\ 12 = up+left
+\ 14 = up+right
+HEX
+: READ-JOYSTICK
+    0 JOYST
+    CASE
+       2 OF TURN-LEFT  ENDOF
+      10 OF TURN-UP    ENDOF
+      04 OF TURN-RIGHT  ENDOF
+      08 OF TURN-DOWN   ENDOF
+    ENDCASE
+
+;
+
 DECIMAL
 : SWOOSH   ( -- )
            GEN4 MUTE
            5 NOISE
            8 NOISE-UP
            20 NOISE-DOWN ;
-
-: NEW-PREY
-    SWOOSH
-    PREY-X @ PREY-Y @ DRAW-WHITE
-    RANDOM-Y RANDOM-X PLACE-PREY
-    DRAW-PREY ;
 
 : GROW-SNAKE  ( -- ) 1 LENGTH +! ;
 
@@ -202,31 +225,48 @@ DECIMAL
             MUTE
             ( -- 5)  13 1 COLOR ;
 .( .)
+\ ******************************************************************
+\ MOUSE coded to run in a separate task and workspace
 DECIMAL
-: DECAY       ( n -- ) 16 0 DO  I DB  DUP MS LOOP DROP ;
+: DECAY   ( n -- ) 16 0 DO  I DB  DUP TICKS LOOP DROP ;
 
-: SQUEAK      ( -- )
+: SQUEAK  ( -- )
           GEN4 MUTE
-          GEN1 3800 HZ 0 DB  45 MS
-          6 DB  25 MS
-          3500 HZ 75 MS
-          8 DB 25 MS
-          1300 HZ
-          11 DB 25 MS
-          800 HZ 25 MS
+          GEN1 3800 HZ 80 DECAY
+          3500 HZ 80 DECAY
+          1300 HZ 80 DECAY
+          800 HZ  80 DECAY
           MUTE ;
+
+: NEW-MOUSE-LOCATION
+    SWOOSH
+    PREY-X @ PREY-Y @ DRAW-WHITE
+    RANDOM-Y RANDOM-X PLACE-PREY
+    500 RND 100 + MS
+    DRAW-PREY SQUEAK ;
+
+: KILL-MOUSE
+    [ PREY SET# ] LITERAL
+    DUP 9 1 COLOR  SQUEAK  2 1 COLOR
+;
 
 \ This code will be a task so it runs in an endless loop
 DECIMAL
+VARIABLE ALIVE  \ message variable to tell mouse task that it is dead
 : SCARED-PREY ( -- )
     BEGIN
-        PAUSE
-        JUMPMS PREY CHARDEF
-     \    [ PREY SET# ] LITERAL  DUP  9 1 COLOR
-          500 RND 100 +  MS
-  \      2 1 COLOR
-        PAUSE
-        MOUSE PREY CHARDEF
+        BEGIN
+        ALIVE @
+        WHILE
+            PAUSE
+            MOUSE2 PREY CHARDEF
+            1000 RND 150 +  MS
+            PAUSE  MOUSE PREY CHARDEF
+        REPEAT
+
+        KILL-MOUSE
+        ALIVE ON
+        NEW-MOUSE-LOCATION
     AGAIN ;
 
 \ we use space for a task in LOW RAM at HEX 2000
@@ -236,7 +276,7 @@ HEX 2000 CONSTANT MOUSE-TASK
     MOUSE-TASK FORK \ copy workspace info into task space
     ['] SCARED-PREY MOUSE-TASK ASSIGN  \ Assign the program to this task.
 ;
-
+\ *******************************************************************
 
 : FASTER    ( -- ) SPEED @ 5 -  1 MAX SPEED ! ;
 
@@ -244,6 +284,8 @@ HEX 2000 CONSTANT MOUSE-TASK
     SNAKE-X-HEAD @ PREY-X @ =
     SNAKE-Y-HEAD @ PREY-Y @ =  AND
     IF
+        ALIVE ON
+
        HAPPY-SNAKE
        GROW-SNAKE
        FASTER
@@ -272,6 +314,9 @@ HEX 2000 CONSTANT MOUSE-TASK
     DRAW-WALLS
     INITIALIZE-SNAKE
     RANDOM-Y RANDOM-X PLACE-PREY
+
+    ['] READ-KEYBOARD IS READ-DIRECTION
+    MOUSE-TASK RESTART
 ;
 
 .( .)
@@ -285,7 +330,7 @@ HEX
          MOVE-SNAKE
          CHECK-PREY
          COLLISION?
-      UNTIL
+     UNTIL
       0C SCREEN
       HONK
       0B 5 AT" GAME OVER"
@@ -347,13 +392,12 @@ DECIMAL
 
 : RUN ( -- )
      TITLE
+
      SPAWN-MOUSE
      BEGIN
-        SINGLE
         MENU
         INITIALIZE
         MULTI
-        MOUSE-TASK RESTART
         PLAY
         500 MS KEY? DROP ( wait for key release)
         2 13 AT" Your snake was " LENGTH @ . ." Ft. long"
@@ -368,9 +412,9 @@ DECIMAL
 
 
 \ ** Uncomment below to make a binary program
-CR .( Making binary program ...)
- LOCK
- INCLUDE DSK1.SAVESYS
- ' COLD SAVESYS DSK3.SNAKE62
+\ CR .( Making binary program ...)
+\ LOCK
+\ INCLUDE DSK1.SAVESYS
+\ ' COLD SAVESYS DSK3.SNAKE62
 
- RUN  \ AUTO START AFTER COMPILE
+ \ RUN  \ AUTO START AFTER COMPILE
