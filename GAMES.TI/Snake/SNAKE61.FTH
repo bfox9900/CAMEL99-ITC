@@ -346,7 +346,8 @@ DECIMAL
 
  RUN  \ AUTO START AFTER COMPILE
 
-\ MAKE A BINARY PROGRAM
+\ ** Uncomment below to make a binary program
+
 \ LOCK
 \ INCLUDE DSK1.SAVESYS
 \ ' COLD SAVESYS DSK3.SNAKE6
