@@ -4,6 +4,8 @@
 CR .(   \\\\\\ Version 6.1 \\\\\\\\ )
 \   \\  snake sounds and mouse squeak  \\\\\
 
+\ v6.2 uses the multi-tasker to animate the mouse
+
 INCLUDE DSK1.RANDOM
 INCLUDE DSK1.GRAFIX
 INCLUDE DSK1.CASE
@@ -11,6 +13,7 @@ INCLUDE DSK1.ARRAYS
 INCLUDE DSK1.UDOTR
 INCLUDE DSK1.SOUND
 INCLUDE DSK1.MARKER
+INCLUDE DSK1.MTASK99
 
 MARKER /SNAKE \ removes snake from the system
 
@@ -213,13 +216,27 @@ DECIMAL
           800 HZ 25 MS
           MUTE ;
 
+\ This code will be a task so it runs in an endless loop
 DECIMAL
 : SCARED-PREY ( -- )
-             JUMPMS PREY CHARDEF
-             SQUEAK
-            [ PREY SET# ] LITERAL  DUP  9 1 COLOR
-             2 1 COLOR
-             MOUSE PREY CHARDEF ;
+    BEGIN
+        PAUSE
+        JUMPMS PREY CHARDEF
+     \    [ PREY SET# ] LITERAL  DUP  9 1 COLOR
+          500 RND 100 +  MS
+  \      2 1 COLOR
+        PAUSE
+        MOUSE PREY CHARDEF
+    AGAIN ;
+
+\ we use space for a task in LOW RAM at HEX 2000
+HEX 2000 CONSTANT MOUSE-TASK
+: SPAWN-MOUSE  \ create a task that can run indepedent of game loop
+    USIZE H !  \ tell system we took "user-size" (196) bytes
+    MOUSE-TASK FORK \ copy workspace info into task space
+    ['] SCARED-PREY MOUSE-TASK ASSIGN  \ Assign the program to this task.
+;
+
 
 : FASTER    ( -- ) SPEED @ 5 -  1 MAX SPEED ! ;
 
@@ -227,7 +244,6 @@ DECIMAL
     SNAKE-X-HEAD @ PREY-X @ =
     SNAKE-Y-HEAD @ PREY-Y @ =  AND
     IF
-       SCARED-PREY
        HAPPY-SNAKE
        GROW-SNAKE
        FASTER
@@ -328,17 +344,23 @@ DECIMAL
       WAIT-KEY ;
 
 .( .)
+
 : RUN ( -- )
      TITLE
+     SPAWN-MOUSE
      BEGIN
+        SINGLE
         MENU
         INITIALIZE
+        MULTI
+        MOUSE-TASK RESTART
         PLAY
         500 MS KEY? DROP ( wait for key release)
         2 13 AT" Your snake was " LENGTH @ . ." Ft. long"
         2 15 AT" Press ENTER to play again"
         KEY 13 <>
      UNTIL
+     SINGLE
      GEN4 MUTE
      8 20 AT" SSSSSee you later!"
      1500 MS
@@ -349,6 +371,6 @@ DECIMAL
 CR .( Making binary program ...)
  LOCK
  INCLUDE DSK1.SAVESYS
- ' COLD SAVESYS DSK3.SNAKE6
+ ' COLD SAVESYS DSK3.SNAKE62
 
  RUN  \ AUTO START AFTER COMPILE
