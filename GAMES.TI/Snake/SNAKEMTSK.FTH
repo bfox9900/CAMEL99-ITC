@@ -19,8 +19,11 @@ INCLUDE DSK1.MTASK99
 
 MARKER /SNAKE \ removes snake from the system
 
-\ Simple manager for low RAM block as a heap
-
+\ Simple manager for low RAM block as a heap ( H is the system variable for heap)
+HEX
+: NEW-HEAP ( -- ) 2000 H !  ;
+: HEAP  ( -- addr ) H @ ;
+: HEAP-ALLOCATE ( n -- ) H +! ; \ H is pointer to end of heap
 
 CR .( compiling Snake...)
 DECIMAL
@@ -79,9 +82,39 @@ CREATE HEADS ( n -- addr ) HEADLEFT , HEADUP , HEADRIGHT , HEADDOWN ,
 HEX
 CREATE CLAY   007E , 6A56 , 6A56 , 7E00 ,
 CREATE VIPER  3C5E , EBF7 , EBDD , 7E3C ,
-CREATE MOUSE  0004 , 3E7B , 7FFC , 8270 ,
-CREATE MOUSE2 0008 , 3F7B , 7EFC , 8270 ,  \ mouse looking up
-CREATE MOUSE2 84BE , FB7F , 3C42 , 0000 ,
+
+\ CREATE MOUSE  0004 , 3E7B , 7FFC , 8270 ,
+\ CREATE MOUSE2 0008 , 3F7B , 7EFC , 8270 ,  \ mouse looking up
+\ CREATE MOUSE3 84BE , FB7F , 3C42 , 0000 ,
+
+\ ****************************************
+NEEDS DATA FROM DSK1.DATABYTE
+
+CREATE MOUSE        DATA 0004,3E7B,7FFC,8270    \ MOUSE-RIGHT
+CREATE MOUSE-LEFT   DATA 0020,7CDE,FE3F,410E    \ MOUSE-LEFT
+CREATE MOUSE2       DATA 0008,3F7B,7EFC,8270    \ MOUSE-RIGHT-LOOK UP
+
+CREATE MOUSE-STAND  DATA 0084,BEFB,7F3C,2400
+CREATE MOUSE-JMP1   DATA 84BE,FB7F,3C42,0000    \ MOUSE-JUMP1
+CREATE MOUSE-JMP2   DATA 84BE,FB7F,3C24,0000    \ MOUSE-JUMP2
+CREATE MOUSE-JMP3   DATA 217D,DFFE,3C24,0000    \ MOUSE-JUMP-LEFT
+\ ****************************************
+DECIMAL
+CREATE RESTING-FILM DATA MOUSE,MOUSE2,MOUSE-LEFT,MOUSE
+
+CREATE JUMP-FILM    DATA MOUSE-STAND,MOUSE-JMP1,MOUSE-JMP2,MOUSE-JMP3
+
+: ]FRAME  ( filmstrip n -- 'frame)  SWAP CELLS + @ ;
+
+: DRAW-PREY ( -- ) PREY  PREY-X @ PREY-Y @ >VPOS VC!  ;
+: PREY-SHAPE  ( addr -- ) PREY CHARDEF ;
+
+: .SHOW  ( addr -- )  PREY CHARDEF  DRAW-PREY ;
+
+: ANIMATE-RESTING
+  MOUSE .FRAME 200 MS
+  4 0 DO  RESTING-FILM I ]FRAME .SHOW  200 MS   LOOP ;
+
 
 DECIMAL
 \ get random x or y position within playable area
@@ -93,7 +126,6 @@ DECIMAL
 : DRAW-SNAKE ( X Y -- ) S" >VPOS SNAKE SWAP VC! " EVALUATE ; IMMEDIATE
 : DRAW-HEAD  ( x y -- ) S" >VPOS SHEAD SWAP VC! " EVALUATE ; IMMEDIATE
 
-: DRAW-PREY ( -- ) PREY  PREY-X @ PREY-Y @ >VPOS VC!  ;
 .( .)
 : DRAW-WALLS
      0  0 BRICK 31 HCHAR
@@ -243,38 +275,42 @@ DECIMAL
     PREY-X @ PREY-Y @ DRAW-WHITE
     RANDOM-Y RANDOM-X PLACE-PREY
     500 RND 100 + MS
-    DRAW-PREY SQUEAK ;
+    DRAW-PREY SQUEAK
+    PREY SET# 2 1 COLOR ;
 
 : KILL-MOUSE
-    [ PREY SET# ] LITERAL
-    DUP 9 1 COLOR  SQUEAK  2 1 COLOR
+    PREY SET# DUP  9 1 COLOR  SQUEAK  1 1 COLOR
 ;
 
 \ This code will be a task so it runs in an endless loop
 DECIMAL
 VARIABLE ALIVE  \ message variable to tell mouse task that it is dead
-: SCARED-PREY ( -- )
+
+: PREY-TASK ( -- )
+    MOUSE PREY CHARDEF
+    PREY SET#  2 1 COLOR
     BEGIN
+        NEW-MOUSE-LOCATION
         BEGIN
-        ALIVE @
+            ALIVE @
         WHILE
             PAUSE
             MOUSE2 PREY CHARDEF
-            1000 RND 150 +  MS
+            1000 RND 350 +  MS
             PAUSE  MOUSE PREY CHARDEF
         REPEAT
-
+        \ mouse is dead
         KILL-MOUSE
-        ALIVE ON
-        NEW-MOUSE-LOCATION
+        ALIVE ON  \
     AGAIN ;
 
 \ we use space for a task in LOW RAM at HEX 2000
 HEX 2000 CONSTANT MOUSE-TASK
 : SPAWN-MOUSE  \ create a task that can run indepedent of game loop
-    USIZE H !  \ tell system we took "user-size" (196) bytes
-    MOUSE-TASK FORK \ copy workspace info into task space
-    ['] SCARED-PREY MOUSE-TASK ASSIGN  \ Assign the program to this task.
+    NEW-HEAP
+    USIZE HEAP-ALLOCATE \ tell system we took "user-size" (196) bytes
+    MOUSE-TASK FORK     \ copy workspace info into task space
+    ['] PREY-TASK MOUSE-TASK ASSIGN  \ Assign the program to this task.
 ;
 \ *******************************************************************
 
@@ -284,12 +320,10 @@ HEX 2000 CONSTANT MOUSE-TASK
     SNAKE-X-HEAD @ PREY-X @ =
     SNAKE-Y-HEAD @ PREY-Y @ =  AND
     IF
-        ALIVE ON
-
+       ALIVE OFF   \ send message to MOUSE task "you're dead"
        HAPPY-SNAKE
        GROW-SNAKE
        FASTER
-       NEW-PREY
     THEN ;
 
 : COLLISION? ( -- ? )
@@ -304,8 +338,6 @@ HEX 2000 CONSTANT MOUSE-TASK
 : INITIALIZE
     PAGE
     4 SCREEN
-    MOUSE PREY  CHARDEF
-    PREY SET#    2 1 COLOR
     CLAY  BRICK CHARDEF
     BRICK SET#   9 1 COLOR
     VIPER SNAKE CHARDEF
@@ -313,8 +345,8 @@ HEX 2000 CONSTANT MOUSE-TASK
     SHEAD SET#  7 1 COLOR
     DRAW-WALLS
     INITIALIZE-SNAKE
-    RANDOM-Y RANDOM-X PLACE-PREY
 
+    RANDOM-Y RANDOM-X PLACE-PREY
     ['] READ-KEYBOARD IS READ-DIRECTION
     MOUSE-TASK RESTART
 ;
