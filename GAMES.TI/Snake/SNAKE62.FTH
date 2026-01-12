@@ -1,9 +1,10 @@
 \ snake  a simple game in Forth ported to CAMEL99 Forth
 \ DERIVED FROM: https://skilldrick.github.io/easyforth/#snake
 \ revised to use CAMEL99/TI-99 features
-CR .(   \\\\\\ Version 6.1 \\\\\\\\ )
+CR .(   \\\\\\ Version 6.2 \\\\\\\\ )
 \   \\  snake sounds and mouse squeak  \\\\\
 
+CR .( Compiline library files ...)
 INCLUDE DSK1.RANDOM
 INCLUDE DSK1.GRAFIX
 INCLUDE DSK1.CASE
@@ -14,10 +15,10 @@ INCLUDE DSK1.DEFER
 INCLUDE DSK1.JOYST
 INCLUDE DSK1.MARKER
 
+CR
+CR .( Compiling Snake program ...)
+CR
 MARKER /SNAKE \ removes snake from the system
-
-CR .( compiling Snake...)
-
 \ ****************************************
 \ * Digit Character Patterns
 \ ****************************************
@@ -34,10 +35,11 @@ CREATE NUMBER-FONT
    7C4C , 4EFE , 8E8E , FE00  ,  \ 8
    7E46 , 467E , 0E0E , 0E00  ,  \ 9
 
-HEX 800 CONSTANT PDT
+\ HEX 800 CONSTANT PDT
+.( .)
 
 : PATTERNS ( n --) 8* ; \ size of a char pattern in bytes
-: ]PDT ( ascii# -- Vdp_addr) PATTERNS PDT + ; \ vdp pattern array
+\ : ]PDT ( ascii# -- Vdp_addr) PATTERNS PDT + ; \ vdp pattern array
 
 DECIMAL
 : NEW-DIGITS   NUMBER-FONT  [CHAR] 0 ]PDT  10 PATTERNS VWRITE ;
