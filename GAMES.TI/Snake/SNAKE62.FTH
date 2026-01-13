@@ -66,10 +66,14 @@ DECIMAL
 
 VARIABLE INCREMENT \ how fast the score goes up (depends on level)
 VARIABLE SCORE
+VARIABLE SPEED
 
-: SCORE++   INCREMENT @ SCORE +! ;
-: <####> ( n -- $ len)  0 <# # # # # #> ;
-: .SCORE   SCORE @ <####>  25 0 >VPOS SWAP VWRITE ;
+: COMPENSATED ( n -- n') 150 SPEED @ */  ;
+
+: SCORE++   INCREMENT @ COMPENSATED  SCORE +! ;
+
+: <#####> ( n -- $ len)  0 <# # # # # # #> ;
+: .SCORE   SCORE @ <#####>  25 0 >VPOS SWAP VWRITE ;
 
 
 : NOISE-UP ( speed  -- )
@@ -89,7 +93,6 @@ MAXLENGTH ARRAY ]SNAKE-Y
 : SNAKE-Y-HEAD  ( -- addr)  [ 0 ]SNAKE-Y ] LITERAL ;
 
 .( .)
-VARIABLE SPEED
 VARIABLE PREY-X
 VARIABLE PREY-Y
 VARIABLE DIRECTION
@@ -209,7 +212,6 @@ DECIMAL
 : TURN-RIGHT     VERTICAL?   IF RIGHT FACE  THEN ;
 
 DEFER READ-DIRECTION
-
 HEX
 : READ-KEYBOARD ( key -- )
   \   83C8 OFF   \ set continuous key reading
@@ -302,7 +304,9 @@ DECIMAL
              SQUEAK
              MOUSE PREY CHARDEF ;
 
-: FASTER    ( -- ) SPEED @ DUP 30 / -  10 MAX SPEED ! ;
+: %  ( n % -- n')  100 */  ;
+
+: FASTER    ( -- ) SPEED @ 95 %  1 MAX SPEED ! ;
 
 : CHECK-PREY  ( -- )
     SNAKE-X-HEAD @ PREY-X @ =
@@ -408,8 +412,14 @@ DECIMAL
     3  7 AT" Use ESDX keys or Joystick 1"
     3  8 AT" to move the snake
     3  9 AT" and catch the mouse."
+
     5 12 AT" The more he eats,
     5 13 AT" the faster he goes!"
+
+    5 15 AT" The faster he goes..."
+    5 16 AT" the more points you get!"
+
+
     5 20 AT" Press any key to begin..."
     WAIT-KEY ;
 
@@ -452,5 +462,11 @@ DECIMAL
      8 20 AT" SSSSSee you later!"
      1500 MS
      GRAPHICS ;
+
+: START   WARM RUN  BYE ;
+
+LOCK
+INCLUDE DSK1.SAVESYS
+' START SAVESYS DSK3.SNAKE
 
 RUN
