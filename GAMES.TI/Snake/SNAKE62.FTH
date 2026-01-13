@@ -19,6 +19,26 @@ CR
 CR .( Compiling Snake program ...)
 CR
 MARKER /SNAKE \ removes snake from the system
+
+\ create some sounds with Forth words HZ DB TICKS MUTE
+DECIMAL \ max N = 10000
+: DECAY  ( n -- ) 16 0 DO  I DB  DUP I +  TICKS LOOP TICKS MUTE ;
+
+: CLINK ( -- ) GEN1 1400 HZ   300 DECAY ;
+: PING  ( -- ) GEN3 2000 HZ  10000 DECAY ;
+
+: DECAY2 ( n -- )
+    16 0
+    DO
+        GEN1 I DB   GEN2 I DB
+        DUP TICKS
+    LOOP
+    TICKS
+    GEN1 MUTE  GEN2 MUTE ;
+
+: BONK  ( -- )  GEN1 110 HZ GEN2 111 HZ  500 DECAY2 ;
+
+
 \ ****************************************
 \ * Digit Character Patterns
 \ ****************************************
@@ -105,7 +125,7 @@ CREATE HEADS ( n -- addr ) HEADLEFT , HEADUP , HEADRIGHT , HEADDOWN ,
 
 \ shape data for PREY, brick, mouse and snake chars
 HEX
-CREATE CLAY   007E , 6A56 , 6A56 , 7E00 ,
+CREATE CLAY   FFBD , DBE7 , E7DB , BDFF , \ 007E , 6A56 , 6A56 , 7E00 ,
 CREATE VIPER  3C5E , EBF7 , EBDD , 7E3C ,
 CREATE MOUSE  0004 , 3E7B , 7FFC , 8270 ,
 CREATE MOUSE2 0008 , 3F7B , 7EFC , 8270 ,  \ mouse looking up
@@ -119,7 +139,7 @@ DECIMAL
 
 \ text macros make drawing faster.
 : DRAW-WHITE ( x y -- ) S" >VPOS  BL   SWAP VC! " EVALUATE ; IMMEDIATE
-: DRAW-SNAKE ( X Y -- ) S" >VPOS SNAKE SWAP VC! " EVALUATE ; IMMEDIATE
+: DRAW-BODY ( X Y -- ) S" >VPOS SNAKE SWAP VC! " EVALUATE ; IMMEDIATE
 : DRAW-HEAD  ( x y -- ) S" >VPOS SHEAD SWAP VC! " EVALUATE ; IMMEDIATE
 
 : DRAW-PREY ( -- )
@@ -138,7 +158,7 @@ DECIMAL
     SNAKE-X-HEAD @  SNAKE-Y-HEAD @ DRAW-HEAD
     LENGTH @ 1
     DO
-       I ]SNAKE-X @   I ]SNAKE-Y @ DRAW-SNAKE
+       I ]SNAKE-X @   I ]SNAKE-Y @ DRAW-BODY
     LOOP
     LENGTH @ DUP ]SNAKE-X @  SWAP ]SNAKE-Y @  DRAW-WHITE ;
 
@@ -172,14 +192,14 @@ DECIMAL
  ;
 
 : MOVE-SNAKE  (  -- )
-             MOUSE2 PREY CHARDEF
-             4 NOISE  8 DB   \ soft white noise
-             MOVE-SNAKE-TAIL
-             10 DB            \ ramp down noise
-             MOVE-SNAKE-HEAD
-             12 DB            \ ramp down noise
-             JUMPMS PREY CHARDEF
-             MUTE ;
+            MOUSE2 PREY CHARDEF
+            4 NOISE  8 DB   \ soft white noise
+            MOVE-SNAKE-TAIL
+            10 DB            \ ramp down noise
+            MOVE-SNAKE-HEAD
+            12 DB            \ ramp down noise
+            JUMPMS PREY CHARDEF
+            MUTE ;
 .( .)
 DECIMAL
 : HORIZONTAL? ( -- ?) DIRECTION @ DUP  LEFT = SWAP RIGHT = OR ;
@@ -258,7 +278,6 @@ DECIMAL
             ( -- 5)  13 1 COLOR ;
 .( .)
 DECIMAL
-: DECAY       ( n -- ) 16 0 DO  I DB  DUP MS LOOP DROP ;
 
 : SQUEAK      ( -- )
           GEN4 MUTE
@@ -301,8 +320,9 @@ DECIMAL
 
 : COLLISION? ( -- ? )
     SNAKE-X-HEAD @ SNAKE-Y-HEAD @ >VPOS VC@
-    DUP  BRICK =
-    SWAP SNAKE = OR  ;
+    DUP  BRICK =  OVER SNAKE = OR
+    SWAP [CHAR] 0 [CHAR] 9 1+ WITHIN OR
+;
 
 \ utility words for menus
 : WAIT-KEY   BEGIN KEY? UNTIL ;
@@ -335,10 +355,9 @@ HEX
         CHECK-PREY
         COLLISION?
     UNTIL
+    BONK 300 MS
     0C SCREEN
-    HONK
     0B 5 AT" GAME OVER"
-    HONK
     DEAD-SNAKE ;
 
 DECIMAL
