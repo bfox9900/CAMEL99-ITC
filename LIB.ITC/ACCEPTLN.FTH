@@ -1,4 +1,6 @@
 \ ACCEPTLN is a fuller featured ACCEPT    Nov 18 2025 FOX
+\ Modified Jan 13 2026: Edits buffer in place using pointer
+
 \ Features:
 \ Key repeat
 \ Insert and overwrite
@@ -6,9 +8,9 @@
 \ delete characters to right of cursor
 \ Backspace key just moves cursor left
 
-\ NEEDS DUMP FROM DSK1.TOOLS    \ debugging
-\ NEEDS MARKER FROM DSK1.MARKER
-\ MARKER /EDIT
+ NEEDS DUMP FROM DSK1.TOOLS    \ debugging
+ NEEDS MARKER FROM DSK1.MARKER
+ MARKER /EDIT
 
 NEEDS CASE FROM DSK1.CASE          \ 104 bytes
 NEEDS RKEY FROM DSK1.RKEY          \ 266 bytes
@@ -28,27 +30,29 @@ HEX
 1F CONSTANT BOX
 
 DECIMAL
-\ 'TEXT uses PAD to save space. It could be a buffer you create.
-: 'TEXT ( -- addr) PAD ;
+CREATE ^BUFFER 0 , 0 ,      \ pointer to buffer string
+^BUFFER CONSTANT $LEN       \ address of length
+$LEN CELL+ CONSTANT 'TEXT   \ address of text
 
 \ ========================
 \ ACCEPTLN's cursor variables
 CREATE XY  0 , 0 ,      \ holds "home" position
-XY CELL+ CONSTANT COL
 XY       CONSTANT ROW
+XY CELL+ CONSTANT COL
 
 \ Name convention: Words ending with '$' return a stack string
-: EMPTY   ( addr -- ) BUFFSIZE BL FILL ;
-: BUFFER$ ( -- adr len) 'TEXT MAX$LEN -TRAILING ;
-: >BUFFER ( adr len --) 'TEXT EMPTY 'TEXT SWAP CMOVE ;
-\ : .BUFFER ( -- ) XY 2@ AT-XY  BUFFER$ 2+ TYPE ;
+: BUFFER$ ( -- adr len) ^BUFFER 2@ ;
+: >BUFFER ( adr len --) ^BUFFER 2! ;
+: .BUFFER ( -- ) XY 2@ AT-XY  BUFFER$  TYPE ;
+
+: BLANK   ( addr len --) BL FILL ;
 
 \ ========================
 \ auto-limited cursor movement
   VARIABLE CP    \ cursor position
 : HOME     CP OFF ;
 
-: LIMITED  ( n -- n') 0 MAX  MAX$LEN MIN ;
+: LIMITED  ( n -- n') 0 MAX  $LEN MIN ;
 : CP+!     ( n -- ) CP @ +  LIMITED CP ! ;
 : 'CURSOR  ( -- adr) 'TEXT CP @ + ;
 : !CHAR    ( c -- ) 'CURSOR C!  1 CP+! ;
@@ -72,7 +76,7 @@ DECIMAL
 : LEFTSIDE   ( adr len -- adr len') DROP CP @ ;
 
 \ print buffer at cursor. 2+ puts extra spaces at end
-: RELINE  ( -- ) BUFFER$ RIGHTSIDE 2+  TYPE ;
+: RELINE  ( -- ) BUFFER$ RIGHTSIDE   TYPE ;
 
 \ =======================
 \ text manipulation

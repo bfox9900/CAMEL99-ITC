@@ -192,13 +192,11 @@ DECIMAL
  ;
 
 : MOVE-SNAKE  (  -- )
-            MOUSE2 PREY CHARDEF
             4 NOISE  8 DB   \ soft white noise
             MOVE-SNAKE-TAIL
             10 DB            \ ramp down noise
             MOVE-SNAKE-HEAD
             12 DB            \ ramp down noise
-            JUMPMS PREY CHARDEF
             MUTE ;
 .( .)
 DECIMAL
@@ -215,8 +213,8 @@ DEFER READ-DIRECTION
 HEX
 : READ-KEYBOARD ( key -- )
   \   83C8 OFF   \ set continuous key reading
-     KEY?
-     CASE
+    KEY?
+    CASE
        [CHAR] S OF TURN-LEFT   ENDOF
        [CHAR] E OF TURN-UP     ENDOF
        [CHAR] D OF TURN-RIGHT  ENDOF
@@ -339,12 +337,14 @@ DECIMAL
     DRAW-WALLS
     INITIALIZE-SNAKE
     RANDOM-Y RANDOM-X PLACE-PREY
+    NEW-DIGITS
+    MOUSE PREY CHARDEF
 ;
 
 .( .)
+
 HEX
 : PLAY ( -- )
-    NEW-DIGITS
     SCORE OFF  .SCORE
     BEGIN
         SPEED @ MS
