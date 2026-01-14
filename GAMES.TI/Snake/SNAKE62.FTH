@@ -20,6 +20,30 @@ CR .( Compiling Snake program ...)
 CR
 MARKER /SNAKE \ removes snake from the system
 
+\ named colors for Graphics programs
+CR .( Aug 9 2023 to uses some TI-Logo names)
+
+: ENUM  ( 0 <text> -- n) DUP CONSTANT  1+ ;
+
+1 ( set 1st color)
+ENUM TRANS    ( 1)
+ENUM BLACK    ( 2)
+ENUM GREEN    ( 3)
+ENUM LIME     ( 4)
+ENUM BLUE     ( 5)
+ENUM RED      ( 6)
+ENUM CYAN     ( 7)
+ENUM RUST     ( 8)
+ENUM ORANGE   ( 9)
+ENUM YELLOW   ( 10)
+ENUM LEMON    ( 11)
+ENUM OLIVE    ( 12)
+ENUM MAGENTA  ( 13)
+ENUM GRAY     ( 14)
+ENUM WHITE    ( 15)
+DROP
+
+
 \ create some sounds with Forth words HZ DB TICKS MUTE
 DECIMAL \ max N = 10000
 : DECAY  ( n -- ) 16 0 DO  I DB  DUP I +  TICKS LOOP TICKS MUTE ;
@@ -108,7 +132,6 @@ DECIMAL
 42  CONSTANT SNAKE
 128 CONSTANT PREY
 30  CONSTANT BRICK
-BL  CONSTANT WHITE
 
 \ Direction #s
 0 CONSTANT LEFT
@@ -151,7 +174,7 @@ DECIMAL
 
 : DRAW-PREY ( -- )
     MOUSE PREY CHARDEF
-    PREY SET#  2 1 COLOR
+    PREY SET#  BLACK 1 COLOR
     PREY  PREY-X @ PREY-Y @ >VPOS VC! ;
 
 .( .)
@@ -215,7 +238,7 @@ DECIMAL
 : TURN-DOWN      HORIZONTAL? IF DOWN  FACE  THEN ;
 : TURN-RIGHT     VERTICAL?   IF RIGHT FACE  THEN ;
 
-DEFER READ-DIRECTION
+DEFER CONTROLLER
 HEX
 : READ-KEYBOARD ( key -- )
   \  83C8 OFF   \ set continuous key reading
@@ -240,7 +263,7 @@ HEX
 \ 14 = up+right
 HEX
 : READ-JOYSTICK
-    0 JOYST
+    0 JOYST DUP 0= IF  DROP  EXIT  THEN
     CASE
        2 OF TURN-LEFT  ENDOF
       10 OF TURN-UP    ENDOF
@@ -266,8 +289,8 @@ DECIMAL
 
 : DEAD-SNAKE  ( -- )
     GEN4 MUTE
-    SNAKE SET#  DUP 11 1 COLOR  250 MS   2 1 COLOR
-    SHEAD SET#  2 1 COLOR  ;
+    SNAKE SET#  DUP LEMON 1 COLOR  250 MS  BLACK 1 COLOR
+    SHEAD SET#  GRAY 1 COLOR  ;
 
 : HAPPY-SNAKE ( -- )
     [ SNAKE SET# ] LITERAL
@@ -278,27 +301,27 @@ DECIMAL
         40 MS
     LOOP
     MUTE
-    ( 5) 13 1 COLOR ;
+    ( 5) MAGENTA 1 COLOR ;
 .( .)
 DECIMAL
 
 : SQUEAK      ( -- )
           GEN4 MUTE
-         [ PREY SET# ] LITERAL  9 1 COLOR
+         [ PREY SET# ] LITERAL  ORANGE 1 COLOR
           GEN1 3800 HZ 0 DB  70 MS
           6 DB  50 MS
           3500 HZ 75 MS
-         [ PREY SET# ] LITERAL  8 1 COLOR
+         [ PREY SET# ] LITERAL  RUST 1 COLOR
           8 DB 50 MS
 
           1300 HZ  11 DB 50 MS
-         [ PREY SET# ] LITERAL  5 1 COLOR
+         [ PREY SET# ] LITERAL  BLUE 1 COLOR
 
           700 HZ 50 MS
-         [ PREY SET# ] LITERAL  15 1 COLOR
+         [ PREY SET# ] LITERAL  WHITE 1 COLOR
 
           400 HZ 50 MS
-         [ PREY SET# ] LITERAL   1 1 COLOR
+         [ PREY SET# ] LITERAL  TRANS 1 COLOR
           GEN1 MUTE ;
 
 DECIMAL
@@ -335,12 +358,12 @@ DECIMAL
 
 : INITIALIZE
     PAGE
-    4 SCREEN
+    OLIVE SCREEN
     CLAY  BRICK CHARDEF
-    BRICK SET#   9 1 COLOR
+    BRICK SET#  ORANGE 1 COLOR
     VIPER SNAKE CHARDEF
-    SNAKE SET#  13 1 COLOR
-    SHEAD SET#  7 1 COLOR
+    SNAKE SET#  MAGENTA 1 COLOR
+    SHEAD SET#  CYAN 1 COLOR
     DRAW-WALLS
     INITIALIZE-SNAKE
     RANDOM-Y RANDOM-X PLACE-PREY
@@ -353,12 +376,10 @@ DECIMAL
 HEX
 : PLAY ( -- )
     SCORE OFF  .SCORE
-    DRAW-PREY
     BEGIN
+        DRAW-PREY
         SPEED @ MS
-        DRAW-SNAKE
-        READ-DIRECTION
-        MOVE-SNAKE
+        DRAW-SNAKE  CONTROLLER MOVE-SNAKE
         CHECK-PREY
         COLLISION?
     UNTIL
@@ -370,29 +391,31 @@ HEX
 DECIMAL
 : ENDGAME
   5 14 AT" You sure? (Y/N)"
-  KEY [CHAR] Y =
-  IF    PAGE ABORT
+  KEY
+  DUP  [CHAR] Y =
+  OVER [CHAR] y = OR
+  IF    BYE  \ PAGE ABORT
   ELSE  5 14 >VPOS 26 BL VFILL
   THEN  CLEAR ABORT
 ;
 
 DECIMAL
-
 : GET-LEVEL ( -- speed)
-      5 13 AT-XY
-      BEGIN
-       KEY DUP [CHAR] 1 [CHAR] 6 WITHIN 0=
-       WHILE
-         DROP
-      REPEAT
-      DUP  [CHAR] 0 -  INCREMENT !
-      CASE
-          [CHAR] 1 OF 150  ENDOF
-          [CHAR] 2 OF 110  ENDOF
-          [CHAR] 3 OF  80  ENDOF
-          [CHAR] 4 OF  50  ENDOF
-          [CHAR] 5 OF ENDGAME ENDOF
-      ENDCASE
+    5 13 AT-XY
+    BEGIN
+      KEY DUP [CHAR] 1 [CHAR] 6 WITHIN 0=
+     WHILE
+        DROP
+    REPEAT
+    DUP  [CHAR] 0 -  INCREMENT !
+
+    CASE
+        [CHAR] 1 OF 150  ENDOF
+        [CHAR] 2 OF 110  ENDOF
+        [CHAR] 3 OF  80  ENDOF
+        [CHAR] 4 OF  50  ENDOF
+        [CHAR] 5 OF ENDGAME ENDOF
+    ENDCASE
 ;
 
 : MENU
@@ -403,15 +426,15 @@ DECIMAL
     5 10 AT" 3 - SNAKE
     5 11 AT" 4 - VIPER"
     5 12 AT" 5 - Quit
-    3 23 AT" (It goes faster as you win)"
+    3 23 AT" (It goes faster as you eat)"
     GET-LEVEL SPEED !
 ;
 
 
 DECIMAL
 : TITLE  ( -- )
-    GRAPHICS
-    5  5 AT" THE SNAKE V6.2"
+    GRAPHICS  OLIVE SCREEN
+    7  5 AT" THE SNAKE V6.2"
     3  7 AT" Use ESDX keys or Joystick 1"
     3  8 AT" to move the snake
     3  9 AT" and catch the mouse."
@@ -433,11 +456,11 @@ DECIMAL
        KEY? BL <>
     WHILE
     REPEAT
-        ['] READ-KEYBOARD IS READ-DIRECTION
-        5 16 AT" Keyboard selected ... "   500 MS
-        EXIT
+    ['] READ-KEYBOARD IS CONTROLLER
+    5 16 AT" Keyboard selected ... "   500 MS
+    EXIT
     THEN
-    ['] READ-JOYSTICK IS READ-DIRECTION
+    ['] READ-JOYSTICK IS CONTROLLER
     5 16 AT" Joystick selected ..." 500 MS
 ;
 
@@ -450,9 +473,9 @@ DECIMAL
 
 .( .)
 : RUN ( -- )
-     TITLE
-     CONTROL-SELECTOR
-     BEGIN
+    TITLE
+    CONTROL-SELECTOR
+    BEGIN
         MENU
         INITIALIZE
         PLAY
@@ -460,11 +483,11 @@ DECIMAL
         2 13 AT" Your snake was " LENGTH @ . ." Ft. long"
         2 15 AT" Press ENTER to play again"
         KEY 13 <>
-     UNTIL
-     GEN4 MUTE
-     8 20 AT" SSSSSee you later!"
-     1500 MS
-     GRAPHICS ;
+    UNTIL
+    GEN4 MUTE
+    8 20 AT" SSSSSee you later!"
+    1500 MS
+    GRAPHICS ;
 
 : START   WARM RUN  BYE ;
 
