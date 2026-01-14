@@ -18,8 +18,8 @@ NEEDS HZ     FROM DSK1.SOUND
 HEX
 50 USER MAILBOX  \ mailbox is local to each task
 
-\ send-mail blocks the sender if reciever mailbox is full
-: SEND-MAIL  ( n PID -- ) \ PID (process ID) is task's workspace address
+\ SEND-MSG blocks if reciever mailbox is full
+: SEND-MSG  ( n PID -- ) \ PID (process ID) is task's workspace address
    BEGIN
       DUP MAILBOX LOCAL @ \ is PID mailbox full?
    WHILE
@@ -28,7 +28,7 @@ HEX
    MAILBOX LOCAL ! ;      \ store n into PID's mailbox
 
 \ wait for a message in my local mailbox variable
-: GET-MAIL ( -- u )
+: GET-MSG ( -- u )
     BEGIN  PAUSE MAILBOX @ ?DUP  UNTIL  MAILBOX OFF ;
 
 \ -------------------------------------------------------
@@ -51,31 +51,37 @@ DECIMAL \ max N = 9000
     TICKS
     GEN1 MUTE  GEN2 MUTE ;
 
-\ SoUND words
+: ATTACK ( speed  -- )
+    1 16 DO  I DB  DUP TICKS  -1 +LOOP 0 DB ;
+
+\ Sound words
 : CLINK ( -- ) GEN1 1400 HZ   100 DECAY  ;
 : PING  ( -- ) GEN3 2000 HZ   800 DECAY  ;
-: PINGS ( n -- ) 4 0 ?DO  PING  LOOP ;
+: PINGS ( n -- ) 20 0 ?DO  PING  LOOP ;
 : BONK  ( -- ) GEN1 110 HZ  GEN2 111 HZ  500 DECAY2 ;
 : BA-DING  GEN1 1400 HZ   100 DECAY  2000 HZ  500 DECAY  ;
 
+: SWOOSH   ( -- ) GEN4 MUTE   4 NOISE  500 ATTACK  100 DECAY ;
 
 \ This task will execute the XT in its mailbox
+\ ** NOT PROTECTED FROM BAD XTs **
 DECIMAL
 : BGPLAYER ( -- )
     MAILBOX OFF \ clear my mailbox
     BEGIN
-        GET-MAIL EXECUTE
+        GET-MSG EXECUTE
         PAUSE
     AGAIN ;
 
-: SNDMSG  ( xt -- ) BGTASK SEND-MAIL ;
+: >SOUND  ( xt -- ) BGTASK SEND-MSG ;
 
 \ multi-tasking sound words
-: CLINKER   ['] CLINK SNDMSG ;
-: PINGER    ['] PING  SNDMSG ;
-: BONKER    ['] BONK  SNDMSG ;
-: BA-DINGER ['] BA-DING SNDMSG ;
-: 4PINGS    ['] PINGS SNDMSG ;
+: CLINKER   ['] CLINK >SOUND ;
+: PINGER    ['] PING  >SOUND ;
+: BONKER    ['] BONK  >SOUND ;
+: BA-DINGER ['] BA-DING >SOUND ;
+: SWOOSHER  ['] SWOOSH >SOUND ;
+
 \ Spawn task to run BGPLAYER
 ' BGPLAYER SPAWN TO BGTASK
 
