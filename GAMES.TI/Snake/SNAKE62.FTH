@@ -203,7 +203,7 @@ DECIMAL
             MOVE-SNAKE-TAIL
             10 DB            \ ramp down noise
             MOVE-SNAKE-HEAD
-            12 DB            \ ramp down noise
+            14 DB            \ ramp down noise
             MUTE ;
 .( .)
 DECIMAL
@@ -265,20 +265,20 @@ DECIMAL
 : GROW-SNAKE  ( -- ) 1 LENGTH +! ;
 
 : DEAD-SNAKE  ( -- )
-             GEN4 MUTE
-             SNAKE SET#  DUP 11 1 COLOR  250 MS   2 1 COLOR
-             SHEAD SET#  2 1 COLOR  ;
+    GEN4 MUTE
+    SNAKE SET#  DUP 11 1 COLOR  250 MS   2 1 COLOR
+    SHEAD SET#  2 1 COLOR  ;
 
 : HAPPY-SNAKE ( -- )
-             [ SNAKE SET# ] LITERAL
-             17 3
-             DO
-                DUP I 1 COLOR
-                I 100 * HZ 0 DB
-                40 MS
-            LOOP
-            MUTE
-            ( -- 5)  13 1 COLOR ;
+    [ SNAKE SET# ] LITERAL
+    17 3
+    DO
+        DUP I 1 COLOR
+        I 100 * HZ 0 DB
+        40 MS
+    LOOP
+    MUTE
+    ( 5) 13 1 COLOR ;
 .( .)
 DECIMAL
 
@@ -353,10 +353,10 @@ DECIMAL
 HEX
 : PLAY ( -- )
     SCORE OFF  .SCORE
+    DRAW-PREY
     BEGIN
         SPEED @ MS
         DRAW-SNAKE
-        DRAW-PREY
         READ-DIRECTION
         MOVE-SNAKE
         CHECK-PREY
@@ -469,7 +469,11 @@ DECIMAL
 : START   WARM RUN  BYE ;
 
 LOCK
+CR .( Building binary program ...)
 INCLUDE DSK1.SAVESYS
 ' START SAVESYS DSK3.SNAKE
 
-RUN
+CR
+CR .( Build completed normally)
+
+\ RUN
