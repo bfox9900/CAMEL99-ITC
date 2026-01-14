@@ -5,7 +5,8 @@ NEEDS MALLOC FROM DSK1.MALLOC
 NEEDS VALUE  FROM DSK1.VALUES
 NEEDS HZ     FROM DSK1.SOUND
 
-0 VALUE BGTASK  \ holds tasks PID (program identifier)
+0 VALUE TASK1  \ holds tasks PID (program identifier)
+0 VALUE TASK2
 
 \ SPAWN dynamically allocates a task space in Low RAM,
 \ "forks" it to create workspace and local variables,
@@ -62,7 +63,7 @@ DECIMAL \ max N = 9000
           GEN1
           3800 HZ 200 DECAY
           3500 HZ 200 DECAY
-          1300 HZ 300 DECAY
+          1300 HZ 200 DECAY
 ;
 
 \ This task will execute the XT in its mailbox
@@ -75,7 +76,7 @@ DECIMAL
         PAUSE
     AGAIN ;
 
-: >SOUND  ( xt -- ) BGTASK SEND-MSG ;
+: >SOUND  ( xt -- ) TASK1 SEND-MSG ;
 
 \ multi-tasking sound words
 : CLINKER   ['] CLINK >SOUND ;
@@ -86,5 +87,5 @@ DECIMAL
 : SQUEAKER  ['] SQUEAK >SOUND ;
 
 \ TESTING: Spawn task to run BGPLAYER
-\ ' BGPLAYER SPAWN TO BGTASK
+\ ' BGPLAYER SPAWN TO TASK1
 \ MULTI

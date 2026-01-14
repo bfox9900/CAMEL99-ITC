@@ -64,7 +64,7 @@ VARIABLE SPEED
 
 \ direct to VDP print score
 : PRINTAT ( $ len col row ) >VPOS SWAP VWRITE ;
-: .SCORE ( -- ) SCORE @ <#####>  25 0 PRINTAT   BA-DINGER ;
+: .SCORE ( -- ) SCORE @ <#####>  25 0 PRINTAT   ;
 
 DECIMAL
 500 CONSTANT MAXLENGTH
@@ -111,6 +111,7 @@ CREATE HEADS ( n -- addr ) HEADLEFT , HEADUP , HEADRIGHT , HEADDOWN ,
 : FACE  ( direction# -- ) DUP ]HEADPATTERN   DIRECTION ! ;
 
 \ shape data for PREY, brick, mouse and snake chars
+.( .)
 HEX
 CREATE CLAY   FFBD , DBE7 , E7DB , BDFF , \ 007E , 6A56 , 6A56 , 7E00 ,
 CREATE VIPER  3C5E , EBF7 , EBDD , 7E3C ,
@@ -159,7 +160,7 @@ DECIMAL
      RIGHT FACE  ;
 
 : PLACE-PREY ( y x -- ) PREY-X ! PREY-Y ! ;
-
+.( .)
 : MOVE-SNAKE-HEAD ( n -- )
     DIRECTION @
     CASE
@@ -174,17 +175,18 @@ DECIMAL
 : MOVE-SNAKE-TAIL
 \      src addr    dest addr      size
 \     ---------    --------- -------------
-    SNAKE-X-HEAD  DUP CELL+  LENGTH @ CELLS  CMOVE>
-    SNAKE-Y-HEAD  DUP CELL+  LENGTH @ CELLS  CMOVE>
- ;
+PAUSE  SNAKE-X-HEAD  DUP CELL+  LENGTH @ CELLS  CMOVE>
+PAUSE  SNAKE-Y-HEAD  DUP CELL+  LENGTH @ CELLS  CMOVE>
+;
 
 : MOVE-SNAKE  (  -- )
-            4 NOISE  8 DB   \ soft white noise
-            MOVE-SNAKE-TAIL
-            10 DB            \ ramp down noise
-            MOVE-SNAKE-HEAD
-            12 DB            \ ramp down noise
-            MUTE ;
+    4 NOISE  8 DB   \ soft white noise
+    MOVE-SNAKE-TAIL
+    10 DB            \ ramp down noise
+    MOVE-SNAKE-HEAD
+    12 DB            \ ramp down noise
+    MUTE
+;
 .( .)
 DECIMAL
 : HORIZONTAL? ( -- ?) DIRECTION @ DUP  LEFT = SWAP RIGHT = OR ;
@@ -207,7 +209,7 @@ HEX
        [CHAR] X OF TURN-DOWN   ENDOF
     ENDCASE
 ;
-
+.( .)
 \ HEX Outputs from JOYST word
 \ 01 = Fire
 \ 02 = Left
@@ -218,23 +220,24 @@ HEX
 \ 0C = down+right
 \ 12 = up+left
 \ 14 = up+right
+
 HEX
-: READ-JOYSTICK
-    0 JOYST
+: READ-JOYSTICK ( -- )
+    0 JOYST DUP 0= IF DROP EXIT THEN
     CASE
        2 OF TURN-LEFT  ENDOF
       10 OF TURN-UP    ENDOF
-      04 OF TURN-RIGHT  ENDOF
-      08 OF TURN-DOWN   ENDOF
+      04 OF TURN-RIGHT ENDOF
+      08 OF TURN-DOWN  ENDOF
     ENDCASE
 ;
 
 DECIMAL
 
 : NEW-PREY
+    SWOOSHER
     PREY-X @ PREY-Y @ DRAW-WHITE
     RANDOM-Y RANDOM-X PLACE-PREY
-    SWOOSHER
     DRAW-PREY ;
 
 : GROW-SNAKE  ( -- ) 1 LENGTH +! ;
@@ -245,35 +248,33 @@ DECIMAL
              SHEAD SET#  2 1 COLOR  ;
 
 : HAPPY-SNAKE ( -- )
-             [ SNAKE SET# ] LITERAL
-             17 3
-             DO
-                DUP I 1 COLOR
-                I 100 * HZ 0 DB
-                40 MS
-            LOOP
-            MUTE
-            ( -- 5)  13 1 COLOR ;
-.( .)
-DECIMAL
-: SET-COLOR  ( set# fg bg -- )  -ROT COLOR PAUSE ; \ multi-task friendly
-
- PREY SET# CONSTANT PREY-CLR-SET
-: DIE
-    SQUEAK  \ immediate sound, not via bgplayer
-
-    PREY-CLR-SET   9 1 SET-COLOR 150 MS
-    PREY-CLR-SET   8 1 SET-COLOR 150 MS
-    PREY-CLR-SET   5 1 SET-COLOR 150 MS
-    PREY-CLR-SET  15 1 SET-COLOR 150 MS
-    PREY-CLR-SET   1 1 SET-COLOR \ invisible
+    [ SNAKE SET# ] LITERAL
+    17 3
+    DO
+        DUP I 1 COLOR
+        I 100 * HZ 0 DB
+        40 MS
+    LOOP
+    MUTE
+    ( -- 5)  13 1 COLOR
 ;
 
+.( .)
 DECIMAL
-: SCARED-PREY ( -- )
-    JUMPMS PREY CHARDEF
-    DIE
-    MOUSE PREY CHARDEF
+: SET-COLOR  ( set# fg bg -- ) COLOR PAUSE ; \ multi-task friendly
+
+DECIMAL
+: DEAD-MOUSE ( -- )
+    SQUEAK  \ run immediately. Does not use BG PLAYER
+    [ PREY SET# ] LITERAL
+    15 5
+    DO
+        JUMPMS PREY CHARDEF
+        DUP I 1 SET-COLOR
+        70 MS
+        MOUSE PREY CHARDEF
+    LOOP
+    ( 5)  1 1 SET-COLOR \ invisible
 ;
 
 : %  ( n % -- n')  100 */  ;
@@ -284,11 +285,11 @@ DECIMAL
     SNAKE-X-HEAD @ PREY-X @ =
     SNAKE-Y-HEAD @ PREY-Y @ =  AND
     IF
-       SCARED-PREY
+       DEAD-MOUSE
+       SCORE++ .SCORE BA-DINGER
        HAPPY-SNAKE
        GROW-SNAKE
        NEW-PREY
-       SCORE++ .SCORE
        FASTER
     THEN ;
 
@@ -318,14 +319,13 @@ DECIMAL
 ;
 
 .( .)
-
 HEX
 : PLAY ( -- )
     SCORE OFF  .SCORE
+    DRAW-PREY
     BEGIN
         SPEED @ MS
         DRAW-SNAKE
-        DRAW-PREY
         READ-DIRECTION
         MOVE-SNAKE
         CHECK-PREY
