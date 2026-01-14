@@ -24,8 +24,6 @@ MARKER /SNAKE \ removes snake from the system
 DECIMAL \ max N = 10000
 : DECAY  ( n -- ) 16 0 DO  I DB  DUP I +  TICKS LOOP TICKS MUTE ;
 
-: CLINK ( -- ) GEN1 1400 HZ   300 DECAY ;
-: PING  ( -- ) GEN3 2000 HZ  10000 DECAY ;
 
 : DECAY2 ( n -- )
     16 0
@@ -36,6 +34,8 @@ DECIMAL \ max N = 10000
     TICKS
     GEN1 MUTE  GEN2 MUTE ;
 
+: CLINK ( -- ) GEN1 1400 HZ   200 DECAY ;
+: PING  ( -- ) GEN3 2000 HZ  1000 DECAY ;
 : BONK  ( -- )  GEN1 110 HZ GEN2 111 HZ  500 DECAY2 ;
 
 
@@ -72,15 +72,19 @@ VARIABLE SPEED
 
 : SCORE++   INCREMENT @ COMPENSATED  SCORE +! ;
 
-: <#####> ( n -- $ len)  0 <# # # # # # #> ;
-: .SCORE   SCORE @ <#####>  25 0 >VPOS SWAP VWRITE ;
+\ number formatter
+: <#####> ( n -- $ len) DECIMAL  0 <# # # # # # #> ;
 
+\ direct to VDP print score
+: PRINTAT ( $ len col row ) >VPOS SWAP VWRITE ;
+: .SCORE
+  SCORE @ <#####>  25 0 PRINTAT    CLINK PING ;
 
 : NOISE-UP ( speed  -- )
         GEN4  2 15 DO  I DB  DUP TICKS  -1 +LOOP DROP ;
 
 : NOISE-DOWN ( speed -- )
-        GEN4 15  2 DO  I DB  DUP TICKS    LOOP DROP MUTE ;
+        GEN4 15  2 DO  I DB  DUP TICKS    LOOP TICKS  MUTE ;
 
 DECIMAL
 500 CONSTANT MAXLENGTH
@@ -142,7 +146,7 @@ DECIMAL
 
 \ text macros make drawing faster.
 : DRAW-WHITE ( x y -- ) S" >VPOS  BL   SWAP VC! " EVALUATE ; IMMEDIATE
-: DRAW-BODY ( X Y -- ) S" >VPOS SNAKE SWAP VC! " EVALUATE ; IMMEDIATE
+: DRAW-BODY  ( X Y -- ) S" >VPOS SNAKE SWAP VC! " EVALUATE ; IMMEDIATE
 : DRAW-HEAD  ( x y -- ) S" >VPOS SHEAD SWAP VC! " EVALUATE ; IMMEDIATE
 
 : DRAW-PREY ( -- )
@@ -214,7 +218,7 @@ DECIMAL
 DEFER READ-DIRECTION
 HEX
 : READ-KEYBOARD ( key -- )
-  \   83C8 OFF   \ set continuous key reading
+  \  83C8 OFF   \ set continuous key reading
     KEY?
     CASE
        [CHAR] S OF TURN-LEFT   ENDOF
@@ -245,18 +249,17 @@ HEX
     ENDCASE
 ;
 
-
 DECIMAL
 : SWOOSH   ( -- )
            GEN4 MUTE
-           5 NOISE
-           8 NOISE-UP
-           20 NOISE-DOWN ;
+           4 NOISE
+           500 NOISE-UP
+           100 NOISE-DOWN ;
 
 : NEW-PREY
-    SWOOSH
     PREY-X @ PREY-Y @ DRAW-WHITE
     RANDOM-Y RANDOM-X PLACE-PREY
+    SWOOSH
     DRAW-PREY ;
 
 : GROW-SNAKE  ( -- ) 1 LENGTH +! ;
