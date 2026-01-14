@@ -1,0 +1,85 @@
+\ forth 2012 structures
+\ A.15 The optional Facility word set
+
+\ =====================
+\ FbForth harness
+: CELLS   1 SLA ;
+: CHARS ;
+: WITHIN  ( n lo hi -- ?) \ n2<=n1<n3?
+          OVER - >R - R> U< ;
+
+: $!  ( adr adr -- ) OVER C@ 1+ =CELLS CMOVE ;
+
+\ ------------------
+
+
+DECIMAL
+: +FIELD  \ n <"name"> -- ; Exec: addr -- 'addr
+   <BUILDS OVER , +
+   DOES> @  + ;
+
+\ using +field you can make your own field desciptors.
+: FIELD:    ( n1 "name" -- n2 ; addr1 -- addr2 ) 1 CELLS +FIELD ;
+: 2FIELD:   ( d1 "name" -- d2 ; addr1 -- addr2 ) 2 CELLS +FIELD ;
+: CFIELD:   ( n1 "name" -- n2 ; addr1 -- addr2 ) 1 CHARS +FIELD ;
+
+: CELLS:    ( n -- )  CELLS +FIELD ;
+
+\ we can add string size tests for a CHARS: field
+: ?STRING   ( n -- n) DUP 1 256 WITHIN 0= ABORT" bad string length" ;
+: CHARS:    ( n -- ) ?STRING CHARS +FIELD ;  ( CHARS is a NOOP on 9900)
+
+\ ===================================================================
+\ example code: using [ ] brackets as a naming convention to
+\ identify structures and fields
+
+    0  ( zero on the stack accumulates the record size)
+       FIELD: REC#]
+    32 CHARS: NAME]
+    32 CHARS: FAMILY]
+    64 CHARS: ADDRESS]
+    32 CHARS: CITY]
+    15 CHARS: PROV]
+    25 CHARS: COUNTRY]
+( -- n) CONSTANT ADDRESS_RECORD  \ record the size as a constant
+
+: BUFFER:  ( size -- ) ( IS:<name> )
+   <BUILDS ALLOT  \ allot size bytes in pf
+   DOES>  ;       ( -- pfa ) 
+
+ADDRESS_RECORD BUFFER: [BUFF         \ and make a buffer that size
+
+: =""   ( $addr -- )  0 SWAP C! ;  \ clear a counted string "cute" :-)
+
+: ERASE.REC
+           0 [BUFF REC#] !
+             [BUFF NAME] =""
+             [BUFF FAMILY] =""
+             [BUFF ADDRESS] =""
+             [BUFF CITY] =""
+             [BUFF PROV] =""
+             [BUFF COUNTRY] =""
+;
+
+: LOAD.REC
+         1    [BUFF REC#] !
+ S" Robert"   [BUFF NAME] $!
+ S" Odrowsky" [BUFF FAMILY] $!
+ S" 116 Settlement Park Ave." [BUFF ADDRESS] $!
+ S" Markham"  [BUFF CITY] $!
+ S" Ontario"  [BUFF PROV] $!
+ S" Canada"   [BUFF COUNTRY] $!
+ ;
+
+: PRINT#   ( addr --)  @ . ;
+: PRINT$   ( $addr --) COUNT TYPE ;
+: PRINTLN  ( $addr --) CR PRINT$ ;
+
+: PRINT.REC
+        CR ." Record#: " [BUFF REC#] PRINT#
+        [BUFF FAMILY] PRINTLN  ." , " [BUFF NAME] PRINT$
+        [BUFF ADDRESS] PRINTLN
+        [BUFF CITY] PRINTLN
+        [BUFF PROV] PRINTLN
+        [BUFF COUNTRY] PRINTLN ;
+
