@@ -43,7 +43,7 @@ XY CELL+ CONSTANT COL
 \ Name convention: Words ending with '$' return a stack string
 : BUFFER$ ( -- adr len) ^BUFFER 2@ ;
 : >BUFFER ( adr len --) ^BUFFER 2! ;
-: .BUFFER ( -- ) XY 2@ AT-XY  BUFFER$  TYPE ;
+: .BUFFER ( -- ) XY 2@ AT-XY  BUFFER$ TYPE ;
 
 : BLANK   ( addr len --) BL FILL ;
 
@@ -52,9 +52,9 @@ XY CELL+ CONSTANT COL
   VARIABLE CP    \ cursor position
 : HOME     CP OFF ;
 
-: LIMITED  ( n -- n') 0 MAX  $LEN MIN ;
+: LIMITED  ( n -- n') 0 MAX  $LEN @ MIN ;
 : CP+!     ( n -- ) CP @ +  LIMITED CP ! ;
-: 'CURSOR  ( -- adr) 'TEXT CP @ + ;
+: 'CURSOR  ( -- adr) 'TEXT @ CP @ + ;
 : !CHAR    ( c -- ) 'CURSOR C!  1 CP+! ;
 
 \ set system cursor to ACCEPTLN cursor location
@@ -76,7 +76,7 @@ DECIMAL
 : LEFTSIDE   ( adr len -- adr len') DROP CP @ ;
 
 \ print buffer at cursor. 2+ puts extra spaces at end
-: RELINE  ( -- ) BUFFER$ RIGHTSIDE   TYPE ;
+: RELINE  ( -- ) BUFFER$ RIGHTSIDE TYPE ;
 
 \ =======================
 \ text manipulation
@@ -94,12 +94,14 @@ DECIMAL
     SLIDE-RIGHT
     BL R> C!  \ blank the 1st char
 ;
+: GETXY  VROW 2@ ;
 
 HEX
 : ACCEPTLN  ( addr len -- addr' len')
     >BUFFER
     BOX CURS !
-    VROW 2@  XY 2!  \ set home xy to Forth xy
+    GETXY  XY 2!    \ set Forth xy to editor xy
+    .BUFFER
     RKEY? DROP      \ clear last key press
     INSERT OFF  HOME
     BEGIN
@@ -108,7 +110,8 @@ HEX
     WHILE
         DUP BL [CHAR] ~ 1+ WITHIN
         IF
-            INSERT @ IF PUSHRIGHT THEN !CHAR
+            INSERT @
+            IF PUSHRIGHT THEN DUP !CHAR EMIT
         ELSE
             CASE
             01 OF   8 CP+!  ( TAB )           ENDOF
@@ -131,11 +134,12 @@ HEX
 HERE SWAP - DECIMAL CR .  .( bytes)
 
 \ testing
+CREATE T$ S" This string is used for testing        " S,
+
 : .OUTPUT ( addr len -- )  CR ." Output:"   CR TYPE ;
-
-CREATE T$ S" This string is used for testing      " S,
-
 : TEST    PAGE  T$ COUNT ACCEPTLN   CR .OUTPUT ;
+
+
 : TESTXY  PAGE  4 4 AT-XY T$ COUNT ACCEPTLN  CR .OUTPUT ;
 
 CREATE LONG$
