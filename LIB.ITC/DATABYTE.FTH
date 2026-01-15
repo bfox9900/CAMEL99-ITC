@@ -17,10 +17,12 @@ DEFER WORD,
 : RAM    ['] C,  IS BYTE,   ['] ,   IS WORD, ;
 : VDP    ['] VC, IS BYTE,   ['] V,  IS WORD, ;
 
+VARIABLE DELIMITER   CHAR ,  DELIMITER !
+
 HEX
 : BYTE ( -- )
          BEGIN
-           [CHAR] , PARSE-WORD  DUP
+           DELIMITER @ PARSE-WORD  DUP
          WHILE
             EVALUATE  DUP FF00 AND  ABORT" Not a byte"
             BYTE,
@@ -29,7 +31,7 @@ HEX
 
 : DATA ( -- )
          BEGIN
-            [CHAR] , PARSE-WORD  DUP
+            DELIMITER @ PARSE-WORD  DUP
          WHILE
             EVALUATE WORD,
          REPEAT
