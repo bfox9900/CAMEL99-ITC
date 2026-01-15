@@ -135,16 +135,15 @@ HEX
 HERE SWAP - DECIMAL CR .  .( bytes)
 
 \ testing
-CREATE T$ S" This string is used for testing        " S,
+\ CREATE T$ S" This string is used for testing        " S,
 
-: .OUTPUT ( addr len -- )  CR ." Output:"   CR TYPE ;
-: TEST    PAGE  T$ COUNT ACCEPTLN   CR .OUTPUT ;
+\ : .OUTPUT ( addr len -- )  CR ." Output:"   CR TYPE ;
+\ : TEST    PAGE  T$ COUNT ACCEPTLN   CR .OUTPUT ;
 
+\ : TESTXY  PAGE  4 4 AT-XY T$ COUNT ACCEPTLN  CR .OUTPUT ;
 
-: TESTXY  PAGE  4 4 AT-XY T$ COUNT ACCEPTLN  CR .OUTPUT ;
+\ CREATE EBUFF 128 ALLOT
+\ S" Candace Owens walked into the conversation confident, dismissing climate"
+\ EBUFF PLACE
 
-CREATE EBUFF 128 ALLOT
-S" Candace Owens walked into the conversation confident, dismissing climate"
-EBUFF PLACE
-
-: TESTLONG    PAGE EBUFF COUNT DROP 120 ACCEPTLN  CR ;
+\ : TESTLONG    PAGE EBUFF COUNT DROP 120 ACCEPTLN  CR ;
