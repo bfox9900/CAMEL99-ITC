@@ -17,6 +17,7 @@ DEFER WORD,
 : RAM    ['] C,  IS BYTE,   ['] ,   IS WORD, ;
 : VDP    ['] VC, IS BYTE,   ['] V,  IS WORD, ;
 
+\ Delimiter can now be changed
 VARIABLE DELIMITER   CHAR ,  DELIMITER !
 
 HEX
