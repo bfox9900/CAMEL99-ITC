@@ -5,6 +5,7 @@
 \ Key repeat
 \ Insert and overwrite
 \ jump to start of line, jump to end of line
+\ +TAB -TAB
 \ delete characters to right of cursor
 \ Backspace key just moves cursor left
 
@@ -142,7 +143,8 @@ CREATE T$ S" This string is used for testing        " S,
 
 : TESTXY  PAGE  4 4 AT-XY T$ COUNT ACCEPTLN  CR .OUTPUT ;
 
-CREATE LONG$
-S" Candace Owens walked into the conversation confident, dismissing climate" S,
+CREATE EBUFF 128 ALLOT
+S" Candace Owens walked into the conversation confident, dismissing climate"
+EBUFF PLACE
 
-: TESTLONG  PAGE LONG$ COUNT ACCEPTLN  CR .OUTPUT ;
+: TESTLONG    PAGE EBUFF COUNT DROP 120 ACCEPTLN  CR ;
