@@ -1,12 +1,12 @@
 \ BREAKOUT.FTH  on Camel99 Forth     Aug 2022 Brian Fox
 \ Updated June 21 2023
-\ 2025 EXPERIMENT with ISR driven sounds 
+\ 2025 EXPERIMENT with Multi-tasked sound player
 
-\ Uses DSK1.MOTION library. 
+\ Uses DSK1.MOTION library.
 \ MOTION sets SPRITE motion vector. SP.MOVE moves sprite 1 increment.
 \ See the file dsk1.motion for more details
 
-\ NEEDS DUMP   FROM DSK1.TOOLS ( debugging)
+NEEDS DUMP   FROM DSK1.TOOLS ( debugging)
 
 NEEDS HCHAR  FROM DSK1.GRAFIX
 NEEDS SPRITE FROM DSK1.DIRSPRIT
@@ -17,12 +17,11 @@ NEEDS HZ     FROM DSK1.SOUND
 NEEDS MALLOC FROM DSK1.MALLOC
 NEEDS MARKER FROM DSK1.MARKER
 NEEDS CASE   FROM DSK1.CASE
-NEEDS JOYST  FROM DSK1.JOYST 
-NEEDS QUIT-ON FROM DSK1.QUITKEY 
-NEEDS YIELD  FROM DSK1.MTASK99 
-NEEDS VALUE  FROM DSK1.VALUES 
-NEEDS U.R    FROM DSK1.UDOTR 
-NEEDS ISRPLAY FROM DSK1.ISRSOUND 
+NEEDS JOYST  FROM DSK1.JOYST
+NEEDS QUIT-ON FROM DSK1.QUITKEY
+NEEDS YIELD  FROM DSK1.MTASK99
+NEEDS VALUE  FROM DSK1.VALUES
+NEEDS U.R    FROM DSK1.UDOTR
 
 : EMPTY S" REMOVE MARKER REMOVE" EVALUATE ;
 
@@ -30,13 +29,13 @@ MARKER REMOVE
 
 EMPTY
 
-\ allocate task space in heap, fork it, assign Execution, return PID
-: SPAWN  ( xt -- pid)  USIZE MALLOC DUP >R FORK  R@ ASSIGN  R> ;
- 
-\ Extensions to MOTION 
+\ allocate task space in heap, fork it, assign Execution, WAKE, return PID
+: SPAWN  ( xt -- pid)  USIZE MALLOC DUP >R FORK  R@ ASSIGN R@ WAKE R> ;
+
+\ Extensions to MOTION
 \ Access the VECTOR table in dsk1.motion, via x and y separately
-: VECT.Y ( n -- addr) POSTPONE ]VECTOR ; IMMEDIATE 
-: VECT.X ( n -- addr) POSTPONE ]VECTOR POSTPONE CELL+ ; IMMEDIATE 
+: VECT.Y ( n -- addr) POSTPONE ]VECTOR ; IMMEDIATE
+: VECT.X ( n -- addr) POSTPONE ]VECTOR POSTPONE CELL+ ; IMMEDIATE
 
 \ ***************************
 \ the variables
@@ -45,8 +44,8 @@ VARIABLE BALL#
 VARIABLE SCORE
 VARIABLE 'BALL      \ record the position so we don't calculate it twice
 VARIABLE REMAINING  \ # squares left to win
-VARIABLE SPEED 
-\ 0 VALUE PADDLE-CTRL 
+VARIABLE SPEED
+
 
 \ ***************************
 \ handy primitives
@@ -78,32 +77,74 @@ VARIABLE SPEED
   ENUM GRAY
   ENUM WHITE
 DROP
+\ ***************************
+\ named TASKS
+\ ***************************
+0 VALUE PADDLE-CTRL
+0 VALUE SOUND-PLAYER
 
 \ ***************************
 \ named SPRITES
 \ ***************************
 1 CONSTANT BALL
-0 CONSTANT PADDLE  
+0 CONSTANT PADDLE
 
 \ ***************************
 \ sounds for the game
 \ ***************************
+
+\ inter-task messaging -------------------------
+HEX
+50 USER MAILBOX  \ mailbox is local to each task
+52 USER FREQ     \ used by CLINK
+
+\ SEND-MSG blocks if reciever mailbox is full
+: SEND-MSG  ( n PID -- ) \ PID (process ID) is task's workspace address
+   BEGIN
+      DUP MAILBOX LOCAL @ \ is PID mailbox full?
+   WHILE
+      PAUSE               \ Yes. Pass control to the next task
+   REPEAT
+   MAILBOX LOCAL ! ;      \ store n into PID's mailbox
+
+\ wait for a message in my local mailbox variable
+: GET-MSG ( -- u )
+    BEGIN  PAUSE MAILBOX @ ?DUP  UNTIL  MAILBOX OFF ;
+
+
+\ --------------------------------------------------
+\ This task will execute the XT in its mailbox
+\ ** NOT PROTECTED FROM BAD XTs **
 DECIMAL
-: CLINK ( freq -- )
-    PAUSE 
-    GEN1 HZ
+: BGPLAYER ( -- ) MAILBOX OFF BEGIN  GET-MSG EXECUTE  PAUSE AGAIN ;
+
+: FREQ!  ( n --)  SOUND-PLAYER FREQ LOCAL ! ;
+
+DECIMAL
+: _CLINK ( -- ) \ sound programs are not used directly
+    PAUSE
+    GEN1 FREQ @ HZ
      0 DB 600 TICKS
      6 DB 400 TICKS
     10 DB 400 TICKS
     MUTE ;
 
-: BONK  ( -- )
-    PAUSE 
-    GEN1 110 HZ 
+: _BONK  ( -- )
+    PAUSE
+    GEN1 110 HZ
      0 DB 1000 TICKS
      6 DB 2000 TICKS
     12 DB 2000 TICKS
     MUTE ;
+
+\ pass sound programs to SOUND-PLAYER as a message
+: CLINK  ( n ) FREQ! ['] _CLINK SOUND-PLAYER SEND-MSG ;
+: BONK   ( -- )      ['] _BONK  SOUND-PLAYER SEND-MSG ;
+
+\ SOUND testing
+\    ' BGPLAYER  SPAWN TO SOUND-PLAYER
+\ 1400 CLINKER   BONK
+
 
 \ ***************************
 \ random numbers
@@ -139,18 +180,18 @@ CREATE SQUARE DATA FFFF,FFFF,FFFF,FFFF
 
 
 \ ****************************************
-\ * Sprite Patterns                       
+\ * Sprite Patterns
 \ ****************************************
-CREATE PADDLE-PATTERN    
-    DATA 0000,0000,00FF,00FF  
-    DATA 00FF,00FF,0000,0000   
-    DATA 0000,0000,00FF,00FF   
-    DATA 00FF,00FF,0000,0000   
+CREATE PADDLE-PATTERN
+    DATA 0000,0000,00FF,00FF
+    DATA 00FF,00FF,0000,0000
+    DATA 0000,0000,00FF,00FF
+    DATA 00FF,00FF,0000,0000
 
 CREATE BALL-PATTERN
-    DATA 0000,0000,0307,0F0F 
+    DATA 0000,0000,0307,0F0F
     DATA 0F07,0300,0000,0000
-    DATA 0000,0000,80C0,E0E0 
+    DATA 0000,0000,80C0,E0E0
     DATA E0C0,8000,0000,0000
 
 
@@ -196,7 +237,7 @@ BALLCHARS 8 + CONSTANT PADDLECHARS
      PADDLECHARS SET# MAGENTA FGCOLOR
      [CHAR] 0 SET# WHITE FGCOLOR
      [CHAR] 9 SET# WHITE FGCOLOR
-     [CHAR] ! SET#  12  GRAY 1 COLORS 
+     [CHAR] ! SET#  12  GRAY 1 COLORS
 ;
 
 : DRAW.BORDER
@@ -217,8 +258,8 @@ BALLCHARS 8 + CONSTANT PADDLECHARS
        2 12 VIOBAR 28 HCHAR
 ;
 
-: BALL.HOME          ( X   Y ) 
-    BALLCHARS  WHITE  127 104  BALL SPRITE 
+: BALL.HOME          ( X   Y )
+    BALLCHARS  WHITE  127 104  BALL SPRITE
     SERVING BALL MOTION ;
 
 : .SCORE  ( -- ) 4 0 AT-XY SCORE @ 5 U.R ;
@@ -228,7 +269,7 @@ BALLCHARS 8 + CONSTANT PADDLECHARS
 
 : START-POSITIONS    BALL.HOME  .SCORE  .BALLS   .PADDLE ;
 
-: DRAW.SCR    
+: DRAW.SCR
   SETCOLORS  BLACK SCREEN  DRAW.BORDER
   .SCORE  .BALLS  RAINBOW  ;
 
@@ -238,11 +279,11 @@ BALLCHARS 8 + CONSTANT PADDLECHARS
 \ : PIX>CHAR ( pixel -- n) 1- 3 RSHIFT 1+ ;
 \ : CHAR>PIX ( n -- pixel) 8*  7 - ;
 HEX                   ( TOS DEC,  TOS 3 SRA,  TOS INC, )
-CODE PIX>CHAR ( pixel -- n) 0604 , 0834 , 0584 , NEXT, ENDCODE 
+CODE PIX>CHAR ( pixel -- n) 0604 , 0834 , 0584 , NEXT, ENDCODE
 
 DECIMAL
 : BALLADDR ( -- vaddr)
-  BALL SP.Y V@ SPLIT 
+  BALL SP.Y V@ SPLIT
   PIX>CHAR SWAP PIX>CHAR SWAP >VPOS
   DUP 'BALL ! ;
 
@@ -252,11 +293,11 @@ DECIMAL
 : FALLING?  BALL VECT.Y @ 0> ;
 : RISING?   BALL VECT.Y @ 0< ;
 
-: OFFSET ( -- n)  
-  PADDLE SP.X VC@  
-  BALL  SP.X VC@ - 2 /  -1 1 CLIP ;    
+: OFFSET ( -- n)
+  PADDLE SP.X VC@
+  BALL  SP.X VC@ - 2 /  -1 1 CLIP ;
 
- DECIMAL 
+ DECIMAL
 \ clipped for sprite column boundaries
 : VC+!  ( n Vaddr --) DUP>R  VC@ +  17 223 CLIP  R> PAUSE VC! ;
 : PADDLE+!   PADDLE SP.X VC+!  ;
@@ -272,7 +313,7 @@ DECIMAL
 
 : MOVES  0 ?DO  BALL.MOVE LOOP ;
 
-: WALL?    ( --?) UNDERBALL BORDER = ; 
+: WALL?    ( --?) UNDERBALL BORDER = ;
 : CLEAR-WALL  BEGIN  WALL?    WHILE  BALL.MOVE  REPEAT ;
 
 : TOPWALL? ( --?) BALL SP.Y VC@ 32 < ;
@@ -282,75 +323,76 @@ DECIMAL
 : SIDEBOUNCE  WALL?    IF  BALL BOUNCE.X  CLEAR-WALL  THEN ;
 : WALL-BOUNCE ( -- ) TOPBOUNCE SIDEBOUNCE ;
 
-: PADDLE-BOUNCE 
-  BALL BOUNCE.Y 
-  BEGIN PADDLE? 
-  WHILE 
+: PADDLE-BOUNCE
+  BALL BOUNCE.Y
+  BEGIN PADDLE?
+  WHILE
     BALL.MOVE
-  REPEAT ;    
+  REPEAT ;
 
-: PADDLE-HIT ( -- ) 
-    600 CLINK   
-    PADDLE-BOUNCE 
-    SIDEBOUNCE 
+: PADDLE-HIT ( -- )
+    600 CLINK
+    PADDLE-BOUNCE
+    SIDEBOUNCE
 ;
 
-DECIMAL 
-\ This was done for smooth multi-tasking. 
+DECIMAL
+\ This was done for smooth multi-tasking.
 \ Give time away while waiting for the human to do something.
-: JOYKEY  ( -- n) \ wait for any joystick output 
-  BEGIN  
+: JOYKEY  ( -- n) \ wait for any joystick output
+  BEGIN
     PAUSE     \ give somebody else time to run
     0 JOYST   \ this is only 10 lines of Assembler. FAST
-    ?DUP 
+    ?DUP
   UNTIL ;
 
 : WAIT-FIRE ( -- ) BEGIN  JOYKEY 1 = UNTIL ;
-  
-: .REPLAY 
-  DELALL 
+
+: .REPLAY
+  DELALL
   11 21 AT-XY ." GAME OVER"
    5 22 AT-XY ." PRESS FIRE TO PLAY AGAIN"
-  WAIT-FIRE 
-  400 MS 
+  WAIT-FIRE
+  400 MS
 ;
 
 : ERASELN  ( x y -- ) >VPOS 28 BL VFILL ;
 
 : SCORE-MULTIPLIER
     SCORE @ 1
-    ?DO  
+    ?DO
       4 0 AT-XY I 5 U.R
       9 9 AT-XY ." MULTIPLIER!"
-      750 CLINK 
+      750 CLINK
       2 9 ERASELN
-    9 +LOOP 
+    9 +LOOP
     SCORE @ BALL# @ *  SCORE !
     .SCORE
 ;
 
-: .BALL# 
+: .BALL#
    BALL# @ DUP . ." BALL" IF ." S" THEN  ;
 
 : ?WIN   REMAINING @ IF  EXIT  THEN ;
 
 \ for debugging
-\ : ?BREAK     
-\  ?TERMINAL 
-\  IF CYAN SCREEN TRUE ABORT" BREAK" 
+\ : ?BREAK
+\  ?TERMINAL
+\  IF CYAN SCREEN TRUE ABORT" BREAK"
 \  THEN ;
 
 : RICOCHET ( points freq --)
   CLINK
-  BL 'BALL @ VC! 
-  BALL BOUNCE.Y  SCORE +!  .SCORE 
+  BL 'BALL @ VC!
+  BALL BOUNCE.Y  SCORE +!  .SCORE
   REMAINING 1-! ;
 
+DECIMAL
 : BALLINPLAY
     BEGIN
-      REMAINING @ 0= IF EXIT THEN 
+      REMAINING @ 0= IF EXIT THEN
       BALL.MOVE
-      PADDLE? IF  PADDLE-HIT THEN 
+      PADDLE? IF  PADDLE-HIT THEN
       UNDERBALL ( char)
       CASE      \ points  Freq.
         MAGBAR   OF 6     1500 RICOCHET    ENDOF
@@ -361,58 +403,59 @@ DECIMAL
         VIOBAR   OF 1     1000 RICOCHET    ENDOF
         BORDER   OF WALL-BOUNCE 200 CLINK  ENDOF
       ENDCASE
-      PAUSE 
+      PAUSE
       BALL SP.Y VC@ 200 >
-    UNTIL         
-    BONK               \ missed the ball return   
-    BALL# 1-! .BALLS  
+    UNTIL
+    BONK               \ missed the ball return
+    BALL# 1-! .BALLS
 ;
 
-: CLS      ( -- ) 24 13 DO  2 I ERASELN  LOOP ; 
+: CLS      ( -- ) 24 13 DO  2 I ERASELN  LOOP ;
 
-: SETUP ( -- ) 
-  SINGLE              \ turn off multi-tasking 
+: SETUP ( -- )
+  SINGLE              \ turn off multi-tasking
   CLEAR
-  DEF-NUMBERS  DEF-SHAPES  
-  SETCOLORS  SCORE OFF 
-  2 MAGNIFY 
-  10 BALLS 
+  DEF-NUMBERS  DEF-SHAPES
+  SETCOLORS  SCORE OFF
+  2 MAGNIFY
+  10 BALLS
   28 6 * REMAINING !  \ # blocks to WIN
 ;
 
 : .PRESS-FIRE
-    6 22 AT-XY ." PRESS FIRE TO SERVE" 
+    6 22 AT-XY ." PRESS FIRE TO SERVE"
     WAIT-FIRE
     2 22 ERASELN ;
 
-: .CREDITS 
+: .CREDITS
    5 14 AT-XY ." RAINBOW BUSTER VER 3.2"
   11 16 AT-XY ." FOR TI-99"
-   7 18 AT-XY ." BY BRIAN FOX 2023" 
+   7 18 AT-XY ." BY BRIAN FOX 2023"
    4 23 AT-XY ." PRESS A KEY TO CONTINUE"
-   KEY DROP 
-;    
-
-: SET-SPEED 
-    BEGIN 
-     SPEED OFF 
-     KEY 
-     CASE 
-      [CHAR] 1 OF  300 SPEED !  ENDOF 
-      [CHAR] 2 OF  150 SPEED !  ENDOF 
-      [CHAR] 3 OF   50 SPEED !  ENDOF 
-                  HONK
-     ENDCASE
-     SPEED @ UNTIL  
+   KEY DROP
 ;
 
-: LEVEL-MENU 
-  CLS 
+: SET-SPEED ( --)
+    BEGIN
+      SPEED OFF
+      KEY
+      CASE
+          [CHAR] 1 OF  150 SPEED !  ENDOF
+          [CHAR] 2 OF   80 SPEED !  ENDOF
+          [CHAR] 3 OF   5 SPEED !  ENDOF
+                      HONK
+      ENDCASE
+      SPEED @
+    UNTIL
+;
+
+: LEVEL-MENU
+  CLS
   11 14 AT-XY ." SKILL LEVEL"
    9 16 AT-XY ." 1 BEGINNER"
    9 17 AT-XY ." 2 GAMER"
    9 18 AT-XY ." 3 OLYMPIC"
-  11 19 AT-XY  
+  11 19 AT-XY
   SET-SPEED
   CLS
 ;
@@ -420,63 +463,63 @@ DECIMAL
 \ ********************************************
 \ Joystick control runs as a background task
 \ ********************************************
-:NONAME ( -- xt)
-    BEGIN 
+: JOYSTICK_TSK ( -- )
+    BEGIN
       JOYKEY           \ JOYKEY calls pause while waiting
       CASE
         2 OF  -2 PADDLE+!  ENDOF
-        4 OF   2 PADDLE+!  ENDOF 
+        4 OF   2 PADDLE+!  ENDOF
       ENDCASE
-\ SLOW down the paddle or it's too fast      
+\ SLOW down the paddle or it's too fast
       SPEED @ 2* TICKS \ TICKS calls pause to share time
-    AGAIN              \ never stops because it is a separate task 
-; CONSTANT PADDLE-TASK \ record XT of the code in this constant 
+    AGAIN              \ never stops because it is a separate task
+;
 
-: ?WINNER 
-  REMAINING @ 0= 
-  IF 
-    DELALL 
-    10 5 AT-XY ." HEY YOU WON !!" 
+: ?WINNER
+  REMAINING @ 0=
+  IF
+    DELALL
+    10 5 AT-XY ." HEY YOU WON !!"
     4 7 AT-XY ." WITH " .BALL#  ."  REMAINING"
-    BALL# @ 1 > IF  SCORE-MULTIPLIER  THEN 
-    BALL# OFF 
-  THEN 
+    BALL# @ 1 > IF  SCORE-MULTIPLIER  THEN
+    BALL# OFF
+  THEN
 ;
 
 : PLAY-GAME ( -- )
   BEGIN
     BALL# @
   WHILE
-    SERVING BALL MOTION 
+    SERVING BALL MOTION
     START-POSITIONS
-    WAIT-FIRE 
-    BALLINPLAY 
-    ?WINNER 
+    WAIT-FIRE
+    BALLINPLAY
+    ?WINNER
   REPEAT
 ;
 
 : GO
     DECIMAL
     QUIT-ON
-    PADDLE-TASK SPAWN WAKE 
-    BEGIN 
-      SETUP  
+    ['] JOYSTICK_TSK SPAWN TO PADDLE-CTRL
+    ['] BGPLAYER   SPAWN TO SOUND-PLAYER
+    BEGIN
+      SETUP
       DRAW.SCR
-      .CREDITS 
+      .CREDITS
       LEVEL-MENU
       .PRESS-FIRE
-      MULTI       
+      MULTI
       CLS
-      PLAY-GAME 
+      PLAY-GAME
       .REPLAY
-    AGAIN 
+    AGAIN
 ;
 
 : STARTER   WARM  GRAPHICS INIT-MULTI  GO ;
 
-LOCK 
+LOCK
 INCLUDE DSK1.SAVESYS
 ' STARTER SAVESYS DSK3.BREAKOUT
 
 DECIMAL
-
