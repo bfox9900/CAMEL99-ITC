@@ -43,7 +43,6 @@ XY CELL+ CONSTANT COL
 
 \ Name convention: Words ending with '$' return a stack string
 : BUFFER$ ( -- adr len) ^BUFFER 2@ ;
-: >BUFFER ( adr len --) ^BUFFER 2! ;
 : .BUFFER ( -- ) XY 2@ AT-XY  BUFFER$ TYPE ;
 
 : BLANK   ( addr len --) BL FILL ;
@@ -95,11 +94,12 @@ DECIMAL
     SLIDE-RIGHT
     BL R> C!  \ blank the 1st char
 ;
+
 : GETXY  VROW 2@ ;
 
 HEX
 : ACCEPTLN  ( addr len -- addr' len')
-    >BUFFER
+   ^BUFFER 2!
     BOX CURS !
     GETXY  XY 2!    \ set Forth xy to editor xy
     .BUFFER

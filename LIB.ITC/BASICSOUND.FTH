@@ -1,6 +1,6 @@
 \ BASICSOUND.FTH  gives sound commands closer to BASIC  2024 BFOX
 
-NEEDS ISRPLAY FROM DSK1.ISRSOUND 
+NEEDS ISRPLAY FROM DSK1.ISRSOUND
 
 \ frequency code must be ORed with these numbers to create a sound
 HEX
@@ -27,9 +27,9 @@ HEX
             NEXT,    \  28 uS
             ENDCODE
 
-\ "ACTIVE CHANNEL" control with these USER variables, LOCAL to each task 
-\ These are in consecutive addresses in memory 
- HEX 
+\ "ACTIVE CHANNEL" control with these USER variables, LOCAL to each task
+\ These are in consecutive addresses in memory
+ HEX
  42 USER ATT      \ holds the active ATTENUATOR value
  44 USER OSC      \ holds the active OSC value
 
@@ -54,11 +54,11 @@ HEX
 : (HZ)    ( f -- n)   HZ>CODE  OSC @ OR  ;          \ convert freq. add OSC
 : (DB)    ( level -- c)  ABS 2/  0F MIN  ATT @ OR ; \ DB to attenuation
 
-VHERE CONSTANT SNDBUFF  HEX 100 VALLOT 
-DECIMAL 
+VHERE CONSTANT SNDBUFF  HEX 100 VALLOT
+DECIMAL
 
-: BUILDSND ( -- addr n )  HERE  C,   C,    C,  HERE OVER - DUP>R C,  R> ; 
-: VOX1 ( vol hz t -- )    
-  HERE 
-  BUILDSND  SNDBUFF SWAP VWRITE 
+: BUILDSND ( -- addr n )  HERE  C,   C,    C,  HERE OVER - DUP>R C,  R> ;
+: VOX1 ( vol hz t -- )
+  HERE
+  BUILDSND  SNDBUFF SWAP VWRITE
 ;
