@@ -14,4 +14,4 @@ HEX
 \ ----- --  --
    0    1   7 SCREEN: SCR0
    4    1   3 SCREEN: SCR4
-\   5    1   4 SCREEN: SCR5
+\  5    1   4 SCREEN: SCR5
