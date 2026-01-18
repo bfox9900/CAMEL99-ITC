@@ -1,28 +1,34 @@
-\ literal translation of BASIC program to Forth 
+\ literal translation of BASIC program to Forth
 
-INCLUDE DSK1.TOOLS 
-INCLUDE DSK1.ELAPSE 
-INCLUDE DSK1.CODEMACROS 
+NEEDS DUMP FROM  DSK1.TOOLS
+NEEDS ELAPSE FROM DSK1.ELAPSE
 
-DECIMAL 
-: ?BREAK   ?TERMINAL ABORT" *BREAK*" ; 
+
+DECIMAL
+: ?BREAK   ?TERMINAL ABORT" *BREAK*" ;
 
 \ must define all data before use
-VARIABLE WIN 
-VARIABLE POWER 
-VARIABLE NUMLEN 
-VARIABLE CARRY 
-VARIABLE INAROW 
+VARIABLE WIN
+VARIABLE POWER
+VARIABLE NUMLEN
+VARIABLE CARRY
+VARIABLE INAROW
 VARIABLE NDX   ( transfers loop index out of DO LOOP )
-             
+
 CREATE []A   256 CELLS ALLOT       \  100 DIM A(256)
 
+\ fast byte array machine CODE macros
+HEX
+: ()C@ ( i addr -- c)  D124 , ( addr) , 0984 , ;
+: ()C! ( c i addr --)  06D6 , D916 , ( addr ) ,  05C6 , C136 , ;
+
+
 \ Integer Arrays that use indexed addressing
-MACRO: ]A@ ( ndx -- n)   []A ()C@,  ;MACRO
-MACRO: ]A! ( n ndx --)   []A ()C!,  ;MACRO
+CODE ]A@ ( ndx -- n)   []A ()C@ NEXT, ENDCODE
+CODE ]A! ( n ndx --)   []A ()C!  NEXT, ENDCODE
 
 
-: RUN 
+: RUN
   CR ." 7's Problem "           \ 110 PRINT "7's Problem"
   []A 256 0 FILL               \ init ]A to zero
   7 0 ]A!                     \ 120 A(1)=7
@@ -31,37 +37,37 @@ MACRO: ]A! ( n ndx --)   []A ()C!,  ;MACRO
   0 NUMLEN !                    \ 150 NUMLEN=1
   BEGIN POWER 1+!               \ 160 POWER=POWER+1
     ." 7 ^" POWER @ . ." IS:"   \ 170 PRINT "7 ^";POWER;"IS:"
-    ?BREAK 
+    ?BREAK
     CARRY OFF                   \ 180 CARRY=0
     INAROW OFF                  \ 190 INAROW=0
     NUMLEN @ 1+ 0               \ 200 FOR I=1 TO NUMLEN
-    DO    
-        I NDX !                 \ copy I for later 
+    DO
+        I NDX !                 \ copy I for later
         I ]A@ 7 *  CARRY @ +  \ 210 A(I)=A(I)*7+CARRY
 \ We avoid some math with divide & mod
         0 10 UM/MOD  CARRY !    \ 220 CARRY=INT(A(I)/10)
         I ]A!                 \ 230 A(I)=A(I)-CARRY*10
         I ]A@ 7 =             \ 240 IF A(I)<>7 THEN 290
-        IF     
+        IF
             INAROW DUP 1+!      \ 250 INAROW=INAROW+1
             @ 6 =               \ 260 IF INAROW<>6 THEN 300
-            IF                
+            IF
               WIN ON            \ 270 WIN=1
-              LEAVE 
-            THEN                
-        ELSE                    \ 280 GOTO 300 
+              LEAVE
+            THEN
+        ELSE                    \ 280 GOTO 300
             INAROW OFF          \ 290 INAROW=0
-        THEN 
+        THEN
     LOOP                        \ 300 NEXT I
 
-    CARRY @ 
+    CARRY @
     DUP NDX @ 1+ ]A!          \ 310 A(I)=CARRY
     IF                          \ 320 IF CARRY=0 THEN 340
         NUMLEN 1+!              \ 330 NUMLEN=NUMLEN+1
-    THEN 
-    CR                          \ replaces PRINT 
-    0 NUMLEN @                  \ 340 FOR I=NUMLEN TO 1 
-    DO   
+    THEN
+    CR                          \ replaces PRINT
+    0 NUMLEN @                  \ 340 FOR I=NUMLEN TO 1
+    DO
       I ]A@ >DIGIT (EMIT)     \ 350 PRINT CHR$(A(I)+48);
     -1 +LOOP                    \ 360 NEXT I ( STEP -1)
     CR CR                       \ 370 PRINT ::

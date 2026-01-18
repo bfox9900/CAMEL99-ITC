@@ -1,13 +1,18 @@
 \ literal translation of a BASIC version of the sevens problem Brian Fox
 \ Original BASIC program from Atariage.com
 
-\ *V2.73 Camel99 uses a smaller but slower VDP driver.
+\ FORTH                       V2.78        ITC      DTC v2.69
+\ ---------                   -------    ------     ---------
+\ V1 literal translation from BASIC       1:26      1:04
+\      "          "   with fast scroll    1:03
+\ use values + fast scroll                1:02
 
-\                                   v2.73  ITC      DTC
-\ V1 using variables and ARRAY:           1:20.9   1:04
-\ V2 replaced variables with VALUES:      1:19.8   1:01
-\ V3 print with address loop, not indices          1:00
-\ V4 Fast scroll & all above              1:15     0:57
+\ CAMELTTY   4800 BAUD                    0:51
+\           38400 BAUD                    0:32
+
+\ ============================================================
+\ TI BASIC                               27:20
+\ Compiled BASIC                          1:40
 
 INCLUDE DSK1.TOOLS
 INCLUDE DSK1.ELAPSE
@@ -30,7 +35,7 @@ DECIMAL
 
 \ this code is the same as the kernel, but with faster scroll
 : CR     (  -- ) VCOL OFF  VROW ++@  L/SCR = IF SCROLL THEN ;
-: (EMIT) ( char -- ) VPOS VC!  VCOL ++@ C/L@ = IF CR THEN ;
+: EMIT   ( char -- ) VPOS VC!  VCOL ++@ C/L@ = IF CR THEN ;
 
 \ .......................................................
 
@@ -86,7 +91,7 @@ DECIMAL
     CR                          \ replaces PRINT
     0  NUMLEN                  \ 340 FOR I=NUMLEN TO 1
     DO
-       I ]A C@ >DIGIT (EMIT)    \ 350 PRINT CHR$(A(I)+48);
+       I ]A C@ >DIGIT EMIT    \ 350 PRINT CHR$(A(I)+48);
     -1 +LOOP                    \ 360 NEXT I ( STEP -1)
     CR CR                       \ 370 PRINT ::
     WIN                         \ 380 IF WIN<>1

@@ -3,7 +3,7 @@
 \ FORTH                       V2.78        ITC      DTC v2.69
 \ ---------                   -------    ------     ---------
 \ V1 literal translation from BASIC       1:26      1:04
-\      "          "   with fast scroll    1:14
+\      "          "   with fast scroll    1:03
 
 \ CAMELTTY   4800 BAUD                    0:51
 \           38400 BAUD                    0:32
@@ -29,8 +29,8 @@ INCLUDE DSK1.ARRAYS
   AT-XY ;                        \ set cursor
 
 \ this code is the same as the kernel, but with faster scroll
- : CR     (  -- )     VCOL OFF  VROW ++@  L/SCR = IF SCROLL THEN ;
- : (EMIT) ( char -- ) VPOS VC!  VCOL ++@  C/L@ = IF CR THEN ;
+ : CR    (  -- )    VCOL OFF  VROW ++@  L/SCR = IF SCROLL THEN ;
+ : EMIT  ( char -- ) VPOS VC!  VCOL ++@  C/L@ = IF CR THEN ;
 \ .......................................................
 
 DECIMAL
