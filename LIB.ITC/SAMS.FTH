@@ -39,48 +39,35 @@ CREATE _REAL  ( virtaddr -- real_address ) \ native sub-routine
      C804 , BANK# , \    R4 BANK# @@ MOV, \ No. update BANK#
      06C4 ,         \    R4 SWPB,
      020C , 1E00 ,  \    R12 1E00 LI,      \ select SAMS card for I/O
-     1D00 ,         \    0 SBO,            \ card on
+     1D00 ,         \    0 SBO,            \ mapper on
      C804 , SREG ,  \    R4 SREG @@ MOV,   \ map the page
-     1E00 ,         \    0 SBZ,            \ card off
+     1E00 ,         \    0 SBZ,            \ mapper off
                     \ ENDIF,
      0204 , PMEM ,  \ R4 PMEM LI,         \ page_mem->tos
      A105 ,         \ R5  R4 ADD,         \ add computed offset to page
      045B ,         \ *R11 B,             \ Return via R11
 ?CSP  ( test for garage on the stack )
 
-: CALL,     06A0 ,   ,  ;  \ machine forth helper
+\ machine forth helper macros for fun and clarity
+: CALL,   06A0 ,   ,  ;   \  @@ BL,
+: DROP,   C136 ,  ;       \ *SP+  TOS MOV,
+: NIP,    05C6 ,  ;       \  SP  INCT,
+: 8>>     0984 ,  ;       \  TOS 8   SRL,
+
+: !,      C536 , DROP, ;  \ *SP+ *TOS MOV,
+: C!      D526 , 0001 , NIP, DROP, ; \ 1 (SP) *TOS MOVB,
+: @,      C114 ,  ;       \ *TOS TOS MOV,
+: C@,     D114 , 8>> ;    \ *TOS TOS MOVB,
 
 CODE VIRT>REAL ( virtual -- real ) _REAL CALL,  NEXT, ENDCODE
 
 \ VIRT>REAL memory fetch and store from SAMS segment. Macros 2x faster
 HEX
-CODE !L ( n virtual -- )
- 06A0 , _REAL , \ _REAL  @@ BL,
- C536 , \   *SP+ *TOS MOV,
- C136 , \   TOS POP,
- NEXT,
-ENDCODE
+CODE !L  ( n virtual -- ) _REAL CALL,  !,   NEXT, ENDCODE
+CODE C!L ( c virtual -- ) _REAL CALL,  C!,  NEXT, ENDCODE
 
-CODE C!L   ( c virtual -- )
- 06A0 , _REAL , \ _REAL  @@ BL,
- D526 , 0001 ,  \ 1 (SP) *TOS MOVB,
- 05C6 ,         \  SP  INCT,
- C136 ,         \  TOS POP,
- NEXT,
-ENDCODE
-
-CODE @L ( virtural -- n)
-    06A0 , _REAL ,  \ _REAL  @@ BL,
-    C114 ,          \ *TOS TOS MOV,
-    NEXT,
-ENDCODE
-
-CODE C@L ( virtual -- c)
-    06A0 , _REAL , \ _REAL  @@ BL,
-    D114 ,         \ *TOS TOS MOVB,
-    0984 ,         \  TOS 8   SRL,
-    NEXT,
-ENDCODE
+CODE @L ( virtural -- n)  _REAL CALL,   @,  NEXT, ENDCODE
+CODE C@L ( virtual -- c)  _REAL CALL,  C@,  NEXT, ENDCODE
 
 CR HERE SWAP - DECIMAL . .( bytes)
 
