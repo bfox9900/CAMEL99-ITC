@@ -2,6 +2,7 @@
 
 \ FORTH                       V2.78        ITC      DTC v2.69
 \ ---------                   -------    ------     ---------
+\ Lee Stewart's Forth version             1:17
 \ V1 literal translation from BASIC       1:26      1:04
 \      "          "   with fast scroll    1:03
 

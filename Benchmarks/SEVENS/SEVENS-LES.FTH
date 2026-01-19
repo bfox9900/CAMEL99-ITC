@@ -1,5 +1,10 @@
 \ Lee Stewart's mod of Lucien2's code for the sevens problem
 
+\ FORTH                       V2.78        ITC
+\ ---------                   -------    ------
+\ Lee Stewart's Forth version             1:17
+
+
 \ Speedup mods for CAMEL99 Forth
 \ 1. Used VALUES
 \ 2. VTYPE for all short strings
@@ -80,10 +85,14 @@ DECIMAL
 ;
 
 DECIMAL
-: .POWER ( n -- ) S" SEVEN TO THE POWER OF " VTYPE DECIMAL .  S" IS" VTYPE ;
+\ Original text used by Mark Wills version
+\ : .POWER ( n -- ) S" SEVEN TO THE POWER OF " VTYPE DECIMAL .  S" IS" VTYPE ;
+
+\ SAME TEXT AS BASIC VERSION
+: .POWER  ( n --) S"  7 ^" TYPE  .  S" IS" TYPE ;
 
 : RUN      \ V2.58 1:26 , v2.59 with 8 line scrolling, 1:02
-           \ v2.62c 1:03.7
+           \ v2.62c 1:03.7  v2.8  1:17
    PAGE
    A1 SIZE 0 FILL
    7 A1 C!

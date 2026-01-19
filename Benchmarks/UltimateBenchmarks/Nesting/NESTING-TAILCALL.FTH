@@ -1,17 +1,17 @@
 \ Source:  https://www.theultimatebenchmark.org/
 
 \ Second version test nesting using '-;' which is a
-\ tail call optimizer for Forth threaded code. 
+\ tail call optimizer for Forth threaded code.
 
 \ Amstrad 6128+ Z80A 4Mhz	Uniforth  Nesting 1Mil  3:26
 \ ZX Spectrum 2+  FIG-Forth 1.1a	  Nesting 1Mil  3:15
 \ C64 (normal)	  Forth64	          Nesting 1Mil	6:20
 \ PDP11           FIG-Forth 1.3       Nesting 1Mil  0:49
 
-\ TI-99 
+\ TI-99
 \                 TurboForth 1.21     Nesting 1Mil  2:29
 \                 Camel99 Forth ITC   Nesting 1Mil  2:30.7
-\                 w/tail-call optimization          1:49.6 
+\                 w/tail-call optimization          1:49.6
 
 \                 Camel99 Forth DTC   Nesting 1Mil  2:16.6
 \                 w/tail-call optimization          1.38
@@ -19,7 +19,13 @@
 \                 ASMForth II         Nesting 1Mil  1:28.7
 \                 W/tail-call optimization          0:54.23
 
-INCLUDE DSK1.ELAPSE 
+INCLUDE DSK1.ELAPSE
+
+\ bigger data stack in Low RAM was done for recursion
+HEX
+: NEW-RSTACK  3FFE ['] RP0 >BODY !  ABORT ;
+
+
 
 : BOTTOM ;
 : 1st BOTTOM BOTTOM ;  : 2nd 1st 1st ;      : 3rd 2nd 2nd ;
@@ -28,24 +34,24 @@ INCLUDE DSK1.ELAPSE
 : 10th 9th 9th ;       : 11th 10th 10th ;   : 12th 11th 11th ;
 : 13th 12th 12th ;     : 14th 13th 13th ;   : 15th 14th 14th ;
 : 16th 15th 15th ;     : 17th 16th 16th ;   : 18th 17th 17th ;
-: 19th 18th 18th ;     : 20th 19th 19th ;   
+: 19th 18th 18th ;     : 20th 19th 19th ;
 
 
 :  1MILLION   CR ."  1 million nest/unnest operations"  20th ;
 
 CR .( start demo like this: )
-\ ELAPSE 1MILLION 
+\ ELAPSE 1MILLION
 
-INCLUDE DSK1.TAILCALL 
+INCLUDE DSK1.TAILCALL
 \ recompile with tailcall optimization operator ( -; )
-: BOTTOM  ;  \ can't optimze this one because there is no function in it. 
+: BOTTOM  ;  \ can't optimze this one because there is no function in it.
 : 1ST BOTTOM BOTTOM -;  : 2ND 1ST 1ST -;      : 3RD 2ND 2ND -;
 : 4TH 3RD 3RD -;        : 5TH 4TH 4TH -;      : 6TH 5TH 5TH -;
 : 7TH 6TH 6TH -;        : 8TH 7TH 7TH -;      : 9TH 8TH 8TH -;
 : 10TH 9TH 9TH -;       : 11TH 10TH 10TH -;   : 12TH 11TH 11TH -;
 : 13TH 12TH 12TH -;     : 14TH 13TH 13TH -;   : 15TH 14TH 14TH -;
 : 16TH 15TH 15TH -;     : 17TH 16TH 16TH -;   : 18TH 17TH 17TH -;
-: 19TH 18TH 18TH -;     : 20TH 19TH 19TH -;   
+: 19TH 18TH 18TH -;     : 20TH 19TH 19TH -;
 
 
 :  1MILLIONTC  CR ." Optimized 1M nest/unnest operations" 20TH ;

@@ -1,8 +1,9 @@
 1 rem for comparison to Forth
-2 rem TI BASIC version runs in 27mins and 20 seconds 
+2 rem TI BASIC version runs in 27mins and 20 seconds
 10 OPEN #1:"CLOCK"
 20 INPUT #1:A$,DATE$,START$
 100 DIM A(256)
+
 110 PRINT "7's Problem"
 120 A(1)=7
 130 WIN=0
@@ -23,12 +24,14 @@
 280    GOTO 300
 290    INAROW=0
 300 NEXT I
+
 310 A(I)=CARRY
 320 IF CARRY=0 THEN 340
 330 NUMLEN=NUMLEN+1
 340 FOR I=NUMLEN TO 1 STEP -1
 350     PRINT CHR$(A(I)+48);
 360 NEXT I
+
 363 REM we're done get the time
 365 INPUT #1:A$,DATE$,END$
 370 PRINT ::
