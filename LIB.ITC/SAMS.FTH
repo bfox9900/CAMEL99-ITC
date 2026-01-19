@@ -48,7 +48,6 @@ CREATE _REAL  ( virtaddr -- real_address ) \ native sub-routine
      045B ,         \ *R11 B,             \ Return via R11
 ?CSP  ( test for garage on the stack )
 
-\ COMPATIBLE WITH FORTH VERSION "DMAP" is data-map
 : CALL,     06A0 ,   ,  ;  \ machine forth helper
 
 CODE VIRT>REAL ( virtual -- real ) _REAL CALL,  NEXT, ENDCODE
