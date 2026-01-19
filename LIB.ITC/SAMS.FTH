@@ -1,6 +1,6 @@
 \ SAMS CARD support. 64K segmented memory fetch and store  2022 Brian Fox
 \ 1 sams page only.  Set to >3000 by PMEM (paged memory)
-\ This version is 2.7X faster than the version in SAMSFTH.Fth 
+\ This version is 2.7X faster than the version in SAMSFTH.Fth
 
 NEEDS SAMSINI FROM DSK1.SAMSINI
 
@@ -22,7 +22,7 @@ PMEM 0B RSHIFT 4000 + CONSTANT SREG
 
 HEX
 CODE VIRT>REAL  ( virtaddr -- real_address )
-\ Lee Stewart's code to replace >1000 UM/MOD. 2.3% faster 
+\ Lee Stewart's code to replace >1000 UM/MOD. 2.3% faster
      C020 , SEG ,   \ SEG @@ R0 MOV,    \ segment# to R0
      0A40 ,         \ R0 4 SLA,         \ page# segment starts
      C144 ,         \ R4 R5 MOV,        \ address to R5
@@ -41,15 +41,15 @@ CODE VIRT>REAL  ( virtaddr -- real_address )
                     \ ENDIF,
      0204 , PMEM ,  \ R4 PMEM LI,         \ page_mem->tos
      A105 ,         \ R5  R4 ADD,         \ add computed offset to page
-     
+
      NEXT, \ 46 bytes
      ENDCODE
 
 \ VIRT>REAL memory fetch and store from SAMS segment
-: !L   ( n Virtaddr -- ) VIRT>REAL   ! ; 
-: C!L  ( n Virtaddr -- ) VIRT>REAL  C! ;  
-: @L   ( Virtaddr -- n)  VIRT>REAL   @ ; 
-: C@L  ( Virtaddr -- n)  VIRT>REAL  C@ ; 
+: !L   ( n Virtaddr -- ) VIRT>REAL   ! ;
+: C!L  ( n Virtaddr -- ) VIRT>REAL  C! ;
+: @L   ( Virtaddr -- n)  VIRT>REAL   @ ;
+: C@L  ( Virtaddr -- n)  VIRT>REAL  C@ ;
 
 CR HERE SWAP - DECIMAL . .( bytes)
 SAMS-OFF SAMSINI SAMS-ON
@@ -61,5 +61,5 @@ CR .( Segment = ) SEG @  DECIMAL U.
 CR
 
 \ HEX
-\ : TEST     FFFF 0 DO  [CHAR] # I !L  LOOP ; \ Forth: 58.38 sec. 
-\                                             \ CODE : 21.05 sec. 
+\ : TEST     FFFF 0 DO  [CHAR] # I !L  LOOP ; \ Forth: 58.38 sec.
+\                                             \ CODE : 21.05 sec.
