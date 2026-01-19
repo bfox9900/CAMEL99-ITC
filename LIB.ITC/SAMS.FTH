@@ -29,16 +29,16 @@ CREATE _REAL  ( virtaddr -- real_address ) \ native sub-routine
 !CSP
 \ Lee Stewart's code to replace >1000 UM/MOD. 2.3% faster
      C020 , SEG ,   \ SEG @@ R0 MOV,    \ segment# to R0
-     0A40 ,         \ R0 4 SLA,         \ page# segment starts
-     C144 ,         \ R4 R5 MOV,        \ address to R5
-     0245 , 0FFF ,  \ R5  0FFF ANDI,    \ page offset
-     09C4 ,         \ R4 0C SRL,        \ page of current segment
-     A100 ,         \ R0 R4 ADD,        \ bank#
-     8804 , BANK# , \ R4 BANK# @@ CMP,    \ page in RAM?
+     0A40 ,         \ R0 4 SLA,         \ 16* gives us page# of segment
+     C144 ,         \ R4 R5 MOV,        \ dup address into R5
+     0245 , 0FFF ,  \ R5  0FFF ANDI,    \ (>1000 MOD) R5 is page offset
+     09C4 ,         \ R4 0C SRL,        \ (>1000/) R4 is page#
+     A100 ,         \ R0 R4 ADD,        \ add segment to page#
+     8804 , BANK# , \ R4 BANK# @@ CMP,  \ page in RAM?
      1309 ,         \ NE IF,
      C804 , BANK# , \    R4 BANK# @@ MOV, \ No. update BANK#
      06C4 ,         \    R4 SWPB,
-     020C , 1E00 ,  \    R12 1E00 LI,      \ select SAMS
+     020C , 1E00 ,  \    R12 1E00 LI,      \ select SAMS card for I/O
      1D00 ,         \    0 SBO,            \ card on
      C804 , SREG ,  \    R4 SREG @@ MOV,   \ map the page
      1E00 ,         \    0 SBZ,            \ card off
