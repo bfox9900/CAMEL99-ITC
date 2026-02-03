@@ -75,6 +75,7 @@ HEX
 DECIMAL
 : RNDCOLOR  ( -- c) 14 RND 3 + ;
 : RNDX-VECT ( -- c) 22 RND 11 - ;
+: RNDX      ( -- n) 250 RND 1+  ;
 
 : QUASI ( -- )
   AUTOMOTION
@@ -82,13 +83,26 @@ DECIMAL
   BEGIN
      MAX.SP 0
      DO
-      [CHAR] .  16 128 0  I SPRITE
-      RNDX-VECT 15  I MOTION
-      RNDCOLOR  I SP.COLOR
-      98 MS
+      [CHAR] .  RNDCOLOR  128 0  I SPRITE
+      RNDX-VECT 15 I MOTION
+      97 MS
       ?BREAK
      LOOP
   AGAIN ;
+
+\: SNOW ( -- )
+\  AUTOMOTION
+\  MAX.SP MOVING   \ make all sprites auto movers
+\  BEGIN
+\     MAX.SP 0
+\     DO
+\      [CHAR] .  RNDCOLOR  RNDX 0  I SPRITE
+\      0  2 RND 13 +  I MOTION
+\      60 MS
+\      ?BREAK
+\     LOOP
+\  AGAIN ;
+
 
 : RUN
      CLEAR
@@ -102,6 +116,7 @@ DECIMAL
      CR S"       CAMEL99 FORTH"        TYPE.BIG CR
      CR S"  NO STRINGS ATTACHED"       TYPE.BIG CR
      QUASI
+
 ;
 
 RUN
