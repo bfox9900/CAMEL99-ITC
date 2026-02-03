@@ -91,7 +91,7 @@ VARIABLE SPEED
      0 0 AT-XY BLANKLN
      ." Vector"  VECTOR 2@  2 .R ." ," 2 .R
      SPACE ." Trys " TRYS @ 2 .R
-     SPACE ." Energy " SPEED @ 150 - ABS 3 .R ;
+     SPACE ." Energy " SPEED @ 200 - ABS 3 .R ;
 
 : SAD         ALPHA-GUY  SADFACE   OVER CHARDEF    SET#  9 1 COLOR  ;
 : HAPPY       ALPHA-GUY  HAPPYFACE OVER CHARDEF    SET# 12 1 COLOR  ;
