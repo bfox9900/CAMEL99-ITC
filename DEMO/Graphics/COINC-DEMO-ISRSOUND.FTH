@@ -31,14 +31,12 @@ DECIMAL
 
 \ compile bytes to turn all sound off
 HEX
-: SILENT, ( -- )  9F VC,  BF VC,  DF VC,  FF VC, ;
-
 \ noise channel selects generator 4 by default
 : NOISE,  ( n -- )  0F AND  GEN4 OSC @ OR  VC,  ;
 
 DECIMAL
 \ create a named sound list in VDP RAM that plays when executed
-: SOUND: ( <text> -- ) CREATE  VHERE ,   !CSP  DOES> @ ISRPLAY SILENT ;
+: SOUND: ( <text> -- ) CREATE  VHERE ,   !CSP  DOES> @ ISRPLAY ;
 : ;SOUND ( -- )  0 VC,  ?CSP ;
 
 \ start/end a VDP byte string.
@@ -49,7 +47,7 @@ DECIMAL
 : MS]     ( vaddr dur -- ) SWAP ]$   MS, ;
 : [MUTE]      $[ MUTE, ]$ ;
 
-SOUND: TINK  $[ GEN1 1500 HZ,  -6 DB,  60 MS] [MUTE] ;SOUND
+SOUND: TINK  $[ GEN1 1500 HZ,  -6 DB,  20 MS] [MUTE] ;SOUND
 SOUND: BONK  $[ GEN2  110 HZ   -4 DB,  80 MS] [MUTE] ;SOUND
 
 : CLIP   ( n lo hi -- n) S" ROT MIN MAX" EVALUATE ; IMMEDIATE
@@ -92,15 +90,15 @@ DECIMAL
     BEGIN RNDSPEED ?DUP UNTIL ;
 
 HEX
-CREATE PAT127 3C42 , A581 , A599 , 423C ,
+CREATE HAPPY 3C42 , A581 , A599 , 423C ,
 
 DECIMAL
 : SPRITES ( -- ) \ makes n sprites
     ( char      colr  x    y  sp#         X/Y  spr#   )
       127       11   10    90  0 SPRITE  RND-DXY  0 MOTION
-    20 1
+    27 1
     DO
-        I [CHAR] 0 +  I 2 + 3 MAX  RNDX RNDY  I SPRITE
+        I [CHAR] A +  I 2 + 3 MAX  RNDX RNDY  I SPRITE
         RND-DXY I MOTION
     LOOP
 ;
@@ -121,7 +119,7 @@ DECIMAL
 
 : RUN ( -- )
     DELALL
-    PAT127 127 CHARDEF
+    HAPPY 127 CHARDEF
     2 SCREEN
     1 MAGNIFY
     4 19  16 1 COLORS

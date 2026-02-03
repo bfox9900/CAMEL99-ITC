@@ -100,7 +100,7 @@ VARIABLE SPEED
 
 : PLANTS      RNDY 0 DO  .PLANT LOOP ;
 
-: SPEED!     ( n -- ) 5 150 CLIP  SPEED ! ;
+: SPEED!     ( n -- ) 5 200 CLIP  SPEED ! ;
 : SPEED++    ( -- ) SPEED @ 35 - SPEED! ;   \ speed is inverse
 : SPEED--    ( -- ) SPEED @ 1+  SPEED! ;
 
