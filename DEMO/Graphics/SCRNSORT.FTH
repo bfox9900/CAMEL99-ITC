@@ -2,7 +2,8 @@
 \ PORTED to CAMEL99 2017 for demo in screen
 
 INCLUDE DSK1.GRAFIX
-INCLUDE DSK1.CASE 
+INCLUDE DSK1.CASE
+INCLUDE DSK1.ELAPSE
 
 VARIABLE GAP
 VARIABLE ITEMS
@@ -20,7 +21,9 @@ C/L @ 8 * CONSTANT SIZE \ we will use top 7 lines of screen as the array
 : ?   @ . ;
 
 : .REPORT
-   CR  
+   CR
+   CR .ELAPSED
+   CR ." Sorted " SIZE . ." bytes in VDP RAM"
    CR ." Done in " PASSES ? ." passes"
    CR SWAPS ? ."  exchanges"  ;
 
@@ -33,11 +36,12 @@ C/L @ 8 * CONSTANT SIZE \ we will use top 7 lines of screen as the array
 : XCHGS  ( adr adr -- ) OVER VC@  OVER VC@  SWAP ROT VC!  SWAP VC! ;
 
 : COMBSORT ( n -- )
-   CR 
+   CR
    CR ." Descending COMB sort..."
     SIZE DUP ITEMS ! GAP !
     PASSES OFF
     SWAPS OFF
+    TICKER OFF
     BEGIN
         GAP @  /1.3  GAP !                 \ additional line
         SFLAG ON
@@ -56,11 +60,12 @@ C/L @ 8 * CONSTANT SIZE \ we will use top 7 lines of screen as the array
    .REPORT ;
 
 : SHELLSORT ( n -- )
-   CR 
+   CR
    CR ." Shell sort... "
     SIZE DUP ITEMS ! GAP !
     PASSES OFF
     SWAPS OFF
+    TICKER OFF
     BEGIN
         GAP @  1- GAP !                  \ additional line
         SFLAG ON
@@ -79,11 +84,12 @@ C/L @ 8 * CONSTANT SIZE \ we will use top 7 lines of screen as the array
    .REPORT ;
 
 : BUBBLESORT ( n -- )
-   CR 
+   CR
     CR ." Descending BUBBLE sort..."
     SIZE DUP ITEMS ! GAP !
     PASSES OFF
     SWAPS OFF
+    TICKER OFF
     BEGIN
         SFLAG ON
         ITEMS @ 1-  0
@@ -99,40 +105,39 @@ C/L @ 8 * CONSTANT SIZE \ we will use top 7 lines of screen as the array
        SFLAG @
    UNTIL
    .REPORT ;
-   
+
 : BUBBLE_DEMO   .CHARSET BUBBLESORT ;
 : SHELL_DEMO    .CHARSET SHELLSORT ;
 : COMB_DEMO     .CHARSET COMBSORT ;
 
-: MENU  
+: MENU
     CR
     CR ." 1  BUBBLE SORT"
-    CR ." 2  SHELL SORT" 
+    CR ." 2  SHELL SORT"
     CR ." 3  COMB SORT"
     CR ." X  Return to Forth"
 ;
 
-: DEMO 
+: DEMO
    COLORSET
-   BEGIN 
+   BEGIN
       PAGE ." ** SORT DEMONSTRATION ** "
-      CR 
+      CR
       CR ." This demo shows sorting"
       CR ." on the screen."
-      CR 
-      CR ." Choose from the menu" 
-      MENU 
+      CR
+      CR ." Choose from the menu"
+      MENU
       KEY
-      CASE 
-         [CHAR] 1 OF  BUBBLE_DEMO   ENDOF 
-         [CHAR] 2 OF  SHELL_DEMO   ENDOF 
-         [CHAR] 3 OF  COMB_DEMO   ENDOF 
-         [CHAR] X OF  CR CR ABORT   ENDOF 
-                      HONK 
-      ENDCASE 
-      CR 
-      CR ." Press a key for menu" KEY DROP 
-       
-   AGAIN 
-;
+      CASE
+         [CHAR] 1 OF  BUBBLE_DEMO   ENDOF
+         [CHAR] 2 OF  SHELL_DEMO   ENDOF
+         [CHAR] 3 OF  COMB_DEMO   ENDOF
+         [CHAR] X OF  CR CR ." Forth" CR ABORT  ENDOF
+                      HONK
+      ENDCASE
+      CR
+      CR ." Press a key for menu" KEY DROP
 
+   AGAIN
+;
