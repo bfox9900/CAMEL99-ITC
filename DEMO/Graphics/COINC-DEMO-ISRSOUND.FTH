@@ -1,5 +1,14 @@
 \ Sprite COINC and TRAP Demo
 
+\ Notes:
+\ A problem with testing coincidence and starting a sound
+\ is the the sound duration is a loop running in the main program.
+\ This means the program cannot test for coincidence while waiting
+\ for the sound duration to expire.
+
+\ This version uses the TI-99 ROM based sound player which runs
+\ under interrupt control. Essentially a background task.
+
 NEEDS DUMP       FROM DSK1.TOOLS
 NEEDS SPRITE     FROM DSK1.DIRSPRIT
 NEEDS AUTOMOTION FROM DSK1.AUTOMOTION
@@ -12,7 +21,6 @@ MARKER /TEST
 HEX
 CODE 0LIMI   0300 , 0000 ,  NEXT, ENDCODE
 CODE 2LIMI   0300 , 0002 ,  NEXT, ENDCODE
-
 
 \ SOUND COMPILERS, put data VDP memory to build sound lists
 DECIMAL
@@ -92,7 +100,8 @@ DECIMAL
       127       11   10    90  0 SPRITE  RND-DXY  0 MOTION
     20 1
     DO
-        I [CHAR] 0 +  I 2 + 3 MAX  RNDX RNDY  I SPRITE  RND-DXY I MOTION
+        I [CHAR] 0 +  I 2 + 3 MAX  RNDX RNDY  I SPRITE
+        RND-DXY I MOTION
     LOOP
 ;
 
@@ -117,7 +126,7 @@ DECIMAL
     1 MAGNIFY
     4 19  16 1 COLORS
     PAGE ." CAMEL99 Forth Sprite Automotion"
-    CR   ." Trap All Sprites
+    CR 5 SPACES  ." >> Using ISR sound <<"
     CR
     SPRITES
     AUTOMOTION
