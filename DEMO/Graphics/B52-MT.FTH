@@ -234,8 +234,12 @@ DECIMAL
 
 \ /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
-\ This is only needed if you want to make a binary program
-: B52   WARM         \ Boot Forth machine (40 column mode )
-        RUN          \ word to start the program
-        BYE          \ exits Forth system to title screen
-;
+\ Un- comment these lines if you want to make a binary program
+\ : B52  WARM         \ Boot Forth machine (40 column mode )
+\        RUN          \ word to start the program
+\        BYE          \ exits Forth system to title screen
+\ ;
+
+\ LOCK
+\ INCLUDE DSK1.SAVESYS
+\ ' B52 SAVESYS DSK3.B52,EXE
