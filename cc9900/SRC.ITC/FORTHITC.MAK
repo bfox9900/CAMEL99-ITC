@@ -122,7 +122,7 @@ TTYI/O
  \ build the copy command in host Forth PAD memory by appending strings
  S" COPY " PAD PLACE
  FILENAME$ COUNT PAD +PLACE
- S"  cc9900\CAMEL99.WIP\dsk1.itc\" PAD +PLACE
+ S"  cc9900\DISKS.99\dsk1.itc\" PAD +PLACE
 
  CR PAD COUNT 2DUP TYPE SYSTEM  \ SYSTEM calls DOS, gives it the string
 

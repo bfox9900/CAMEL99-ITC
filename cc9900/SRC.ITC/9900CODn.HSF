@@ -328,7 +328,9 @@ CODE COUNT  ( addr -- addr' u)
             TOS PUSH,             \ make a copy of addr
             *SP INC,              \ inc. addr past the count byte
 l: _C@      *TOS TOS MOVB,        \ put C@ inline to save space
-            TOS 8 SRL,            \ **BUG FIX** used to be SRA :-(
+ \           TOS 8 SRL,           \ 26+32= 58 cycles
+             TOS SWPB,
+             TOS TOS SUBB,        \ clears MSB  54 cycles
             NEXT,
             ENDCODE
 
