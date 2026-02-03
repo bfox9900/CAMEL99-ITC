@@ -103,7 +103,7 @@ HEX
    BOUNDS
    DO
       10 I VC+!
-      10 TICKS
+      35 TICKS
    LOOP
 ;
 

@@ -1,5 +1,5 @@
 \ EXTENDED BASIC to CAMEL99 Forth demo BJFox 2019
-\ forth style translation from BASIC uses no VARIABLES 
+\ forth style translation from BASIC uses no VARIABLES
 
 \ 1 ! Smart Programming Guide for Sprites
 \ 2 !      by Craig Miller
@@ -23,81 +23,79 @@
 \ 260 NEXT N
 \ 270 GOTO 140
 
-\ Camel99 kernel is bare-bones. 
+\ Camel99 kernel is bare-bones.
 \ Extras must be compiled into system
 NEEDS .S     FROM DSK1.TOOLS
 NEEDS MOTION FROM DSK1.AUTOMOTION
 NEEDS RND    FROM DSK1.RANDOM
 NEEDS DB     FROM DSK1.SOUND
 
-\ character definition for the bullet 
+\ character definition for the bullet
 CREATE ABULLET HEX 0000 , 0018 , 1800 , 0000 ,
 
 DECIMAL
-\ name the sprites 
+\ name the sprites
  1 CONSTANT AMMO    2 CONSTANT TURRET   3 CONSTANT TARGET
 
 \ Name the colors
  2 CONSTANT BLACK   5 CONSTANT BLUE    16 CONSTANT WHITE
 
-\ words to make it more like BASIC 
+\ words to make it more like BASIC
 : SOUND1   ( t Hz db -- ) GEN1  DB  HZ  MS  MUTE ;
 : ?BREAK   ?TERMINAL IF  STOPMOTION CR ." BREAK"  ABORT  THEN ;
 
-\ return random coordinates 
+\ return random coordinates
 : RNDX  ( -- x) 255 RND 1+ ;
 : RNDY  ( -- y) 192 RND 1+ ;
 
-: TURRET-SPRITE 
-\    ascii    colr x  y   spr# 
-    [CHAR] ^ WHITE 1 180 TURRET SPRITE   
+: TURRET-SPRITE
+\    ascii    colr x  y   spr#
+    [CHAR] ^ WHITE 1 180 TURRET SPRITE
     5 0 TURRET MOTION ;
 
-: TARGET-SPRITE ( char --) 
-\   colr     x       y        spr# 
-    WHITE  RNDX 1+  RNDY 2/  TARGET SPRITE ;    
+: TARGET-SPRITE ( char --)
+\   colr     x       y        spr#
+    WHITE  RNDX 1+  RNDY 2/  TARGET SPRITE ;
 
 \ function computes motion vector between 2 SPRITES x,y
-: DELTA ( x y x2 y2  -- x' y')  
-        ROT  - 2/  >R   \ delta Y pushed to Rstack 
-        SWAP - 2/       \ delta X    
-        R> ;            \ bring back delta Y  
+: DELTA ( x y x2 y2  -- x' y')
+        ROT  - 2/  >R   \ delta Y pushed to Rstack
+        SWAP - 2/       \ delta X
+        R> ;            \ bring back delta Y
 
 : DELSPRITE ( spr# -- ) 0 SWAP SP.PAT VC! ;
 
-: SHOOT 
+: SHOOT
 \ next line sets the motion vector for the AMMO sprite
 \ by reading the sprite positions and computing the delta
     TURRET POSITION  TARGET POSITION DELTA  AMMO MOTION
 
 \ generate noise using sound chip API
-    2 NOISE -14 DB 430 MS MUTE
+    4 NOISE -14 DB 100 MS MUTE 330 MS
 
-    120 110 -6 SOUND1 
+    120 110 -6 SOUND1
     AMMO DELSPRITE
     [CHAR] # TARGET PATTERN
-    100 220 -6 SOUND1    
+    100 220 -6 SOUND1
 ;
 
-: RUN 
-    CLEAR  
-    BLUE SCREEN 
+: RUN
+    CLEAR
+    BLUE SCREEN
     10 0 AT-XY ." Camel99 Forth"
     ABULLET [CHAR] . CHARDEF
-    TURRET-SPRITE 
+    TURRET-SPRITE
     AUTOMOTION
-    BEGIN 
-        25 0 
+    BEGIN
+        25 0
         DO
-        \ put target sprite on the screen with a sound     
-            [CHAR] A  I +  TARGET-SPRITE 
+        \ put target sprite on the screen with a sound
+            [CHAR] A  I +  TARGET-SPRITE
             50 660 8 SOUND1
 
-        \ put the AMMO sprite at the turret position 
-            [CHAR] . WHITE  TURRET POSITION AMMO SPRITE  
-            SHOOT 
-           
-            ?BREAK 
+        \ put the AMMO sprite at the turret position
+            [CHAR] . WHITE  TURRET POSITION AMMO SPRITE
+            SHOOT
+            ?BREAK
         LOOP
     AGAIN ;
-
