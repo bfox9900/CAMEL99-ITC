@@ -59,11 +59,12 @@ SIZE CELLS  MALLOC CONSTANT Q[]
 : ERASE   0 FILL ;
 
 : CLEARIT  ( -- ) 0 ]Q SIZE CELLS ERASE ;     \ all the same data 17.7
-: REVERSED ( -- ) SIZE  0 DO  SIZE I -  I ]Q !      LOOP ; \ 18.0 seconds
-: ASCENDING ( -- ) SIZE  0 DO     I  I ]Q !      LOOP ; \ 17.7
-: RANDIT   ( -- ) SIZE  0 DO  256 RND I ]Q !   LOOP ;  \ 19.6
-: TWOIT    ( -- ) CLEARIT   99 45 ]Q !  777 SIZE 2/ ]Q ! ; \ 2 different records 17.7
-: TURTLES  ( -- ) \ 18.0
+: REVERSED ( -- ) SIZE  0 DO  SIZE I -  I ]Q !      LOOP ; \ 17.11 seconds
+: ASCENDING ( -- ) SIZE  0 DO     I  I ]Q !      LOOP ;    \ 16.3
+: RANDIT   ( -- ) SIZE  0 DO  256 RND I ]Q !   LOOP ;  \ 18.11
+\ 2 different records 16.3
+: TWOIT    ( -- ) CLEARIT   99 45 ]Q !  777 SIZE 2/ ]Q ! ;
+: TURTLES  ( -- ) \ 16.6
            SIZE 0
             DO
                I I CHAR+ ]Q !   \ each 2 elements are reversed
