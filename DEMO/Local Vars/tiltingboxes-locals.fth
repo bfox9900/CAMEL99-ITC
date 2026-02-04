@@ -35,8 +35,8 @@ DECIMAL
 \ with these locals we cannot use a DO LOOP because
 \ the locals are sitting on the return stack.
 : BOX   ( x1 y1 x2 y2 char -- ) \ 1120 sub box(x1,y1,x2,y2,c)
- 5 LOCALS
-    C ! Y2 ! X2 !  Y1 ! X1 !    \ store stack to locals
+ 5 LOCALS                       \ allocate 5 cells on Rstack
+    C ! Y2 ! X2 !  Y1 ! X1 !    \ store data stack to locals
     BEGIN
         Y2 @ 1+ Y1 @ >          \ 1130 for y=y1 to y2
     WHILE
@@ -45,7 +45,7 @@ DECIMAL
         Y1 1+!                  \ 1150     next y
 
     REPEAT
- /LOCALS
+ /LOCALS                        \ de-allocate locals stack frame
 ;                               \ 1160 subend
 
 : RUN

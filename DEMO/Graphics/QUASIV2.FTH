@@ -83,7 +83,9 @@ DECIMAL
   BEGIN
      MAX.SP 0
      DO
+      PAUSE
       [CHAR] .  RNDCOLOR  128 0  I SPRITE
+      PAUSE
       RNDX-VECT 15 I MOTION
       97 MS
       ?BREAK

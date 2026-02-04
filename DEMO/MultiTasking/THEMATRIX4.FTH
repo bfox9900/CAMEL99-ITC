@@ -1,12 +1,11 @@
 \ THE MATRIX Multi-tasking demonstration                Brian Fox 2021
 
-NEEDS DUMP   FROM DSK1.TOOLS  \ DEBUG
+\ NEEDS DUMP   FROM DSK1.TOOLS  \ DEBUG
 NEEDS MARKER FROM DSK1.MARKER
 NEEDS MALLOC FROM DSK1.MALLOC
 NEEDS RND    FROM DSK1.RANDOM
 NEEDS COLOR  FROM DSK1.GRAFIX
-NEEDS SPRITE FROM DSK1.DIRSPRIT
-NEEDS MOTION FROM DSK1.AUTOMOTION
+NEEDS SPRITE FROM DSK1.AUTOMOTION
 NEEDS FORK   FROM DSK1.MTASK99
 
 : HEX#, ( addr len  --) \ can be used for longstrings (128 bytes)
@@ -66,25 +65,38 @@ CREATE Japanese
 
 : >WHITE ( greenchar -- whitechar) WHITECHAR + ;
 : RNDCHAR ( -- c)  32 RND 128 +  ; \ returns green charset only
-: RNDCOL   ( -- col)  32 RND ;
 
-DECIMAL
-: RNDLEN   21 RND 4 + ; ( max will be 20+4=24 )
-: VROW++  ( -- ) VROW DUP @ 1+ 23 MIN SWAP ! ;
-: DREAMS  ( n ) 0 ?DO  PAUSE  LOOP PAUSE ;
-
-: FALLING ( length col row  -- )
-    AT-XY
-    ( len ) 0
-    ?DO
-      PAUSE
-      RNDCHAR VPUT
-      VROW++
-      RNDCHAR >WHITE VPUT
-      12 RND 5 + DREAMS
+: FINDEMPTY ( -- -1 | col) \ -1 means all full
+    -1
+    32 0 DO
+        I 0 >VPOS VC@ BL =
+        IF DROP I LEAVE
+        THEN
     LOOP
 ;
 
+: RNDCOL   ( -- col)
+    FINDEMPTY DUP TRUE =
+    IF DROP 32 RND
+    THEN
+;
+
+ DECIMAL
+: RNDLEN   21 RND 4 + ; ( max will be 20+4=24 )
+
+: VROW++  ( -- ) VROW DUP @ 1+ 23 MIN SWAP ! ;
+
+: FALLING ( length col row  -- )
+          AT-XY
+          ( len ) 0
+          ?DO
+             PAUSE
+             RNDCHAR VPUT
+             VROW++
+             RNDCHAR >WHITE  VPUT
+             10 RND 4 + TICKS
+          LOOP
+;
 
 \ \\\\\\\\\\\\\\\\\\\\\ BACKGROUND TASKS ///////////////////
 : FALLER
@@ -93,92 +105,75 @@ DECIMAL
        AGAIN ;
 
 : ERASER
+    5000 MS
     BEGIN
-      32 RND 0 AT-XY
-      50 RND 6 +  DREAMS
-      24 0
-      DO
-        PAUSE
-        BL VPUT
-        VROW++
-        20 RND DREAMS
-      LOOP
+        32 RND 0 AT-XY
+        50 RND 6 +  \ loop speed on stack
+        24 0
+         DO
+            PAUSE BL VPUT
+            VROW++
+            DUP MS    \ delay to loop speed
+        LOOP
+        DROP         \ DROP loop speed
+        2000 RND 400 + MS
     AGAIN ;
 
 CREATE GREENS   13 , 3 , 4 , 13 , 4 , 3 , 13 , 3 ,
-: ]GREEN ( n)  7 AND CELLS GREENS + @ ; \ circular access array
-
-: RND-GRN  7 RND ]GREEN  ;
+: ]GREEN ( n)  7 AND CELLS GREENS + ; \ circular access array
 
 : SHIMMER  \ switches charsets to random greens, random times
       0    \ first []green index
       BEGIN
         PAUSE
         22 16 DO
-         PAUSE
-          I  OVER ]GREEN 1 COLOR
+         \ 100 TICKS
+          I  OVER ]GREEN @ 1 PAUSE COLOR
           1+  \ increment index
-          PAUSE
         LOOP
       AGAIN
 ;
 
-: RNDX ( -- xpixel ) 240 RND 8 + ;
-: RNDFALL  8 RND 2 + ;
-
-\ make sprite characters fall from the top
-DECIMAL
-: WHITE-RAIN
-  1000 MS
-  BEGIN
-    10 0
-    DO
-      PAUSE
-      ( char   colr  x  y sp# )
-      RNDCHAR  16  RNDX 0  I SPRITE  0 RNDFALL I MOTION
-      100 DREAMS
-    LOOP
-  AGAIN
-;
-
-: GREEN-RAIN
-  2000 MS
-  BEGIN
-    21 11
-    DO
-      PAUSE
-      ( char        colr     X   y sp# )
-      RNDCHAR  8 RND ]GREEN RNDX 0  I SPRITE  0 RNDFALL I MOTION
-      100 DREAMS
-    LOOP
-  AGAIN
-;
-
 : TWINKLE ( colorset -- )
-    PAUSE
-    DUP 15 1 COLOR
-    5 DREAMS
-    16 1 COLOR   \ back to white
-    5 DREAMS
+        DUP 15 1 PAUSE COLOR
+        300 TICKS
+        16 1 PAUSE COLOR   \ back to white
+        400 TICKS
 ;
 
 : TWINKLER
+      BEGIN
+        26 22 \ white character sets
+        DO
+          I TWINKLE
+        LOOP
+      AGAIN
+;
+
+: SPRITE-FALL
+    8000 MS     \ wait until the screen gets full
+    12 MOVING   \ set number of sprites that auto move
     BEGIN
-      26 22 \ white character sets
-      DO
-        I TWINKLE
-      LOOP
+        6 RND 6 +  0
+        DO
+           \ char   colr   x       y   spr#
+            PAUSE
+            RNDCHAR  16  210 RND 18 +  0    I SPRITE
+            PAUSE
+            0  2 RND 5 +  I MOTION
+            300 RND 700 + MS
+        LOOP
     AGAIN
 ;
+
+\ : TEST   BEGIN   22 16 DO  I ]GREEN @ . LOOP  ?TERMINAL UNTIL ;
 
 \ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 \ SPAWN allocates USER area in Low RAM, FORKS,
 \ sets the awake flag and assigns a Forth word to RUN
-: SPAWN  ( xt -- )  USIZE MALLOC DUP FORK DUP WAKE  ASSIGN ;
+: SPAWN  ( xt -- )  USIZE MALLOC DUP FORK DUP WAKE  ASSIGN  ;
 
-HEX
 : SPAWN-JOBS ( --)
-  2000 H !
   ['] FALLER SPAWN
   ['] FALLER SPAWN
   ['] FALLER SPAWN
@@ -188,50 +183,43 @@ HEX
   ['] ERASER SPAWN
   ['] SHIMMER SPAWN
   ['] TWINKLER SPAWN
-  ['] WHITE-RAIN SPAWN
-  ['] GREEN-RAIN SPAWN
+  ['] SPRITE-FALL SPAWN
 ;
+
 
 HEX 83D6 CONSTANT ALWAYS  \ screen timeout control
 : PATTERNS ( n -- n')  8* ; \ char patterns to write to pattern table
-
-: DO-CHARS
-   \ source   dest.    Quantity
-    \ ------   ----    ----------
-    Japanese  128 ]PDT  31 PATTERNS VWRITE  \ GREEN charset
-    Japanese  176 ]PDT  31 PATTERNS VWRITE  \ WHITE charset
-
-    128 SET# 168 SET#  4 1 COLORS   ( green)
-    176 SET# 228 SET# 16 1 COLORS   ( white)
-;
 
 DECIMAL
 : RUN
     WARM
     GRAPHICS
-    DO-CHARS
+    \ source   dest.    Quantity
+    \ ------   ----    ----------
+    Japanese  128 ]PDT  31 PATTERNS VWRITE \ GREEN charset
+    Japanese  176 ]PDT  31 PATTERNS VWRITE  \ WHITE charset
+
+    128 SET# 168 SET#  4 1 COLORS   ( green)
+    176 SET# 228 SET# 16 1 COLORS   ( white)
+
     INIT-MULTI
     ." Spawning tasks..."
     SPAWN-JOBS
-
     1 SCREEN
     MULTI
     ALWAYS ON  \ prevent screen timeout
     AUTOMOTION
-    20 MOVING
     BEGIN      \ the console task loops to test the break key
       PAUSE
       ?TERMINAL
     UNTIL
-   \ 8 SCREEN
     SINGLE
-    DELALL
-    STOPMOTION
-    BYE
+ \   BYE
 ;
 
-\ Make a binary program
+
+
+
   LOCK
   INCLUDE DSK1.SAVESYS
-
  ' RUN SAVESYS DSK3.THEMATRIX
