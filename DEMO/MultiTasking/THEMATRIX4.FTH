@@ -4,6 +4,7 @@
 NEEDS MARKER FROM DSK1.MARKER
 NEEDS MALLOC FROM DSK1.MALLOC
 NEEDS RND    FROM DSK1.RANDOM
+NEEDS QUIT-ON FROM DSK1.QUITKEY
 NEEDS COLOR  FROM DSK1.GRAFIX
 NEEDS SPRITE FROM DSK1.AUTOMOTION
 NEEDS FORK   FROM DSK1.MTASK99
@@ -57,8 +58,8 @@ CREATE Japanese
   S" 00107C0438540000"  HEX#,
 
 
-\ : .JAPAN  CR  159 128 DO I EMIT LOOP ;  .JAPAN
-\ : .JAPAN2  CR 207 176 DO I EMIT LOOP ;  .JAPAN2
+: .JAPAN  CR  159 128 DO I EMIT LOOP ;  .JAPAN
+ : .JAPAN2  CR 207 176 DO I EMIT LOOP ;  .JAPAN2
 
 \ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 176 128 - CONSTANT WHITECHAR  ( changes green character to white)
@@ -75,7 +76,7 @@ CREATE Japanese
     LOOP
 ;
 
-: RNDCOL   ( -- col)
+: EMPTY-COL   ( -- col)
     FINDEMPTY DUP TRUE =
     IF DROP 32 RND
     THEN
@@ -100,9 +101,13 @@ CREATE Japanese
 
 \ \\\\\\\\\\\\\\\\\\\\\ BACKGROUND TASKS ///////////////////
 : FALLER
-       BEGIN
-         RNDLEN  RNDCOL 0 FALLING
-       AGAIN ;
+    32 0
+    DO  \ initial fallers are in random columns
+      RNDLEN  32 RND 0 FALLING
+    LOOP
+    BEGIN \ these ones find and empty column or use random
+      RNDLEN  EMPTY-COL 0 FALLING
+    AGAIN ;
 
 : ERASER
     5000 MS
@@ -119,35 +124,39 @@ CREATE Japanese
         2000 RND 400 + MS
     AGAIN ;
 
-CREATE GREENS   13 , 3 , 4 , 13 , 4 , 3 , 13 , 3 ,
-: ]GREEN ( n)  7 AND CELLS GREENS + ; \ circular access array
+\ fg/bg color values of different greens for 6 character sets
+\ BLIT these directly into the color table with VWRITE
+HEX
+CREATE GREENS   C0 C,  20 C,  30 C, C0 C, 20 C,
+CREATE GREENS2  30 C,  C0 C,  20 C, 30 C, C0 C,
+CREATE GREENS3  20 C,  30 C,  C0 C, 20 C, 30 C,
 
+DECIMAL
 : SHIMMER  \ switches charsets to random greens, random times
-      0    \ first []green index
-      BEGIN
-        PAUSE
-        22 16 DO
-         \ 100 TICKS
-          I  OVER ]GREEN @ 1 PAUSE COLOR
-          1+  \ increment index
-        LOOP
-      AGAIN
+    BEGIN
+      PAUSE
+      GREENS  [ 16 ]CTAB ] LITERAL  5 VWRITE
+      50 MS
+      GREENS2 [ 16 ]CTAB ] LITERAL  5 VWRITE
+      50 MS
+      GREENS3 [ 16 ]CTAB ] LITERAL  5 VWRITE
+      50 MS
+    AGAIN
 ;
 
-: TWINKLE ( colorset -- )
-        DUP 15 1 PAUSE COLOR
-        300 TICKS
-        16 1 PAUSE COLOR   \ back to white
-        400 TICKS
-;
+HEX
+CREATE WHITE1 E0 C, F0 C, E0 C, F0 C, E0 C,
+CREATE WHITE2 F0 C, E0 C, F0 C, E0 C, F0 C,
 
+DECIMAL
 : TWINKLER
-      BEGIN
-        26 22 \ white character sets
-        DO
-          I TWINKLE
-        LOOP
-      AGAIN
+    BEGIN
+      PAUSE
+      WHITE1  [ 22 ]CTAB ] LITERAL  5 VWRITE
+      50 RND 100 + MS
+      WHITE2  [ 22 ]CTAB ] LITERAL  5 VWRITE
+      50 RND 50 +  MS
+    AGAIN
 ;
 
 : SPRITE-FALL
@@ -183,7 +192,6 @@ CREATE GREENS   13 , 3 , 4 , 13 , 4 , 3 , 13 , 3 ,
   ['] ERASER SPAWN
   ['] SHIMMER SPAWN
   ['] TWINKLER SPAWN
-  ['] SPRITE-FALL SPAWN
 ;
 
 
@@ -193,6 +201,7 @@ HEX 83D6 CONSTANT ALWAYS  \ screen timeout control
 DECIMAL
 : RUN
     WARM
+    QUIT-ON      \ Enable quit key interrupt
     GRAPHICS
     \ source   dest.    Quantity
     \ ------   ----    ----------
@@ -209,17 +218,12 @@ DECIMAL
     MULTI
     ALWAYS ON  \ prevent screen timeout
     AUTOMOTION
-    BEGIN      \ the console task loops to test the break key
-      PAUSE
-      ?TERMINAL
-    UNTIL
-    SINGLE
- \   BYE
+    SPRITE-FALL  \ Console runs the sprite-fall task forever
 ;
 
 
+  LOCK \ Lock the dictionary to this point.
 
-
-  LOCK
+\ this code will load into unallocated space so not part of the final image
   INCLUDE DSK1.SAVESYS
  ' RUN SAVESYS DSK3.THEMATRIX

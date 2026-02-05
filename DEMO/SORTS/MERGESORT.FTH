@@ -5,15 +5,15 @@ INCLUDE DSK1.RANDOM
 INCLUDE DSK1.MALLOC
 INCLUDE DSK1.ELAPSE
 
-DECIMAL 
+DECIMAL
 
-\ camel99 forth translation harness 
-: RDROP  POSTPONE R> POSTPONE DROP ; IMMEDIATE 
-: <=     POSTPONE 1+  POSTPONE < ; IMMEDIATE 
+\ camel99 forth translation harness
+: RDROP  S" R> DROP" EVALUATE ; IMMEDIATE
+: <=     S" 1+ <" EVALUATE  ; IMMEDIATE
 
-1 CELLS CONSTANT CELL 
+1 CELLS CONSTANT CELL
 
-: MERGE-STEP ( right mid left -- right mid+ left+ )
+: MERGE-STEP ( RIGHT MID LEFT -- RIGHT MID+ LEFT+ )
   OVER @ OVER @ < IF
     OVER @ >R
     2DUP - OVER DUP CELL+ ROT MOVE
@@ -21,21 +21,21 @@ DECIMAL
     >R CELL+ 2DUP = IF RDROP DUP ELSE R> THEN
   THEN CELL+ ;
 
-: MERGE ( right mid left -- right left )
+: MERGE ( RIGHT MID LEFT -- RIGHT LEFT )
   DUP >R BEGIN 2DUP > WHILE MERGE-STEP REPEAT 2DROP R> ;
 
-: MID ( l r -- mid ) OVER - 2/ CELL NEGATE AND + ;
+: MID ( L R -- MID ) OVER - 2/ CELL NEGATE AND + ;
 
-: MERGESORT ( right left -- right left )
+: MERGESORT ( RIGHT LEFT -- RIGHT LEFT )
   2DUP CELL+ <= IF EXIT THEN
   SWAP 2DUP MID RECURSE ROT RECURSE MERGE ;
-  
-: MSORT ( addr len -- )  CELLS BOUNDS MERGESORT 2DROP ;
+
+: MSORT ( ADDR LEN -- )  CELLS OVER + SWAP MERGESORT 2DROP ;
 
 \ ============ TESTING COMMANDS ======================
 \ load the array with different kinds of mixed up data
 HEX
-2000 H !   \ reset the heap 
+2000 H !   \ reset the heap
 
 DECIMAL
 1000 CONSTANT SIZE
@@ -66,5 +66,4 @@ SIZE CELLS  MALLOC CONSTANT Q[]
 
 REVERSED
 
-: GO   Q[] SIZE MSORT  ; \ 41 SECONDS 
-
+: GO   Q[] SIZE MSORT  ; \ 41 SECONDS
