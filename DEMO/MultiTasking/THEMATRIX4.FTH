@@ -124,7 +124,7 @@ CREATE Japanese
         2000 RND 400 + MS
     AGAIN ;
 
-\ fg/bg color values of different greens for 6 character sets
+\ fg/bg color values of different greens for 5 character sets
 \ BLIT these directly into the color table with VWRITE
 HEX
 CREATE GREENS   C0 C,  20 C,  30 C, C0 C, 20 C,
