@@ -165,8 +165,8 @@ DECIMAL
     BEGIN
         6 RND 6 +  0
         DO
-           \ char   colr   x       y   spr#
             PAUSE
+           \ char   colr   x           y   spr#
             RNDCHAR  16  210 RND 18 +  0    I SPRITE
             PAUSE
             0  2 RND 5 +  I MOTION
