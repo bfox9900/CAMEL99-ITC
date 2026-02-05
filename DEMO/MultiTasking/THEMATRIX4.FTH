@@ -78,8 +78,7 @@ CREATE Japanese
 
 : EMPTY-COL   ( -- col)
     FINDEMPTY DUP TRUE =
-    IF DROP 32 RND
-    THEN
+    IF DROP 32 RND THEN
 ;
 
  DECIMAL
