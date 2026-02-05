@@ -1,5 +1,5 @@
 \ sorting demo with sound effects, with Quick-Sort   May 6 2022 Brian Fox
-\ Updated for CAmel99 V2.7 kernel with MOVE not CMOVE 
+\ Updated for CAmel99 V2.7 kernel with MOVE not CMOVE
 
 NEEDS .S     FROM DSK1.TOOLS
 NEEDS HZ     FROM DSK1.SOUND
@@ -75,7 +75,7 @@ SQR3 SET#    7 2 COLOR  \ red
 
 \ scripting tools
 : CLEARLN ( col row --)  BL 32 HCHAR ;
-: TITLE:  0 23 2DUP CLEARLN  AT-XY ;
+: TITLE:  0 4 2DUP CLEARLN  AT-XY ;
 : TIME:   0 1 AT-XY ;
 : WAIT-KEY  BEGIN KEY? UNTIL ;
 
@@ -163,9 +163,9 @@ VARIABLE SORTED
 
 CR .( mergesort.fth from rosetta code )
 
-\ camel99 forth translation harness 
-: RDROP  POSTPONE R> POSTPONE DROP ; IMMEDIATE 
-: <=     POSTPONE 1+  POSTPONE < ; IMMEDIATE 
+\ camel99 forth translation harness
+: RDROP  POSTPONE R> POSTPONE DROP ; IMMEDIATE
+: <=     POSTPONE 1+  POSTPONE < ; IMMEDIATE
 
 \ mergesort & quicksort use addresses not indices so we need to translate
 : >COL    ( addr --  n)  0 ]Q - 2/ ;
@@ -177,13 +177,13 @@ CR .( mergesort.fth from rosetta code )
 
 
 
-1 CELLS CONSTANT CELL 
+1 CELLS CONSTANT CELL
 
 : MERGE-STEP ( right mid left -- right mid+ left+ )
-    .GRN 
-    OVER >COL .REDBAR 
-    
-    OVER  @ OVER @  < 
+    .GRN
+    OVER >COL .REDBAR
+
+    OVER  @ OVER @  <
     IF
       OVER @ >R
       2DUP - OVER DUP CELL+ ROT MOVE
@@ -199,7 +199,7 @@ CR .( mergesort.fth from rosetta code )
 : MERGESORT ( RIGHT LEFT -- RIGHT LEFT )
   2DUP CELL+ <= IF EXIT THEN
   SWAP 2DUP MID RECURSE ROT RECURSE MERGE ;
-  
+
 : MSORT ( ADDR LEN -- )  CELLS OVER + SWAP  MERGESORT 2DROP ;
 
 \ =============================================================
@@ -268,13 +268,13 @@ DECIMAL
      TIME: .ELAPSED
 ;
 
-: MERGE-SORT 
-    LOAD-DATA 
-    PAGE SHOWDATA 
-    TITLE: ." Merge Sort" 
-    0 ]Q SIZE MSORT FINISH 
-    TIME: .ELAPSED 
-; 
+: MERGE-SORT
+    LOAD-DATA
+    PAGE SHOWDATA
+    TITLE: ." Merge Sort"
+    0 ]Q SIZE MSORT FINISH
+    TIME: .ELAPSED
+;
 
 : QUICK-SORT
      LOAD-DATA
