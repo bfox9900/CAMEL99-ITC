@@ -57,9 +57,9 @@ CREATE Japanese
   S" 00207C2420202000"  HEX#,
   S" 00107C0438540000"  HEX#,
 
-
-: .JAPAN  CR  159 128 DO I EMIT LOOP ;  .JAPAN
- : .JAPAN2  CR 207 176 DO I EMIT LOOP ;  .JAPAN2
+\ for debugging
+\ : .JAPAN  CR  159 128 DO I EMIT LOOP ;  .JAPAN
+\ : .JAPAN2  CR 207 176 DO I EMIT LOOP ;  .JAPAN2
 
 \ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 176 128 - CONSTANT WHITECHAR  ( changes green character to white)
@@ -67,6 +67,7 @@ CREATE Japanese
 : >WHITE ( greenchar -- whitechar) WHITECHAR + ;
 : RNDCHAR ( -- c)  32 RND 128 +  ; \ returns green charset only
 
+\ find space char along row '0'
 : FINDEMPTY ( -- -1 | col) \ -1 means all full
     -1
     32 0 DO
@@ -76,7 +77,7 @@ CREATE Japanese
     LOOP
 ;
 
-: EMPTY-COL   ( -- col)
+: EMPTY-COL   ( -- -1 | col)
     FINDEMPTY DUP TRUE =
     IF DROP 32 RND THEN
 ;
@@ -195,7 +196,9 @@ DECIMAL
 
 
 HEX 83D6 CONSTANT ALWAYS  \ screen timeout control
-: PATTERNS ( n -- n')  8* ; \ char patterns to write to pattern table
+
+\ no, of char patterns to write to pattern table (8 bytes/pattern)
+: PATTERNS ( n -- n')  8* ;
 
 DECIMAL
 : RUN
