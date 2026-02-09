@@ -23,6 +23,15 @@ HERE
 
 : FORTH-COMPILER  ['] <INTERP> 'IV ! ;
 
+: <ABORT> ( -- )
+      FORTH-COMPILER
+      SP0 SP!
+      VDPTOP ^PAB !   \ set base pab pointer
+      CR QUIT ;
+
+\ PATCH ABORT so it restores the correct vocabulary
+\ ' <ABORT>   ' ABORT >BODY !
+
 : ABORT"  ( ? --) \ restores normal Forth interpreter
    DUP IF FORTH-COMPILER THEN  POSTPONE ABORT" ; IMMEDIATE
 
@@ -36,7 +45,6 @@ CODE !      C536 , C136 ,  NEXT, ENDCODE
 CODE @      C114 ,         NEXT, ENDCODE
 CODE C@     D114 , 0984 ,  NEXT, ENDCODE
 CODE +      A136 ,         NEXT, ENDCODE
-
 
 045A CONSTANT 'NEXT'  \ 9900 CODE for B *R10   Camel99 Forth's NEXT code
 
@@ -101,8 +109,10 @@ ALSO JITS DEFINITIONS
     COMPILES UNLOOP          \ collapse stack frame
 ; IMMEDIATE
 
+: *RP+!, ( n -- )   A5CA , ;  \ machine Forth instruction
+
 : +LOOP
-    0A5CA ,          \ TOS *RP ADD,
+    *RP+!,            \ TOS *RP ADD,
     DROP,            \ don't need TOS value anymore
     POSTPONE LOOP    \ compile loop code
 ; IMMEDIATE
@@ -137,7 +147,7 @@ FORTH DEFINITIONS
 \ CFA of a code word contains the address of the next cell
 : CODE? ( XT -- ?)  DUP @ 2- = ;
 
-: OTHERS ( xt -- ) \
+: DATA, ( xt -- ) \
     DUP
     @     \ FETCH the "executor" address
     CASE  \ compare to executor words
@@ -155,7 +165,7 @@ FORTH DEFINITIONS
     IF
        CODE,    \ compile kernel code inline
     ELSE
-       OTHERS   \ handle everything else
+       DATA,   \ handle everything else
     THEN
 ;
 

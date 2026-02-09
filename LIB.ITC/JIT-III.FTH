@@ -41,16 +41,25 @@ VARIABLE MESSAGES
 : >CS     ( n -- ) CS PUSH ;
 : CS>     ( -- n ) CS POP ;
 : CS>SWAP ( -- )   CS> CS> SWAP >CS >CS ;
-: ?CS     CS STACK-DEPTH ABORT" Un-matched IF or loop words" ;
 
 : FORTH-COMPILER  ['] <INTERP> 'IV ! ;
 
+: <ABORT> ( -- )
+      FORTH-COMPILER
+      SP0 SP!
+      VDPTOP ^PAB !   \ set base pab pointer
+      CR QUIT ;
+
+\ PATCH ABORT so it restores the correct vocabulary
+' <ABORT>   ' ABORT >BODY !
+
 : ABORT"  ( ? --) \ restores normal Forth interpreter
-     DUP IF FORTH-COMPILER
+     DUP IF \ FORTH-COMPILER
             /ARGS    ( collapse ARGSTK)
             POSTPONE ABORT"
      THEN  ; IMMEDIATE
 
+: ?CS     CS STACK-DEPTH ABORT" Un-matched IF or loop words" ;
 HEX
 \ *** changed for kernel V2.69 ***
 \ Words in scratchpad RAM end in a JMP instruction, not NEXT

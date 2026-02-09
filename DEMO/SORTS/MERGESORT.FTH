@@ -11,6 +11,16 @@ DECIMAL
 : RDROP  S" R> DROP" EVALUATE ; IMMEDIATE
 : <=     S" 1+ <" EVALUATE  ; IMMEDIATE
 
+\ 6.1.1900 MOVE     LIBRARY FILE FOR CAMEL99
+\ CORE
+: MOVE    ( src dst n -- )
+          >R  2DUP SWAP DUP R@ +  \ -- src dst dst src src+n
+          WITHIN
+          IF    R> CMOVE>         \ src <= dst < src+n
+          ELSE  R> CMOVE
+          THEN ;
+
+
 1 CELLS CONSTANT CELL
 
 : MERGE-STEP ( RIGHT MID LEFT -- RIGHT MID+ LEFT+ )

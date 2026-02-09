@@ -1,17 +1,17 @@
 
 
-: <=   1+ < ;
-: RDROP  R>  DROP ;
-
 1 CELLS CONSTANT CELL
+: <=     1+ < ;
 
 : MERGE-STEP ( RIGHT MID LEFT -- RIGHT MID+ LEFT+ )
-  OVER @ OVER @ < IF
+  OVER @ OVER @ <
+  IF
     OVER @ >R
     2DUP - OVER DUP CELL+ ROT MOVE
     R> OVER !
-    >R CELL+ 2DUP = IF RDROP DUP ELSE R> THEN
+    >R CELL+ 2DUP = IF R> DROP DUP ELSE R> THEN
   THEN CELL+ ;
+
 : MERGE ( RIGHT MID LEFT -- RIGHT LEFT )
   DUP >R BEGIN 2DUP > WHILE MERGE-STEP REPEAT 2DROP R> ;
 
@@ -23,7 +23,7 @@
 
 : SORT ( ADDR LEN -- )  CELLS OVER + SWAP MERGESORT 2DROP ;
 
-CREATE TEST 8 , 1 , 5 , 3 , 9 , 0 , 2 , 7 , 6 , 4 ,
+CREATE TEST 8 , 1 , 5 , 3 , 9 , 0 , 2 , 7 , 6 , 4 , 0 , 0 ,
 
 : .ARRAY ( ADDR LEN -- ) 0 DO DUP I CELLS + @ . LOOP DROP ;
 
