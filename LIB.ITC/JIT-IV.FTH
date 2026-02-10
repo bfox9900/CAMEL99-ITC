@@ -27,7 +27,7 @@ ONLY FORTH ALSO ASSEMBLER ALSO FORTH DEFINITIONS
 HERE
 \ debug messages
 VARIABLE MESSAGES \ messages switch
-: ?TYPE  MESSAGES @ IF CR ." -- "  TYPE EXIT THEN  DROP ;
+: ?TYPE  MESSAGES @ IF CR ." >> "  TYPE EXIT THEN  DROP ;
 : MSG"   POSTPONE S" POSTPONE ?TYPE ; IMMEDIATE
 
 MESSAGES ON
@@ -92,7 +92,7 @@ HEX
 : 1-,    ( n -- n') COMPILES 1-  ; \ TOS DEC,
 
 \ optimizer language to help clarify logic
-: OPTIMIZER: : ;
+: OPTIMIZER: :  IMMEDIATE ;
 : ;OPTIMIZER  POSTPONE CODE,  POSTPONE ;  ; IMMEDIATE
 
 : CASE:       POSTPONE IF POSTPONE DROP ; IMMEDIATE
@@ -209,18 +209,20 @@ FORTH DEFINITIONS
 : CODE? ( XT -- ?)  DUP @ 2- = ;
 
 VARIABLE XT-TYPE  \ future ...
+VARIABLE XT
+
 : ISVAR   1 XT-TYPE ! ;
 : ISCONST 2 XT-TYPE ! ;
 : ISUSER  3 XT-TYPE ! ;
 : ISCODE  4 XT-TYPE ! ;
-
 
 OPTIMIZER: OPT@, ( xt --)
     #ARGS CASE:  ?DUP, ARG> @@ TOS MOV,   ;CASE
 ;OPTIMIZER
 
 OPTIMIZER: OPTC@, ( xT 'XT)
-    #ARGS CASE:  ?DUP,  ARG> @@ TOS MOVB,  TOS 8 SRA,   ;CASE
+    #ARGS    CASE:  DUP,  ARG> @@ TOS MOVB,  TOS 8 SRA, ;CASE
+    #ARGS 0= CASE:  DUP, *TOS     TOS MOVB,  TOS 8 SRA, ;CASE
 ;OPTIMIZER
 
 OPTIMIZER: OPT!,
@@ -236,7 +238,6 @@ OPTIMIZER: OPTC!,
 0204 CONSTANT "LI"    \ load imm. to R4
 C136 CONSTANT "DROP"
 
-VARIABLE XT
 
 : FOLDING ( xt -- )
      XT !
@@ -244,7 +245,7 @@ VARIABLE XT
 \ 2 literals added together
     2 LOOKBACK "LI" =  6 LOOKBACK "LI" = AND
     CASE:
-       MSG" 2 lits found"
+       MSG" 2 lits folded"
        1 LOOKBACK 5 LOOKBACK  XT PERFORM
        8 REMOVE \ get rid of old code
        ( -- sum) LIT,     \ compile sum as a literal
@@ -253,7 +254,7 @@ VARIABLE XT
 \ literal and address argument (ie: a variable)
     2 LOOKBACK "LI" =  #ARGS 0> AND
     CASE:
-        MSG" LIT and ARG found"
+        MSG" LIT and ARG folded"
         1 LOOKBACK ARG>   XT PERFORM
         4 REMOVE
         LIT,
@@ -281,7 +282,7 @@ VARIABLE XT
     DUP
     CASE
     \    ['] @ OF    OPT@,   ENDOF
-    \    ['] C@ OF  OPTC@,   ENDOF
+         ['] C@ OF  OPTC@,   ENDOF
 
     \    ['] ! OF    OPT!,   ENDOF
     \    ['] C! OF  OPTC!,   ENDOF
@@ -342,7 +343,7 @@ VARIABLE XT
 \ 3. ABORTS if you try to compile a Forth word
 \ 4. Compiles literal numbers with LI instruction
 
-VARIABLE JSTATE
+\ VARIABLE JSTATE
 
 : <JIT> ( -- )
     'SOURCE 2!  >IN OFF
@@ -351,13 +352,13 @@ VARIABLE JSTATE
     WHILE
         FIND ?DUP
         IF ( it's a word)
-            1+ JSTATE @ 0= OR
+            1+ STATE @ 0= OR
             IF   EXECUTE      \ IF BEGIN etc. are all immediate
             ELSE JITCOMPILE,
             THEN
         ELSE
             COUNT NUMBER? ?ERR
-            JSTATE @ IF LIT, THEN  \ special number compiler
+            STATE @ IF LIT, THEN  \ special number compiler
         THEN
         DEPTH 0< ABORT" JIT: Underflow"
     REPEAT
@@ -369,7 +370,7 @@ VARIABLE JSTATE
 : JIT: ( -- JIT-xt)
     ALSO JITS         \ put JITS VOCABULARY first in search order
     CODE
-    JSTATE ON
+    ]
     /ARGS              \ clear the literal stack
     JIT-COMPILER
 ;
@@ -377,12 +378,12 @@ VARIABLE JSTATE
 : ;JIT ( JIT-XT -- )
     PREVIOUS          \ restore previous search order
     FORTH-COMPILER
-    JSTATE OFF
     NEXT,            \ compile NEXT at end of new code word
     #ARGS IF CR ." WARNING: LIT stack contains " CR ." >> ".ARGS THEN
     ?CS              \ check control flow stack
-   \ ENDCODE
+   ENDCODE
    CR .S
+   POSTPONE [
 ; IMMEDIATE
 
 HERE SWAP - SPACE DECIMAL CR . .( bytes)

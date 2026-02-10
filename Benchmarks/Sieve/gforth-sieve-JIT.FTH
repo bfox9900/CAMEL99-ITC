@@ -39,7 +39,7 @@ JIT: DO-PRIME  ( -- n )
            THEN
            SWAP 1+ SWAP
         THEN
-        CELL
+        CELL+
     LOOP
     DROP
 ;JIT

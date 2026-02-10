@@ -254,15 +254,15 @@ OPTIMIZER: OPT+, ( xt -- ) \ constant folding :-)
 : OPT-CODE,
     DUP
     CASE
-        ['] @ OF    OPT@,  MSG" Opt @"  ENDOF
-        ['] C@ OF  OPTC@,  MSG" Opt C@"  ENDOF
+    \    ['] @ OF    OPT@,  MSG" Opt @"  ENDOF
+    \    ['] C@ OF  OPTC@,  MSG" Opt C@"  ENDOF
 
-        ['] ! OF    OPT!,  MSG" Opt !" ENDOF
-        ['] C! OF  OPTC!,  MSG" Opt C!" ENDOF
+    \    ['] ! OF    OPT!,  MSG" Opt !" ENDOF
+    \    ['] C! OF  OPTC!,  MSG" Opt C!" ENDOF
 
-        ['] +  OF  OPT+,   MSG" Opt +"  ENDOF
+    \    ['] +  OF  OPT+,   MSG" Opt +"  ENDOF
 
-        ['] DUP OF ?DUP,   ENDOF
+    \    ['] DUP OF ?DUP,   ENDOF
 
                     CODE,  \ default, compile kernel code
     ENDCASE
@@ -283,7 +283,7 @@ OPTIMIZER: OPT+, ( xt -- ) \ constant folding :-)
 : JITCOMPILE,  ( xt -- )
     DUP CODE?
     IF
-       OPT-CODE,    \ compile kernel code inline
+       CODE,    \ compile kernel code inline
     ELSE
        OPT-DATA,   \ handle everything else
     THEN
@@ -304,7 +304,7 @@ VARIABLE JSTATE
     WHILE
         FIND ?DUP
         IF ( it's a word)
-            1+ JSTATE @ 0= OR
+            1+ STATE @ 0= OR
             IF   EXECUTE      \ IF BEGIN etc. are all immediate
             ELSE JITCOMPILE,
             THEN
@@ -322,9 +322,8 @@ VARIABLE JSTATE
 : JIT: ( -- JIT-xt)
     ALSO JITS         \ put JITS VOCABULARY first in search order
     CODE
-    JSTATE ON
     /ARGS              \ clear the literal stack
-    JIT-COMPILER
+    JIT-COMPILER ]
 ;
 
 : ;JIT ( JIT-XT -- )
@@ -332,11 +331,13 @@ VARIABLE JSTATE
     FORTH-COMPILER
     JSTATE OFF
     NEXT,            \ compile NEXT at end of new code word
+    POSTPONE [
+ \   ENDCODE
     ARG? IF CR ." WARNING: LIT stack contains " CR ." >> ".ARGS THEN
     ?CS              \ check control flow stack
     CR .S
- \   ENDCODE
 ; IMMEDIATE
+
 
 HERE SWAP - SPACE DECIMAL
 CR . .( bytes)

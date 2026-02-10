@@ -8,6 +8,22 @@ VARIABLE Z
 DECIMAL
 CREATE Q 100 CELLS  ALLOT
 
+JIT: FOLDTEST
+    2 2 +
+    3 +
+    4 +
+    5 +
+    6 +
+    7 +
+    8 +
+;JIT
+\ Code output
+\   DCCE  0646  dect R6                     (14)
+\   DCD0  C584  mov  R4,*R6                 (30)
+\   DCD2  0204  li   R4,>0025               (20)
+\   DCD6  045A  b    *R10                   (16)
+
+
 JIT: ADDTEST
     2 2 +   \ two lits
 ;JIT
@@ -25,9 +41,7 @@ JIT: MULADDTEST
 ;JIT
 
 
-
-
-JIT: C@TEST \ pass
+JIT: C@TEST \ FAIL
     X C@
 ;JIT
 
@@ -57,18 +71,3 @@ JIT: Q8+
 
 
 \ =====================================
-
-JIT: FOLDTEST
-    2 2 +
-    3 +
-    4 +
-    5 +
-    6 +
-    7 +
-    8 +
-;JIT
-\ Code output
-\   DCCE  0646  dect R6                     (14)
-\   DCD0  C584  mov  R4,*R6                 (30)
-\   DCD2  0204  li   R4,>0025               (20)
-\   DCD6  045A  b    *R10                   (16)
