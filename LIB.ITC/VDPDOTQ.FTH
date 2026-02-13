@@ -13,7 +13,7 @@ INCLUDE DSK1.VDPMEM
 \ : VCOUNT  ( vdp$adr -- vdpadr len ) DUP 1+ SWAP VC@ ;
 
 \ Print a VDP stack string
-: VDPTYPE   ( vdp_addr len -- ) BOUNDS ?DO   I VC@ (EMIT)  LOOP ;
+: VDPTYPE   ( vdp_addr len -- ) BOUNDS ?DO  I VC@ (EMIT)  LOOP ;
 
 \ Compile a VDP string, that types itself. Overrides regular ." word
 : ."   ( <tex> )
