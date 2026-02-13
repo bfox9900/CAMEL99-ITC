@@ -6,7 +6,7 @@ NEEDS MALLOC FROM DSK1.MALLOC
 NEEDS RND    FROM DSK1.RANDOM
 NEEDS QUIT-ON FROM DSK1.QUITKEY
 NEEDS COLOR  FROM DSK1.GRAFIX
-NEEDS SPRITE FROM DSK1.AUTOMOTION
+\ NEEDS SPRITE FROM DSK1.AUTOMOTION
 NEEDS FORK   FROM DSK1.MTASK99
 
 : HEX#, ( addr len  --) \ can be used for longstrings (128 bytes)
@@ -83,29 +83,30 @@ CREATE Japanese
 ;
 
  DECIMAL
-: RNDLEN   21 RND 4 + ; ( max will be 20+4=24 )
+: RNDLEN   19 RND 4 + ; ( max will be 20+4=24 )
 
 : VROW++  ( -- ) VROW DUP @ 1+ 23 MIN SWAP ! ;
 
 : FALLING ( length col row  -- )
-          AT-XY
-          ( len ) 0
-          ?DO
-             PAUSE
-             RNDCHAR VPUT
-             VROW++
-             RNDCHAR >WHITE  VPUT
-             10 RND 4 + TICKS
-          LOOP
+    AT-XY
+    ( len ) 0
+    ?DO
+        RNDCHAR VPUT
+        VROW++
+        RNDCHAR >WHITE  VPUT
+        70 RND 2+ MS
+    LOOP
 ;
 
 \ \\\\\\\\\\\\\\\\\\\\\ BACKGROUND TASKS ///////////////////
 : FALLER
+\ initial fallers are in random columns
     32 0
-    DO  \ initial fallers are in random columns
+    DO
       RNDLEN  32 RND 0 FALLING
     LOOP
-    BEGIN \ these ones find and empty column or use random
+\ these ones find an empty column or use random
+    BEGIN
       RNDLEN  EMPTY-COL 0 FALLING
     AGAIN ;
 
@@ -132,15 +133,14 @@ CREATE GREENS2  30 C,  C0 C,  20 C, 30 C, C0 C,
 CREATE GREENS3  20 C,  30 C,  C0 C, 20 C, 30 C,
 
 DECIMAL
-: SHIMMER  \ switches charsets to random greens, random times
+: SHIMMER  \ cycles charsets thru 3 green colors
     BEGIN
-      PAUSE
-      GREENS  [ 16 ]CTAB ] LITERAL  5 VWRITE
-      50 MS
-      GREENS2 [ 16 ]CTAB ] LITERAL  5 VWRITE
-      50 MS
-      GREENS3 [ 16 ]CTAB ] LITERAL  5 VWRITE
-      50 MS
+        PAUSE
+        GREENS  [ 16 ]CTAB ] LITERAL  5 VWRITE
+        PAUSE
+        GREENS2 [ 16 ]CTAB ] LITERAL  5 VWRITE
+        PAUSE
+        GREENS3 [ 16 ]CTAB ] LITERAL  5 VWRITE
     AGAIN
 ;
 
@@ -159,21 +159,21 @@ DECIMAL
     AGAIN
 ;
 
-: SPRITE-FALL
-    8000 MS     \ wait until the screen gets full
-    12 MOVING   \ set number of sprites that auto move
-    BEGIN
-        6 RND 6 +  0
-        DO
-            PAUSE
-           \ char   colr   x           y   spr#
-            RNDCHAR  16  210 RND 18 +  0    I SPRITE
-            PAUSE
-            0  2 RND 5 +  I MOTION
-            300 RND 700 + MS
-        LOOP
-    AGAIN
-;
+\ : SPRITE-FALL
+\    8000 MS     \ wait until the screen gets full
+\    12 MOVING   \ set number of sprites that auto move
+\    BEGIN
+\        6 RND 6 +  0
+\        DO
+\            PAUSE
+\           \ char   colr   x           y   spr#
+\            RNDCHAR  16  210 RND 18 +  0    I SPRITE
+\            PAUSE
+\            0  2 RND 5 +  I MOTION
+\            300 RND 700 + MS
+\        LOOP
+\    AGAIN
+\ ;
 
 \ : TEST   BEGIN   22 16 DO  I ]GREEN @ . LOOP  ?TERMINAL UNTIL ;
 
@@ -187,9 +187,20 @@ DECIMAL
   ['] FALLER SPAWN
   ['] FALLER SPAWN
   ['] FALLER SPAWN
+  ['] FALLER SPAWN
+  ['] FALLER SPAWN
+  ['] FALLER SPAWN
+  ['] FALLER SPAWN
+  ['] FALLER SPAWN
+  ['] FALLER SPAWN
+
   ['] ERASER SPAWN
   ['] ERASER SPAWN
   ['] ERASER SPAWN
+  ['] ERASER SPAWN
+  ['] ERASER SPAWN
+  ['] ERASER SPAWN
+
   ['] SHIMMER SPAWN
   ['] TWINKLER SPAWN
 ;
@@ -207,7 +218,7 @@ DECIMAL
     GRAPHICS
     \ source   dest.    Quantity
     \ ------   ----    ----------
-    Japanese  128 ]PDT  31 PATTERNS VWRITE \ GREEN charset
+    Japanese  128 ]PDT  31 PATTERNS VWRITE  \ GREEN charset
     Japanese  176 ]PDT  31 PATTERNS VWRITE  \ WHITE charset
 
     128 SET# 168 SET#  4 1 COLORS   ( green)
@@ -219,8 +230,7 @@ DECIMAL
     1 SCREEN
     MULTI
     ALWAYS ON  \ prevent screen timeout
-    AUTOMOTION
-    SPRITE-FALL  \ Console runs the sprite-fall task forever
+    FALLER     \ run on more faller loop
 ;
 
 
