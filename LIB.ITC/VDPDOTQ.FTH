@@ -1,4 +1,5 @@
-\ VDP do     quote OVERRIDES ."
+CR .( VDP  doT-quote overrides ."    FEB 2026) 
+
 \ Replaces ." so that it compiles literal strings in VDP RAM.
 \ Also adds PRINT." which is like BASIC print with leading CR
 
