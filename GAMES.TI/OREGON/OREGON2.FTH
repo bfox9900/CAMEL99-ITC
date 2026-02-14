@@ -7,27 +7,8 @@
 \ Also adds PRINT." which is like BASIC print with leading CR
 
 NEEDS VCOUNT FROM DSK1.VDPMEM
+NEEDS PRINT."  FROM DSK1.VDPDOTQ
 
-\ ====================================================
-\ VDP string support
-\ compile stack string into VDP memory
-: VS,     ( $adr len-- )  VHERE OVER CHAR+  VALLOT VPLACE ;
-: VSLITERAL  VS, POSTPONE LITERAL ;
-
-\ Print a VDP stack string
-: VTYPE   ( vdp_addr len -- ) BOUNDS ?DO   I VC@ EMIT   LOOP ;
-
-: V.$   ( V$ -- ) VCOUNT VTYPE ;
-
-\ Compile a VDP string, that types itself
-: ."  ( -- )
-    ?COMP
-    VHERE
-    [CHAR] " PARSE  VSLITERAL
-    POSTPONE V.$
-; IMMEDIATE
-
-: PRINT."   POSTPONE CR  POSTPONE ." ; IMMEDIATE
 
 \ Print a stack string centered on the screen
 : CENTERTYPE  ( addr len -- ) DUP C/L@ SWAP - 2/ 1- SPACES TYPE ;
