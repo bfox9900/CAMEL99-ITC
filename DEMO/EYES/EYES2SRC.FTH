@@ -19,6 +19,7 @@ DECIMAL
 \ ****************************************
 HEX
 CREATE EYELIDS
+RAM
   DATA 030C,1020,4040,8080    \ 0 Wide open
   DATA 8080,4040,2010,0C03
   DATA C030,0804,0202,0101
@@ -173,7 +174,6 @@ C/SCR @ 1-  CONSTANT N  \ chars per screen - 1
 
 : THING
      BEGIN
-        CLOSE2
         PAGE
         10 10 OPEN2 .EYES
         N 2/  0
@@ -182,11 +182,14 @@ C/SCR @ 1-  CONSTANT N  \ chars per screen - 1
            '*'  N  I - VC!
            40 MS
         LOOP
+        CLOSE2
      AGAIN
 ;
 
 : UP/DOWN
      BEGIN
+
+
         3000 RND CALM @ + MS
         PIX.COL  9 RND 4 - +  VERT
         ?TERMINAL
@@ -202,12 +205,15 @@ DECIMAL
       WARM GRAPHICS
       NO-TIMEOUT ON
       1 SCREEN
+      DEF.CHARS
       INIT-MULTI
+      MULTI
+      ['] THING SPAWN
+      2000 MS
+      CLOSE2
       ['] BLINKING  SPAWN
       ['] LEFT/RIGHT SPAWN
-      ['] THING SPAWN
-      DEF.CHARS
-      MULTI
+      10 10 OPEN2 .EYES
       UP/DOWN   \ console task
       BYE
 ;
