@@ -158,6 +158,7 @@ CHAR ! CONSTANT '!'
 \ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 \ TASKS
 : BLINKING ( -- )
+
          BEGIN
            3000 RND FATIGUE @ + MS
            BLINK2
@@ -174,26 +175,25 @@ C/SCR @ 1-  CONSTANT N  \ chars per screen - 1
 
 : THING
      BEGIN
+        CLOSE2
         PAGE
-        10 10 OPEN2 .EYES
+         10 10 .EYES
         N 2/  0
         DO
-           '!'     I   VC!
-           '*'  N  I - VC!
+           '!'    I    VC!
+           '*'  N I -  VC!
            40 MS
         LOOP
-        CLOSE2
      AGAIN
 ;
 
 : UP/DOWN
      BEGIN
-
-
         3000 RND CALM @ + MS
         PIX.COL  9 RND 4 - +  VERT
         ?TERMINAL
      UNTIL ;
+
 \ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 \ combine multi-tasking primitives to dynamically create a task
 : SPAWN  ( xt -- )  USIZE MALLOC DUP FORK DUP WAKE  ASSIGN ;
@@ -208,12 +208,9 @@ DECIMAL
       DEF.CHARS
       INIT-MULTI
       MULTI
-      ['] THING SPAWN
-      2000 MS
-      CLOSE2
       ['] BLINKING  SPAWN
       ['] LEFT/RIGHT SPAWN
-      10 10 OPEN2 .EYES
+      ['] THING SPAWN
       UP/DOWN   \ console task
       BYE
 ;
