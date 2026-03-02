@@ -1,7 +1,9 @@
 # POCO Resident editor for Camel99 Forth
 
-This folder contains source code for poco editor in TI-99 file format.
-It can make a version for normal expansion RAM or
+The POCO/bin folder contains source code for poco editor
+in TI-99 DV80 file format.
+
+These files can make a version for normal expansion RAM or
 a version that works with the Editor/Assembler Supercart
 with 8K of RAM in the cartridge.
 
