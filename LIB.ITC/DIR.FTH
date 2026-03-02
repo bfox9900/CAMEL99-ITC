@@ -21,17 +21,14 @@ DECIMAL
           LINES OFF
           BEGIN
              PAD DUP 80 R@ READ-LINE ?FILERR 2DROP
-           ( PAD) C@
+            C@   \ CR .S   KEY DROP  QUIT ( pad len ? )
           WHILE \ do while length > 0
              PAD COUNT 12 TYPE.L ?CR
-             ?TERMINAL
-             IF
-                R> CLOSE-FILE
-                2DROP
-                CR CR ." *BREAK*" ABORT
-             THEN
+             ?TERMINAL 0=
+          WHILE
              1 LINES +!
           REPEAT
+          THEN
           R> CLOSE-FILE ?FILERR
           DECIMAL
           CR LINES @ . ." files" CR
