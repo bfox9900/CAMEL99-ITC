@@ -19,7 +19,8 @@ with 8K of RAM in the cartridge.
 
 ### SuperCart POCO Build
 
-Use the same staps as above but at the Forth console type:
+Use the same staps as above but you must run the CAML99SC kernel.
+Then at the Forth console type:
 '
 INCLUDE DSK2.POCOSC,MAK
 '
