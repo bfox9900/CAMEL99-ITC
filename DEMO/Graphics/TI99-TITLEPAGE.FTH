@@ -1,9 +1,11 @@
 \ BIG chars from GROM with no Assembler
 \ this program reads the LARGE FONT from Graphics ROM (GROM)
+\ and the character patterns for the TI-LOGO
 \ that are used in the TI-99 title screen.
 
 INCLUDE DSK1.GRAFIX
-INCLUDE DSK1.CHARSET    \ sets BIG caps or standard charset
+INCLUDE DSK1.CHARSET    \ to get us BIG caps and TI-LOGO
+INCLUDE DSK1.VTYPE      \ fast printing to screen
 
 HERE
 \ named colors for Graphics programs
@@ -31,71 +33,76 @@ DECIMAL
     DROP
 ;
 
-: FG-COLOR  1 COLOR ;
-: NEXTSET ( n -- n') 8 + DUP SET# ;
+: FG-COLOR ( C -- ) 1 COLOR ;
+: NEXTSET#  ( n -- n') 8 + DUP SET# ;
 
 : SET-COLORS
-  128 DUP SET# DKRED FG-COLOR
-  NEXTSET LTGRN FG-COLOR
-  NEXTSET BLACK FG-COLOR
-  NEXTSET LTYEL FG-COLOR
-  NEXTSET DKGRN FG-COLOR
-  NEXTSET MAGENTA FG-COLOR
-  NEXTSET WHITE FG-COLOR
-  NEXTSET DKBLU FG-COLOR
-  NEXTSET MEDGRN FG-COLOR
-  NEXTSET MAGENTA FG-COLOR
-  NEXTSET MEDRED FG-COLOR
-  NEXTSET GRAY  FG-COLOR
-  NEXTSET LTBLU FG-COLOR
-  NEXTSET LTRED FG-COLOR
-  NEXTSET DKYEL FG-COLOR
-  NEXTSET DKRED FG-COLOR
+  128 DUP
+  SET#     DKRED FG-COLOR
+  NEXTSET# LTGRN FG-COLOR
+  NEXTSET# BLACK FG-COLOR
+  NEXTSET# LTYEL FG-COLOR
+  NEXTSET# DKGRN FG-COLOR
+  NEXTSET# MAGENTA FG-COLOR
+  NEXTSET# WHITE FG-COLOR
+  NEXTSET# DKBLU FG-COLOR
+  NEXTSET# MEDGRN FG-COLOR
+  NEXTSET# MAGENTA FG-COLOR
+  NEXTSET# MEDRED FG-COLOR
+  NEXTSET# GRAY  FG-COLOR
+  NEXTSET# LTBLU FG-COLOR
+  NEXTSET# LTRED FG-COLOR
+  NEXTSET# DKYEL FG-COLOR
+  NEXTSET# DKRED FG-COLOR
   DROP
 ;
 
 HEX
 \ Load TI title page font from GROM to VDP
-: BIGCAPS  ( -- ) 4B4 900 200 GVMOVE ;
+: BIGCAPS  ( -- ) 4B4  BL ]PDT  200 GVMOVE ;
 
 DECIMAL
 : (c)   10 EMIT ;
 
-\ LOGO chars as short strings
-CREATE LOGO 1 C, 2 C, 3 C,
-            4 C, 5 C, 6 C,
-            7 C, 8 C, 9 C,
+\ TI LOGO chars as 3 byte strings
+CREATE LOGO
+    1 C, 2 C, 3 C,
+    4 C, 5 C, 6 C,
+    7 C, 8 C, 9 C,
 
 : TI.LOGO ( -- )
   [ HEX ]
-( Load LOGO from GROM to VDP )
+( Load LOGO from GROM to VDP pattern table at character #1)
 \    GROM     VDP     9 patterns
 \   ------  -------   ----------
      950     1 ]PDT   9 8*  GVMOVE   \ GROM->VDP move
   [ DECIMAL ]
-    14 5 AT-XY   LOGO 3 TYPE
-    14 6 AT-XY [ LOGO 3 + ] LITERAL 3 TYPE
-    14 7 AT-XY [ LOGO 6 + ] LITERAL 3 TYPE
+    14 5 AT-XY   LOGO      3 VTYPE
+    14 6 AT-XY   LOGO 3 +  3 VTYPE
+    14 7 AT-XY   LOGO 6 +  3 VTYPE
 ;
 
 : .TITLE
-     8  9 AT-XY     ." TEXAS INSTRUMENTS"
-    10 11 AT-XY       ." HOME COMPUTER"
-    10 13 AT-XY       ." CAMEL99 FORTH"
-     2 15 AT-XY ." READY-PRESS ANY KEY TO BEGIN"
+     8  9 AT" TEXAS INSTRUMENTS"
+    10 11 AT" HOME COMPUTER"
+    10 13 AT" CAMEL99 FORTH"
+     2 15 AT" READY-PRESS ANY KEY TO BEGIN"
 ;
 
-: .BAR
-  128 DUP 15 8* + SWAP
-  DO
-    I DUP (EMIT) (EMIT)
-  8 +LOOP
-  248 DUP (EMIT) VPUT \ last char does not inc VCOL
-;
+\ take byte. make into 2 bytes, compile 2 bytes and add 8
+: 2bytes, ( c -- c' )  DUP  DUP FUSE ,  8 + ;
 
-: .BANNER  .BAR CR .BAR CR .BAR ;
+\ create a string of chars for 1 line of the color bar
+CREATE BAR$
+  128   ( 1st character)
+  2bytes, 2bytes, 2bytes, 2bytes, 2bytes, 2bytes, 2bytes, 2bytes,
+  2bytes, 2bytes, 2bytes, 2bytes, 2bytes, 2bytes, 2bytes, 2bytes,
+  DROP
 
-: VC+!  ( n Vaddr) S" DUP>R VC@ +  R> VC!" EVALUATE ; IMMEDIATE
+: .BAR    ( -- )  BAR$ 32 VTYPE ; \ draw single line of colored blocks
+: .BANNER ( -- ) .BAR CR .BAR CR .BAR ; \ draw 3 lines
+
+: VC+!  ( n Vaddr) DUP>R VC@ +   R> VC! ;
 
 HEX
 : KALEIDOSCOPE
@@ -103,7 +110,7 @@ HEX
    BOUNDS
    DO
       10 I VC+!
-      35 TICKS
+      65 TICKS
    LOOP
 ;
 
@@ -111,13 +118,13 @@ DECIMAL
 : TITLEPAGE
     GRAPHICS
     CYAN SCREEN
-    BIGCAPS DEF-BLOCKS SET-COLORS
+    BIGCAPS  DEF-BLOCKS SET-COLORS
     PAGE
     .BANNER
     TI.LOGO
     .TITLE
     CR CR  .BANNER
-    7 22 AT-XY (c) ."  2025" 2 SPACES ." BRIAN FOX"
+    7 22 AT-XY (c) S"  2026 BRIAN FOX" VTYPE
     2000 MS
     BEGIN KALEIDOSCOPE KEY? UNTIL
     TEXT CHARSET
