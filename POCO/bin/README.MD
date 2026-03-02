@@ -21,7 +21,7 @@ with 8K of RAM in the cartridge.
 
 Use the same staps as above but at the file name prompt type:
 `
-DSK1.CAML99SC kernel.
+DSK1.CAML99SC
 `
 
 Then at the Forth console type:
