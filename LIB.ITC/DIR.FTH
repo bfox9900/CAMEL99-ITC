@@ -1,16 +1,21 @@
 \ read a TI disk directory
 HEX
+
 NEEDS OPEN-FILE FROM DSK1.ANSFILES
 
 DECIMAL
-: ?CR     ( n -- ) LINES @ 3 MOD 0= IF CR THEN ;   \ CR if near end of screen
+: ?CR     ( n -- ) VCOL @ C/L@ 15 - > IF CR THEN ;
 
-HEX
+: TYPE.L  ( addr len n -- ) \ type left justified
+           OVER - >R  TYPE   R> SPACES ;
+
+DECIMAL
 : DIR  ( <DSK?.> )   \  needs the '.' ONLY shows file name
-          PARSE-NAME ?FILE
-          RELATIVE 100 FIXED R/O BIN OPEN-FILE ?FILERR
+          BL PARSE-WORD ?FILE
+
+          RELATIVE 256 FIXED R/O BIN OPEN-FILE ?FILERR
           >R  \ push handle onto Return stack
-          PAD 50 R@ READ-LINE ?FILERR 2DROP
+          PAD 80 R@ READ-LINE ?FILERR 2DROP
           CR PAD COUNT TYPE
           CR
           LINES OFF
@@ -18,7 +23,7 @@ HEX
              PAD DUP 80 R@ READ-LINE ?FILERR 2DROP
            ( PAD) C@
           WHILE \ do while length > 0
-             PAD COUNT DUP >R  TYPE 0D R> - SPACES
+             PAD COUNT 12 TYPE.L ?CR
              ?TERMINAL
              IF
                 R> CLOSE-FILE
@@ -26,7 +31,6 @@ HEX
                 CR CR ." *BREAK*" ABORT
              THEN
              1 LINES +!
-             ?CR
           REPEAT
           R> CLOSE-FILE ?FILERR
           DECIMAL
