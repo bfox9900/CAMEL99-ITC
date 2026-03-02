@@ -1,9 +1,11 @@
+# POCO Resident editor for Camel99 Forth
+
 This folder contains source code for poco editor in TI-99 file format.
 It can make a version for normal expansion RAM or
 a version that works with the Editor/Assembler Supercart
 with 8K of RAM in the cartridge.
 
-How to build POCO for expansion RAM
+### How to build POCO for expansion RAM
 
 - You the need the Editor/Assembler (E/A) cartrige plugged into TI-99
 - You need the CAMEL99 disk in DSK1.
@@ -15,7 +17,7 @@ How to build POCO for expansion RAM
 - After about 2 minutes the finished program will be saved onto DSK2.
 
 
-#### SuperCart POCO Build
+### SuperCart POCO Build
 
 Use the same staps as above but at the Forth console type:
 '
