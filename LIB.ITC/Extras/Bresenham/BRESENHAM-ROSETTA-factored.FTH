@@ -1,4 +1,4 @@
-\ bresenham from rosettacode.com
+\ bresenham from rosettacode.com re-factered 2025 Brian Fox
 
 \ libraries needed by Camel99 forth
 NEEDS .S     FROM DSK1.TOOLS
