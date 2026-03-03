@@ -16,9 +16,11 @@
 
 \ make a dictionary for a language ...
 DICTIONARY: KWlist
+\ use API
 : KEYWORD:  PARSE-NAME KWlist ADD$ ;
-: KWFIND    kwlist LOOKUP ;
-: KEYWORDS  KWlist VWORDS ;
+: KWFIND    KWlist LOOKUP ;
+: KEYWORDS  KWlist VWORDS ;  \ show the dictionary of keywords
+
 
   KEYWORD: IF      KEYWORD: ELSE      KEYWORD: ENDIF
   KEYWORD: WHILE   KEYWORD: ENDWHILE
@@ -32,8 +34,12 @@ DICTIONARY: KWlist
   KEYWORD: PROCEDURE
   KEYWORD: PROGRAM
 
+\ make a symbol table for this language with a data field
 DICTIONARY: Symboltab
 : SymbolFind   Symboltab LOOKUP ;
+: SYMBOLS  Symboltab VWORDS ;
+
+: NEWVAR   Symboltab ADD$  0 V, ;
 
 : INT: ( -- ) \ Example Integer definer
 ( *Not complete: needs data space allocation )

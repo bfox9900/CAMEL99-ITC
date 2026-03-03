@@ -62,11 +62,18 @@ DECIMAL
     2DROP
     R> ;
 
+VARIABLE UNIQUE  \ test for unique word ON/OFF
 VARIABLE FATAL   \ FATAL ON -or- FATAL OFF
 : ?FATAL    ( ? -- ) ABORT" Duplicate dictionary entry" ;
+
 : 3DUP      ( a b c -- a b c a b c ) >R 2DUP R@ -ROT R> ;
 : -UNIQUE?  ( addr len did -- ?)
-    3DUP LOOKUP  DUP FATAL @ AND ?FATAL  IF ." Not unique " THEN ;
+    UNIQUE @
+    IF
+        3DUP LOOKUP  DUP FATAL @ AND ?FATAL
+        IF ." Not unique " THEN
+    THEN
+;
 
 : ADD$ ( addr len did --) \ compile string into dictionary(did)
     -UNIQUE?
@@ -76,5 +83,5 @@ VARIABLE FATAL   \ FATAL ON -or- FATAL OFF
     0 VC,                 \ compile an empty byte (immediate flag, type info)
     VHERE >R              \ save HERE (ie: new NFA location)
     VS,                   \ compile (addr len) as counted string
-    R> SWAP !            \ VHERE is NFA of last word defined
+    R> SWAP !             \ VHERE is NFA of last word defined
 ;

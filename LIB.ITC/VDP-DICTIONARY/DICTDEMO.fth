@@ -1,4 +1,9 @@
-\ dictionary examples   2025 Brian Fox
+\ dictionary demo   2025 Brian Fox
+
+\ copy the entire forth wordlist into VDP as a dictionary.
+\ This takes some time because the VDP dictionary is searched
+\ for duplicates.
+\ Use VWORDS to see the VDP dictionary.
 
 ' ADD$  DROP  \ need to load DICTIONARY.FTH
 
