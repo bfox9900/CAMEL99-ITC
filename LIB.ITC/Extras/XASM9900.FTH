@@ -1,4 +1,8 @@
 CR .( CROSS ASSEMBLER for Camel99 Forth   Brian Fox 2021 )
+
+\ Code is cross-assembled into TI-99 low RAM segment.
+\ See MachForth project for a way to save as program.
+
 ( *NOTE:                                              )
 (        compare instruction has been changed to CMP, )
 (        to remove name conflict with C,              )
