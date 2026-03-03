@@ -4,7 +4,7 @@
 \ that are used in the TI-99 title screen.
 
 INCLUDE DSK1.GRAFIX
-INCLUDE DSK1.CHARSET    \ to get us BIG caps and TI-LOGO
+INCLUDE DSK1.CHARSET    \ lets us read GROM :-)
 INCLUDE DSK1.VTYPE      \ fast printing to screen
 
 HERE
@@ -18,9 +18,9 @@ HERE
 DROP
 
 HEX
-CREATE BLK  FFFF , FFFF , FFFF , FFFF ,
+CREATE SQUARE  FFFF , FFFF , FFFF , FFFF ,
 
-: DEF-BLOCK ( char -- char ) BLK OVER CHARDEF ;
+: DEF-BLOCK ( char -- char ) SQUARE OVER CHARDEF ;
 
 DECIMAL
 : DEF-BLOCKS
@@ -119,11 +119,15 @@ DECIMAL
     GRAPHICS
     CYAN SCREEN
     BIGCAPS  DEF-BLOCKS SET-COLORS
+
     PAGE
     .BANNER
     TI.LOGO
     .TITLE
-    CR CR  .BANNER
+    CR
+    CR
+    .BANNER
+
     7 22 AT-XY (c) S"  2026 BRIAN FOX" VTYPE
     2000 MS
     BEGIN KALEIDOSCOPE KEY? UNTIL
