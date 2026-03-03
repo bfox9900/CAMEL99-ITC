@@ -17,9 +17,9 @@ C007 , \  RP R0 MOV,  \ DUP return stack pointer in R0
 0A14 , \ TOS 1 SLA,  \ CELLS
 61C4 , \  TOS RP SUB, \ allocate n cells on Rstack
 
-C207 , \  RP  W  MOV, \ COPY the new Rstack pointer to W
+C207 , \  RP  W  MOV,    \ COPY the new Rstack pointer to W
 \  BEGIN,
-CE36 , \    *SP+  *W+ MOV,  \ copy data stack to stack frame
+CE36 , \    *SP+  *W+ MOV,  \ copy n data items to stack frame
 0644 , \     TOS DECT,
 16FD , \  EQ UNTIL,
 
