@@ -42,7 +42,7 @@ CREATE SQUARE  FFFF , FFFF , FFFF , FFFF ,
 
 DECIMAL
 : CHARACTERS ( pattern first last -- )
-        1+ SWAP ?DO    DUP I CHARDEF  8 +LOOP DROP ;
+   1+ SWAP ?DO    DUP I CHARDEF  8 +LOOP DROP ;
 
 : SET-COLORS ( -- )
     88 SET#  15 1 COLOR
@@ -56,7 +56,7 @@ DECIMAL
    152 SET#  16 1 COLOR
 ;
 
-: WAIT-BREAK  BEGIN ?TERMINAL UNTIL ;
+: WAIT-KEY  BEGIN KEY? UNTIL ;
 
 \ manually hit the sound chip with data
 HEX
@@ -72,7 +72,7 @@ DECIMAL
 
    COLOR-BARS  WHITE-BOX  SMPTE-BOXES
    400HZ
-   WAIT-BREAK
+   WAIT-KEY
    MUTE
    8 SCREEN
    4 19 2 1 COLORS
