@@ -4,7 +4,10 @@
 \ Rockwell R1200-14, 2Mhz 65F12	RSC-Forth	    Integer Calc	      0:31.0
 \ Amstrad 6128+ Z80A 4Mhz	Uniforth	          Integer Calc	      0:17.0
 \ TI99 Camel99 Forth (ITC)                    Integer Calc        0:14.76
-\  with inline optimizing                                         0:10.85 
+\  with inline optimizing                                         0:10.85
+\  replace /  with U/                                             0:10.31
+\  replace /  with U/ and JIT compile                             0:04.23
+
 
 \                    (DTC)                                        0:12.4
 \    (DTC)   with inline next                                     0:11.90
@@ -14,9 +17,9 @@
 
 INCLUDE DSK1.ELAPSE
 
-: BENCHME ( XT N -- ) 
-  DUP >R 
-  0 DO DUP EXECUTE LOOP 
+: BENCHME ( XT N -- )
+  DUP >R
+  0 DO DUP EXECUTE LOOP
   CR R> . ." ITERATIONS." CR \
 ;
 
@@ -40,9 +43,11 @@ VARIABLE INTRESULT
 
 \ ELAPSE DOINT
 
+MARKER /INLINED
+
 INCLUDE DSK1.INLINE
 
-: DOINT2 
+: DOINT2
   INLINE[ 1 DUP INTRESULT DUP >R ! ]
   BEGIN
     INLINE[ DUP INTMAX < ]
@@ -54,4 +59,42 @@ INCLUDE DSK1.INLINE
   R> DROP DROP
 ;
 
+\ unsigned divide. FASTER but be careful
+HEX
+CODE U/ ( n n -- n )
+    C004 , 04C4 , C176 , 3D00 ,
+\   TOS  R0 MOV,     \ divisor->R0                 14
+\       TOS CLR,
+\  *SP+  R5 MOV,     \ MOVE low word to r5         18
+\   R0  TOS DIV,     \ perform unsigned division  124
+    NEXT,
+ENDCODE
 
+
+: DOINT-2
+  1 DUP INTRESULT DUP >R !
+  BEGIN
+    DUP INTMAX <
+  WHILE
+    DUP NEGATE R@ +! 1+
+    DUP R@ +! 1+
+    R@ @ OVER * R@ ! 1+
+    R@ @ OVER U/ R@ ! 1+
+  REPEAT
+  R> DROP DROP
+;
+
+INCLUDE DSK1.JIT
+
+JIT: DOINT-JIT
+  1 DUP INTRESULT DUP >R !
+  BEGIN
+    DUP INTMAX <
+  WHILE
+    DUP NEGATE R@ +! 1+
+    DUP R@ +! 1+
+    R@ @ OVER * R@ ! 1+
+    R@ @ OVER U/ R@ ! 1+
+  REPEAT
+  R> DROP DROP
+;JIT
