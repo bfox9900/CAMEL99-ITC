@@ -22,7 +22,7 @@ VP @ 2000 0 VFILL
 HEX
 : VALIGN    VP @ 1+ FFFE AND  VP ! ;
 
-\ "place" string caddr/u in VDP memory as byte-counted string
+\ compile string caddr/u in VDP memory as byte-counted string
 : VS,  ( caddr u -- ) VHERE OVER 1+ VALLOT VPLACE VALIGN ;
 
 \ Neil Baud's COMPARE modified to compare RAM string to VDP string

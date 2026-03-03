@@ -1,22 +1,8 @@
-\ dictionary examples   2025 Brian Fox
+\ keywords example   2025 Brian Fox
 
-DICTIONARY: VFORTH  \ Init a new dictionary in VDP RAM
-
-HEX
-\ copy Forth dictionary into VDP RAM dictionary
-: COPY-DICTIONARY
-    CR
-    LATEST @
-    BEGIN
-        DUP COUNT VFORTH ADD$
-        NFA>LFA @ DUP  \ follow link in Forth dictionary to next word
-    0= UNTIL
-    DROP
-;
-
-\ lets you see the contents of a dictionary
 : VDP.TYPE  ( Vaddr len --) BOUNDS ?DO I VC@ EMIT LOOP ;
 
+\ lets you see the contents of a dictionary
 : VWORDS  ( did -- ) \ dictionary ID argument required
     CR
     @
@@ -28,10 +14,11 @@ HEX
     DROP
 ;
 
-\ make some dictionaries for a language ...
+\ make a dictionary for a language ...
 DICTIONARY: KWlist
 : KEYWORD:  PARSE-NAME KWlist ADD$ ;
 : KWFIND    kwlist LOOKUP ;
+: KEYWORDS  KWlist VWORDS ;
 
   KEYWORD: IF      KEYWORD: ELSE      KEYWORD: ENDIF
   KEYWORD: WHILE   KEYWORD: ENDWHILE
