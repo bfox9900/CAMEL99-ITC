@@ -1,4 +1,4 @@
-\  SMPTE Style Color Bars TI-99 CAMEL Forth Brian Fox 
+\  SMPTE Style Color Bars TI-99 CAMEL Forth Brian Fox
 
 \ INCLUDE DSK1.TOOLS   ( for debugging only)
 NEEDS HCHAR   FROM DSK1.GRAFIX
@@ -21,18 +21,18 @@ DECIMAL
 : WHITE-BOX ( -- )
    7 18 152 6 HCHAR
    7 19 152 6 HCHAR
-   7 20 152 6 HCHAR   
+   7 20 152 6 HCHAR
    7 21 152 6 HCHAR
-   7 22 152 6 HCHAR   
+   7 22 152 6 HCHAR
    7 23 152 6 HCHAR
 ;
 
 : SMPTE-BOXES
     2 17 136 4 HCHAR
     6 17 144 4 HCHAR
-   10 17 120 4 HCHAR  
+   10 17 120 4 HCHAR
    14 17 144 4 HCHAR
-   18 17 104 4 HCHAR  
+   18 17 104 4 HCHAR
    22 17 144 4 HCHAR
    26 17  88 4 HCHAR
 ;
@@ -49,7 +49,7 @@ DECIMAL
     96 SET#  11 1 COLOR
    104 SET#   8 1 COLOR
    112 SET#  13 1 COLOR
-   120 SET#  14 1 COLOR   
+   120 SET#  14 1 COLOR
    128 SET#  10 1 COLOR
    136 SET#   5 1 COLOR
    144 SET#   2 1 COLOR
@@ -58,15 +58,22 @@ DECIMAL
 
 : WAIT-BREAK  BEGIN ?TERMINAL UNTIL ;
 
-: BARS  
+\ manually hit the sound chip with data
+HEX
+: 400HZ   8D SND! 06 SND!   96 SND! ;
+: MUTE    9F SND! ;
+
+DECIMAL
+: BARS
    CLEAR  2 SCREEN
 
    SET-COLORS
    SQUARE 88 152 CHARACTERS
 
    COLOR-BARS  WHITE-BOX  SMPTE-BOXES
-   
+   400HZ
    WAIT-BREAK
+   MUTE
    8 SCREEN
    4 19 2 1 COLORS
    CLEAR
@@ -74,5 +81,3 @@ DECIMAL
 ;
 
 CR .( Done. Type BARS to run)
-
-
