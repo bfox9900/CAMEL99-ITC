@@ -15,3 +15,16 @@ HEX
    NEXT,                    \ NEXT, in ASSEMBLER vocabulary in kernel
    ]                        \ switch ON compiler
 ; IMMEDIATE
+
+\ TEST
+HEX
+\ machine Forth compilers
+: DROP,   C136 ,  ;
+: DUP,    0646 , C584 , ; ( TOS PUSH, )
+
+: ASMTEST ( -- 1 2 ) 1 2 3  ASM[  DROP, ]ASM  ;
+
+: @,  ( addr -- n) DUP,  C120 ,  ,   ; \  addr @@ TOS MOV,
+
+VARIABLE X   99 X !
+: @TEST  ASM[  X @, ]ASM  ;
