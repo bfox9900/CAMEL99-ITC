@@ -19,6 +19,7 @@ VARIABLE maphndl
         R> DROP
 ;
 
+\ -------------------------------------------------
 \
 \ COUNT words in a file
 \
@@ -36,19 +37,18 @@ DECIMAL
     R>                    \ put counter on data stack
 ;
 
-\
-\ count words in a file
-\
 VARIABLE #WORDS
-: WORDS++    ( addr len -- )  WORDCOUNTER #WORDS +! ;
-: COUNTWORDS ( $addr len -- n ) #WORDS OFF   ['] WORDS++ MAPFILE  #WORDS @ ;
+: WORDS++    ( addr len --)  WORDCOUNTER #WORDS +! ;
+: COUNTWORDS ( $addr len -- n) #WORDS OFF  ['] WORDS++ MAPFILE  #WORDS @ ;
 
+\ -----------------------------------------------------
 \
 \ count lines in a file
 \
 : LINES++  ( addr len --)  2DROP LINES 1+! ;
 : COUNTLINES  LINES OFF  ['] LINES++ MAPFILE  LINES @ ;
 
+\ -----------------------------------------------------
 \
 \ view a file
 \
@@ -56,6 +56,7 @@ VARIABLE #WORDS
 : PRINTLN ( addr len -- )  CR ?KEYPRESS TYPE ;
 : VIEW    ( addr len --) ['] PRINTLN  MAPFILE ;
 
+\ ----------------------------------------------------
 \
 \ count non-white characters in a file
 \
