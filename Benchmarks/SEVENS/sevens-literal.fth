@@ -13,15 +13,15 @@
 \ TI BASIC                               27:20
 \ Compiled BASIC                          1:40
 
-INCLUDE DSK1.TOOLS
-INCLUDE DSK1.ELAPSE
-INCLUDE DSK1.ARRAYS
-INCLUDE DSK1.CONDCOMP   \ conditional compilation control
-\ Scroll ends up being the slowest part of the benchmark.
-\ Uncomment the screen I/O code below for a faster driver
-\ .......................................................
+\ INCLUDE DSK1.TOOLS
+NEEDS ELAPSE FROM DSK1.ELAPSE
+NEEDS ARRAY  FROM DSK1.ARRAYS
+NEEDS [IF]   FROM DSK1.CONDCOMP   \ conditional compilation control
 
-FALSE [IF]
+\ .......................................................
+\ Change FALSE to TRUE to compile with fast scroll
+TRUE [IF]
+\ Scroll ends up being the slowest part of the benchmark.
 \ SCROLL entire screen in one block with VMBR and VMBW
  : SCROLL ( -- )
   HERE 100 + DUP>R  VTOP @  ( --  buffer dst) ( r: BUFFER)
