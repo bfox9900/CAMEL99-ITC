@@ -8,7 +8,7 @@
 \ "alpha" intelligent "tanks". Only two are killers.
 \ The rest are just targets.
 
-\ NEEDS DUMP      FROM DSK1.TOOLS
+NEEDS DUMP      FROM DSK1.TOOLS
 NEEDS BYTE      FROM DSK1.DATABYTE
 NEEDS RND       FROM DSK1.RANDOM
 NEEDS COLOR     FROM DSK1.GRAFIX
@@ -19,6 +19,7 @@ NEEDS TASK:     FROM DSK1.MTASK99
 NEEDS MALLOC    FROM DSK1.MALLOC
 NEEDS MARKER    FROM DSK1.MARKER
 NEEDS VALUE     FROM DSK1.VALUES
+NEEDS QUIT-ON   FROM DSK1.QUITKEY
 
 MARKER /ALPHA
 
@@ -46,7 +47,7 @@ TANKCHAR: TANK3   TANKCHAR: TANK4     TANKCHAR: TANK5
 TANKCHAR: TANK6   TANKCHAR: TANK7     TANKCHAR: TANK8
 TANKCHAR: TANK9   TANKCHAR: TANK10    TANKCHAR: TANK11
 TANKCHAR: TANK12  TANKCHAR: TANK13    TANKCHAR: TANK14
-TANKCHAR: TANK15
+TANKCHAR: TANK15  TANKCHAR: TANK16
 DROP
 
 \ put all tank chars in a counted string for searching with SCAN
@@ -101,8 +102,8 @@ HEX
 52 USER SPEED
 54 USER MEMORY   \ pointer to circular buffer of headings for BETA chars
 56 USER MAILBOX  \ one mailbox per task
-58 USER BRAIN    \ contains program that controls tanks "thinking"
-60 USER SPRITE#  \ sprite # of the radar dot
+58 USER BRAIN    \ contains optional program that controls tanks "thinking"
+60 USER SPRITE#  \ sprite # of the for this task
 
 \ --------------------------------------
 \ words to access the tank data
@@ -216,6 +217,7 @@ CREATE TANKS ( -- addr)
 : ]TANK  ( heading -- Pattern-addr) CELLS TANKS + @  ;
 
 : TANK-SHAPE ( heading -- ) \ set pattern based on HEADING variable
+    PAUSE
   \ RAM address   VDP address   bytes
     ]TANK        PANZER @ ]PDT   8  VWRITE ;
 
@@ -277,7 +279,7 @@ DECIMAL
         I 4* DB
     LOOP
     DROP
-    GEN4 -26 DB 60 MS  MUTE
+    GEN4 -26 DB 60 MS MUTE
 ;
 
 \ add coordinates to a vector
@@ -298,6 +300,7 @@ DECIMAL
 : VDP>XY     ( Vaddr -- X Y) C/L@ /MOD  ;
 : NEXT-ADDR  ( Vaddr -- Vaddr') VDP>XY FWD >VPOS ;
 
+DECIMAL
 
 : ADVANCE    ( -- )
   ERASE-TANK
@@ -305,17 +308,16 @@ DECIMAL
   SPEED @ MS
 ;
 
-: MUTE-MYSELF  ATT @  0F +  ;
-
 : DECAY1 ( n -- )
     -10 DB DUP TICKS
     -18 DB DUP TICKS
     -22 DB DUP TICKS
     -26 DB     TICKS
+    MUTE
 ;
 
-: BOINK       900 HZ  500 DECAY1   ;
-: BONK        120 HZ  500 DECAY1   ;
+: BOINK   GEN1 900 HZ  500 DECAY1   ;
+: BONK    GEN2 120 HZ  500 DECAY1   ;
 
 \ SCAN is a fast word to find a character
 : SCANFOR ( Caddr -- n)  COUNT ROT SCAN NIP ;
@@ -330,7 +332,7 @@ DECIMAL
 
 : THINK   BRAIN PERFORM ;
 
-: CLEAR-AHEAD? ( -- ?)  XY@ NEXT-XY GCHAR BKG = ;
+: CLEAR-AHEAD? ( -- ?) PAUSE XY@ NEXT-XY GCHAR BKG = ;
 
 DECIMAL
 : ALPHA-MIND \ common logic for simple creatures
@@ -349,7 +351,7 @@ DECIMAL
 ;
 
 : ALPHA-TANK ( --)
-    100 SPEED !
+    100 RND 100 +  SPEED !
     GEN2 MUTE
     PANZER @ SET# GRAY RED COLOR
     ['] PAUSE BRAIN !  \ this makes BRAIN a NOOP
@@ -364,9 +366,9 @@ DECIMAL
     MUTE
     7  %CHANCE IF GO-LEFT            EXIT THEN
     7  %CHANCE IF GO-RIGHT           EXIT THEN
-    1  %CHANCE IF TURN-AROUND        EXIT THEN
-    2  %CHANCE IF FREEZE             EXIT THEN
-    5  %CHANCE IF 50 RND 5 + SPEED ! EXIT THEN
+    4  %CHANCE IF TURN-AROUND        EXIT THEN
+    1  %CHANCE IF FREEZE             EXIT THEN
+    6  %CHANCE IF 50 RND 5 + SPEED ! EXIT THEN
 ;
 : RABBIT-TANK ( --)
     100 SPEED !
@@ -387,28 +389,32 @@ DECIMAL
 : PIXELS ( x y -- px py) 8* SWAP 8* SWAP ;
 : POINTER   XY@ FWD PIXELS SPRITE# @ LOCATE ;
 
+: HUNT
+      XY@ NEXT-XY GCHAR
+      DUP ENEMY? IF DESTROY  KILLS 1+!  ELSE
+
+      DUP BKG =  IF DROP ADVANCE        ELSE
+                 \ default actions
+                  BOINK  GEN1 MUTE
+                  RND-HEADING
+                  DROP
+      THEN THEN
+      MUTE
+;
+
 : ALPHA-HUNTER ( --)
     95 SPEED !
     GEN1 MUTE ( set the sound generator for this task )
     15 12 XY!
     RND-HEADING
-    PANZER @ SET# BLACK 1 COLOR
+    PANZER @ SET# BLACK RED COLOR
     0 SPRITE# !
  ( char colr   x    y   sp# )
     1   LIME  255  255 SPRITE# @ SPRITE
     ['] POINTER BRAIN !
     BEGIN
       PAUSE
-      XY@ NEXT-XY GCHAR
-      DUP ENEMY? IF DESTROY  KILLS 1+!  ELSE
-
-      DUP BKG =  IF DROP ADVANCE        ELSE
-                 \ default actions
-                    BOINK  GEN1 MUTE
-                    RND-HEADING
-                    DROP
-      THEN THEN
-      MUTE
+      HUNT
     AGAIN
 ;
 
@@ -422,58 +428,24 @@ DECIMAL
 
 : GO-AND-HIDE ( -- ) RND-HEADING  FIND-A-WALL  TURN-AROUND ;
 
+DECIMAL
 : STALKER ( -- )
 \ finds a hiding place and shoots what comes past
     100 SPEED !
-    GEN2 MUTE
+    GEN3 MUTE
     PANZER @ SET#  GREEN RED COLOR
     15 12 XY.TANK
     GO-AND-HIDE
     BEGIN
-      PAUSE
       XY@ NEXT-XY GCHAR
       DUP ENEMY?
       IF  DESTROY  KILLS 1+!
       ELSE DROP
-      THEN GEN2 MUTE
-
+      THEN
       \ every so often move to a new location
       10000 RND 5 < IF GO-AND-HIDE THEN
 
-    AGAIN
-;
-
-\ SNIPER TANK CAN SHOOT FARTHER
-\ Sprite used to see the scanner operation
-DECIMAL
-  S" 0000001000000000" 1 CALLCHAR
-: >PIXXY  ( x y -- px py) 8* SWAP 8* SWAP ;
-: PLOT    ( x y -- ) PAUSE >PIXXY SPRITE# @ LOCATE ;
-: 1AHEAD ( x y -- char)  NEXT-XY 2DUP PLOT GCHAR ;
-: 2AHEAD ( x y -- char)  NEXT-XY NEXT-XY 2DUP PLOT GCHAR ;
-
-: SNIPER
-    120 SPEED !
-    GEN1 MUTE ( set the sound generator for this task )
-    15 12 XY!
-    RND-HEADING
-    PANZER @ SET# RUST 1 COLOR
-    9 SPRITE# !
- ( char colr   x    y   sp# )
-    1   WHITE 255  255 SPRITE# @ SPRITE
-    ['] PAUSE BRAIN !
-    BEGIN
       PAUSE
-      XY@ 1AHEAD DUP ENEMY? IF DESTROY  KILLS 1+!  ELSE
-      XY@ 2AHEAD DUP ENEMY? IF DESTROY  KILLS 1+!  ELSE
-
-      DUP BKG =  IF DROP ADVANCE                   ELSE
-                 \ default actions
-                    BOINK  GEN1 MUTE
-                    RND-HEADING
-                    DROP
-      THEN THEN THEN
-      MUTE
     AGAIN
 ;
 
@@ -498,7 +470,7 @@ DECIMAL
   ['] RABBIT-TANK TANK10 TANK-BUILDER
   ['] RABBIT-TANK TANK11 TANK-BUILDER
 
-  ['] SNIPER  TANK12  TANK-BUILDER
+  ['] ALPHA-TANK  TANK12  TANK-BUILDER
   ['] ALPHA-TANK  TANK13  TANK-BUILDER
   ['] ALPHA-TANK  TANK14  TANK-BUILDER
   ['] ALPHA-TANK  TANK15  TANK-BUILDER
@@ -572,10 +544,11 @@ DECIMAL
       ALWAYS ON
       .SCORE
       PAUSE
-      ?TERMINAL .#LIVE 1 = OR
+      ?TERMINAL IF  SINGLE  SILENT ABORT  THEN
+      .#LIVE 1 =
     UNTIL
     800 MS
-    BEEP CLRLN 0 23 AT-XY  ." Simulation completed"
+    BEEP CLRLN PROMPT  ." Simulation completed"
     2000 MS
 ;
 HEX
@@ -589,16 +562,15 @@ DECIMAL
     DRAW-SCREEN
     BUILD-TANKS
     MONITOR_ACTIVITY \ console task just watches things
-    SINGLE SILENT    \ turn multi-tasking, kill all sound
-    PROMPT ." Exit simulation?"
-    KEY UPCASE [CHAR]  Y =
-  UNTIL
-  BYE
+    SINGLE SILENT    \ turn off multi-tasking, kill all sound
+    PROMPT ." Restarting ..."
+    2000 MS
+  AGAIN
 ;
 
 \ this words starts the binary program
-: STARTER   WARM  GRAPHICS  RUN   ABORT ;
+: STARTER   WARM  GRAPHICS QUIT-ON  RUN   ABORT ;
 
   LOCK
   INCLUDE DSK1.SAVESYS
-' STARTER  SAVESYS DSK3.TANKS-5
+' STARTER  SAVESYS DSK3.TANKBATTLE
