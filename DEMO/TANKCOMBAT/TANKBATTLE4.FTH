@@ -101,8 +101,8 @@ HEX
 52 USER SPEED
 54 USER MEMORY   \ pointer to circular buffer of headings for BETA chars
 56 USER MAILBOX  \ one mailbox per task
-58 USER BRAIN    \ contains program that controls tanks "thinking"
-60 USER SPRITE#  \ sprite # of the radar dot
+58 USER BRAIN    \ contains optional program that controls tanks "thinking"
+60 USER SPRITE#  \ sprite # of the for this task
 
 \ --------------------------------------
 \ words to access the tank data
