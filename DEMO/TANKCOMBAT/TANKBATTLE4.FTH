@@ -278,7 +278,7 @@ DECIMAL
     LOOP
     DROP
     GEN4 -26 DB 60 MS
-    MUTE
+    SILENT
 ;
 
 \ add coordinates to a vector
