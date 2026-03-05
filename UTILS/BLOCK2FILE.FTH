@@ -27,6 +27,7 @@ VARIABLE #OUT
         DUP .
         DUP SCR !  S" \ SCR# " FTYPE  "###" FTYPE
         16 0 DO   CR I LINE$ FTYPE  LOOP
+        CR
 ;
 
 : .HEADER      CR  S" \ " FTYPE ACTIVE COUNT FTYPE ;
