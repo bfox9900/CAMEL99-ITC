@@ -5,24 +5,34 @@
 \  0 50  BLOCKS2FILE
 \  CLOSE-OUTPUT
 \  CLOSE-BLOCKS
-
-NEEDS MAKE-OUPUT  FROM DSK1.OUTFILE
+NEEDS DUMP        FROM DSK1.TOOLS
 NEEDS BLOCK       FROM DSK1.BLOCKS
 NEEDS .R          FROM DSK1.UDOTR
 NEEDS -TRAILING   FROM DSK1.TRAILING
+NEEDS MORE        FROM DSK1.MORE
 
 DECIMAL
+VARIABLE #OUT
+: OPEN-OUTPUT   DV80 W/O CREATE-FILE ?FILERR  #OUT ! ;
+: CLOSE-OUTPUT  #OUT @ CLOSE-FILE DROP ;
+
+: FTYPE  ( addr len -- ) #OUT @ WRITE-LINE ?FILERR ;
+
 : LINE   ( n -- addr n)  64 *  SCR @ BLOCK + 64   ;
-: .LINE  ( n -- ) LINE -TRAILING 0 MAX TYPE ;
-: '\'    92 EMIT BL EMIT ;
+: LINE$  ( n -- addr n) LINE -TRAILING 0 MAX ;
+
+: "###"  0 <#  # # #  #>  ;
 
 : WRITEBLK ( n - )
-        CR
-        DUP SCR !  '\'  S" SCR#" TYPE  4 .R
-        16 0 DO   I .LINE CR  LOOP
-        CR ;
+        DUP .
+        DUP SCR !  S" \ SCR# " FTYPE  "###" FTYPE
+        16 0 DO   CR I LINE$ FTYPE  LOOP
+;
 
-: .HEADER      CR  '\' ACTIVE COUNT TYPE ;
+: .HEADER      CR  S" \ " FTYPE ACTIVE COUNT FTYPE ;
 
-: BLOCKS2FILE  ( from to -- )
-  .HEADER   1+ SWAP ?DO  I WRITEBLK LOOP ;
+: TOFILE ( from to -- <PATH>)
+        PARSE-NAME OPEN-OUTPUT
+        .HEADER
+        1+ SWAP ?DO  I WRITEBLK LOOP
+        CLOSE-OUTPUT ;
