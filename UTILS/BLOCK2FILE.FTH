@@ -18,7 +18,7 @@ VARIABLE #OUT
 
 : FTYPE  ( addr len -- ) #OUT @ WRITE-LINE ?FILERR ;
 
-: LINE   ( n -- addr n)  64 *  SCR @ BLOCK + 64   ;
+: LINE   ( n -- addr n) 64 *  SCR @ BLOCK + 64 ;
 : LINE$  ( n -- addr n) LINE -TRAILING 0 MAX ;
 
 : "###"  0 <#  # # #  #>  ;
