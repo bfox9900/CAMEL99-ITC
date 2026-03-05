@@ -90,9 +90,9 @@ VARIABLE NDX   ( transfers loop index out of DO LOOP )
     CR                          \ replaces PRINT
     0 NUMLEN @                  \ 340 FOR I=NUMLEN TO 1
     DO
-      I ]A C@ 48 + EMIT     \ 350 PRINT CHR$(A(I)+48);
+      I ]A C@ 48 + (EMIT)       \ 350 PRINT CHR$(A(I)+48);
     -1 +LOOP                    \ 360 NEXT I ( STEP -1)
-    CR                          \ 370 PRINT
+    CR CR                       \ 370 PRINT
     WIN @                       \ 380 IF WIN<>1
   UNTIL                         \     THEN 160
   CR ." Winner is 7 ^" POWER @ . \ 390 PRINT "WINNER IS 7 ^";POWER
