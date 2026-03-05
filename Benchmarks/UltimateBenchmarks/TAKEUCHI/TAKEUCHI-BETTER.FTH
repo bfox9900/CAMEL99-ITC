@@ -34,7 +34,7 @@ DECIMAL
 : TAKZ   ROT 1- 0 2ROT ROT DROP ;
 
 \ BENCHMARK values:  DECIMAL 18 12 6 ELAPSE TAK
-: TAK  ( x y z -- result )  \ 67.21 seconds on TI-99
+: TAK  ( x y z -- result )  \ 57.8 seconds on TI-99
       NOT_Y<X?
       IF ONLY_Z
       ELSE TAKX RECURSE
@@ -45,9 +45,10 @@ DECIMAL
 
 \ ======================================================
 
-: ONLY_Z ( x y z -- z ) NIP NIP ;  \ using NIP instead
+\ using macro
+: ONLY_Z ( x y z -- z ) S" NIP NIP" EVALUATE ;  IMMEDIATE
 
-: TAK2  ( x y z -- result )  \ 61.93 seconds
+: TAK2  ( x y z -- result )  \ 54.15 seconds
       NOT_Y<X?
       IF ONLY_Z
       ELSE TAKX RECURSE
@@ -83,7 +84,7 @@ DECIMAL
            RECURSE
       THEN ;
 
-: TAK5  ( x y z -- result )  \ 45.5 seconds
+: TAK5  ( x y z -- result )  \ 45.48 seconds
       OVER 4TH >= IF NIP NIP EXIT THEN  \ FAST EXT
       TAKX RECURSE
       TAKY RECURSE
