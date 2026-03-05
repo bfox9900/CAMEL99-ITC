@@ -18,13 +18,15 @@ INCLUDE DSK1.TOOLS
 INCLUDE DSK1.ELAPSE
 INCLUDE DSK1.ARRAYS
 INCLUDE DSK1.VALUES
+INCLUDE DSK1.CONDCOMP
 
 DECIMAL
 : ?BREAK   ?TERMINAL ABORT" *BREAK*" ;
 
-\ Scroll ends up being the slowest part of the benchmark.
-\ Uncomment the screen I/O code below to a faster driver
 \ .......................................................
+\ Change FALSE to TRUE to compile with fast scroll
+FALSE [IF]
+\ Scroll ends up being the slowest part of the benchmark.
 \ SCROLL entire screen in one block with VMBR and VMBW
  : SCROLL ( -- )
   HERE 100 + DUP>R  VTOP @  ( --  buffer dst) ( r: BUFFER)
@@ -34,10 +36,10 @@ DECIMAL
   AT-XY ;                        \ set cursor
 
 \ this code is the same as the kernel, but with faster scroll
-: CR     (  -- ) VCOL OFF  VROW ++@  L/SCR = IF SCROLL THEN ;
-: EMIT   ( char -- ) VPOS VC!  VCOL ++@ C/L@ = IF CR THEN ;
-
+ : CR    (  -- )    VCOL OFF  VROW ++@  L/SCR = IF SCROLL THEN ;
+ : EMIT  ( char -- ) VPOS VC!  VCOL ++@  C/L@ = IF CR THEN ;
 \ .......................................................
+[THEN]
 
 \ define all data before use
 0 VALUE WIN

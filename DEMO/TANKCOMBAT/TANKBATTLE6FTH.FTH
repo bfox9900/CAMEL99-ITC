@@ -279,7 +279,7 @@ DECIMAL
         I 4* DB
     LOOP
     DROP
-    GEN4 -26 DB 60 MS MUTE
+    GEN4 -26 DB 60 MS GEN4 MUTE
 ;
 
 \ add coordinates to a vector
@@ -370,6 +370,7 @@ DECIMAL
     1  %CHANCE IF FREEZE             EXIT THEN
     6  %CHANCE IF 50 RND 5 + SPEED ! EXIT THEN
 ;
+
 : RABBIT-TANK ( --)
     100 SPEED !
     GEN3 MUTE
@@ -443,7 +444,7 @@ DECIMAL
       ELSE DROP
       THEN
       \ every so often move to a new location
-      10000 RND 5 < IF GO-AND-HIDE THEN
+      10000 RND 4 < IF GO-AND-HIDE THEN
 
       PAUSE
     AGAIN
