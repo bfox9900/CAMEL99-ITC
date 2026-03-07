@@ -6,7 +6,7 @@
 \ V1 literal translation from BASIC       1:26      1:04
 \      "          "   with fast scroll    1:03
 
-\ CAMELTTY   4800 BAUD                    0:51
+\ CAMELTTY   4800 BAUD                    0:51.6
 \           38400 BAUD                    0:32
 
 \ ============================================================
@@ -20,7 +20,7 @@ NEEDS [IF]   FROM DSK1.CONDCOMP   \ conditional compilation control
 
 \ .......................................................
 \ Change FALSE to TRUE to compile with fast scroll
-TRUE [IF]
+FALSE [IF]
 \ Scroll ends up being the slowest part of the benchmark.
 \ SCROLL entire screen in one block with VMBR and VMBW
  : SCROLL ( -- )
@@ -59,7 +59,7 @@ VARIABLE NDX   ( transfers loop index out of DO LOOP )
   0 NUMLEN !                    \ 150 NUMLEN=1
   BEGIN POWER 1+!               \ 160 POWER=POWER+1
     ." 7 ^" POWER @ . ." IS:"   \ 170 PRINT "7 ^";POWER;"IS:"
-    ?BREAK
+\    ?BREAK
     CARRY OFF                   \ 180 CARRY=0
     INAROW OFF                  \ 190 INAROW=0
     NUMLEN @ 1+ 0               \ 200 FOR I=1 TO NUMLEN
@@ -90,7 +90,7 @@ VARIABLE NDX   ( transfers loop index out of DO LOOP )
     CR                          \ replaces PRINT
     0 NUMLEN @                  \ 340 FOR I=NUMLEN TO 1
     DO
-      I ]A C@ 48 + (EMIT)       \ 350 PRINT CHR$(A(I)+48);
+      I ]A C@ 48 + EMIT       \ 350 PRINT CHR$(A(I)+48);
     -1 +LOOP                    \ 360 NEXT I ( STEP -1)
     CR CR                       \ 370 PRINT
     WIN @                       \ 380 IF WIN<>1

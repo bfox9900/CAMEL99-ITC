@@ -174,18 +174,25 @@ VARIABLE OFFSET
 
 .( ..)
 : PlayGame ( -- )
-         BEGIN
-            MoveBall
-            WallTest
-            #BALL 1 8 COINC IF 1 PaddleHit THEN #HUMAN MovePaddle
-            #BALL 2 6 COINC IF 2 PaddleHit THEN ComputerPlayer #HUMAN MovePaddle
-            #BALL SP.X VC@ OffBoard?
-         UNTIL
+   BEGIN
+      MoveBall
+      WallTest
+      #BALL 1 8 COINC
+      IF
+         1 PaddleHit
+      THEN #HUMAN MovePaddle
+
+      #BALL 2 6 COINC
+      IF
+         2 PaddleHit
+      THEN ComputerPlayer #HUMAN MovePaddle
+      #BALL SP.X VC@ OffBoard?
+   UNTIL
 \ ball went OffBoard...
-         XVEC @ 0>        \ positive direction means human played the ball
-         IF   1 HUMAN +!
-         ELSE 1 COMPUTER +!
-         THEN HONK ;
+   XVEC @ 0>        \ positive direction means human played the ball
+   IF   1 HUMAN +!
+   ELSE 1 COMPUTER +!
+   THEN HONK ;
 
 : RandY ( -- n|-n) BEGIN  3 RND 1-  DUP 0 <> UNTIL ;
 
