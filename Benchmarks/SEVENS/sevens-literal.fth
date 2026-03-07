@@ -59,7 +59,7 @@ VARIABLE NDX   ( transfers loop index out of DO LOOP )
   0 NUMLEN !                    \ 150 NUMLEN=1
   BEGIN POWER 1+!               \ 160 POWER=POWER+1
     ." 7 ^" POWER @ . ." IS:"   \ 170 PRINT "7 ^";POWER;"IS:"
-\    ?BREAK
+    ?BREAK
     CARRY OFF                   \ 180 CARRY=0
     INAROW OFF                  \ 190 INAROW=0
     NUMLEN @ 1+ 0               \ 200 FOR I=1 TO NUMLEN
