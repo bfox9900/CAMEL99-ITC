@@ -16,7 +16,9 @@
 \ The above copyright notice and this permission notice shall be included in all
 \ copies or substantial portions of the Software.
 
-\ THIS VERSION REPLACES VARIABLES WITH VALUES FOR FASTER PERFORMANCE
+\ ***********************************************************************
+\ *  THIS VERSION REPLACES VARIABLES WITH VALUES FOR FASTER PERFORMANCE *
+\ ***********************************************************************
 
 NEEDS PLOT  FROM DSK1.GRAPHICS2B
 NEEDS VALUE FROM DSK1.VALUES
@@ -118,7 +120,7 @@ DECIMAL
 : DRAW   ( -- )     PEN-DOWN  [X,Y] PLOT ;
 
 : HEAD   ( angle -- ) DUP DUP TO ANGL  >DIR TO Q
-                      45 + 60 MOD     >DIR TO W  ;
+                      45 + 60 MOD      >DIR TO W  ;
 
 : GOTO   ( x y -- )   PEN-UP  256* TO Y   256* TO X ;
 : HOME   ( -- )       PEN-UP   0 0 GOTO  0 HEAD ;
