@@ -54,11 +54,6 @@ PDT TABLE: ]PDT  \ gives faster index into PDT
 : INIT-IMAGE ( -- )
     -1 IMG 300 BOUNDS DO  1+ DUP 0FF AND I VC!  LOOP  DROP ;
 
-HEX
-CREATE BITS ( -- addr) 80 C, 40 C, 20 C, 10 C, 8 C, 4 C, 2 C, 1 C,
-
-BITS TABLE: ]BIT
-
 \ drawing code ...
 HEX
 : VAND  ( c Vaddr -- ) S" DUP>R VC@ AND  R> VC!" EVALUATE ; IMMEDIATE
@@ -100,16 +95,18 @@ DEFER STYLUS   \ usage:  PENCIL IS STYLUS    ERASER IS STYLUS
 \ Remainder X mod 8 = is index to array of bit values ;
 
 \ *note: We use UM/MOD because it is the fastest divide in the system
+HEX
 : PIXPOS ( x y -- bit PDT_addr)
+ ( Y) 0FF AND
+      0 8 UM/MOD             \ compute Y offset into VDP memory
+      FUSE                   \ fuse bytes into one integer
+
       SWAP
  ( X) FF AND                \ mask X is required
       0 8 UM/MOD 8*         \ compute X offset into VDP memory
-      SWAP ]BIT C@          \ convert remainder to bit mask
+      SWAP 80 SWAP RSHIFT   \ convert remainder to bit mask
       SWAP
       ROT
- ( Y) 0FF AND
-      0 8 UM/MOD             \ compute Y offset into VDP memory
-      FUSE                   \ fuse bytes x y into one integer
       +                      \ add the remainder
       ]PDT ;                 \ use integer as index PDT
 ;

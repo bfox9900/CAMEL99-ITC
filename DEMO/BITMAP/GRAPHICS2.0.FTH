@@ -97,15 +97,16 @@ DEFER STYLUS   \ usage:  PENCIL IS STYLUS    ERASER IS STYLUS
 \ *note: We use UM/MOD because it is the fastest divide in the system
 HEX
 : PIXPOS ( x y -- bit PDT_addr)
+ ( Y) 0FF AND
+      0 8 UM/MOD             \ compute Y offset into VDP memory
+      FUSE                   \ fuse bytes into one integer
+
       SWAP
  ( X) FF AND                \ mask X is required
       0 8 UM/MOD 8*         \ compute X offset into VDP memory
-      SWAP 80 SWAP RSHIFT   \ ]BIT C@  \ convert remainder to bit mask
+      SWAP 80 SWAP RSHIFT   \ convert remainder to bit mask
       SWAP
       ROT
- ( Y) 0FF AND
-      0 8 UM/MOD             \ compute Y offset into VDP memory
-      FUSE                   \ fuse bytes x y into one integer
       +                      \ add the remainder
       ]PDT ;                 \ use integer as index PDT
 ;
