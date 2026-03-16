@@ -2,6 +2,8 @@
 \ Written in Forth to show methods.
 \ Referenced TI-FORTH: ( CONVERT TO GRAPHICS2 MODE CONFIG 14SEP82 LAO)
 \ 2025 Added TABLE: for faster access into VDP tables
+\ 2026  simplified stackrobatics in PIXPOS
+
 \ COMPILES under ITC and DTC systems
 CR .( Two colour bit map mode )
 CR .( Uses text macros and tail-call optimization)
@@ -94,21 +96,22 @@ DEFER STYLUS   \ usage:  PENCIL IS STYLUS    ERASER IS STYLUS
 \ BYTE_ADDRESS = 8(INT(X/8)) + 256(INT(Y/8)) + (Y MOD 8)
 \ Remainder X mod 8 = is index to array of bit values ;
 
-\ *note: We use UM/MOD because it is the fastest divide in the system
+\ *note:
+\ 1. We use UM/MOD because it is the fastest divide in the system
+\ 2. FUSE performs 256* because it puts two bytes together in an integer
+\    AA BB  FUSE -> BBAA  so BB is effectively BB*256+AA
 HEX
 : PIXPOS ( x y -- bit PDT_addr)
  ( Y) 0FF AND
-      0 8 UM/MOD             \ compute Y offset into VDP memory
-      FUSE                   \ fuse bytes into one integer
+      0 8 UM/MOD        \ -- (Y MOD 8) ,  (Y/8)
+      FUSE              \ do 256*y + (y mod 8)
 
       SWAP
- ( X) FF AND                \ mask X is required
-      0 8 UM/MOD 8*         \ compute X offset into VDP memory
-      SWAP 80 SWAP RSHIFT   \ convert remainder to bit mask
-      SWAP
-      ROT
-      +                      \ add the remainder
-      ]PDT ;                 \ use integer as index PDT
+ ( X) FF AND            \ mask X is required
+      0 8 UM/MOD 8*     \ compute X offset into VDP memory
+      80 ROT RSHIFT     ( -- Y' X' bit )
+      -ROT +            ( -- bit ndx)
+      ]PDT ;            ( -- bit Vaddr)
 ;
 
 : PLOT   ( x y -- ) S" PIXPOS STYLUS" EVALUATE ; IMMEDIATE

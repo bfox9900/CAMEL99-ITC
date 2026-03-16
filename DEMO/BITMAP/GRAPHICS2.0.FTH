@@ -127,7 +127,7 @@ DECIMAL
     4DUP
    \ compute mid points
      ROT MID >R  MID R>
-    2DUP 2ROT RECURSE RECURSE ; \ tail call optimization helps this
+    2DUP 2ROT RECURSE RECURSE ;
 
 0 VALUE x
 0 VALUE y
