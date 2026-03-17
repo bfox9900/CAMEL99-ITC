@@ -96,14 +96,15 @@ DEFER STYLUS   \ usage:  PENCIL IS STYLUS    ERASER IS STYLUS
 \ BYTE_ADDRESS = 8(INT(X/8)) + 256(INT(Y/8)) + (Y MOD 8)
 \ Remainder X mod 8 = is index to array of bit values ;
 
-\ *note:
+\ *Note:
 \ 1. We use UM/MOD because it is the fastest divide in the system
 \ 2. FUSE performs 256* because it puts two bytes together in an integer
-\    AA BB  FUSE -> BBAA  so BB is effectively BB*256+AA
+\    AA BB  FUSE -> BBAA   in effect it is: AA * 256 + BB
+
 HEX
 : PIXPOS ( x y -- bit PDT_addr)
- ( Y) 0FF AND
-      0 8 UM/MOD        \ -- (Y MOD 8) ,  (Y/8)
+ ( Y) 0FF AND           \ mask Y is required
+      0 8 UM/MOD        \ -- (Y MOD 8) (Y/8)
       FUSE              \ do 256*y + (y mod 8)
 
       SWAP

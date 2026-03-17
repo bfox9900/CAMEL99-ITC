@@ -1,4 +1,4 @@
-\ Graphics2 Mode V2.9 for Camel99 Forth Dec 2022 BJF
+CR .( Graphics2 Mode V2.9B for Camel99 Forth Mar 2025 BJF)
 \ Referenced TI-FORTH:
 ( CONVERT TO GRAPHICS2 MODE CONFIG 14SEP82 LAO)
 
@@ -7,7 +7,7 @@
 \ 2.7   critical VOR VERASE and XY-offset as CODE
 \ 2.8   PIXPOS re-coded in ASM, LINE uses tail called optimization
 \ 2.9   DXY? removes 1 4DUP call. MID written in code
-\ 2.A   4dup in code integrated with DXY?
+\ 2.C   Uses DEFER word for STYLUS
 
 \ COMPILES under ITC ONLY
 CR .( Two colour bit map mode )
@@ -18,6 +18,7 @@ NEEDS VALUE     FROM DSK1.VALUES
 NEEDS CHARSET   FROM DSK1.CHARSET
 NEEDS ARRAY     FROM DSK1.ARRAYS
 NEEDS 4TH       FROM DSK1.3RD4TH \ fast access to deep stack items
+NEEDS DEFER     FROM DSK1.DEFER
 
 HERE
 HEX
@@ -58,10 +59,10 @@ HEX
 : INIT-IMAGE ( -- )
     -1 IMG 300 BOUNDS DO  1+ DUP 0FF AND I VC!  LOOP  DROP ;
 
-\ replacing text macro with code words
+\ Expose hidden sub-rotuines in the kernel
 HEX
-' VC! 2 CELLS + @ CONSTANT VWMODE  \ Access VDP write address sub-routine
-' VC@ 2 CELLS + @ CONSTANT VRMODE  \ Access VDP read address sub-routine
+' VC! 2 CELLS + @ CONSTANT VWMODE  \ VDP write address sub-routine
+' VC@ 2 CELLS + @ CONSTANT VRMODE  \ VDP read address sub-routine
 
 8800 CONSTANT VDPRD        \ vdp ram read data port
 8C00 CONSTANT VDPWD        \ vdp ram write data port
@@ -82,8 +83,8 @@ CODE VOR ( c Vaddr -- )
 ENDCODE
 
 \ : VAND  ( c Vaddr -- ) S" DUP>R VC@ AND  R> VC!" EVALUATE ; IMMEDIATE
-\ : VERASE  ( c Vaddr -- ) >R INVERT R> VAND ;
 
+\ : VERASE  ( c Vaddr -- ) >R INVERT R> VAND ;
 CODE VERASE ( c Vaddr -- )
         VRMODE @@ BL,    \ set read address
         W CLR,
@@ -102,7 +103,9 @@ ENDCODE
 ' VOR    CONSTANT PENCIL
 ' VERASE CONSTANT ERASER
 
-VARIABLE STYLUS   \ usage:  PENCIL STYLUS !   ERASER STYLUS !
+DEFER STYLUS
+\ usage:  PENCIL IS STYLUS  ERASER IS STYLUS
+PENCIL IS STYLUS
 
 \ setup VDP code ...
 : GRAPHICS2
@@ -173,26 +176,12 @@ CODE PIXPOS  ( x y -- bit Vaddr)
 ENDCODE
 
 \ TEXT macro for speed
-: PLOT   ( x y -- ) S" PIXPOS STYLUS PERFORM " EVALUATE ; IMMEDIATE
+: PLOT   ( x y -- ) S" PIXPOS STYLUS" EVALUATE ; IMMEDIATE
 
 \ ====================================
 \ line drawing
 DECIMAL
-
-HEX
-\ manual tail call optimizer. Improves LINE by 1.5%
-CODE GOTO   C259 ,  ( *IP IP MOV,)  NEXT, ENDCODE
-: -;  ( -- )
-      HERE 2- @ >BODY       \ get previous XT, compute data field
-      -2 ALLOT              \ erase the previous XT
-      POSTPONE GOTO  ,      \ compile the address for GOTO
-      POSTPONE [            \ turn off compiler
-      REVEAL
-      ?CSP
-; IMMEDIATE
-
-HEX
-\ : DXY  ( x y x2 y2 -- dY dX) ROT - ABS -ROT - ABS  ;
+\ : DXY  ( x y x2 y2 -- dY dX) ROT - ABS -ROT - ABS ;
 
 \ name items on the stack for clairity
 \ Using index addressing to avoid 4DUP
@@ -201,14 +190,7 @@ HEX
 : X2   1 (SP) ;
 : Y2   *SP  ;
 
-CODE 4DUPDXY?   ( x y x2 y2 --x y x2 y2  x y x2 y2 ?)
-    C046 ,          \ SP  R1 MOV,  \ dup stack pointer    \  14
-    0646 , C584 ,   \ TOS PUSH,    ( -- a b c d d)        \  28
-    0226 , FFFA ,   \ SP -6 AI,    \ make some room       \  12
-    C5B1 ,          \ R1 *+ *SP MOV,                      \  28
-    C9B1 , 0002 ,   \ R1 *+ 2 (SP) MOV,                   \  30
-    C9B1 , 0004 ,   \ R1 *+ 4 (SP) MOV,                   \  30
-
+CODE DXY? ( x y x2 y2 --x y x2 y2 ?)
       TOS PUSH,
    Y2 TOS MOV,
     Y1 Y2 SUB,
@@ -249,15 +231,30 @@ DECIMAL
 : 2ROT ( d1 d2 d3 -- d2 d3 d1)
   S" 2>R 2SWAP 2R> 2SWAP" EVALUATE ; IMMEDIATE
 
+HEX
+\ manual tail call optimizer. Improves LINE by 1.5%
+: PREVXT ( -- XT)  HERE 1 CELLS - @ ;
+
+\ -; does not end with EXIT because it is branching directly to another
+\ list of tokens. That other list will end in EXIT or NEXT.
+: -;  ( -- ) \ programmer controlled
+      PREVXT >BODY              \ get previous XT, compute PFA
+     -1 CELLS ALLOT             \ erase the previous XT
+      POSTPONE BRANCH HERE - ,  \ compile BRANCH to the PFA
+      POSTPONE [                \ turn off compiler
+      REVEAL
+      ?CSP
+; IMMEDIATE
+
 : LINE ( x1 y1 x2 y2 -- )
-\ ANS version of Dr. Ting's recursive line.  R.I.P.
-    4DUPDXY? IF  2DROP PLOT  EXIT THEN
-    MIDXY 2DUP 2ROT RECURSE RECURSE ;
+\ Dr. Ting's recursive line.  R.I.P.
+    DXY? IF  2DROP PLOT  EXIT THEN
+    MIDXY 2DUP 2ROT RECURSE RECURSE -;
 
 0 VALUE x
 0 VALUE y
 
-: MOVETO ( x y -- ) TO y   TO x ;
+: MOVETO  ( x y -- ) TO y   TO x ;
 : LINETO  ( x y -- ) 2DUP x y LINE MOVETO ;
 
 \ no safety net !!

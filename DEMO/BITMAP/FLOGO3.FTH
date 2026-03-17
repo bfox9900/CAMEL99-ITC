@@ -74,10 +74,11 @@ CREATE SINTAB
   243 , 249 , 254 , 255 ,
   000 ,
 
+
 \ expose the table as a byte array. Use text macro for speed
 \ : ]N@ ( ndx -- n) S" N + C@" EVALUATE ; IMMEDIATE
 
-\ FAST array with machine Forth compilers
+\ FASTER array with machine Forth compilers
 HEX
 : 2*,   ( n -- 2(n)  A104 , ;             \ A R4,R4
 : []@,   ( addr -- ) C124 , ( addr) , ;   \ MOV addr@(R4),R4
@@ -86,7 +87,7 @@ DECIMAL
 CODE SIN ( ndx -- addr)  2*, SINTAB []@,  NEXT, ENDCODE
 
 : >DIR ( angle -- coord)
-       DUP>R  ABS >R
+       DUP>R ABS >R
        R@ 15 MOD
        R@ 30 MOD 14 > IF 15 SWAP - THEN SIN
        R@ 60 MOD 30 > IF NEGATE    THEN 2R> 2DROP ;
@@ -99,13 +100,15 @@ HEX
 \ : 256*     ( --c) ><  BYTE ; \ swap byte is 256 * :-)
 \ : 256/    ( --c) 8 RSHIFT  BYTE ;
 
-CODE 256*   06C4 , NEXT, ENDCODE  \ TOS SWPB,
-CODE 256/   0984 , NEXT, ENDCODE  \ TOS 8 SRL,
+\ MORE Machine Code words to speed up this code
+: 256*   06C4 ,  ; \ TOS SWPB,
+: 256/   0984 ,  ; \ TOS 8 SRL,
+: #+     ( n -- ) 0224 ,  ,  ;  \ TOS  n AI,
 
 DECIMAL
 \ returns scaled,centred X,Y values
-: XSCALE  ( --c) 256/ XCNTR +  ;
-: YSCALE  ( --c) 256/ YCNTR +  ;
+CODE  XSCALE  ( --c) 256/ XCNTR #+  NEXT, ENDCODE
+CODE  YSCALE  ( --c) 256/ YCNTR #+  NEXT, ENDCODE
 
 DECIMAL
 : [X,Y]  ( -- x y) S" X XSCALE Y YSCALE" EVALUATE ; IMMEDIATE
@@ -124,7 +127,7 @@ DECIMAL
 
 : GOTO   ( x y -- )   PEN-UP  256* TO Y   256* TO X ;
 : HOME   ( -- )       PEN-UP   0 0 GOTO  0 HEAD ;
-: MOV    ( n -- )     DUP Q *  +TO X    W *  +TO Y DRAW ;
+: MOV    ( n -- )     DUP  Q * +TO X    W * +TO Y  DRAW ;
 
 : TURN   ( angle -- ) +TO ANGL   ANGL HEAD ;
 

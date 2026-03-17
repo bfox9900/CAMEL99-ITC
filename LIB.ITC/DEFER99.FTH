@@ -13,7 +13,7 @@ HERE
 : ?DEFER  ( -- ) HERE COUNT CR TYPE TRUE ABORT" Undefined DEFER"  ;
 
 \ fastest running DEFER words
-\ HEX
+HEX
  : DEFER ( xt -- )
               CREATE  ['] ?DEFER ,  ( ?defer is the default action)
               ;CODE  C218 , \ *W  W  MOV,  \ fetch address in W->W
