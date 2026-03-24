@@ -100,14 +100,13 @@ HEX
  ( Y) 0FF AND
       0 8 UM/MOD             \ compute Y offset into VDP memory
       FUSE                   \ fuse bytes into one integer
-
       SWAP
  ( X) FF AND                \ mask X is required
       0 8 UM/MOD 8*         \ compute X offset into VDP memory
       SWAP 80 SWAP RSHIFT   \ convert remainder to bit mask
       SWAP
-      ROT +                  \ add the remainder
-      ]PDT ;                 \ use integer as index PDT
+      ROT +                 \ add the remainder
+      ]PDT ;                \ use integer as index PDT
 ;
 
 : PLOT   ( x y -- ) PIXPOS STYLUS ;
