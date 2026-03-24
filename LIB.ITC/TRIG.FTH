@@ -36,9 +36,7 @@ CODE ]SIN  ( ndx -- sin) 2*,  SINTAB +@,  NEXT, ENDCODE
          360^  MOD DUP 0<
          IF    360^ +  THEN
          DUP 180^ >
-         IF    180^ - (SIN) NEGATE
-         ELSE (SIN)
-         THEN ;
+         IF    180^ - (SIN) NEGATE  ELSE (SIN) THEN ;
 
 : COS ( n -- n )  360^ MOD 90^ + SIN ;
 

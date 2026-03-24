@@ -106,8 +106,7 @@ HEX
       0 8 UM/MOD 8*         \ compute X offset into VDP memory
       SWAP 80 SWAP RSHIFT   \ convert remainder to bit mask
       SWAP
-      ROT
-      +                      \ add the remainder
+      ROT +                  \ add the remainder
       ]PDT ;                 \ use integer as index PDT
 ;
 

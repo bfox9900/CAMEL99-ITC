@@ -61,7 +61,7 @@ YMAX 2/ CONSTANT YCNTR
  VARIABLE W      \ Radian ?
 
 \ ===============================================
-\ direction table
+\ direction table ~6 degree resolution
 DECIMAL
 CREATE SINTAB
   000 , 027 , 053 , 079 ,
