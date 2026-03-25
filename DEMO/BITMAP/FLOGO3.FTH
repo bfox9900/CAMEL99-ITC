@@ -1,10 +1,8 @@
 \ FLOGO3 Ported to CAMEL99 FORTH to test GRAPHICS2  Mode  Dec 2022 Brian Fox
 \ Based on fignition LOGO https://github.com/AshleyF/FIGTurtle
-\ Expanded names from single letter commands for clarity
 
-\ MIT License
-
-\ Copyright (c) 2021 Ashley Feniello
+CR ." MIT License"
+CR ." Copyright (c) 2021 Ashley Feniello"
 
 \ Permission is hereby granted, free of charge, to any person obtaining a copy
 \ of this software and associated documentation files (the "Software"), to deal
@@ -16,11 +14,14 @@
 \ The above copyright notice and this permission notice shall be included in all
 \ copies or substantial portions of the Software.
 
+CR ." Modified for Camel99 Forth  2026 Brian Fox"
 \ ***********************************************************************
 \ *  THIS VERSION REPLACES VARIABLES WITH VALUES FOR FASTER PERFORMANCE *
 \ ***********************************************************************
+\ Machine Forth was used to speed up some computations
 
-NEEDS PLOT  FROM DSK1.GRAPHICS2B
+
+NEEDS PLOT  FROM DSK1.GRAPHICS2
 NEEDS VALUE FROM DSK1.VALUES
 
 \ ===============================================
@@ -173,6 +174,7 @@ DECIMAL
   GRAPHICS2
 
     WHITE   HUE SINE
+    LIME    SQUARE
     MAGENTA HUE BURST
     GREEN   HUE SQUIRAL
     BLUE    HUE SPIRAL
