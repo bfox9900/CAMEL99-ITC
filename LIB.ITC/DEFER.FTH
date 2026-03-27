@@ -22,7 +22,7 @@ HERE
 \ : ACTION-OF  ( <text> -- xt) ( returns execution token of <text>)
 \           STATE @
 \           IF     POSTPONE [']  POSTPONE DEFER@
-\           ELSE   ' ( -- XT) DEFER@ 
+\           ELSE   ' ( -- XT) DEFER@
 \           THEN ; IMMEDIATE
 
 HERE SWAP - SPACE DECIMAL . .( bytes )

@@ -14,6 +14,15 @@ NEEDS DEFER       FROM DSK1.DEFER
 
 HERE
 HEX
+\ setup code ... ( this verbose on purpose to clarify VDP setup )
+: BITMAP-MODE   2 0 VWTR  4 VMODE ! ;
+: VDP-REG1     ( n --)  DUP VDPR1 C! 1 VWTR ;  \ set mode, copy into memory for system
+: NAME-TABLE   ( Vaddr -- )  400 / DUP TO NMT      2 VWTR ; \ "name" table (TI nomenclature)
+: COLOR-TABLE   ( Vaddr -- )  40 / DUP TO CTAB   3 VWTR ;
+: PATTERN-TABLE ( Vaddr -- ) 800 / DUP TO PDT    4 VWTR ;
+: SPR-ATTRIB-TABLE ( Vaddr -- ) 80 /  DUP TO SAT  5 VWTR ; \ VR5*>80  = >3800
+: SPR-PATTRN-TABLE ( Vaddr --)  800 /  DUP TO SPT  6 VWTR ; \  VR6 * >800 = >3800
+
 \
 \ text mode so we can return to the Forth console
 \ KERNEL version does not init all registers
@@ -28,14 +37,17 @@ CREATE 40COL
          0 DO  COUNT I VWTR  LOOP DROP ;
 
 HEX
- 0000 VALUE CTAB    \ color table
- 2000 VALUE PDT     \ pattern descriptor table
- 1800 VALUE IMG
+ 0 VALUE CTAB    \ color table
+ 0 VALUE PDT     \ pattern descriptor table
+ 0 VALUE NMT     \ name table
+ 0 VALUE SAT     \ sprite attribute table
+ 0 VALUE SPT     \ Sprite pattern table
+ 0 VALUE SCRCOLOR \ fg bg combined as 1 byte
 
 : TEXT  ( -- )
-      40COL COUNT VREGS
-      800 TO PDT
-      380 TO CTAB
+      000 NAME-TABLE
+      800 PATTERN-TABLE
+      380 COLOR-TABLE
       VTOP OFF
       2 VMODE !
       28 C/L!
@@ -44,52 +56,50 @@ HEX
 
 : CLEAR   ( -- )  PDT  1800  0 VFILL ; \ ERASE pattern table
 
-: COLOR   ( fg bg --)
-      SWAP 4 LSHIFT SWAP +    \ merge colors into a byte
-      CTAB 1800  ROT VFILL ;  \ init color table
+: COLOR  ( fg bg --) SWAP 4 LSHIFT SWAP + TO SCRCOLOR ; ( merge colors into a byte)
+
+: INIT-COLOR-TABLE  ( fg bg --)
+      COLOR
+      CTAB 1800 SCRCOLOR VFILL ;  \ init color table
 
 : INIT-IMAGE ( -- )
-    -1 IMG 300 BOUNDS DO  1+ DUP 0FF AND I VC!  LOOP  DROP ;
+    -1 NMT 300 BONAMEDO  1+ DUP 0FF AND I VC!  LOOP  DROP ;
 
 HEX
 CREATE BITS ( -- addr) 80 C, 40 C, 20 C, 10 C, 8 C, 4 C, 2 C, 1 C,
-
-: >BIT ( n -- bit[n]) S" BITS + C@" EVALUATE ; IMMEDIATE
 
 \ drawing code ...
 HEX
 : VAND  ( c Vaddr -- ) S" DUP>R VC@ AND  R> VC!" EVALUATE ; IMMEDIATE
 
 \ PENCIL and ERASER are "execution tokens"
-:NONAME ( VOR)     ( c Vaddr -- ) DUP>R VC@  OR  R> VC! ; CONSTANT PENCIL
-:NONAME ( VERASE)  ( c Vaddr -- ) >R INVERT R> VAND ; CONSTANT ERASER
-:NONAME  ( c Vaddr -- ) DUP>R VC@  XOR  R> VC! ; CONSTANT BRUSH
-                                        ' 2DROP  CONSTANT PENUP
+:NONAME ( VOR)     ( c Vaddr -- ) DUP>R VC@  OR  R> VC! ;  CONSTANT PENCIL
+:NONAME ( VERASE)  ( c Vaddr -- ) >R INVERT R> VAND ;      CONSTANT ERASER
+:NONAME  ( c Vaddr -- ) DUP>R VC@  XOR  R> VC! ;           CONSTANT BRUSH
+                                                  ' 2DROP  CONSTANT PENUP
 
 DEFER STYLUS   \ usage:  PENCIL IS STYLUS    ERASER IS STYLUS
 
-\ setup code ...
-: GRAPHICS2
-    0000 TO CTAB    \ color table
-    1800 TO IMG     \ "name" table (TI nomenclature)
-    2000 TO PDT     \ pattern descriptor table
 
+: SCREEN-COLORS  ( fg bg -- ) COLOR  SCRCOLOR 7 VWTR ;
+
+: GRAPHICS2
     0A0 1 VWTR      \ VR1 >A0 16K, screen on
+    F 1 SCREEN-COLORS  \ screen background colour white on transparent
     INIT-IMAGE
-    F 0 COLOR
     CLEAR
     20 C/L! 300 C/SCR !
-    2 0 VWTR          \ VR0 >02 Bitmap mode on
-    6 2 VWTR          \ Screen image = 6*>400 = 1800
-    07F 3 VWTR        \ Color table at >0000
-    7 4 VWTR          \ PATTERN table= VR4*>800 = 2000
+    BITMAP-MODE
+    1800 NAME-TABLE
+    1FC0 COLOR-TABLE
+    3800 PATTERN-TABLE
+    2000 TO PDT       \ move pattern descriptor table Why?
     PDT VTOP !        \ VROW VCOL can be used if needed
-    70 5 VWTR         \ sprite attribute table: VR5*>80  = >3800
-     7 6 VWTR         \ sprite pattern table: VR6 * >800 = >3800
-   0F1 7 VWTR         \ screen background colour white on transparent
-    0E0 DUP VDPR1 C! 1 VWTR   \ set mode, copy into memory for system
-    4 VMODE !
-    0 837A C!  ;      \ highest sprite in auto-motion
+
+    3800 SPR-ATTRIB-TABLE
+    3800 SPR-PATTRN-TABLE
+    0E0 VDP-REG1
+    0 837A C!  ;    \ highest sprite in auto-motion
 
 \ Compute offset into pattern table per:
 \ TI Video Display Processors, Programmer's Guide
@@ -97,9 +107,8 @@ DEFER STYLUS   \ usage:  PENCIL IS STYLUS    ERASER IS STYLUS
       SWAP
       FF AND                \ mask X is required
       0 8 UM/MOD 8*         \ compute X offset into VDP memory
-      SWAP >BIT SWAP        \ convert remainder to bit mask
-
-      ROT 0FF AND
+      SWAP BITS + C@        \ convert remainder to bit mask
+      SWAP ROT 0FF AND
       0 8 UM/MOD             \ compute Y offset into VDP memory
       >< + +                 \ combine x y into integer
       PDT + ;                \ add all offsets to PDT base address

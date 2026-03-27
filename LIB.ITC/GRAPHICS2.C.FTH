@@ -7,6 +7,7 @@
 \ 2.7   critical VOR VERASE and XY-offset as CODE
 \ 2.8   PIXPOS re-coded in ASM, LINE uses tail called optimization
 \ 2.9   DXY? removes 1 4DUP call. MID written in code
+\ 2.C   PIXPOS uses ideas from ASM_USR @ ATARTAGE.COM
 
 \ COMPILES under ITC ONLY
 CR .( Two colour bit map mode )
@@ -17,6 +18,7 @@ NEEDS VALUE     FROM DSK1.VALUES
 NEEDS CHARSET   FROM DSK1.CHARSET
 NEEDS ARRAY     FROM DSK1.ARRAYS
 NEEDS 4TH       FROM DSK1.3RD4TH \ fast access to deep stack items
+NEEDS DEFER     FROM DSK1.DEFER
 
 HERE
 HEX
@@ -101,7 +103,9 @@ ENDCODE
 ' VOR    CONSTANT PENCIL
 ' VERASE CONSTANT ERASER
 
-VARIABLE STYLUS   \ usage:  PENCIL STYLUS !   ERASER STYLUS !
+DEFER STYLUS  ( mask Vaddr --)
+
+PENCIL IS STYLUS
 
 \ setup VDP code ...
 : GRAPHICS2
@@ -132,45 +136,62 @@ VARIABLE STYLUS   \ usage:  PENCIL STYLUS !   ERASER STYLUS !
 CREATE BITS ( -- addr) 80 , 40 , 20 , 10 , 8 , 4 , 2 , 1 ,
 
 \ =============================================
+
+\ Thoughts of ASMUSR @atartiage.com who has made concise way to do this.
+\ "The code is quite impossible to understand without knowing how
+\ the bitmap screen is structured, but here is a rough explanation.
+\ The screen address is calculated as:
+\ 5_most_significant_bits_of_y * 256 + 5_most_significant_bits_of_x *
+\ 8 + 3_least_significant_bits_of_y =
+
+\ 5_most_significant_bits_of_y << 8 + 5_most_significant_bits_of_x << 3 +
+\ 3_least_significant_bits_of_y "
+
+\ BF Note:  I adapted his code to work with BITS array
+
+\ MOV  R1,R4         ; 00000000YYYYYYYY
+\ SLA  R4,5          ; 000YYYYYYYY00000
+\ SOC  R1,R4         ; 000YYYYY???YYYYY
+\ ANDI R4,>FF07      ; 000YYYYY00000YYY
+\ MOV  R0,R5         ; 00000000XXXXXXXX
+\ ANDI R5,7          ; 0000000000000XXX
+\ A    R0,R4         ; 000YYYYY00000YYY + 00000000XXXXXXXX
+\ S    R5,R4         ; 000YYYYY00000YYY + 00000000XXXXXXXX -
+\ 0000000000000XXX = 000YYYYY00000YYY + 00000000XXXXX000 = 000YYYYYXXXXXYYY
+
+
 \ PIXPOS Register usage
 \ R0  X offset
 \ R1  dup of Y coordinate
 \ R2  Temp Y quotient
-\ R3  Y coordinate
-\ R4  Forth Accumulator, outputs PDT address
+\ R5  Y coordinate
+\ R4  Forth Accumulator, TOS, outputs PDT address
 \ R8  = W = X division remainder
+HEX
+ CODE PIXPOS ( x y -- c Vaddr)
+    *SP R0 MOV,   \ x
+    TOS R1 MOV,   \ y
+    R1 R4 MOV,
+    R4 5  SLA,    \ R4 32*
+    R1 R4 SOC,    \ mask r4 with R1
+    R4 FF07 ANDI,
 
-CODE PIXPOS  ( x y -- bit Vaddr)
-\ mask x,y to 8 bit values
-    *SP R0 MOV,     \ get X into R0, leave stack position available
+    R0 R5 MOV,
+    R5 7 ANDI,    \ r5 is index into BITS
 
-\ calc X offset
-    R0  W MOV,     \ copy x to W
-    R0  3 SRA,     \ divide by 8
-    R0  3 SLA,     \ mult quot by 8.  R0 = X offset
-    R0  W SUB,     \ sub-tract result -> W = remainder
-
-\ convert remainder to bit mask
+    R5 W MOV,         \ dup R5 in W
     W    1 SLA,       \ W 2*
     BITS (W) *SP MOV, \ lookup bit value leave as 2nd on stack
 
-\ calc Y offset
-    TOS R1  MOV,    \ DUP Y for subtraction later
-    TOS   3 SRA,    \ divide by 8 = Y quotient
-    TOS  R2 MOV,    \ dup quotient result
-    R2    3 SLA,    \ mult quot by 8
-    R2   R1 SUB,    \ sub-tract result = remainder
-        TOS SWPB,   \ Y quotient 256*
-
-\ compute pattern table address
-    R1   TOS ADD,   \ add remainder to quotient
-    R0   TOS ADD,   \ add X offset to Y offset
-    TOS  PDT AI,    \ add index to pattern table base address
+    R0 R4 ADD,
+    R5 R4 SUB,
+    R4 PDT AI,   \ add index to pattern table base address
     NEXT,
 ENDCODE
 
+
 \ TEXT macro for speed
-: PLOT   ( x y -- ) S" PIXPOS STYLUS PERFORM " EVALUATE ; IMMEDIATE
+: PLOT   ( x y -- ) S" PIXPOS STYLUS" EVALUATE ; IMMEDIATE
 
 \ ====================================
 \ line drawing

@@ -105,11 +105,11 @@ HEX
 : 256*   06C4 ,  ; \ TOS SWPB,
 : 256/   0984 ,  ; \ TOS 8 SRL,
 : #+     ( n -- ) 0224 ,  ,  ;  \ TOS  n AI,
+: AND,   ( n -- ) 0244 ,  ,  ;  \ TOS n ANDI,
 
-DECIMAL
 \ returns scaled,centred X,Y values
-CODE  XSCALE  ( --c) 256/ XCNTR #+  NEXT, ENDCODE
-CODE  YSCALE  ( --c) 256/ YCNTR #+  NEXT, ENDCODE
+CODE  XSCALE  ( --c) 256/ XCNTR #+  FF AND,  NEXT, ENDCODE
+CODE  YSCALE  ( --c) 256/ YCNTR #+  FF AND,  NEXT, ENDCODE
 
 DECIMAL
 : [X,Y]  ( -- x y) S" X XSCALE Y YSCALE" EVALUATE ; IMMEDIATE
@@ -171,10 +171,9 @@ DECIMAL
 : FLOWER  ( -- ) BGN 15 0 DO   PETAL 4 TURN  LOOP               WAIT ;
 
 : DEMO
-  GRAPHICS2
+    GRAPHICS2
 
     WHITE   HUE SINE
-    LIME    SQUARE
     MAGENTA HUE BURST
     GREEN   HUE SQUIRAL
     BLUE    HUE SPIRAL

@@ -95,13 +95,13 @@ HEX
 \ : 256*     ( --c) ><  BYTE ; \ swap byte is 256 * :-)
 \ : 256/    ( --c) 8 RSHIFT  BYTE ;
 
-CODE 256*   06C4 , NEXT, ENDCODE  \ TOS SWPB,
-CODE 256/   0984 , NEXT, ENDCODE  \ TOS 8 SRL,
+CODE 256*    0884 , NEXT, ENDCODE  \ TOS 8 SLA,
+CODE 256/    0984 , NEXT, ENDCODE  \ TOS 8 SRL,
 
-DECIMAL
-\ returns scaled,centred X,Y values
-: XSCALE  ( --c) 256/ XCNTR +  ;
-: YSCALE  ( --c) 256/ YCNTR +  ;
+\ returns scaled,centred X,Y values. Masked so they wrap around
+HEX
+: XSCALE  ( --c) 256/ XCNTR +  FF AND ;
+: YSCALE  ( --c) 256/ YCNTR +  FF AND ;
 
 DECIMAL
 : [X,Y]  ( -- x y) S" X @ XSCALE Y @ YSCALE" EVALUATE ; IMMEDIATE
