@@ -12,7 +12,6 @@ NEEDS DUMP        FROM DSK1.TOOLS
 NEEDS VALUE       FROM DSK1.VALUES
 NEEDS CHARSET     FROM DSK1.CHARSET
 NEEDS 4TH         FROM DSK1.3RD4TH
-NEEDS CARRAY      FROM DSK1.ARRAYS
 
 HERE
 \
@@ -92,9 +91,14 @@ CREATE GRAPH2
     0 837A C!  ;    \ highest sprite in auto-motion
 
 HEX
-8 CARRAY ]BITS
- 0 ]BITS DP !
- 80 C, 40 C, 20 C, 10 C, 8 C, 4 C, 2 C, 1 C,
+CREATE BITS  80 , 40 , 20 , 10 , 8 , 4 , 2 , 1 ,
+\ : ]BIT  ( n-- n')  2* BITS + @ ;
+
+\ fast const array using indexed addressing
+ : 2*,   ( n -- 2(n)  A104 , ;             \ A R4,R4
+ : []@,   ( addr -- ) C124 , ( addr) , ;   \ MOV addr@(R4),R4
+CODE ]BIT ( n-- n')  2*, BITS []@,  NEXT, ENDCODE
+
 
 \ PLOT computes offset into pattern table per:
 \ TI Video Display Processors, Programmer's Guide
@@ -110,10 +114,10 @@ DEFER STYLUS  ( mask Vaddr --)
       0 8 UM/MOD 256* +     \ 256(INT(Y/8)) + (Y MOD 8)
       SWAP
       0 8 UM/MOD 8* ( r q)  \ (X MOD 8)  8(INT(X/8))
-      SWAP ]BITS C@              \ convert remainder to bit mask
-     -ROT +                      \ add Y to X offset
-      PDT +                      \ add offset to PDT base address
-     ( mask Vaddr) STYLUS ;      \ do stylus code
+      SWAP ]BIT -ROT        \ convert remainder to bit, put on bottom
+      +                     \ add Y to X offset
+      PDT +                 \ add offset to PDT base address
+     ( -- bit Vaddr) STYLUS ; \ do stylus code
 
 \ drawing operations
 HEX
