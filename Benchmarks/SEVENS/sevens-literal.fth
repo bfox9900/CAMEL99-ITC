@@ -20,7 +20,7 @@ NEEDS [IF]   FROM DSK1.CONDCOMP   \ conditional compilation control
 
 \ .......................................................
 \ Change FALSE to TRUE to compile with fast scroll
-FALSE [IF]
+TRUE [IF]
 \ Scroll ends up being the slowest part of the benchmark.
 \ SCROLL entire screen in one block with VMBR and VMBW
  : SCROLL ( -- )
