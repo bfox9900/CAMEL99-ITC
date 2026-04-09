@@ -91,14 +91,14 @@ CREATE GRAPH2
     0 837A C!  ;    \ highest sprite in auto-motion
 
 HEX
-CREATE BITS  80 , 40 , 20 , 10 , 8 , 4 , 2 , 1 ,
 \ : ]BIT  ( n-- n')  2* BITS + @ ;
 
 \ fast const array using indexed addressing
- : 2*,   ( n -- 2(n)  A104 , ;             \ A R4,R4
- : []@,   ( addr -- ) C124 , ( addr) , ;   \ MOV addr@(R4),R4
-CODE ]BIT ( n-- n')  2*, BITS []@,  NEXT, ENDCODE
+: 2*,   ( n -- 2(n)  A104 , ;             \ A R4,R4
+: []@,   ( addr -- ) C124 , ( addr) , ;   \ MOV addr@(R4),R4
+: CONST-ARRAY: ( addr -- ) CODE    2*,  []@,  NEXT, ;
 
+HERE  80 , 40 , 20 , 10 , 8 , 4 , 2 , 1 , CONST-ARRAY: ]BIT
 
 \ PLOT computes offset into pattern table per:
 \ TI Video Display Processors, Programmer's Guide
