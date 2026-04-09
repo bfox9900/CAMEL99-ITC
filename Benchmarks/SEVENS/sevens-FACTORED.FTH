@@ -77,13 +77,25 @@ DECIMAL
     LOOP                        \ 300 NEXT I
 ;
 
+\ : PRINT[] ( addr len -- ) \ print array backwards
+\    CR
+\    0  NUMLEN                 \ 340 FOR I=NUMLEN TO 1
+\    OVER + ( --'start 'end)    \ compute addresses instead
+\    DO
+\       I C@ >DIGIT (EMIT)        \ 350 PRINT CHR$(A(I)+48)
+\    -1 +LOOP                   \ 360 NEXT I ( STEP -1)
+\ ;
+
 : PRINT[] ( addr len -- ) \ print array backwards
     CR
-  \  0  NUMLEN                 \ 340 FOR I=NUMLEN TO 1
     OVER + ( --'start 'end)    \ compute addresses instead
-    DO
-       I C@ 48 + (EMIT)        \ 350 PRINT CHR$(A(I)+48)
-    -1 +LOOP                   \ 360 NEXT I ( STEP -1)
+    BEGIN
+        2DUP XOR
+    WHILE
+       DUP C@ >DIGIT (EMIT)        \ 350 PRINT CHR$(A(I)+48)
+       1-                          \ 360 NEXT I ( STEP -1)
+    REPEAT
+    2DROP
 ;
 
 : ?ADJUST-LENGTH ( --)
