@@ -3,14 +3,13 @@
 \ Forth by Brian Fox for Camel99 Forth
 
 \ add some stuff to the kernel
-INCLUDE DSK1.TOOLS
-INCLUDE DSK1.VALUES
-INCLUDE DSK1.GRAFIX
-INCLUDE DSK1.AUTOMOTION
-INCLUDE DSK1.COLORS
-INCLUDE DSK1.RANDOM
-INCLUDE DSK1.SOUND
-INCLUDE DSK1.UDOTR   \ flush left number printing
+NEEDS CASE       FROM DSK1.CASE
+NEEDS VALUES     FROM DSK1.VALUES
+NEEDS HCHAR      FROM DSK1.GRAFIX
+NEEDS AUTOMOTION FROM DSK1.AUTOMOTION
+NEEDS RND        FROM DSK1.RANDOM
+NEEDS HZ         FROM DSK1.SOUND
+NEEDS .R         FROM DSK1.UDOTR   \ flush left number printing
 
 : ENUM  ( 0 <text> -- n) DUP CONSTANT  1+ ;
 
@@ -54,6 +53,8 @@ DECIMAL
 : DEBRIS$
  S" 220884218A00248108104580144012001082005002A80011440008A200049200" ;
 
+.( .)
+
 : GameInit
   32 TO SCROLLS
    0 TO score
@@ -86,6 +87,8 @@ DECIMAL
 
 : RedFlash ( --  ) RED SCREEN  160 MS  BLACK SCREEN ; \ Flash screen red
 
+.( .)
+
 \ access sprite attribute table as an array of 4 byte records
 : ]SAT  ( n -- Vaddr) 4* SAT + ;
 
@@ -116,7 +119,7 @@ DECIMAL
   DELALL       \ Clean up all the sprites
   0 23 AT-XY ." Press ENTER to play again"
 ;
-
+.( .)
 \ Camel99 exposes memory fields in VDP RAM each of sprite.
 \ SP.Y      VDP address of the 'y' position field
 
@@ -159,7 +162,7 @@ DECIMAL
   score hiscore > IF  score TO hiscore THEN
   0 22 AT-XY ." Score " score 5 .R  2 SPACES ." High" hiscore 5 .R
 ;
-
+.( .)
 \ ****************************************************************
 \                   horizontal scroll function
 \  Camel99 didn't have horizontal scrolling so we had to make one
@@ -191,7 +194,7 @@ DECIMAL
     LOOP
   ;
 \ ******************************************************************
-
+.( .)
 \ // Generate one column of cave by adding or subtracting from last column
 0 VALUE A
 0 VALUE B
@@ -219,7 +222,7 @@ DECIMAL
   REPEAT
 ;
 
-\  // Make sure enough room for ship to pass between current column and previous column
+\  // Make sure enough room for ship to pass between current column and previou
 \  // This is intentionally made to be a little tight sometimes
 \  IF (lastA+B)>18 THEN B=B-(lastA+B)+18
 \  IF (lastB+A)>18 THEN A=A-(lastB+A)+18
@@ -242,7 +245,7 @@ DECIMAL
     MAKEGAP
     ENOUGHROOM
 ;
-
+.( .)
 
 15 VALUE SPEED
 
@@ -266,3 +269,6 @@ DECIMAL
       kLoop
     UNTIL
     END ;
+
+CR .( Compile complete)
+CR .( Type  RUN <enter> to start demo )
