@@ -52,14 +52,18 @@ DECIMAL
   0 TO NUMLEN                   \ 150 NUMLEN=1
 ;
 
-: PROCESSOR ( -- ? ) \ win FLAG lives on data stack
+: .POWER ." 7 ^" POWER . ." IS:" ; \ 170 PRINT "7 ^";POWER;"IS:"
+
+: PROCESSOR ( -- ?) \ win FLAG lives on data stack
+    1 +TO POWER                 \ 160 POWER=POWER+1
+    .POWER                      \ 170 PRINT "7 ^";POWER;"IS:"
     0 TO CARRY                  \ 180 CARRY=0
     0 TO INAROW                 \ 190 INAROW=0
     FALSE                       \ replaces WIN variable
     NUMLEN 1+ 0                 \ 200 FOR I=1 TO NUMLEN
     DO
-        I TO NDX                \ copy I for later
-        I ]A                    \ Array address onto data stack
+        I DUP TO NDX            \ I does not exist outside loop. Copy for later
+        ( i) ]A                 \ Array address onto data stack
         DUP C@ 7 *  CARRY +     \ 210 A(I)=A(I)*7+CARRY
         0 10 UM/MOD TO CARRY    \ 220 CARRY=INT(A(I)/10)
 ( addr n) TUCK SWAP C!          \ 230 A(I)=A(I)-CARRY*10
@@ -87,13 +91,13 @@ DECIMAL
 \ ;
 
 : PRINT[] ( addr len -- ) \ print array backwards
-    CR
-    OVER + ( --'start 'end)    \ compute addresses instead
+    CR                           \ 340 FOR I=NUMLEN TO 1
+    OVER + ( --'start 'end)      \ compute addresses instead
     BEGIN
         2DUP XOR
     WHILE
-       DUP C@ >DIGIT (EMIT)        \ 350 PRINT CHR$(A(I)+48)
-       1-                          \ 360 NEXT I ( STEP -1)
+       DUP C@ >DIGIT (EMIT)       \ 350 PRINT CHR$(A(I)+48)
+       1-                         \ 360 NEXT I ( STEP -1)
     REPEAT
     2DROP
 ;
@@ -102,18 +106,13 @@ DECIMAL
     CARRY DUP NDX 1+ ]A C!      \ 310 A(I)=CARRY
     IF                          \ 320 IF CARRY=0 THEN 340
        1 +TO NUMLEN             \ 330 NUMLEN=NUMLEN+1
-    THEN
+    THEN                        \ 340
 ;
-
-: .POWER
-    ." 7 ^" POWER . ." IS:" ;   \ 170 PRINT "7 ^";POWER;"IS:"
 
 : RUN
     CR ." 7's Problem "          \ 110 PRINT "7's Problem"
     MEM_INIT
     BEGIN
-        1 +TO POWER              \ 160 POWER=POWER+1
-        .POWER
         PROCESSOR ( win?)       \ WIN flag is on the data stack
         ?ADJUST-LENGTH
         []A NUMLEN  PRINT[]
