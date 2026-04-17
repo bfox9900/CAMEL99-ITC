@@ -10,13 +10,20 @@
 
 \  ***  All Forth commands are separated by a SPACE ***
 
-\ Forth commands are called WORDS. 
+\ Forth commands are called WORDS.
 \ They are like sub-routines in other languages.
 \ WORDs are kept in the Forth Dictionary.
 \ In Forth, everything is either a WORD in the dictionary or a number.
 \ All programming in Forth is done by using existing WORDs to make new WORDs.
 \ FORTH is one of the first "CONCATENTIVE" languages which means you can
 \ string words together end to end to make more powerful words.
+
+\ if you have the CAMEL99 Forth program running on TI-99,
+\ you should type this line in all caps, to get the .S command,
+\ which is used in this demo.
+
+INCLUDE DSK1.TOOLS
+
 
 \ Numbers and math are typically performed on the data stack
 ( commonly called "the stack")
