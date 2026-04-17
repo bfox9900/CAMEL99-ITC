@@ -99,7 +99,6 @@ DECIMAL
     16 MOVING  \ sets the number of sprites for Automotion interrupt
     -2 NOISE  0 DB  200 MS
     RedFlash
-\ 12 sprites flying in random directions
     16 2 DO
         Debris ORANGE  #SHIP POSITION I SPRITE \ Use POSITION like a function
         RNDV RNDV I MOTION
@@ -107,7 +106,7 @@ DECIMAL
     LOOP
     500 MS
     SILENT
-    15 2 DELSPRITES   \ delete 12 sprites starting at #2
+    16 2 DELSPRITES   \ delete 14 sprites starting at #2
     1 MOVING
 ;
 
