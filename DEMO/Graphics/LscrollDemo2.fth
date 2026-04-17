@@ -86,9 +86,6 @@ DECIMAL
 
 : RedFlash ( --  ) RED SCREEN  160 MS  BLACK SCREEN ; \ Flash screen red
 
-\ adjust the volume of the active sound generator
-: DECAY   ( n -- ) 16 0 DO  I DB DUP MS  LOOP DROP ;
-
 \ access sprite attribute table as an array of 4 byte records
 : ]SAT  ( n -- Vaddr) 4* SAT + ;
 
