@@ -284,20 +284,21 @@ CREATE MYNUMBERS   10 CELLS ALLOT    \ ok
 \ Initialize all the values to 0
 MYNUMBERS 10 CELLS 0 FILL   \ ok
 
-\ If we needed to do this a lot, we would define ERASE
-: ERASE  ( addr len -- ) 0 FILL ;
+\ If we needed to do this a lot, we would use ERASE which is written
+\ in Forth Assembler so it is very fast.
 
 \ ... and do this...
 MYNUMBERS 10 CELLS ERASE
 
-\ or we can CREATE an array initialized with specific values
-\ using the 'comma' number compiler. (puts 1 integer in next available CELL)
-CREATE MYNUMBERS    64 , 9001 , 1337 , \ ok (the last `,` is important!)
+\ We can CREATE an array initialized with specific values
+\ using the 'comma' number compiler.
+\ >> Comma is a word, not puncuation <<
 
-\ ...which is equivalent to manually writing values to each index:
-  64 MYNUMBERS 0 CELLS + !    \ ok
-9001 MYNUMBERS 1 CELLS + !    \ ok
-1337 MYNUMBERS 2 CELLS + !    \ ok
+\ It puts 1 integer in next available memory CELL in the dictionary
+
+CREATE MYNUMBERS    64 , 9001 , 1337 , 4545 , 1234 ,
+( NOTE: The last `,` is important!)
+
 
 \ Reading values from our array at indexes, the hard way:
 MYNUMBERS 0 CELLS + ?    \ 64 ok
@@ -315,6 +316,14 @@ MYNUMBERS 1 CELLS + ?    \ 9001 ok
 
 \ If you don't like this syntax you are free to change it!
 \ *Notice there is no index checking. You could add it if you need it.
+
+\ In Camel99 it is simpler to just load the array libary into the system
+
+INCLUDE DSK1.ARRAYS
+
+\ syntax is:   100 ARRAY Q   ( Makes a 100 cell array)
+\  3 Q  returns the address of the 3rd cell of the array
+
 
 \ ------------------------------ The Return Stack ------------------------------
 \ Just like a sub-routine stack, the Forth return stack holds the address (pointer)
