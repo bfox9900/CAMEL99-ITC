@@ -180,7 +180,7 @@ DECIMAL
 \                   src      dst    size (20 lines)
 : SCRCAPTURE ( -- ) VTOP @   HEAP   WINDOW_SIZE VREAD ;
 
-\ copy screen and write 20 heap lines minus first char, back to screen
+\ copy screen and write 18 heap lines minus first char, back to screen
 : SCROLL-LEFT ( -- )
     SCRCAPTURE
     19 1 DO
