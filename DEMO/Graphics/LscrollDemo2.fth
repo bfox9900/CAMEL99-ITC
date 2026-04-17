@@ -225,8 +225,8 @@ DECIMAL
 \  IF (lastB+A)>18 THEN A=A-(lastB+A)+18
 \  lastA=A::lastB=B
 : ENOUGHROOM
-   LastA B + DUP 18 >  IF  B SWAP - 18 +   TO B ELSE DROP THEN
-   LastB A + DUP 18 >  IF  A SWAP - 18 +   TO A ELSE DROP THEN
+   LastA B + DUP 18 >  IF  B SWAP - 18 +  TO B    ELSE DROP THEN
+   LastB A + DUP 18 >  IF  A SWAP - 18 +  TO A    ELSE DROP THEN
    A TO LastA   B TO LastB
 ;
 
