@@ -321,9 +321,10 @@ MYNUMBERS 1 CELLS + ?    \ 9001 ok
 
 INCLUDE DSK1.ARRAYS
 
-\ syntax is:   100 ARRAY Q   ( Makes a 100 cell array)
-\  3 Q  returns the address of the 3rd cell of the array
+ 100 ARRAY Q   ( Makes a 100 cell array)
 
+    1234 5 Q !  \ store 1234 in the 5th cell of the array
+     5 Q ?      \ prints 1234
 
 \ ------------------------------ The Return Stack ------------------------------
 \ Just like a sub-routine stack, the Forth return stack holds the address (pointer)
