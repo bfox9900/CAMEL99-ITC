@@ -151,7 +151,8 @@ FALSE .    \ 0 ok
 42 42 = .   \ -1 ok
 12 53 = .   \ 0 ok
 
-\ `IF` is a compile-only word that does stuff if top of stack is TRUE
+\ `IF` is a compile-only word (must be inside a colon definition)
+\ that does stuff if top of stack is TRUE.
 \ Forth's IF/THEN will confuse you if you think it's the same as other languages.
 \ It is best understood if we consider the sentence:
 
