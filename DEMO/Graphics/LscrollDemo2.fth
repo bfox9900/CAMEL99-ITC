@@ -164,7 +164,7 @@ DECIMAL
 \                   horizontal scroll function
 \  Camel99 didn't have horizontal scrolling so we had to make one
 \ ****************************************************************
-: HEAP       ( -- addr) H @ ; \ H is Camel99 pointer to unused low RAM
+: HEAP    ( -- addr) H @ ; \ H is Camel99 pointer to unused low RAM
 
 \ Machine code "R4 5 SLA" is faster than mulitply
 HEX
