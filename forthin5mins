@@ -343,10 +343,10 @@ PAGE
 \ Clear the screen:
 \ PAGE
 
-\ Loading Forth files into the system:
-\ INCLUDE MYFILE.FTH
+\ Loading Forth files into the Camel99 Forth system:
+\ INCLUDE DSK1.MYFILE
 
-\ you can list every word that's in Forth's dictionary with WORDS
-KEY DROP
-
+\ If you have "included"  DSK1.TOOLS, you can list every word that's in Forth's dictionary with the command: WORDS
+CR
+CR
 WORDS
