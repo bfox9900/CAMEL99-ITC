@@ -110,7 +110,7 @@ DECIMAL
     LOOP
     500 MS
     SILENT
-    12 2 DELSPRITES   \ delete 12 sprites starting at #2
+    15 2 DELSPRITES   \ delete 12 sprites starting at #2
     1 MOVING
 ;
 
