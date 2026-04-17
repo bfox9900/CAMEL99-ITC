@@ -192,7 +192,7 @@ DECIMAL
   ;
 \ ******************************************************************
 
-\  // Generate one column of cave by adding or subtracting from last column
+\ // Generate one column of cave by adding or subtracting from last column
 0 VALUE A
 0 VALUE B
 0 VALUE LastA
@@ -255,7 +255,7 @@ DECIMAL
     BEGIN
       GameInit
       .SCORE
-      10 TO A  7  TO B
+      10 TO A   7 TO B
       BEGIN
         SCROLL-LEFT
         10 +TO score   \ 10 points for every good loop
