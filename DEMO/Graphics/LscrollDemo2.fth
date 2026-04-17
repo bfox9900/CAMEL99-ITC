@@ -243,12 +243,8 @@ DECIMAL
     ENOUGHROOM
 ;
 
-\  GameInit  0 1 AT-XY
 
 15 VALUE SPEED
-
-\ we can move the ship during the delay :-)
-:  DELAY  ( -- ) 0 ?DO  MOVE-SHIP 500 TICKS LOOP ;
 
 : RUN
     AUTOMOTION
