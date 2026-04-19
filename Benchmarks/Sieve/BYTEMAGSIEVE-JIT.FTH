@@ -3,7 +3,7 @@
 \                Normal  w/FILLW   OPT      JIT
 \ Camel99 DTC     104              67.3
 \ TurboForth      107
-\ Camel99 ITC     120    117       75.6     49
+\ Camel99 ITC     120    117       75.6     50
 \ FbForth 2.0:13  174
 
 NEEDS JIT:   FROM DSK1.JITII
