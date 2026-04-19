@@ -3,7 +3,9 @@
 \                Normal  FILLW   OPT
 \ Camel99 DTC     104     103    67.3
 \ TurboForth      107
-\ Camel99 ITC     120     117    75.6
+\ Camel99 ITC     120   \ original code
+\ Primes2         108   \ simplest fixes
+\ Primes3
 \ FbForth 3.0     174
 
 NEEDS ELAPSE FROM DSK1.ELAPSE
@@ -36,24 +38,52 @@ DECIMAL
    10 0 DO  DO-PRIME  CR SPACE . ." Primes"  LOOP
    CR ." Done!"
 ;
+\ ----------------------------------------------------------
+INCLUDE DSK1.TABLES  \ faster indexed memory access library
+FLAGS TABLE: ]FLAGS
 
-INCLUDE DSK1.FILLW
-\ WITH fast fill and 2* and 2DROP
-HEX 0101 CONSTANT $0101
-DECIMAL
-: DO-PRIME3
-   FLAGS SIZE  $0101 FILLW  ( set array )
+: DO-PRIME2
+   FLAGS SIZE  1 FILL  ( set array )
    0        ( counter )
    SIZE 0
-   DO FLAGS I + C@
-     IF I 2*  3 +  DUP I +
+   DO I ]FLAGS C@          \ Optimized with ]FLAGS
+     IF I 2* 3 +  DUP I +  \ optimized with 2*
         BEGIN
           DUP SIZE <
         WHILE
-           0 OVER FLAGS +  C!
-           OVER +
+          0 OVER ]FLAGS C!
+          OVER +
         REPEAT
-        2DROP
+        2DROP             \ optimized with 2DROP
+        1+
+     THEN
+   LOOP
+;
+
+: PRIMES2 ( -- )
+   PAGE ."  10 Iterations"
+   10 0 DO  DO-PRIME2  CR SPACE . ." Primes"  LOOP
+   CR ." Done!"
+;
+
+
+INCLUDE DSK1.FILLW
+\ WITH  TABLE:, fast fill and 2* and 2DROP
+HEX 0101 CONSTANT $0101
+DECIMAL
+: DO-PRIME3
+   FLAGS SIZE $0101 FILLW  ( set array )
+   0        ( counter )
+   SIZE 0
+   DO I ]FLAGS C@          \ Optimized with ]FLAGS
+     IF I 2* 3 +  DUP I +  \ optimized with 2*
+        BEGIN
+          DUP SIZE <
+        WHILE
+          0 OVER ]FLAGS C!
+          OVER +
+        REPEAT
+        2DROP             \ optimized with 2DROP
         1+
      THEN
    LOOP

@@ -7,8 +7,8 @@
 \ This is 10x faster than linear method
 \ : SQRT ( n -- n ) -1 TUCK DO   2+  DUP +LOOP   2/ ;
 \
-\ INCLUDE DSK1.TOOLS  \ for testing only
-\ INCLUDE DSK1.ELAPSE \  "   "       "
+ INCLUDE DSK1.TOOLS  \ for testing only
+ INCLUDE DSK1.ELAPSE \  "   "       "
 
 \ : U/  ( u1 u2 -- u3 )  0 SWAP UM/MOD NIP ;
 \ machine code is same size as Forth
@@ -28,8 +28,8 @@ DECIMAL
   DUP
   IF
      DUP>R
-\     INIT-SEED   ( optimized seed value) \ 64516 SQRT : 5000x 16.4 seconds
-      1   ( default seed value )          \ 64516 SQRT : 5000x 31.1 seconds
+     INIT-SEED   ( optimized seed value) \ 64516 SQRT : 5000x 16.4 seconds
+ \   1   ( default seed value )          \ 64516 SQRT : 5000x 31.1 seconds
      R@ OVER U/ OVER + 2/ NIP ( DUP . ) \ debug viewing
      BEGIN
         R@ OVER U/ OVER + 2/  ( DUP .)
@@ -42,10 +42,10 @@ DECIMAL
      R> DROP
   THEN ;
 
-\ recursive version by Gerry Jackson comp.lang.forth 
+\ recursive version by Gerry Jackson comp.lang.forth
 : USQRT ( u -- u1 )
    DUP 2 U< IF EXIT THEN
-   DUP >R 2 RSHIFT RECURSE
+   DUP>R  2 RSHIFT  RECURSE
    2*                ( -- u sm )
    1+ DUP            ( -- u la la )
    DUP *             ( -- u la la^2 )
@@ -53,6 +53,10 @@ DECIMAL
 ;
 
 \ for speed testing
-: ROOTS1 ( n1 cnt -- n) 65516 1000 0 DO  DUP SQRT DROP  LOOP DROP ;
+: ROOTS1 ( n1 cnt -- n) 65516 1000 0 DO  DUP SQRT DROP  LOOP DROP ;  \ 3.7
 
-: ROOTS2 ( n1 cnt -- n) 65516 1000 0 DO  DUP USQRT DROP  LOOP DROP ;
+: ROOTS2 ( n1 cnt -- n) 65516 1000 0 DO  DUP USQRT DROP  LOOP DROP ; \ 7.4
+
+
+: LINSQRT ( n -- n ) -1 TUCK DO   2+  DUP +LOOP   2/ ;
+: ROOTS3 ( n1 cnt -- n) 65516 1000 0 DO  DUP LINSQRT DROP  LOOP DROP ; \ 35
