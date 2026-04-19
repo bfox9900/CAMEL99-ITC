@@ -98,7 +98,7 @@ HEX
 : []@,   ( addr -- ) C124 , ( addr) , ;   \ MOV addr@(R4),R4
 : CONST-ARRAY: ( addr -- ) CODE    2*,  []@,  NEXT, ;
 
-HERE  80 , 40 , 20 , 10 , 8 , 4 , 2 , 1 , CONST-ARRAY: ]BIT
+BEGIN  80 , 40 , 20 , 10 , 8 , 4 , 2 , 1 , CONST-ARRAY: ]BIT
 
 \ PLOT computes offset into pattern table per:
 \ TI Video Display Processors, Programmer's Guide
