@@ -26,15 +26,15 @@ JIT: DO-PRIME
    SIZE 0
    DO I FLAGS + C@
       IF
-         I 2*  3 +  DUP I +
-        BEGIN
-          DUP SIZE <
-        WHILE
+         I I +  3 +  DUP I +
+         BEGIN
+           DUP SIZE <
+         WHILE
            0 OVER FLAGS +  C!
            OVER +
-        REPEAT
-        2DROP
-        1+
+         REPEAT
+         DROP DROP
+         1+
      THEN
    LOOP
 ;JIT
