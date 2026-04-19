@@ -3,9 +3,11 @@
 \                Normal  FILLW   OPT
 \ Camel99 DTC     104     103    67.3
 \ TurboForth      107
+
 \ Camel99 ITC     120   \ original code
 \ Primes2         108   \ simplest fixes
 \ Primes3         107   \ faster fill
+\ Primes-opt       76   \ inline optimizer
 
 \ FbForth 3.0     174
 
