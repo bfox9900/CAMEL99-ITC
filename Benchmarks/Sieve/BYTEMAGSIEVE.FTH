@@ -5,7 +5,8 @@
 \ TurboForth      107
 \ Camel99 ITC     120   \ original code
 \ Primes2         108   \ simplest fixes
-\ Primes3
+\ Primes3         107   \ faster fill
+
 \ FbForth 3.0     174
 
 NEEDS ELAPSE FROM DSK1.ELAPSE
@@ -99,7 +100,7 @@ NEEDS INLINE[  FROM DSK1.INLINE
 
 \ optimized Version
 DECIMAL
-: DO-PRIME2
+: DO-PRIME4
   INLINE[ FLAGS SIZE  01 FILL 0   SIZE 0 ]
    DO
      INLINE[ FLAGS I + C@ ]
@@ -115,41 +116,7 @@ DECIMAL
 \ Camel99
 : PRIMES-OPT ( -- )
    PAGE ." 10 Iterations"
-   10 0 DO  DO-PRIME2 LOOP
+   10 0 DO  DO-PRIME4 LOOP
    CR
-   CR ." Done!"
-;
-
-
-\ WITH fast fill and 2* and 2DROP "TABLE:"
-NEEDS FILLW   FROM  DSK1.FILLW
-NEEDS TABLE:  FROM DSK1.TABLES
-
-HEX 0101 CONSTANT $0101
-
-FLAGS TABLE: ]FLAGS
-
-DECIMAL
-: DO-PRIME4
-   FLAGS SIZE  $0101 FILLW  ( set array )
-   0        ( counter )
-   SIZE 0
-   DO I ]FLAGS C@
-     IF I 2*  3 +  DUP I +
-        BEGIN
-          DUP SIZE <
-        WHILE
-           0 OVER ]FLAGS C!
-           OVER +
-        REPEAT
-        2DROP
-        1+
-     THEN
-   LOOP
-;
-
-: PRIMES4 ( -- )
-   PAGE ."  10 Iterations"
-   10 0 DO  DO-PRIME4  CR SPACE . ." Primes"  LOOP
    CR ." Done!"
 ;
