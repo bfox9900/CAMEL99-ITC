@@ -12,14 +12,15 @@ INCLUDE DSK1.SEARCH
 : LEN ( addr -- c) C@ ; \ for clarity only
 
 HEX
-\ create the problem instructions as byte-counted binary strings
-CREATE DROP/DUP$ ALIGN  06 C,  C1 C, 36 C, 06 C, 46 C, C5 C, 84 C,  0 C, ALIGN
+CREATE DROP/DUP$  C136 , 0646 , C584 ,
+CREATE DUP/DROP   0646 , C584 , C136 ,
 
-CREATE <NEXT>  2 C, NEXT,  ALIGN
+CREATE <NEXT>  NEXT,
 
 
-: "DROP/DUP" ( -- addr len) DROP/DUP$ COUNT ;
-: "NEXT"                   <NEXT> COUNT ;
+: "DROP/DUP" ( -- addr len) DROP/DUP$ 6 ;
+: "DUP/DROP"  DUP/DROP  6 ;
+: "NEXT"      <NEXT> 2 ;
 
 \ remove bytes from the data pair (addr len)
 \ returning the rest of the string
@@ -34,10 +35,18 @@ CREATE <NEXT>  2 C, NEXT,  ALIGN
 VARIABLE #DUPS
 VARIABLE #BYTESWAPS
 
+: CODELENGTH  ( CODEaddr -- addr len ? )
+    DUP 200  "NEXT" SEARCH NIP
+    >R
+    OVER -
+    R>
+
+;
+
 : TOSOPT ( addr size -- )
     #DUPS OFF
     BEGIN
-        "DROP/DUP" SEARCH ( addr len ?)
+        "DUP/DROP" SEARCH ( addr len ?)
     IF
     WHILE
         2DUP 3 CELLS DUP>R REMOVE    \ remove the code
@@ -47,3 +56,5 @@ VARIABLE #BYTESWAPS
    THEN
     2DROP
 ;
+
+' DO-PRIME >BODY  CODELENGTH

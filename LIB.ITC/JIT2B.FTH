@@ -6,7 +6,7 @@
 \ and compiles the execution token for the super instructions in a Forth word.
 
 \ Version II compiles code into dictionary ram as CODE definitions.
-\ 2b Experiment to remove PUSH/POP overhead
+\ Verion: 2b Experiment to remove PUSH/POP overhead
 
 NEEDS .S     FROM DSK1.TOOLS   \ debug
 NEEDS ELAPSE FROM DSK1.ELAPSE  \ execution timing
@@ -49,15 +49,42 @@ CODE +      A136 ,         NEXT, ENDCODE
 
 045A CONSTANT 'NEXT'  \ 9900 CODE for B *R10   Camel99 Forth's NEXT code
 
+0646 CONSTANT 'PUSH'
+C584 CONSTANT 'TOSMOV'  \ DUP is "push tosmov"
+C136 CONSTANT 'DROP'
+
+
+VARIABLE OPTIMIZER
+
+\ This optimizer looks for a 'drop' instruction.
+\ If found it looks back for the 'DUP' instruction ( 2 machine instructions)
+\ If 'DUP'  is found it removes 'DUP' and 'DROP' ( 6 bytes)
+
+: =DUP?  ( d -- ?)  'PUSH' =   SWAP 'DROP' =  AND ;
+: OPCODE, ( HERE u -- )   ,  CELL+ ;
+: PREVDUP? ( IP instruction -- ?)  OVER 2 CELLS - 2@  QUIT  =DUP? ;
+
+: (OPT,)  ( IP instruction -- )
+        DUP  'DROP' =
+        IF PREVDUP?
+           IF
+              DROP  -2 CELLS ALLOT  \ throw it away
+           THEN
+        ELSE
+             OPCODE,
+        THEN ;
+
+: OPT, ( opcode -- ) OPTIMIZER @ IF  (OPT,) ELSE  OPCODE,   THEN ;
+
+
 : CODE,  ( xt --)  \ Read code word from kernel, compile into target memory
     >BODY 80 CELLS  \ 128 bytes is max size we will try to compile
     BOUNDS    ( -- IPend IPstart)
     BEGIN
         DUP @ 'NEXT' <>  \ the instruction is not 'NEXT'
     WHILE
-        DUP @  ( -- IP instruction)
-        ,      \ compile instruction
-        CELL+  \ advance IP
+        DUP @   ( -- IP instruction)
+        OPT,
         2DUP < ABORT" End of code not found"
     REPEAT
     2DROP
@@ -71,7 +98,18 @@ HEX
 : DUP,   COMPILES DUP  ;
 : DROP,  COMPILES DROP ;
 
-: LIT,   ( n -- )    DUP, 0204 ,  , ; \ LI R4,<n>
+: ?DUP,    ( -- ) \ smart dup
+    OPTIMIZER @
+    IF
+        HERE 1 CELLS -  @ 'DROP' =  \ was previous instruction DROP ?
+        IF  -1 CELLS ALLOT          \ yes: erase it
+        ELSE DUP,                   \ no: compile a DUP
+        THEN
+    ELSE
+        DUP,                       \ no optimizing
+    THEN ;
+
+: LIT,   ( n -- )    ?DUP, 0204 ,  , ; \ LI R4,<n>
 
 \ store a byte offset in odd byte of addr.
 \ Addr is the location of Jump instruction
@@ -200,8 +238,9 @@ FORTH DEFINITIONS
 
 : JIT: ( -- JIT-xt)
     ALSO JITS         \ put JITS VOCABULARY first in search order
+    JIT-COMPILER
     CODE
-    JIT-COMPILER ]
+    ]
 ;
 
 : ;JIT ( JIT-XT -- )
@@ -215,3 +254,20 @@ FORTH DEFINITIONS
 
 HERE SWAP -
 CR DECIMAL . .( bytes)
+
+VARIABLE X !
+OPTIMIZER ON
+HEX
+JIT: TEST
+ DUP DROP DEAD X !  X @
+;JIT
+
+' TEST  30 DUMP
+
+OPTIMIZER OFF
+HEX
+JIT: TEST
+ DUP DROP DEAD X !  X @
+;JIT
+
+' TEST  30 DUMP

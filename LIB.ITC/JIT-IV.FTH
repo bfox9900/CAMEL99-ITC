@@ -1,9 +1,9 @@
 \ jit-II.fth Compiles inline code as headless words in HEAP  Nov 29 2022
 
 \ Problem:
-\ ITC Forth spends 50% of it's time running 3 instructions call NEXT.
+\ ITC Forth spends 50% of it's time running 3 instructions called NEXT.
 \ This system compiles primitives from the kernel as super-instructions
-\ and compiles the execution token for the super instructions in a Forth word.
+\ and compiles the execution token for the super instructions in a Forth CODE word.
 
 \ Version II compiles code into dictionary ram as CODE definitions.
 
@@ -89,7 +89,7 @@ CODE +      A136 ,         NEXT, ENDCODE
 
 \ tiny assemblers to explain the code
 HEX
-: 1-,    ( n -- n') COMPILES 1-  ; \ TOS DEC,
+: 1-,    ( n -- n') 0604 ,   ; \ TOS DEC,
 
 \ optimizer language to help clarify logic
 : OPTIMIZER: :  IMMEDIATE ;
@@ -156,7 +156,7 @@ HEX
 \ from the kernel.
 
 VOCABULARY JITS
-ALSO JITS DEFINITIONS
+JITS DEFINITIONS
 
 : BEGIN    HERE >CS ; IMMEDIATE  \ push location onto control stack
 
@@ -204,7 +204,8 @@ ALSO JITS DEFINITIONS
 
 \ --------------------------------------------------------------
 
-FORTH DEFINITIONS
+ONLY FORTH DEFINITIONS ALSO JITS ALSO ASSEMBLER
+
 \ CFA of a code word contains the address of the next cell
 : CODE? ( XT -- ?)  DUP @ 2- = ;
 
@@ -273,8 +274,6 @@ C136 CONSTANT "DROP"
 ' * FOLD-OP: OPT*,
 ' - FOLD-OP: OPT-,
 ' / FOLD-OP: OPT/,
-
-
 
 \ specific CODE word and optimizers
 \ If the case statemente can't find it, just compile kernel code
@@ -369,10 +368,10 @@ C136 CONSTANT "DROP"
 
 : JIT: ( -- JIT-xt)
     ALSO JITS         \ put JITS VOCABULARY first in search order
+    JIT-COMPILER
     CODE
     ]
     /ARGS              \ clear the literal stack
-    JIT-COMPILER
 ;
 
 : ;JIT ( JIT-XT -- )
