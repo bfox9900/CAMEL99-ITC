@@ -249,18 +249,19 @@ VTOP @ TABLE32: ]SCRLN   \ expose screen memory as an array of lines
 \ IF (lastB+A)>18 THEN A=A-(lastB+A)+18
 \ lastA=A::lastB=B
 
-\ We could write the above expression using values but this is bad form in Forth
+\ We could write the above expressions using values.
 \ Example:
 \ : ENOUGHROOM
 \     lastA B +  18 > IF  B lastA B + -  18 + TO B  THEN
 \     lastB A +  18 > IF  A lastB A + -  18 + TO A  THEN
 \     A TO lastA  B TO lastB
-;
+\ ;
+
+\ But this is bad form in Forth.
 
 \ BUT! If we use the data stack and factor out the common code,
 \ we get one function.
 \ The new function can test the A and B values with the same code. :-)
-
 
 : TESTGAP ( n Lastn -- n')
    OVER + ( a n )
@@ -288,17 +289,17 @@ VARIABLE SPEED
 
 : SPEED--
     SPEED @  0= IF EXIT THEN
-    SPEED DUP @ 10 - 0 MAX SWAP !  ;
+    SPEED DUP @ 10 - 0 MAX SWAP ! ;
 
 : ANTICIPATION
-     \ first moves get no points
-      31 0 DO
-        NEXTCOLUMN
-        SPEED @ MS
-        MOVE-SHIP
-        .SCORE
-      LOOP
-      GREEN BRICKS
+    \ first moves get no points
+    31 0 DO
+      NEXTCOLUMN
+      SPEED @ MS
+      MOVE-SHIP
+      .SCORE
+    LOOP
+    GREEN BRICKS
 ;
 
 : ENGINES   -2 NOISE -24 DB ;
@@ -324,7 +325,9 @@ VARIABLE SPEED
 ;
 
 \ switch to text mode and restart interpreter
-: END  STOPMOTION TEXT ." Camel99 Forth" 500 MS CR ." Bye!"  1000 MS  BYE ;
+: END
+  STOPMOTION
+  CLEAR ." Camel99 Forth" 500 MS CR ." Bye!"  1000 MS  BYE ;
 
 : RUN
     AUTOMOTION
@@ -342,7 +345,7 @@ VARIABLE SPEED
 \ Save program as binary program for Editor/Assembler Loader
 \ Menu selection 5.
 
-: START  WARM DECIMAL  RUN ;
+: START   WARM DECIMAL  RUN ; \ 1ST Forth word that will RUN
 
   HEX 2000 H !         \ set heap to default value so it won't be saved
 DECIMAL
