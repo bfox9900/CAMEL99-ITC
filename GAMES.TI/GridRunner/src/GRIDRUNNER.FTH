@@ -224,7 +224,7 @@ VTOP @ TABLE32: ]SCRLN   \ expose screen memory as an array of lines
 \  B=B+INT(RND*5)-2 :: IF B<2 THEN B=2 ELSE IF B>15 THEN B=15
 
 \ Factored this out of all of the above
-:  2+/-  ( n -- n')  5 RND 2- +  2 15 CLIP ;
+:  RND2+/-  ( n -- n')  5 RND 2- +  2 15 CLIP ;
 
 \  // Make sure enough room for ship to pass current column
 \  WHILE A+B>18
@@ -261,7 +261,7 @@ VTOP @ TABLE32: ]SCRLN   \ expose screen memory as an array of lines
 
 : NEXTCOLUMN
     SCROLL-LEFT
-    A 2+/-  B 2+/- MAKEGAP TO B  TO A
+    A RND2+/-  B RND2+/- MAKEGAP TO B  TO A
     ENOUGHROOM
     .COLUMN
 ;
