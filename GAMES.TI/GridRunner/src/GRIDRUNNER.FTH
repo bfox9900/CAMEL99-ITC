@@ -149,7 +149,7 @@ DECIMAL
 \             *** moving a sprite with AUTOMOTION ***
 HEX 83C8 CONSTANT RPTKEY \ magic address in TI-99 system
 
-: RETRO   GEN4 -10 DB ; \ retro rocket noise
+: RETRO  -8 DB ; \ retro rocket noise
 
  DECIMAL
 : MOVE-SHIP ( -- )
@@ -157,9 +157,9 @@ HEX 83C8 CONSTANT RPTKEY \ magic address in TI-99 system
     KEY?              \ Scan for a key.move
     [CHAR] E :CASE  RETRO  1 -11 #SHIP MOTION   BREAK;  \ move ship up
     [CHAR] X :CASE  RETRO  0  11 #SHIP MOTION   BREAK;  \ move ship down
-    DROP                                        \ drop the key char
-    0 0 #SHIP MOTION                            \ stop motion
-    GEN4 -20 DB
+    DROP                \ default drop the key char
+    0 0 #SHIP MOTION    \ stop motion
+    -20 DB
 ;
 
 \ return true if ship position is not over a space char (BL)
@@ -174,7 +174,7 @@ HEX 83C8 CONSTANT RPTKEY \ magic address in TI-99 system
 : .#####  (#####) VTYPE ; \ FASTER score printing
 
 : .SCORE ( -- )
-  score hiscore > IF  score TO hiscore THEN
+  score hiscore MAX TO hiscore
   0 22 AT-XY  ." Score " score .#####  3 SPACES ." High " hiscore .##### ;
 
 \ ****************************************************************
@@ -230,9 +230,11 @@ VTOP @ TABLE32: ]SCRLN   \ expose screen memory as an array of lines
 \  WHILE A+B>18
 \    IF A>B THEN A=A-1 ELSE B=B-1
 \  WEND
+ 17 CONSTANT MAXGAP \ use a constant to save space
+
 : MAKEGAP ( A B -- A' B')
   BEGIN
-    2DUP + 17 >
+    2DUP + MAXGAP 1- >
   WHILE
      2DUP >
      IF   SWAP 1- SWAP
@@ -259,7 +261,6 @@ VTOP @ TABLE32: ]SCRLN   \ expose screen memory as an array of lines
 \ we get one function.
 \ The new function can test the A and B values with the same code. :-)
 
- 17 CONSTANT MAXGAP \ use a constant to save space
 
 : TESTGAP ( n Lastn -- n')
    OVER + ( a n )

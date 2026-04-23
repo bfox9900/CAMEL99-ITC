@@ -1,6 +1,6 @@
 # Grid Runner
 
-This demo was 1st developed by SteveB@atariage.com, to show scrolling the screen to the left. Stephan is famous for the creation of a structured BASIC transpiler TICoded, that takes source code in a BASIC dialect that he developed and it outputs a TI Extended BASIC program that can be compile by the BASIC compiler.
+This demo was 1st developed by SteveB@atariage.com, to show scrolling the screen to the left. Stefan is famous for the creation of a structured BASIC transpiler TICoded, that takes source code in a BASIC dialect that he developed and it outputs a TI Extended BASIC program that can be compile by the BASIC compiler.
 
 https://lizardware.de/
 
