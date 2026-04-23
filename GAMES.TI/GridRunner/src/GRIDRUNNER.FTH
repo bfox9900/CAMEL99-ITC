@@ -232,7 +232,7 @@ VTOP @ TABLE32: ]SCRLN   \ expose screen memory as an array of lines
 \  WEND
 : MAKEGAP ( A B -- A' B')
   BEGIN
-    2DUP + 16 >
+    2DUP + 17 >
   WHILE
      2DUP >
      IF   SWAP 1- SWAP
@@ -246,11 +246,27 @@ VTOP @ TABLE32: ]SCRLN   \ expose screen memory as an array of lines
 \ IF (lastA+B)>18 THEN B=B-(lastA+B)+18
 \ IF (lastB+A)>18 THEN A=A-(lastB+A)+18
 \ lastA=A::lastB=B
-: ENOUGHROOM
-   LastA B + DUP 17 >  IF  B SWAP - 17 +   TO B ELSE DROP THEN
-   LastB A + DUP 17 >  IF  A SWAP - 17 +   TO A ELSE DROP THEN
-   A TO LastA   B TO LastB
+
+\ We could write the above expression using values but this is bad form in Forth
+\ Example:
+\ : ENOUGHROOM
+\     lastA B +  18 > IF  B lastA B + -  18 + TO B  THEN
+\     lastB A +  18 > IF  A lastB A + -  18 + TO A  THEN
+\     A TO lastA  B TO lastB
 ;
+
+\ BUT! If we use the data stack and factor out the common code,
+\ we get one function.
+\ The new function can test the A and B values with the same code. :-)
+
+ 17 CONSTANT MAXGAP \ use a constant to save space
+
+: TESTGAP ( n Lastn -- n')
+   OVER + ( a n )
+   DUP MAXGAP > ( a n ? )
+   IF   -  MAXGAP +
+   ELSE DROP
+   THEN ;
 
 \ Using the same method as BASIC program
 : .COLUMN
@@ -261,15 +277,17 @@ VTOP @ TABLE32: ]SCRLN   \ expose screen memory as an array of lines
 
 : NEXTCOLUMN
     SCROLL-LEFT
-    A RND2+/-  B RND2+/- MAKEGAP TO B  TO A
-    ENOUGHROOM
+    A RND2+/-  B RND2+/- MAKEGAP ( -- a b)
+    LastA TESTGAP  DUP TO B  TO LastB
+    LastB TESTGAP  DUP TO A  TO LastA
     .COLUMN
 ;
 
 VARIABLE SPEED
 
-: SPEED--  SPEED @ 0= IF EXIT THEN
-           SPEED DUP @ 10 - 0 MAX SWAP !  ;
+: SPEED--
+    SPEED @  0= IF EXIT THEN
+    SPEED DUP @ 10 - 0 MAX SWAP !  ;
 
 : ANTICIPATION
      \ first moves get no points
@@ -319,6 +337,9 @@ VARIABLE SPEED
       EndGame?
     UNTIL
     END ;
+
+\ Save program as binary program for Editor/Assembler Loader
+\ Menu selection 5.
 
 : START  WARM DECIMAL  RUN ;
 
