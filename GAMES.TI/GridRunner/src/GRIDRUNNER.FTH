@@ -14,6 +14,14 @@ INCLUDE DSK1.RANDOM
 INCLUDE DSK1.SOUND
 INCLUDE DSK1.MALLOC  \ simple low ram allocator
 
+\ utilities
+: VBLANK  ( Vaddr n -- ) BL VFILL ; \ fill VDP memory with space char
+: CLIP    ( n lo hi -- n') ROT MIN MAX ; \ CLIP n to lo  hi range
+
+\ simple faster, case structure. EXITs as soon as match is found
+: :CASE  ( n --) POSTPONE OVER=  POSTPONE IF  POSTPONE DROP ; IMMEDIATE
+: BREAK; ( -- )  POSTPONE EXIT   POSTPONE THEN ; IMMEDIATE
+
 : ENUM  ( 0 <text> -- n) DUP CONSTANT  1+ ;
 
 1 ( set 1st color)
@@ -34,8 +42,11 @@ ENUM PURPLE   \ 14
 ENUM GRAY     \ 15
 ENUM WHITE    \ 16
 DROP
+\ ======================================================================
+\                  >>> GAME CODE BEGINS <<<
 
-\ define variables before use
+\ define variables.
+\ Used VALUES because they are normally faster in games
 DECIMAL
 30 VALUE SPEEDSET
 30 VALUE SPEED
@@ -43,12 +54,19 @@ DECIMAL
  0 VALUE score
  0 VALUE hiscore
 
-\ name some characters
+\ name sprites
   0 CONSTANT #SHIP          \ ship Sprite. (sprite no.s start at zero)
+
+\ name some characters
   1 CONSTANT Brick
   2 CONSTANT BRICK2
+  8 CONSTANT BARCHAR
+
 128 CONSTANT Shipchar
 132 CONSTANT Debris
+
+136 CONSTANT HIJET
+140 CONSTANT LOJET
 
 \ Camel99 CALLCHAR must have all 8 bytes for each character shape
 : SHIP$
@@ -57,10 +75,35 @@ DECIMAL
 : DEBRIS$
  S" 220884218A00248108104580144012001082005002A80011440008A200049200" ;
 
-: BRICK$  S" FF818181818181FF" ;
-: DAMAGE$ S" 01152B11212B1501" ;
+: JETHI$
+  S" 01020705030100000000000000000000008040C0800000000000000000000000" ;
 
+: JETLO$
+  S" 0000000000000000000001020705030100000000000000000000008040C08000" ;
+
+: BRICK$  S" FF818181818181FF" ;
+: DAMAGE$ S" 1F1B090D0505091F" ;
+: BAR$    S" FF81BDBDBDBD81FF" ;
+
+: SHAPES
+  SHIP$   Shipchar CALLCHAR
+  DEBRIS$ Debris   CALLCHAR
+  BRICK$  Brick    CALLCHAR
+  DAMAGE$ BRICK2   CALLCHAR
+  BAR$    BARCHAR  CALLCHAR
+  JETHI$  HIJET    CALLCHAR
+  JETLO$  LOJET    CALLCHAR
+;
+
+ \ Usage: RED BRICKS
 : BRICKS ( color -- ) Brick SET# SWAP BLACK COLOR ;
+
+: .BORDERS
+  BARCHAR SET# WHITE GRAY COLOR
+\ col row  char    cnt
+  0    0  BARCHAR  31 HCHAR
+  0   19  BARCHAR  31 HCHAR
+;
 
 : GameInit
   32 TO SCROLLS
@@ -68,25 +111,13 @@ DECIMAL
   GRAPHICS ( does clear as well)
   BLACK SCREEN
   4 19  WHITE BLACK COLORS  \ printable characters
+  .BORDERS
+  SHAPES
   CYAN BRICKS
-  SHIP$   Shipchar CALLCHAR
-  DEBRIS$ Debris   CALLCHAR
-  BRICK$  Brick CALLCHAR
-  DAMAGE$ BRICK2 CALLCHAR
-
-\ Draw top and bottom borders
-\ col row  char  cnt
-  0    0  Brick  32 HCHAR
-  0   19  Brick  32 HCHAR
-
-  2 MAGNIFY  RANDOMIZE
+  2 MAGNIFY
 \ char      clr   x   y  spr#
   Shipchar WHITE 10 100  #SHIP SPRITE
 ;
-
-\ utilities
-: VBLANK  ( Vaddr n -- ) BL VFILL ; \ fill VDP memory with space char
-: CLIP    ( n lo hi -- n') ROT MIN MAX ; \ CLIP n to lo  hi range
 
 : EndGame?   ( -- ?)
   0 23 AT-XY ." Press ENTER to play again"
@@ -94,32 +125,34 @@ DECIMAL
 
 : RedFlash ( --  )
   RED SCREEN   RUST BRICKS
-  250 MS
-  BLACK SCREEN  CYAN BRICKS  ; \ Flash screen red
-
-\ adjust the volume of the active sound generator
-: DECAY   ( n -- ) 16 0 DO  I DB DUP MS  LOOP DROP ;
+  400 MS
+  BLACK SCREEN  CYAN BRICKS ; \ Flash screen red
 
 \ access sprite attribute table as an array of 4 byte records
 : ]SAT  ( n -- Vaddr) 4* SAT + ;
 
-: DELSPRITE  ( n -- ) ]SAT  4 VBLANK ;
+\ :-) ommitted this in the SPRITE library
+: DELSPRITE  ( n -- )     ]SAT  4 VBLANK ;
+
+\ delete 'n' sprites with sequential numbers
 : DELSPRITES ( n 1st -- ) ]SAT SWAP 4* VBLANK ;
 
 \ divide by 8 using 3 shifts to the right (TEXT MACRO)
 : 8/   ( n -- n') S" 3 RSHIFT" EVALUATE ; IMMEDIATE
 
 \ Convert pixels to character coordinates
-: >XY  ( pix piy -- x y)  8/ 1+ SWAP 8/ 1+ SWAP ;
+: >XY  ( pix piy -- x y)  8/ 1+  SWAP 8/ 1+ SWAP ;
 
 \ Random motion vector -5 .. 5
 : RNDV ( -- dx dy) 11 RND 5 - ;
 
 : Explode ( -- )
-    0 0 #SHIP MOTION
+    0 0 #SHIP MOTION  \ Stop ship
+    1 DELSPRITE       \ delete retro rocket
 
     16 MOVING  \ sets the number of sprites for Automotion interrupt
-    -2 NOISE  0 DB  200 MS
+    -2 NOISE  0 DB  200 MS \ loud explosion
+
     BRICK2 #SHIP POSITION >XY >VPOS VC!
     RedFlash
 
@@ -129,6 +162,7 @@ DECIMAL
         RNDV RNDV I MOTION
         I DB 70 MS  \ set volume and hold
     LOOP
+    -28 DB
     200 MS
     SILENT
     12 2 DELSPRITES   \ delete 12 sprites starting at #2
@@ -136,74 +170,82 @@ DECIMAL
 ;
 
 : CRASH \  Oh no, we crashed!
- \ Stop any ship motion and get its position, start explosion sound
   Explode      \ debris flying off of ship
   DELALL       \ Clean up all the sprites
 ;
 
+HEX
+83C8 CONSTANT RPTKEY \ magic address in TI-99 system
 
-\ simple faster, case system. EXITs as soon as match is found
-: :CASE  ( n --) POSTPONE OVER=  POSTPONE IF  POSTPONE DROP ; IMMEDIATE
-: BREAK; ( -- )  POSTPONE EXIT   POSTPONE THEN ; IMMEDIATE
+DECIMAL
+: RETRO ( char -- ) \ fire retro-rocket
+   -10 DB  \ engine volume up
+ \ fire burst has no motion assigned. It follows the ship.
+   ORANGE  #SHIP POSITION  1 SPRITE
+;
 
-\             *** moving a sprite with AUTOMOTION ***
-HEX 83C8 CONSTANT RPTKEY \ magic address in TI-99 system
+: MOVE-UP     LOJET RETRO    1 -11 #SHIP MOTION ;
+: MOVE-DOWN   HIJET RETRO    0 11  #SHIP MOTION ;
 
-: RETRO  -8 DB ; \ retro rocket noise
 
  DECIMAL
 : MOVE-SHIP ( -- )
     RPTKEY ON
     KEY?              \ Scan for a key.move
-    [CHAR] E :CASE  RETRO  1 -11 #SHIP MOTION   BREAK;  \ move ship up
-    [CHAR] X :CASE  RETRO  0  11 #SHIP MOTION   BREAK;  \ move ship down
-    DROP                \ default drop the key char
-    0 0 #SHIP MOTION    \ stop motion
-    -20 DB
+    [CHAR] E :CASE  MOVE-UP     BREAK;  \ move ship up
+    [CHAR] X :CASE  MOVE-DOWN   BREAK;  \ move ship down
+  \ no key detected actions:
+    DROP
+    0 0 #SHIP MOTION         \ stop motion
+    1 DELSPRITE
+    -24 DB
 ;
 
-\ return true if ship position is not over a space char (BL)
-: COLLISION?  ( -- ?) #SHIP POSITION >XY  GCHAR  BL <> ;
+\ : COLLISION?  ( -- ?) #SHIP POSITION >XY  GCHAR  BL <> ;
 
-\  Display score and high score
-: (#####)    ( n -- addr len ) ABS 0 <#  # # # # #  #> ;
+\ return true if ship position is over a space char (BL)
+: SAFE?       ( -- ?) #SHIP POSITION >XY  GCHAR BL = ;
 
 \ fast typing
-: VTYPE  ( addr len ) DUP>R VPOS SWAP VWRITE R> VCOL +!  ;
+: VTYPE  ( addr len ) DUP>R VPOS SWAP VWRITE  R> VCOL +!  ;
 
-: .#####  (#####) VTYPE ; \ FASTER score printing
+\ fast score printing
+: .##### ( u --) ABS 0 <#  # # # # #  #> VTYPE ;
 
 : .SCORE ( -- )
-  score hiscore MAX TO hiscore
+  score hiscore MAX  TO hiscore
   0 22 AT-XY  ." Score " score .#####  3 SPACES ." High " hiscore .##### ;
+
+\ "tables" expose any memory as a table of records
+\ The index calculation is at machine speed
+HEX
+: TABLE32: ( addr -- ) \ 32 bytes per record
+    CREATE    ,         \ compile time: record the base address
+
+    ;CODE ( n -- addr)  \ RUN time: do this machine code
+          0A54 ,        \  R4 5 SLA,  ( TOS 32* )
+          A118 ,        \ *W R4 ADD, \ *W holds the base address
+          NEXT,         \ return to Forth interpreter
+    ENDCODE
 
 \ ****************************************************************
 \                   horizontal scroll function
 \  Camel99 didn't have horizontal scrolling so we had to make one
-\ ****************************************************************
 HEX 2000 H !  \ reset heap pointer to start of low ram
-\ expose memory as a table of 32 byte records
-HEX
-: TABLE32: ( addr -- )
-     CREATE    ,
-     ;CODE ( n -- Vaddr')     \ RUN time
-          0A54 ,  \ TOS 5 SLA,  ( TOS 32* )
-          A118 ,  \ *W TOS ADD,
-          NEXT,
-    ENDCODE
-
+\ ****************************************************************
 DECIMAL
-19 C/L@ *          CONSTANT WINDOW_SIZE
+20 C/L@ *          CONSTANT WINDOW_SIZE
 WINDOW_SIZE MALLOC CONSTANT HEAP
 
-\ exposes heap as strings and screen memory lines 0..23
+\ exposes heap and screen memory as lines 0..23
   HEAP TABLE32: ]HEAPLN  \ 32 bytes by 20 lines in the heap
 VTOP @ TABLE32: ]SCRLN   \ expose screen memory as an array of lines
 
 \ copy lines 0 ..19 of screen to Low RAM
-\                   src     dst  size (20 lines)
-: SCRCAPTURE ( -- ) VTOP @  HEAP   WINDOW_SIZE   VREAD ;
+\                   src     dst      #bytes   read VDP
+: SCRCAPTURE ( -- ) VTOP @  HEAP   WINDOW_SIZE VREAD ;
 
+VARIABLE SPEED
 \ copy screen and write 20 heap lines minus first char, back to screen
 : SCROLL-LEFT ( -- )
     SCRCAPTURE
@@ -211,15 +253,15 @@ VTOP @ TABLE32: ]SCRLN   \ expose screen memory as an array of lines
       I ]HEAPLN C/L@  1 /STRING  I ]SCRLN  SWAP VWRITE
     LOOP
   ;
-
 \ ******************************************************************
 
-\  // Generate one column of cave by adding or subtracting from last column
 0 VALUE A
 0 VALUE B
 0 VALUE LastA
 0 VALUE LastB
 
+\ BASIC code
+\ Generate one column of cave by adding or subtracting from last column
 \  A=A+INT(RND*5)-2 :: IF A<2 THEN A=2 ELSE IF A>15 THEN A=15
 \  B=B+INT(RND*5)-2 :: IF B<2 THEN B=2 ELSE IF B>15 THEN B=15
 
@@ -230,7 +272,7 @@ VTOP @ TABLE32: ]SCRLN   \ expose screen memory as an array of lines
 \  WHILE A+B>18
 \    IF A>B THEN A=A-1 ELSE B=B-1
 \  WEND
- 17 CONSTANT MAXGAP \ use a constant to save space
+ 16 CONSTANT MAXGAP \ use a constant to save space
 
 : MAKEGAP ( A B -- A' B')
   BEGIN
@@ -249,7 +291,7 @@ VTOP @ TABLE32: ]SCRLN   \ expose screen memory as an array of lines
 \ IF (lastB+A)>18 THEN A=A-(lastB+A)+18
 \ lastA=A::lastB=B
 
-\ We could write the above expressions using values.
+\ We could write the above expressions using values in Forth.
 \ Example:
 \ : ENOUGHROOM
 \     lastA B +  18 > IF  B lastA B + -  18 + TO B  THEN
@@ -257,71 +299,78 @@ VTOP @ TABLE32: ]SCRLN   \ expose screen memory as an array of lines
 \     A TO lastA  B TO lastB
 \ ;
 
-\ But this is bad form in Forth.
+\ But... this is bad form in Forth :-)
 
-\ BUT! If we use the data stack and factor out the common code,
+\ If we use the data stack and factor out the common code,
 \ we get one function.
 \ The new function can test the A and B values with the same code. :-)
 
 : TESTGAP ( n Lastn -- n')
    OVER + ( a n )
    DUP MAXGAP > ( a n ? )
-   IF   -  MAXGAP +
-   ELSE DROP
-   THEN ;
+   IF   -  MAXGAP +   EXIT THEN  \ fix it and get out
+   DROP                          \ otherwise just drop it
+;
 
-\ Using the same method as BASIC program
-: .COLUMN
-\    X   y        char   len
-    31   1        BL     18   VCHAR      \ erase right side column
-    31   1        Brick  A    VCHAR      \ draw top
-    31  20 B - 1+ Brick  B 1- VCHAR ; \ draw bottom
-
-: NEXTCOLUMN
-    SCROLL-LEFT
+: GAPCALCS
     A RND2+/-  B RND2+/- MAKEGAP ( -- a b)
     LastA TESTGAP  DUP TO B  TO LastB
     LastB TESTGAP  DUP TO A  TO LastA
-    .COLUMN
 ;
 
-VARIABLE SPEED
+: .COLUMN
+\    X   y      char  len
+    31   1      Brick  A       VCHAR   \ draw top
+    31   A      BL     20 B -  VCHAR   \ draw GAP
+    31  20 B - 1-  Brick  B    VCHAR  \ draw bottom
+;
+
+: NEXTCOLUMN  SCROLL-LEFT  GAPCALCS   .COLUMN ;
 
 : SPEED--
-    SPEED @  0= IF EXIT THEN
-    SPEED DUP @ 10 - 0 MAX SWAP ! ;
+    SPEED @ 0= IF EXIT THEN
 
-: ANTICIPATION
+    SPEED DUP @ 500 - 0 MAX DUP 0=
+    IF  ORANGE BRICKS  THEN
+    SWAP !
+;
+
+: SCROLL-COUNTER ( n -- )
+    1+ DUP 32 >   \ have we scrolled 32 times?
+    IF ( yes)
+      DROP 0      \ reset the loop counter
+      SPEED--     \ decr the speed variable (goes faster)
+    THEN ( continue...)
+;
+
+: GET-READY
     \ first moves get no points
     31 0 DO
       NEXTCOLUMN
-      SPEED @ MS
+      SPEED @ TICKS
       MOVE-SHIP
       .SCORE
     LOOP
     GREEN BRICKS
 ;
 
-: ENGINES   -2 NOISE -24 DB ;
+: ENGINES    -2 NOISE -24 DB ;  \ background engine noise
 
 : GAMELOOP
-      ENGINES
-      ANTICIPATION
-      0   \ loop counter on data stack
-      BEGIN
-        1+ DUP 32 >   \ have we scrolled 32 times?
-        IF ( yes)
-           DROP 0     \ reset the loop counter
-           SPEED--    \ decr the speed variable (goes faster)
-        THEN ( continue...)
-        10 +TO score   \ 10 points for every good loop
-        NEXTCOLUMN
-        SPEED @ MS
-        MOVE-SHIP
-        .SCORE
-        COLLISION? \ ?TERMINAL OR
-      UNTIL
-      DROP
+    ENGINES
+    GET-READY
+    0   \ scroll counter on data stack
+    BEGIN
+      SAFE?
+    WHILE
+      SCROLL-COUNTER
+      10 +TO score  \ 10 points for every good loop
+      .SCORE
+      SPEED @ TICKS
+      NEXTCOLUMN
+      MOVE-SHIP
+    REPEAT
+    DROP
 ;
 
 \ switch to text mode and restart interpreter
@@ -334,14 +383,15 @@ VARIABLE SPEED
     BEGIN
       GameInit
       .SCORE
-      10 TO A  7 TO B
-      100 SPEED !
+      7 TO A   9 TO B
+      4000 SPEED !
       GAMELOOP
       CRASH
       EndGame?
     UNTIL
     END ;
 
+\ =============================================================
 \ Save program as binary program for Editor/Assembler Loader
 \ Menu selection 5.
 
