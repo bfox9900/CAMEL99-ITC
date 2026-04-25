@@ -347,7 +347,7 @@ VARIABLE SPEED
     \ first moves get no points
     31 0 DO
       NEXTCOLUMN
-      SPEED @ TICKS
+      SPEED @ TICKS  \ the ticks counter for fast durations
       MOVE-SHIP
       .SCORE
     LOOP
