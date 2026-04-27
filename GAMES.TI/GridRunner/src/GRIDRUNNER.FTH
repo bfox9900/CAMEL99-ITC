@@ -1,4 +1,4 @@
-\ GRIDFUNNER   Apr 2026
+\ GRIDRUNNER   Apr 2026
 \ From the talented people at atariage.com
 \ SteveB's LSCROLL demo in TiCodEd
 \ Features added by 2026 Brad Snyder
