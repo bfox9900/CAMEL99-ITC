@@ -218,7 +218,7 @@ VARIABLE SPEED  \ speed of the cactii
 
 VARIABLE CACTUS#   4 CACTUS# !
 
-: CACTUS++  CACTUS# DUP 1+! @ 9 > IF  4 CACTUS# !  THEN ;
+: CACTUS++  CACTUS# DUP 1+! @ 8 > IF  4 CACTUS# !  THEN ;
 
 \ : TEST   BEGIN  CACTUS# @  .  CACTUS++   ?TERMINAL UNTIL ;
 
@@ -252,6 +252,8 @@ DECIMAL
    18 0 AT-XY ." HI " HISCORE @ 5 U.R  PAUSE SPACE SCORE @ 5 U.R
    SET-HISCORE ;
 
+: ALL-STOP   STOPMOTION  SINGLE  SILENT ;
+
 
 \ *************************
 \   COINCIDENCE AND STUFF
@@ -269,23 +271,18 @@ DECIMAL
    FALSE \ default flag is false
    11 4  \ scan sprites #4 to #PTERODACTYL
    DO
-    \  I SP.PAT VC@ BL <>   \ is sprite assigned a shape?
-    \  IF
-         #DINO I TOLERANCE COINC
-         OR   \ OR each flag. Any cactus counts
-         DUP IF  STOPMOTION SINGLE  LEAVE THEN
-    \  THEN
+      #DINO I TOLERANCE COINC
+      OR   \ OR each flag. Any cactus counts
+      DUP IF ALL-STOP  LEAVE THEN
       PAUSE
    LOOP
 ;
 
-: SPAWNPOINT ( -- x y) 245  DIRT-Y ; \ cactus start location
-
 \ :-)  kill cactii that are on the left side
 : HERBICIDE ( 1stsprite lastsprite -- )
    1+ SWAP
-   DO
-      PAUSE
+   PAUSE                \ be nice and share
+   DO                   \ then take control for the entire loop
       I SP.X@ 11 <
       IF  I DELSPRITE
       THEN
@@ -317,9 +314,7 @@ DECIMAL
 \   DINOSAUR JUMP CONTROL
 \ *************************
 
-15 CONSTANT HEIGHT
-
-: GRAVITY   7 TICKS ; \ ticks is a 23.1 micro-second delay
+10 CONSTANT HEIGHT
 
 DECIMAL
 : JUMPUP ( == ?)
@@ -350,6 +345,7 @@ DECIMAL
    0 0 #DINO MOTION
 ;
 
+
 \ *********************
 \  SOME TEXT CONTROLS
 \ *********************
@@ -358,12 +354,12 @@ DECIMAL
 
 : ESCAPE
    ?TERMINAL
-   IF SINGLE  STOPMOTION
+   IF ALL-STOP
       PROMPT: ." *Camel99 Forth*"
       1000 MS
-      CR ." Bye!"
+      PROMPT: ." Bye!"
       500 MS
-      CR ABORT
+      BYE
    THEN ;
 
 : WAIT-KEYUP  BEGIN  PAUSE KEY? 0=  UNTIL ;
@@ -387,44 +383,44 @@ CREATE FLAP-STRIP
    wingsup , wingsmid , wingsdn , wingsmid ,
    wingsup , wingsmid , wingsdn , wingsmid ,
 
-VARIABLE FRAME#
-: FRAME#@++   ( -- n) FRAME# @ 1+ 7 AND DUP FRAME# ! ;
-: PTERO-CHAR ( -- char ) FRAME#@++ CELLS FLAP-STRIP + @  ;
+: PTERO-CHAR ( -- char )  CELLS FLAP-STRIP + @  ;
 
 : .Pterodactyl ( -- ) \ spawn the flying dinosaur sprite
-   PTERO-CHAR  PURPLE  245 111 #PTERODACTYL SPRITE ;
+    wingsup  RUST  245 115 #PTERODACTYL SPRITE ;
 
 \ **************************
 \        task loops
 \ **************************
-: FLYING-DINO ( -- ) \ endless loop. Randomly spawns a Pterodactyl
+\ Task to spawn the Pterodactyl
+: FADEUP  PAUSE   8 16 DO  I DB -1 +LOOP ;
+: FADEDN  PAUSE  16  8 DO  I DB  LOOP ;
+
+: FLAPPING-NOISE   -4 NOISE  FADEUP MUTE PAUSE FADEDN MUTE ;
+
+: FLYING-DINO ( -- )
    BEGIN
     12000 RND 3000 + MS  \ random start time   3 to 15 seconds
     .Pterodactyl
     -34 0 #PTERODACTYL MOTION  \ fly fast left
+     0  \ 1st frame#
      BEGIN
-         PAUSE
-         PTERO-CHAR #PTERODACTYL PATTERN
-         150 MS
-         #PTERODACTYL SP.X@ 10 <  \ fly until X=9
+         DUP PTERO-CHAR #PTERODACTYL PATTERN
+         \ FLAPPING-NOISE
+         2000 TICKS
+         1+ 7 AND \ circular wrap the frame#
+         #PTERODACTYL SP.X@ 10 <  \ fly until we get to left side
      UNTIL
+     DROP                         \ DROP the frame#
      #PTERODACTYL DELSPRITE       \ erase myself
    AGAIN
 ;
 
-: WAIT-FOR-BIRD
-   BEGIN
-      #PTERODACTYL SP.PAT VC@  \ read the birds pattern
-      BL =                     \ loop until it's a space ie: deleted sprite
-   UNTIL
-;
+: SPAWNPOINT ( -- x y) 245  DIRT-Y ; \ cactus start location
 
-\ CACTUS GUN NOW WAITS UNTIL THERE IS NO FLYING DINO IN THE AIR
 : CACTUS-GUN
    BEGIN
-     4 10 HERBICIDE
-     2450 SPEED @ +  RND 500 + MS  \ wait for a random time
-  \  WAIT-FOR-BIRD
+   \  4 9 HERBICIDE
+     2150 SPEED @ +  RND 40 + MS  \ wait for a random time
      WAIT-FREE-SPRITE >R
      3 RND ]CACTUSCHAR  OLIVE  SPAWNPOINT R@ SPRITE
      SPEED @ 0  R> MOTION
@@ -436,7 +432,7 @@ VARIABLE FRAME#
 : CACTUS-KILLER   ( -- )
 \ searches for cactus at LEFT side of screen and deletes them
    BEGIN
-      4 10 HERBICIDE
+      4 9 HERBICIDE
       PAUSE
    AGAIN
 ;
@@ -469,7 +465,7 @@ DECIMAL
    FALSE              \ default collision flag = false
    REPEAT-KEY  ON
    BEGIN
-      SCORE 1+!
+      5 SCORE +!
       KEY? BL <>
    WHILE
       DETECTER 0=
@@ -510,32 +506,45 @@ DECIMAL
    MOVE-CLOUDS
 ;
 
-: RUN
+: RESET-GAME
+   INITS
+   .GAME-SCREEN
+  -20 SPEED !
+   SCORE OFF
+
+   PROMPT: ."   PRESS ENTER TO BEGIN"
+   WAIT-SPACE-BAR
+   PROMPT:
+
+   AUTOMOTION
+   12 MOVING  \ max sprites that are moving under interrupt control
+
+\ restart the other processes
+   ERASER-TASK RESTART
+   GROUND-TASK RESTART
+   CACTUS-TASK RESTART
+   FLYER-TASK  RESTART
+
+   MULTI      \ enable multi-tasking
+;
+
+: START-GAME
    CLEAR
    TITLE
+
+\ Create processes in LOW RAM
    ['] CACTUS-KILLER SPAWN TO ERASER-TASK
    ['] EARTH-MOVER   SPAWN TO GROUND-TASK
    ['] CACTUS-GUN    SPAWN TO CACTUS-TASK
    ['] FLYING-DINO   SPAWN TO FLYER-TASK
-
    RESETSCORE
+;
+
+
+: RUN
+   START-GAME
    BEGIN
-   \ reset the game
-      INITS
-      .GAME-SCREEN
-     -20 SPEED !
-      SCORE OFF
-      WAIT-SPACE-BAR
-
-      AUTOMOTION
-      12 MOVING  \ max sprites that are moving under interrupt control
-
-      ERASER-TASK RESTART
-      GROUND-TASK RESTART
-      CACTUS-TASK RESTART
-      FLYER-TASK  RESTART
-      MULTI
-
+     RESET-GAME
    \ run the game loop in console task
       BEGIN
          DINO-LOOP
@@ -546,8 +555,9 @@ DECIMAL
    AGAIN
 ;
 
-\ : GO   WARM DECIMAL INIT-MULTI GRAPHICS QUIT-ON RUN ;
+ : GO   WARM  INIT-MULTI  GRAPHICS QUIT-ON  RUN ;
 
-\ LOCK
-\ INCLUDE DSK1.SAVESYS
-\ ' GO SAVESYS DSK3.TIREX
+ LOCK
+ INCLUDE DSK1.SAVESYS
+ DECIMAL
+ ' GO SAVESYS DSK3.TIREX
