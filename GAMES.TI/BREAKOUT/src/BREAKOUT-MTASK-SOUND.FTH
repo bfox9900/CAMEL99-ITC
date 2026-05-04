@@ -6,11 +6,11 @@
 \ MOTION sets SPRITE motion vector. SP.MOVE moves sprite 1 increment.
 \ See the file dsk1.motion for more details
 
-NEEDS DUMP   FROM DSK1.TOOLS ( debugging)
+\ NEEDS DUMP   FROM DSK1.TOOLS ( debugging)
 
 NEEDS HCHAR  FROM DSK1.GRAFIX
 NEEDS SPRITE FROM DSK1.DIRSPRIT
-NEEDS MOTION FROM DSK1.MOTION
+NEEDS MOTION FROM DSK1.MOTION  \ Forth controlled motion. Not TI system
 NEEDS DATA   FROM DSK1.DATABYTE
 NEEDS RND    FROM DSK1.RANDOM
 NEEDS HZ     FROM DSK1.SOUND
@@ -29,8 +29,9 @@ MARKER REMOVE
 
 EMPTY
 
+\ SPAWN is in MTASK99 as of April 2026
 \ allocate task space in heap, fork it, assign Execution, WAKE, return PID
-: SPAWN  ( xt -- pid)  USIZE MALLOC DUP >R FORK  R@ ASSIGN R@ WAKE R> ;
+\ : SPAWN  ( xt -- pid)  USIZE MALLOC DUP >R FORK  R@ ASSIGN R@ WAKE R> ;
 
 \ Extensions to MOTION
 \ Access the VECTOR table in dsk1.motion, via x and y separately
@@ -90,10 +91,13 @@ DROP
 0 CONSTANT PADDLE
 
 \ ***************************
-\ sounds for the game
+\    sounds for the game
 \ ***************************
 
 \ inter-task messaging -------------------------
+\ Sounds is implemented by message passing.
+\ The messages are execution tokens for the sound code.
+
 HEX
 50 USER MAILBOX  \ mailbox is local to each task
 52 USER FREQ     \ used by CLINK
@@ -241,21 +245,21 @@ BALLCHARS 8 + CONSTANT PADDLECHARS
 ;
 
 : DRAW.BORDER
-       0 2 BORDER 32 HCHAR
-       0 3 BORDER 32 HCHAR
-       0 3 BORDER 21 VCHAR
-       1 3 BORDER 21 VCHAR
-      30 3 BORDER 21 VCHAR
-      31 3 BORDER 21 VCHAR
+     0 2 BORDER 32 HCHAR
+     0 3 BORDER 32 HCHAR
+     0 3 BORDER 21 VCHAR
+     1 3 BORDER 21 VCHAR
+    30 3 BORDER 21 VCHAR
+    31 3 BORDER 21 VCHAR
 ;
 
 : RAINBOW
-       2  7 MAGBAR 28 HCHAR
-       2  8 REDBAR 28 HCHAR
-       2  9 YELBAR 28 HCHAR
-       2 10 GRNBAR 28 HCHAR
-       2 11 BLUBAR 28 HCHAR
-       2 12 VIOBAR 28 HCHAR
+     2  7 MAGBAR 28 HCHAR
+     2  8 REDBAR 28 HCHAR
+     2  9 YELBAR 28 HCHAR
+     2 10 GRNBAR 28 HCHAR
+     2 11 BLUBAR 28 HCHAR
+     2 12 VIOBAR 28 HCHAR
 ;
 
 : BALL.HOME          ( X   Y )
@@ -278,8 +282,14 @@ BALLCHARS 8 + CONSTANT PADDLECHARS
 \ ***************************
 \ : PIX>CHAR ( pixel -- n) 1- 3 RSHIFT 1+ ;
 \ : CHAR>PIX ( n -- pixel) 8*  7 - ;
-HEX                   ( TOS DEC,  TOS 3 SRA,  TOS INC, )
-CODE PIX>CHAR ( pixel -- n) 0604 , 0834 , 0584 , NEXT, ENDCODE
+
+HEX
+\ Machine Forth compilers let us understand what's happening
+: 1-,   0604 , ; \ TOS DEC,
+: 1+,   0584 , ; \ TOS INC,
+: 8*,   0834 , ; \ TOS 3 SRA,
+
+CODE PIX>CHAR ( pixel -- n) 1-, 8*, 1+,  NEXT, ENDCODE
 
 DECIMAL
 : BALLADDR ( -- vaddr)
@@ -300,7 +310,7 @@ DECIMAL
  DECIMAL
 \ clipped for sprite column boundaries
 : VC+!  ( n Vaddr --) DUP>R  VC@ +  17 223 CLIP  R> PAUSE VC! ;
-: PADDLE+!   PADDLE SP.X VC+!  ;
+: PADDLE+!    PADDLE SP.X VC+!  ;
 
 
 \ ***************************************
@@ -309,7 +319,7 @@ DECIMAL
 
 : PADDLE?  ( -- ?) BALL PADDLE 8 COINC PAUSE ;
 
-: BALL.MOVE    SPEED @ TICKS  BALL PAUSE SP.MOVE  ;
+: BALL.MOVE    SPEED @ TICKS  BALL PAUSE SP.MOVE ;
 
 : MOVES  0 ?DO  BALL.MOVE LOOP ;
 
@@ -395,13 +405,13 @@ DECIMAL
       PADDLE? IF  PADDLE-HIT THEN
       UNDERBALL ( char)
       CASE      \ points  Freq.
-        MAGBAR   OF 6     1500 RICOCHET    ENDOF
-        REDBAR   OF 5     1400 RICOCHET    ENDOF
-        YELBAR   OF 4     1300 RICOCHET    ENDOF
-        GRNBAR   OF 3     1200 RICOCHET    ENDOF
-        BLUBAR   OF 2     1100 RICOCHET    ENDOF
-        VIOBAR   OF 1     1000 RICOCHET    ENDOF
-        BORDER   OF WALL-BOUNCE 200 CLINK  ENDOF
+        MAGBAR OF   6     1500 RICOCHET    ENDOF
+        REDBAR OF   5     1400 RICOCHET    ENDOF
+        YELBAR OF   4     1300 RICOCHET    ENDOF
+        GRNBAR OF   3     1200 RICOCHET    ENDOF
+        BLUBAR OF   2     1100 RICOCHET    ENDOF
+        VIOBAR OF   1     1000 RICOCHET    ENDOF
+        BORDER OF   WALL-BOUNCE 200 CLINK  ENDOF
       ENDCASE
       PAUSE
       BALL SP.Y VC@ 200 >
@@ -440,9 +450,9 @@ DECIMAL
       SPEED OFF
       KEY
       CASE
-          [CHAR] 1 OF  150 SPEED !  ENDOF
-          [CHAR] 2 OF   80 SPEED !  ENDOF
-          [CHAR] 3 OF   5 SPEED !  ENDOF
+          [CHAR] 1 OF  350 SPEED !  ENDOF
+          [CHAR] 2 OF  125 SPEED !  ENDOF
+          [CHAR] 3 OF    1 SPEED !  ENDOF
                       HONK
       ENDCASE
       SPEED @
@@ -466,13 +476,14 @@ DECIMAL
 : JOYSTICK_TSK ( -- )
     BEGIN
       JOYKEY           \ JOYKEY calls pause while waiting
+      PAUSE
       CASE
         2 OF  -2 PADDLE+!  ENDOF
         4 OF   2 PADDLE+!  ENDOF
       ENDCASE
-\ SLOW down the paddle or it's too fast
-      SPEED @ 2* TICKS \ TICKS calls pause to share time
-    AGAIN              \ never stops because it is a separate task
+      \ SLOW down the paddle or it's too fast
+      SPEED @ TICKS \ TICKS calls pause to share time
+    AGAIN           \ never stops because it is a separate task
 ;
 
 : ?WINNER
@@ -502,7 +513,10 @@ DECIMAL
     DECIMAL
     QUIT-ON
     ['] JOYSTICK_TSK SPAWN TO PADDLE-CTRL
-    ['] BGPLAYER   SPAWN TO SOUND-PLAYER
+    ['] BGPLAYER     SPAWN TO SOUND-PLAYER
+
+    PADDLE-CTRL WAKE
+    SOUND-PLAYER WAKE
     BEGIN
       SETUP
       DRAW.SCR
@@ -516,7 +530,7 @@ DECIMAL
     AGAIN
 ;
 
-: STARTER   WARM  GRAPHICS INIT-MULTI  GO ;
+: STARTER   WARM  GRAPHICS INIT-MULTI   GO ;
 
 LOCK
 INCLUDE DSK1.SAVESYS
