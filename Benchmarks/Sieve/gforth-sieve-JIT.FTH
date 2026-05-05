@@ -11,37 +11,36 @@ NEEDS .S    FROM DSK1.TOOLS
 \ VARIABLE FLAGS   SIZE ALLOT  0 FLAGS !
 \ FLAGS SIZE + CONSTANT EFLAG
 
-NEEDS FILLW   FROM  DSK1.FILLW
-
-\ Use 8K in low RAM for the array
-HEX 2000 CONSTANT FLAGS    0 FLAGS !
-HEX 0101 CONSTANT $0101
+NEEDS FILLW   FROM DSK1.FILLW
+NEEDS JIT:    FROM DSK1.JIT   \ JIT V1 puts code in LOW RAM
 
 DECIMAL
 8190 CONSTANT SIZE
-
 FLAGS SIZE + CONSTANT EFLAG
 
-JIT: DO-PRIME  ( -- n )
-   FLAGS SIZE  $0101 FILLW  ( set array )
+CREATE FLAGS   SIZE CELL+ ALLOT
 
-  0 3
-  EFLAG FLAGS
-  DO   I C@
-       IF  DUP I + DUP EFLAG <
-           IF
+JIT: DO-PRIME  ( -- n )
+    FLAGS SIZE  TRUE FILLW  ( set array )
+
+    0 3
+    EFLAG FLAGS ( -- 'last 'first )
+    DO                     \ I is address in FLAGS
+        I C@
+        IF  DUP I + DUP EFLAG <
+            IF
                 EFLAG SWAP
                 DO
-                    0 I C!
+                    0 I C!  \ reset the byte
                 DUP +LOOP
-           ELSE
+            ELSE
                 DROP
-           THEN
-           SWAP 1+ SWAP
+            THEN
+            SWAP 1+ SWAP    \ update counter on data stack
         THEN
         CELL+
     LOOP
-    DROP
+    DROP                   \ drop the offset
 ;JIT
 
 : PRIMES ( -- )

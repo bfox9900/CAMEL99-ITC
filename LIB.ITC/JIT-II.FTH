@@ -112,7 +112,7 @@ ALSO JITS DEFINITIONS
 : *RP+!, ( n -- )   A5CA , ;  \ machine Forth instruction
 
 : +LOOP
-    *RP+!,            \ TOS *RP ADD,
+    *RP+!,           \ TOS *RP ADD,
     DROP,            \ don't need TOS value anymore
     POSTPONE LOOP    \ compile loop code
 ; IMMEDIATE

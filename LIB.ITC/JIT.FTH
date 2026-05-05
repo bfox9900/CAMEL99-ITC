@@ -9,7 +9,12 @@ NEEDS .S     FROM DSK1.TOOLS   \ debug
 NEEDS ELAPSE FROM DSK1.ELAPSE  \ execution timing
 NEEDS CASE   FROM DSK1.CASE
 NEEDS LIFO:  FROM DSK1.STACKS
+NEEDS MARKER FROM DSK1.MARKER
 NEEDS WORDLIST FROM DSK1.WORDLISTS
+
+: EMPTY  S" *CLEAN* MARKER *CLEAN*" EVALUATE ;
+MARKER *CLEAN*
+EMPTY
 
 HERE
 
@@ -58,18 +63,12 @@ CODE +      A136 ,         NEXT, ENDCODE
 
 : COMPILES ( <codeword> ) POSTPONE [']  POSTPONE CODE, ; IMMEDIATE
 
-\ steal code words from the kernel and compile it to target memory
+\ now we can steal code word from the kernel and compile it to target memory
 : DUP,   COMPILES DUP ;
 : DROP,  COMPILES DROP ;
 : 1-,    ( n -- n') COMPILES 1-  ; \ TOS DEC,
 
-\ tiny assemblers to explain the code
-HEX
-: TOS!,  ( n )       0204 T,  T, ; \ load n into TOS
-: @TOS, ( addr - )   C120 T,  T, ; \ fetch symbolic to TOS
-
-: LIT,   ( n -- )    DUP, TOS!, ; \ compile n as literal in TOS
-: JVAR, ( addr -- )  DUP, @TOS,  ;
+: LIT,   ( -- n) DUP,  0204 T, ( n) T, ; \ compile n as literal in TOS
 
 \ store a byte offset in odd byte of addr.
 \ Addr is the location of Jump instruction
@@ -107,13 +106,15 @@ ALSO JITS DEFINITIONS
 ; IMMEDIATE
 
 : +LOOP
-    0A5CA T,         \ TOS *RP ADD,
+    A5C4 T,         \ TOS *RP ADD,
     DROP,            \ don't need TOS value anymore
-    POSTPONE LOOP    \ compile loop code
+    CS> THERE  0 JNO, <BACK   \ compute offset, compile into JNO
+    COMPILES UNLOOP           \ collapse stack frame; IMMEDIATE
 ; IMMEDIATE
 
-: I  COMPILES I ;  IMMEDIATE
-: J  COMPILES J ;  IMMEDIATE
+HEX
+: I   COMPILES I ; IMMEDIATE
+: J   COMPILES J ; IMMEDIATE
 
 : AGAIN   CS> THERE 0 JMP, <BACK ; IMMEDIATE
 
@@ -142,24 +143,16 @@ FORTH DEFINITIONS
 \ CFA of a code word contains the address of the next cell
 : CODE? ( XT -- ?)  DUP @ 2- = ;
 
-: SPECIALS ( xt -- ) \
-    DUP
-    @     \ FETCH the "executor" address
-    CASE  \ compare to know executors
+: JITCOMPILE,  ( xt -- )
+    DUP CODE? IF  CODE,   EXIT  THEN  \ compile kernel code & exit
+    \ xt is not a code word...
+    DUP @   \ FETCH the "executor" address
+    CASE ( data words )
         ['] DOVAR    OF  >BODY   LIT, ENDOF
-        ['] DOCON    OF  >BODY @ LIT, ENDOF
+        ['] DOCON    OF  EXECUTE LIT, ENDOF
         ['] DOUSER @ OF  EXECUTE LIT, ENDOF
         TRUE ABORT" Can't optimize word"  ( any other Forth word bombs)
     ENDCASE
-;
-
-: JITCOMPILE,  ( xt -- )
-    DUP CODE?
-    IF
-       CODE,      \ compile kernel code & exit
-    ELSE
-       SPECIALS   \ xt is not a code word...
-    THEN
 ;
 
 \ new interpreter loop
@@ -168,49 +161,54 @@ FORTH DEFINITIONS
 \ 3. ABORTS if you try to compile a Forth word
 \ 4. Compiles literal numbers with LI instruction
 
-VARIABLE JSTATE
-
-: <JIT> ( -- )
+: <JIT> ( -- addr)
     'SOURCE 2!  >IN OFF
     BEGIN
         BL WORD  DUP C@
     WHILE
         FIND ?DUP
         IF ( it's a word)
-            1+ JSTATE @ 0= OR
+            1+ STATE @ 0= OR
             IF   EXECUTE      \ IF BEGIN etc. are all immediate
             ELSE JITCOMPILE,  \ code and data are not
             THEN
         ELSE
             COUNT NUMBER? ?ERR
-            JSTATE @ IF LIT, THEN  \ special number compiler
+            STATE @ IF LIT, THEN  \ special number compiler
         THEN
         DEPTH 0< ABORT" JIT: Underflow"
     REPEAT
     DROP
 ;
 
-: JIT-COMPILER    ['] <JIT>    'IV ! ;
+\ 'IV  is CAMEL99 "interpreter vector" variable
+\ We can change the interpeter's action with it.
 : FORTH-COMPILER  ['] <INTERP> 'IV ! ;
-
-: TCODE ( -- addr) HEADER !CSP   THERE , ;
+: JIT-COMPILER    ['] <JIT>    'IV ! ;
 
 : JIT: ( -- JIT-xt)
-    ALSO JITS         \ put JITS VOCABULARY first in search order
-    TCODE
-    JSTATE ON
-    JIT-COMPILER
+    ALSO JITS       \ put JITS VOCABULARY first in search order
+    HEADER          \ put the name in dictionary
+    THERE ,         \ Compile code address in the dictionary
+    !CSP            \ remember the stack address
+    JIT-COMPILER ]  \ switch to JIT compiler loop. STATE=true
 ;
 
 : ;JIT ( JIT-XT -- )
-    PREVIOUS          \ restore previous search order
-    FORTH-COMPILER
-    JSTATE OFF
+    PREVIOUS         \ restore previous search order
+    FORTH-COMPILER   \ back to Forth compiler loop
     'NEXT' T,        \ compile NEXT at end of new code word
-    ?CS              \ check control flow stack
-    ?CSP
+    POSTPONE [       \ compile code to turn off compiler
+    ?CSP             \ test the data stack is same beginning
+    ?CS              \ check control flow stack is empty
 ; IMMEDIATE
 
 HERE SWAP -
-CR SPACE DECIMAL . .( bytes)
-NEWHEAP
+CR DECIMAL . .( bytes)
+NEWHEAP CR .( HEAP is reset to >2000)
+
+\         *** IMPORTANT ***
+\ There can be NO code on the  'JIT: <name>'  line
+\ JIT: TESTDO
+\  -1 0 DO I DROP LOOP
+\ ;JIT
