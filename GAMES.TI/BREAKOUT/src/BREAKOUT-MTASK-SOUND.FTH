@@ -287,9 +287,9 @@ HEX
 \ Machine Forth compilers let us understand what's happening
 : 1-,   0604 , ; \ TOS DEC,
 : 1+,   0584 , ; \ TOS INC,
-: 8*,   0834 , ; \ TOS 3 SRA,
+: 8/,   0834 , ; \ TOS 3 SRA,  ( divide by 8 )
 
-CODE PIX>CHAR ( pixel -- n) 1-, 8*, 1+,  NEXT, ENDCODE
+CODE PIX>CHAR ( pixel -- n) 1-, 8/, 1+,  NEXT, ENDCODE
 
 DECIMAL
 : BALLADDR ( -- vaddr)

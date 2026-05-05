@@ -148,7 +148,7 @@ ALSO JITS DEFINITIONS
     COMPILES UNLOOP          \ collapse stack frame
 ; IMMEDIATE
 
-: *RP+!, ( n -- )   A5CA , ;  \ machine Forth instruction
+: *RP+!, ( n -- )   A5C4 , ;  \ machine Forth instruction
 
 : +LOOP
     *RP+!,            \ TOS *RP ADD,

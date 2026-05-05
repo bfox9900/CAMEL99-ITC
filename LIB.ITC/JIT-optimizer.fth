@@ -43,18 +43,26 @@ VARIABLE #BYTESWAPS
 
 ;
 
+
+' DO-PRIME @  CODELENGTH .
+"DROP/DUP" SEARCH .
+3 CELLS REMOVE
+
+' DO-PRIME @  CODELENGTH .
+"DUP/DROP" SEARCH .
+
+3 CELLS REMOVE
+
+
 : TOSOPT ( addr size -- )
     #DUPS OFF
     BEGIN
         "DUP/DROP" SEARCH ( addr len ?)
-    IF
     WHILE
-        2DUP 3 CELLS DUP>R REMOVE    \ remove the code
+        2DUP 3 CELLS DUP>R REMOVE  \ remove the code
         R> NEGATE H +!             \ update Target data pointer
         #DUPS 1+!
     REPEAT
-   THEN
+    THEN
     2DROP
 ;
-
-' DO-PRIME >BODY  CODELENGTH

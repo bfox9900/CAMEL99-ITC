@@ -158,7 +158,7 @@ ALSO JITS DEFINITIONS
 ; IMMEDIATE
 
 : +LOOP
-    0A5CA ,          \ TOS *RP ADD,
+    0A5C4 ,          \ TOS *RP ADD,
     DROP,            \ don't need TOS value anymore
     POSTPONE LOOP    \ compile loop code
 ; IMMEDIATE

@@ -5,6 +5,11 @@
 \ This system compiles primitives from the kernel as super-instructions
 \ and compiles the execution token for the super instructions in a Forth word.
 
+\ May 5 2026
+\ -EXP version is an experiment in optimizing @ and !
+\ @ will replace code with symbolic addressing
+\ ! will replace code with symbolic addressing
+
 NEEDS .S     FROM DSK1.TOOLS   \ debug
 NEEDS ELAPSE FROM DSK1.ELAPSE  \ execution timing
 NEEDS CASE   FROM DSK1.CASE
@@ -17,6 +22,22 @@ MARKER *CLEAN*
 EMPTY
 
 HERE
+
+\ Let's record where free low ram starts in case
+\ there are other programs using it as well.
+H @ CONSTANT CODEMEM
+
+\ messages help with debugging ...
+VARIABLE MESSAGES
+: ?TYPE  MESSAGES @ IF CR ." -- " TYPE EXIT THEN 2DROP ;
+: MSG"   POSTPONE S"  POSTPONE ?TYPE ; IMMEDIATE
+
+10 LIFO: ARGSTK
+: >ARG    ARGSTK PUSH  MSG" ARG pushed" ;
+: ARG>    ARGSTK POP   MSG" ARG popped" ;
+: ARG?  ( -- n) ARGSTK STACK-DEPTH ;
+: /ARGS  ARGSTK DUP @  SWAP CELL+ ! ;
+: .ARGS   ARG? 0 DO ARG> U. LOOP ;
 
 8 LIFO: CS     \ small CONTROL FLOW STACK for loops and branching
 : >CS     ( n -- ) CS PUSH ;
@@ -39,11 +60,11 @@ CODE C@     D114 , 0984 ,  NEXT, ENDCODE
 CODE +      A136 ,         NEXT, ENDCODE
 
 \ Heap management
-: THERE  ( -- addr) H @ ;  \ returns end of Target memory in HEAP
-: HALLOT ( n -- )   H +! ; \ Allocate n bytes of target memory.
-: T,     ( n -- )   THERE ! 2 HALLOT ;  \ "target compile" n into heap
+: THERE  ( -- addr) H @ ;  \ returns end of Target memory in Low RAM
+: TALLOT ( n -- )   H +! ; \ Allocate n bytes of target memory.
+: T,     ( n -- )   THERE ! 2 TALLOT ;  \ "target compile" n into heap
 
-: NEWHEAP ( -- ) 2000 2000 0 FILL   2000 H ! ; \ reset HEAP
+: NEWHEAP ( -- ) CODEMEM  2000 ERASE   CODEMEM  H ! ; \ reset HEAP
 
 045A CONSTANT 'NEXT'  \ 9900 CODE for B *R10   Camel99 Forth's NEXT code
 
@@ -63,12 +84,36 @@ CODE +      A136 ,         NEXT, ENDCODE
 
 : COMPILES ( <codeword> ) POSTPONE [']  POSTPONE CODE, ; IMMEDIATE
 
+\ LOOKBACK and REMOVE are used for optimization
+: LOOKBACK ( n -- u) CELLS NEGATE THERE + @ ; \ read existing code
+
+VARIABLE REMOVED   \ count number of bytes removed from code
+: REMOVE   ( n -- )
+    CELLS DUP NEGATE TALLOT  \ removes cells of code in target memory
+    THERE OVER ERASE         \ erase for debugging
+    REMOVED +!               \ count how many bytes were removed
+;
+
+HEX
+C136 CONSTANT "DROP"  \ *SP+ R4 MOV,
+
 \ now we can steal code word from the kernel and compile it to target memory
 : DUP,   COMPILES DUP ;
-: DROP,  COMPILES DROP ;
-: 1-,    ( n -- n') COMPILES 1-  ; \ TOS DEC,
 
-: LIT,   ( -- n) DUP,  0204 T, ( n) T, ; \ compile n as literal in TOS
+VARIABLE TOSFREE
+
+: ?DUP,
+    1 LOOKBACK  "DROP" =
+    IF   1 REMOVE
+    ELSE DUP,
+    THEN TOSFREE ON
+;
+
+: DROP,   COMPILES DROP  TOSFREE OFF ;
+: 1-,    ( n -- n') COMPILES 1-  ; \ TOS DEC,
+: #,     ( n -- )  0204 T, ( n) T, ;  \ TOS n LI,
+
+: LIT,   ( -- n) DUP, #, ; \ compile n as literal in TOS
 
 \ store a byte offset in odd byte of addr.
 \ Addr is the location of Jump instruction
@@ -143,14 +188,98 @@ FORTH DEFINITIONS
 \ CFA of a code word contains the address of the next cell
 : CODE? ( XT -- ?)  DUP @ 2- = ;
 
+HEX 0204 CONSTANT 'LI'  \ LI R4,   instruction
+
+\ machine code optimizers for symbolic fetch and store use symbolic addressing
+: FAST@,   ( addr -- )  C120 T,  T,  ; \ MOV @ADDR,R4
+: FAST!,   ( addr -- )  C804 T,  T,  ; \ MOV R4,@ADDR
+
+
+\ test if an address has been compiled as LITERAL
+: DATA-ARG? ( -- ?)  2 LOOKBACK  'LI' =  ARG? AND ;
+
+: OPT@,
+    DATA-ARG?
+    IF
+        4 REMOVE         \ removes: DUP,  #,  ( 8 bytes)
+        ?DUP,            \ compile DUP if we must
+        ARG>  FAST@,
+    ELSE
+        ARG> DROP
+        COMPILES @
+    THEN
+;
+: OPT!,
+    DATA-ARG?
+    IF
+       4 REMOVE
+       ARG> FAST!,
+       DROP,           \ refill TOS
+    ELSE
+       COMPILES !
+    THEN
+;
+
+: FASTC@,   ( addr -- )  D120 T,  T,  0984 T, ;
+
+: OPTC@,
+    DATA-ARG?
+    IF
+        4 REMOVE         \ removes: DUP,  #,  ( 8 bytes)
+        ?DUP,            \ compile DUP if we must
+        ARG>  FASTC@,
+    ELSE
+        COMPILES C@
+    THEN
+;
+
+
+: FASTC!,   ( addr -- )  06C4 T, D804 T,  T,  ;
+: OPTC!,
+    DATA-ARG?
+    IF
+       4 REMOVE
+       ARG> FASTC!,
+       DROP,           \ refill TOS
+    ELSE
+       COMPILES C!
+    THEN
+;
+
+\ Some code words can be optimized.
+: OPT-CODE, ( xt -- )
+    CASE
+        ['] @ OF  OPT@,   ENDOF
+        ['] ! OF  OPT!,   ENDOF
+
+        ['] C@ OF OPTC@,  ENDOF
+        ['] C! OF OPTC!,  ENDOF
+
+     ( default:)
+    \ Can't optimize so compile Forth's code
+               DUP CODE,
+    ENDCASE
+;
+
+\ *CHANGE*
+\ In this version data words compile with LI instruction but..
+\ the address is also pushed onto the ARG stack.
+\ The arg stack is a proxy for a "data type is present"
+\ Literal numbers do NOT echo onto the ARG stack.
+\ The original code using LI is compiled as the decault.
+\ But the compiler can REMOVE that code if it sees the right signals.
+
+\ The advantage is that if we can't optimize then we do nothing and
+\ the existing code will still work.
+
 : JITCOMPILE,  ( xt -- )
-    DUP CODE? IF  CODE,   EXIT  THEN  \ compile kernel code & exit
+    DUP CODE? IF   OPT-CODE,   EXIT  THEN  \ compile kernel code & exit
     \ xt is not a code word...
     DUP @   \ FETCH the "executor" address
     CASE ( data words )
-        ['] DOVAR    OF  >BODY   LIT, ENDOF
-        ['] DOCON    OF  EXECUTE LIT, ENDOF
-        ['] DOUSER @ OF  EXECUTE LIT, ENDOF
+        ['] DOVAR    OF  EXECUTE DUP >ARG LIT, ENDOF
+        ['] DOCON    OF  EXECUTE DUP >ARG LIT, ENDOF
+        ['] DOUSER @ OF  EXECUTE DUP >ARG LIT, ENDOF
         TRUE ABORT" Can't optimize word"  ( any other Forth word bombs)
     ENDCASE
 ;
@@ -187,6 +316,8 @@ FORTH DEFINITIONS
 : JIT-COMPILER    ['] <JIT>    'IV ! ;
 
 : JIT: ( -- JIT-xt)
+    REMOVED OFF     \ Reset the counter variable
+    /ARGS           \ reset the ARG stack
     ALSO JITS       \ put JITS VOCABULARY first in search order
     HEADER          \ put the name in dictionary
     THERE ,         \ Compile code address in the dictionary
@@ -212,3 +343,23 @@ NEWHEAP CR .( HEAP is reset to >2000)
 \ JIT: TESTDO
 \  -1 0 DO I DROP LOOP
 \ ;JIT
+
+VARIABLE X
+
+NEWHEAP
+
+JIT: TESTX
+    99 X !
+    X @
+;JIT
+
+VARIABLE Y
+
+HEX
+JIT: TESTC!
+  BB  Y C!
+      Y C@
+;JIT
+
+PAGE
+' TESTC! @  40 DUMP
