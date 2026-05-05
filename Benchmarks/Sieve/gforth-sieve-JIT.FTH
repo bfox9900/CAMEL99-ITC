@@ -2,23 +2,19 @@
 
 NEEDS .S    FROM DSK1.TOOLS
 
-\ Running on Camel99 Forth
+\ Running on Camel99 Forth (ITC)
 \ Byte Magazine version:  120 seconds
 \ GForth version       :   74.1 seconds (38% faster)
+\ GForth JIT compiled  :   32.2
 
-\ DECIMAL
-\ 8190 CONSTANT SIZE
-\ VARIABLE FLAGS   SIZE ALLOT  0 FLAGS !
-\ FLAGS SIZE + CONSTANT EFLAG
 
-NEEDS FILLW   FROM DSK1.FILLW
-NEEDS JIT:    FROM DSK1.JIT   \ JIT V1 puts code in LOW RAM
+NEEDS FILLW   FROM DSK1.FILLW  \ 16 bit fill
+NEEDS JIT:    FROM DSK1.JIT    \ JIT V1 puts code in LOW RAM
 
 DECIMAL
 8190 CONSTANT SIZE
+VARIABLE FLAGS   SIZE ALLOT  0 FLAGS !
 FLAGS SIZE + CONSTANT EFLAG
-
-CREATE FLAGS   SIZE CELL+ ALLOT
 
 JIT: DO-PRIME  ( -- n )
     FLAGS SIZE  TRUE FILLW  ( set array )

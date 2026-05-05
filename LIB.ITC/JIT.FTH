@@ -105,11 +105,11 @@ ALSO JITS DEFINITIONS
     COMPILES UNLOOP           \ collapse stack frame
 ; IMMEDIATE
 
-: +LOOP
-    A5C4 T,         \ TOS *RP ADD,
-    DROP,            \ don't need TOS value anymore
+: +LOOP ( n --)
+    A5C4 T,                   \ TOS *RP ADD,
+    DROP,                     \ don't need TOS value now
     CS> THERE  0 JNO, <BACK   \ compute offset, compile into JNO
-    COMPILES UNLOOP           \ collapse stack frame; IMMEDIATE
+    COMPILES UNLOOP           \ collapse DO/LOOP stack frame
 ; IMMEDIATE
 
 HEX
