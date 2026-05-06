@@ -6,7 +6,8 @@
 \ and compiles the execution token for the super instructions in a Forth word.
 
 \ May 5 2026
-\ -EXP version is an experiment in optimizing @ and !
+\ -EXP version is an experiment in optimizing
+\ Removes DROP/DUP sequences
 \ @ will replace code with symbolic addressing
 \ ! will replace code with symbolic addressing
 
@@ -139,6 +140,7 @@ VARIABLE TOSFREE
 VOCABULARY JITS
 ALSO JITS DEFINITIONS
 
+WARNINGS OFF
 : BEGIN    THERE >CS ; IMMEDIATE  \ push location onto control stack
 
 \ <DO> is CODE preamble to setup return stack.
@@ -181,7 +183,7 @@ HEX
 : WHILE  ( n -- ) POSTPONE IF CS>SWAP ; IMMEDIATE
 
 : REPEAT  POSTPONE AGAIN  POSTPONE THEN ; IMMEDIATE
-
+WARNINGS ON
 \ --------------------------------------------------------------
 
 FORTH DEFINITIONS
@@ -367,33 +369,3 @@ NEWHEAP CR .( HEAP is reset to >2000)
 \ JIT: TESTDO
 \  -1 0 DO I DROP LOOP
 \ ;JIT
-
-VARIABLE X
-VARIABLE Y
-
-NEWHEAP
-OPTIMIZER OFF
-HEX
-JIT: X@Y!
-   X @  Y !
-;JIT
-
-' X@Y! @  20 DUMP
-
-
-
-OPTIMIZER ON
-JIT: TESTX
-    99 X !
-;JIT
-' TESTX @  20 DUMP
-
-
-HEX
-JIT: TESTC!
-  BB  Y C!
-      Y C@
-;JIT
-
-PAGE
-' TESTC! @  40 DUMP
