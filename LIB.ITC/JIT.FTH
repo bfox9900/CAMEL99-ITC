@@ -1,4 +1,5 @@
-\ jit.fth Compiles inline code as headless words in HEAP  Nov 29 2022
+\ jit.fth Compiles inline code in HEAP Nov 29 2022
+CR .( Simple inline JIT compiler. Updated May 2026)
 
 \ Problem:
 \ ITC Forth spends 50% of it's time running 3 instructions call NEXT.
