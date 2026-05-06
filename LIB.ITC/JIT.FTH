@@ -32,12 +32,14 @@ HEX
 \ *** changed for kernel V2.69 ***
 \ Words in scratchpad RAM end in a JMP instruction, not NEXT
 \ Might change this, but for now make some conventional versions.
+WARNINGS OFF
 CODE DUP    0646 , C584 ,  NEXT, ENDCODE
 CODE DROP   C136 ,         NEXT, ENDCODE
 CODE !      C536 , C136 ,  NEXT, ENDCODE
 CODE @      C114 ,         NEXT, ENDCODE
 CODE C@     D114 , 0984 ,  NEXT, ENDCODE
 CODE +      A136 ,         NEXT, ENDCODE
+WARNINGS ON
 
 \ Heap management
 : THERE  ( -- addr) H @ ;  \ returns end of Target memory in HEAP
@@ -94,7 +96,7 @@ CODE +      A136 ,         NEXT, ENDCODE
 
 VOCABULARY JITS
 ALSO JITS DEFINITIONS
-
+WARNINGS OFF
 : BEGIN    THERE >CS ; IMMEDIATE  \ push location onto control stack
 
 \ <DO> is CODE preamble to setup return stack.
@@ -137,7 +139,7 @@ HEX
 : WHILE  ( n -- ) POSTPONE IF CS>SWAP ; IMMEDIATE
 
 : REPEAT  POSTPONE AGAIN  POSTPONE THEN ; IMMEDIATE
-
+WARNINGS ON
 \ --------------------------------------------------------------
 
 FORTH DEFINITIONS

@@ -46,5 +46,6 @@ JIT: DO-PRIME  ( -- n )
 ;
 
 INCLUDE DSK1.ELAPSE
-
-\ run with: ELAPSE PRIMES
+CR
+CR
+CR .( Run with: ELAPSE PRIMES)
