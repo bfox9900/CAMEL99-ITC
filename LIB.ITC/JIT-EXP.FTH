@@ -188,12 +188,14 @@ FORTH DEFINITIONS
 \ CFA of a code word contains the address of the next cell
 : CODE? ( XT -- ?)  DUP @ 2- = ;
 
-HEX 0204 CONSTANT 'LI'  \ LI R4,   instruction
+HEX
+0204 CONSTANT 'LI'  \ LI R4,   instruction
+C120 CONSTANT 'X@'  \ fetch from memory
 
 \ machine code optimizers for symbolic fetch and store use symbolic addressing
 : FAST@,   ( addr -- )  C120 T,  T,  ; \ MOV @ADDR,R4
 : FAST!,   ( addr -- )  C804 T,  T,  ; \ MOV R4,@ADDR
-
+: MEM2MEM,    ( addr1 addr2 -- ) C820 T,  T,  T, ; \ mem2mem move
 
 \ test if an address has been compiled as LITERAL
 : DATA-ARG? ( -- ?)  2 LOOKBACK  'LI' =  ARG? AND ;
@@ -209,17 +211,35 @@ HEX 0204 CONSTANT 'LI'  \ LI R4,   instruction
         COMPILES @
     THEN
 ;
-: OPT!,
+
+\  store is complicated if we want to use 9900 mem2mem feature
+HEX
+: OPT!, ( -- )
+\ Condition I:  previous instruction was a fetch from memory
+                \ 2000 10 DUMP
+    6 LOOKBACK  \ DUP  CR ." 2 LB= " HEX U.
+    'X@' =
+    ARG? AND   \ look for fetch & address argument
+    IF  CR ." mem2mem"
+        5 LOOKBACK   \ get the address part
+        8 REMOVE     \ remove 6 CELLS
+        ( dst) ARG> SWAP  MEM2MEM,  \ replace with 3 cells
+        EXIT         \ get out early
+    THEN
+
+\ Condition II:  literal in TOS register
     DATA-ARG?
-    IF
-       4 REMOVE
-       ARG> FAST!,
-       DROP,           \ refill TOS
+    IF \ CR ." lit addr !"
+        4 REMOVE
+        ARG> FAST!,
+        DROP,           \ refill TOS
     ELSE
        COMPILES !
     THEN
 ;
 
+
+\ -----------------------------------------------
 : FASTC@,   ( addr -- )  D120 T,  T,  0984 T, ;
 
 : OPTC@,
@@ -247,7 +267,11 @@ HEX 0204 CONSTANT 'LI'  \ LI R4,   instruction
 ;
 
 \ Some code words can be optimized.
+VARIABLE OPTIMIZER
+
 : OPT-CODE, ( xt -- )
+    OPTIMIZER @ 0= IF  CODE,   EXIT  THEN
+
     CASE
         ['] @ OF  OPT@,   ENDOF
         ['] ! OF  OPT!,   ENDOF
@@ -256,7 +280,7 @@ HEX 0204 CONSTANT 'LI'  \ LI R4,   instruction
         ['] C! OF OPTC!,  ENDOF
 
      ( default:)
-    \ Can't optimize so compile Forth's code
+    \ NO optimizer code so compile Forth's code
                DUP CODE,
     ENDCASE
 ;
@@ -345,15 +369,25 @@ NEWHEAP CR .( HEAP is reset to >2000)
 \ ;JIT
 
 VARIABLE X
+VARIABLE Y
 
 NEWHEAP
-
-JIT: TESTX
-    99 X !
-    X @
+OPTIMIZER OFF
+HEX
+JIT: X@Y!
+   X @  Y !
 ;JIT
 
-VARIABLE Y
+' X@Y! @  20 DUMP
+
+
+
+OPTIMIZER ON
+JIT: TESTX
+    99 X !
+;JIT
+' TESTX @  20 DUMP
+
 
 HEX
 JIT: TESTC!
