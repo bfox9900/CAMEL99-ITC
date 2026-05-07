@@ -87,12 +87,12 @@ CODE NYBBLES ( color column colorbyte -- colorbyte')
 C0B6 ,          \    R2 POP,          \ column to R2
 C0F6 ,          \    R3 POP,          \ new color to R3
 0243 , 000F ,   \    R3  0F ANDI,     \ insure color is legal
-0242 , 0001 ,   \    R2  1  ANDI,
+0242 , 0001 ,   \    R2  1  ANDI,     \ test if ODD no,
 1303 ,          \    NE IF,
 0244 , 00F0 ,   \        TOS F0 ANDI,
 1003 ,          \    ELSE,
 0244 , 000F ,   \       TOS 0F ANDI,
-0A43 ,          \      R3  4 SLA,
+0A43 ,          \       R3   4 SLA,
                 \    ENDIF,
 A103 ,          \    R3 TOS ADD,
     NEXT,
@@ -119,6 +119,7 @@ DROP
 : XY@      ( -- x y) VROW 2@ ;
 : HLINE    ( n x y --) AT-XY 0 DO MCOLOR @ XY@ MCHAR  VCOL 1+! LOOP ;
 : VLINE    ( n x y --) AT-XY 0 DO MCOLOR @ XY@ MCHAR  VROW 1+!  LOOP ;
+
 DECIMAL
 \ Text macros make LINE clearer but run full speed
 : 2ROT ( d1 d2 d3 -- d2 d3 d1)
