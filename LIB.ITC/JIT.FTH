@@ -41,6 +41,10 @@ CODE C@     D114 , 0984 ,  NEXT, ENDCODE
 CODE +      A136 ,         NEXT, ENDCODE
 WARNINGS ON
 
+\ CFA of a code word contains the address of the next cell
+: CODE? ( XT -- ?)  DUP @ 2- = ;
+
+
 \ Heap management
 : THERE  ( -- addr) H @ ;  \ returns end of Target memory in HEAP
 : HALLOT ( n -- )   H +! ; \ Allocate n bytes of target memory.
@@ -143,8 +147,6 @@ WARNINGS ON
 \ --------------------------------------------------------------
 
 FORTH DEFINITIONS
-\ CFA of a code word contains the address of the next cell
-: CODE? ( XT -- ?)  DUP @ 2- = ;
 
 : JITCOMPILE,  ( xt -- )
     DUP CODE? IF  CODE,   EXIT  THEN  \ compile kernel code & exit
