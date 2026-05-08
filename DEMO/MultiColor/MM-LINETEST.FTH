@@ -7,7 +7,7 @@ DECIMAL
 : RNDCOLOR ( -- )  16 RND  MCOLOR ! ;
 : RNDX     ( -- n) 64 RND ;
 : RNDY     ( -- n) 48 RND ;
-: RNDLEN   ( -- n) 10 RND 2+ ;
+: RNDLEN   ( -- n) 44 RND 2+ ;
 
 
 : TESTLINE

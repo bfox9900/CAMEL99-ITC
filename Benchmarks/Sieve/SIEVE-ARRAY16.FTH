@@ -10,22 +10,32 @@ NEEDS CARRAY FROM DSK1.ARRAYS
 
 DECIMAL
 8190 CONSTANT SIZE
-SIZE CARRAY ]FLAGS
+SIZE ARRAY ]FLAGS
 
 0 ]FLAGS CONSTANT []FLAGS
+HEX
+CODE SETTRUE ( addr cnt -- ) \ set memory cells to TRUE ( -1 )
+    C076 ,  \    *SP+ R1 MOV,
+            \    BEGIN,
+    0731 ,  \        R1 *+ SETO,
+    0644 ,  \        TOS DECT,
+    15FD ,  \    LTE UNTIL,
+    C136 ,  \    TOS POP,
+    NEXT,
+ENDCODE
+DECIMAL
 
-0 []FLAGS !
-
+   []FLAGS OFF
 : DO-PRIME
-   []FLAGS SIZE  1 FILL  ( set array )
+   []FLAGS CELL+ SIZE CELLS 2-  SETTRUE  ( set array )
    0        ( counter )
    SIZE 0
-   DO I ]FLAGS C@
-     IF I 2*  3 +  DUP I +
+   DO I ]FLAGS @
+      IF I 2*  3 +  DUP I +
         BEGIN
           DUP SIZE <
         WHILE
-          0 OVER ]FLAGS C!
+          DUP ]FLAGS OFF
           OVER +
         REPEAT
         2DROP
@@ -38,4 +48,5 @@ SIZE CARRAY ]FLAGS
    PAGE ."  10 Iterations"
    10 0 DO  DO-PRIME  CR SPACE . ." Primes"  LOOP
    CR ." Done!"
-; \ 1:47.68
+;  \ 1:37.73  10% faster using ARRAY vs CARRAY
+   \ with SETTRUE  1:35.36

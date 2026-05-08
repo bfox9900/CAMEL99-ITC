@@ -12,3 +12,13 @@ DECIMAL
 \     TOS POP,
 \     NEXT,
 \ ENDCODE
+
+CODE []TRUE ( addr cnt -- ) \ set memory cells to TRUE ( -1 )
+    C076 ,  \    *SP+ R1 MOV,
+            \    BEGIN,
+    0731 ,  \        R1 *+ SETO,
+    0644 ,  \        TOS DECT,
+    15FD ,  \    LTE UNTIL,
+    C136 ,  \    TOS POP,
+    NEXT,
+ENDCODE

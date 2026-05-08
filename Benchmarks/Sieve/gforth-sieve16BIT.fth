@@ -1,22 +1,16 @@
 \ gforth's siev.fs (uses address arithmetic and DO for the inner loop)
 
 NEEDS .S    FROM DSK1.TOOLS
+NEEDS FILLW   FROM  DSK1.FILLW
 
 \ Running on Camel99 Forth
 \ Byte Magazine version:  120 seconds
 \ GForth version       :   74.1 seconds (38% faster)
 
-\ DECIMAL
-\ 8190 CONSTANT SIZE
-\ VARIABLE FLAGS   SIZE ALLOT  0 FLAGS !
-\ FLAGS SIZE + CONSTANT EFLAG
-
-NEEDS FILLW   FROM  DSK1.FILLW
-
-DECIMAL
-8190 CONSTANT SIZE
-VARIABLE FLAGS   SIZE ALLOT  0 FLAGS !
-FLAGS SIZE + CONSTANT EFLAG
+ DECIMAL
+ 8190 CELLS CONSTANT SIZE
+ VARIABLE FLAGS   SIZE ALLOT  0 FLAGS !
+ FLAGS SIZE + CONSTANT EFLAG
 
 : DO-PRIME  ( -- n )
  \ FLAGS SIZE 1 FILL
@@ -24,12 +18,12 @@ FLAGS SIZE + CONSTANT EFLAG
 
   0 3   ( -- accumulator 1st-offset)
   EFLAG FLAGS  \ end-address, start-address
-  DO   I C@    \ I is the array address
-       IF  DUP I + DUP EFLAG <
+  DO    I C@    \ I is the array address
+        IF  DUP I + DUP EFLAG <
            IF
                 EFLAG SWAP
                 DO
-                     I OFF
+                    I OFF
                 DUP +LOOP
            ELSE
                 DROP

@@ -69,7 +69,6 @@ FLAGS TABLE: ]FLAGS
    CR ." Done!"
 ;
 
-
 INCLUDE DSK1.FILLW
 \ WITH  TABLE:, fast fill and 2* and 2DROP
 HEX 0101 CONSTANT $0101
