@@ -116,9 +116,10 @@ DROP
 
 : MM.PLOT  ( x y -- ) MCOLOR @ -ROT  MCHAR ;
 
-: XY@      ( -- x y) VROW 2@ ;
-: HLINE    ( n x y --) AT-XY 0 DO MCOLOR @ XY@ MCHAR  VCOL 1+! LOOP ;
-: VLINE    ( n x y --) AT-XY 0 DO MCOLOR @ XY@ MCHAR  VROW 1+!  LOOP ;
+\ text macro in inner loop speeds things up
+: XY@      ( -- x y)  S" VROW 2@ " EVALUATE ; IMMEDIATE
+: HLINE    ( n x y --) AT-XY 0 DO  MCOLOR @ XY@ MCHAR  VCOL 1+!  LOOP ;
+: VLINE    ( n x y --) AT-XY 0 DO  MCOLOR @ XY@ MCHAR  VROW 1+!  LOOP ;
 
 DECIMAL
 \ Text macros make LINE clearer but run full speed
