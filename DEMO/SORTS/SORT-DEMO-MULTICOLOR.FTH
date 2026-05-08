@@ -60,7 +60,7 @@ DECIMAL
       >R SWAP R> VLINE
       DELAY ;
 
-: .BAR  ( col value -- )
+: .BAR  ( col value -- ) 20 5 5 VLINE
 
 
 : ]Q.DRAW ( ndx -- ) DUP ]Q @ .BAR ; \ draw bar
