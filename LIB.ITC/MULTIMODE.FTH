@@ -64,7 +64,7 @@ HEX
 \ MCHAR for Camel99 Forth   Sept 14 2024 Brian fox
 \ Derived from code by Lee Stewart
 HEX
-CODE >NAME ( col row -- Vaddr)
+CODE ]NAME ( col row -- Vaddr)
     C076 , \ *SP+ R1 MOV,
     0911 , \  R1   1 SRL,  \ 2/
     0914 , \  TOS  1 SRL,  \ 2/
@@ -99,7 +99,7 @@ A103 ,          \    R3 TOS ADD,
 ENDCODE
 
 : MCHAR  ( color col row --)
-    2DUP >NAME VC@ ]PATTERN DUP>R VC@  NYBBLES  R> VC! ;
+    2DUP ]NAME VC@ ]PATTERN DUP>R VC@  NYBBLES  R> VC! ;
 
 VARIABLE MCOLOR       \ holds active color
 
