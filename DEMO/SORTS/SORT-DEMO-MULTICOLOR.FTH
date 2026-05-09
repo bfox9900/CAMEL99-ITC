@@ -27,12 +27,12 @@ CREATE REF-DATA
    DATA 25,26,27,28,29,30,31,32
    DATA 17,18,19,20,21,22,23,24
    DATA  9,10,11,12,13,14,15,16
-   DATA  1, 2, 3, 4, 5,	6,	7, 8,
+   DATA  1, 2, 3, 4, 5,	6,	7, 8
 
 
 : LOAD-DATA
    []Q 48 CELLS ERASE
-   REF-DATA []Q 48 CELLS MOVE
+   REF-DATA []Q 48 CELLS CMOVE
 ;
 
 : .DATA  CR 48 0 DO  I ]Q ?  LOOP ;
@@ -60,24 +60,24 @@ DECIMAL
       >R SWAP R> VLINE
       DELAY ;
 
-: .BAR  ( col value -- ) 20 5 5 VLINE
-
+: .BAR  ( col value -- ) 20 SWAP 5 VLINE ;
 
 : ]Q.DRAW ( ndx -- ) DUP ]Q @ .BAR ; \ draw bar
 
 : SOUND-ON   GEN1  15000 HZ  -6 DB ;
 
 : SHOW-DATA   SOUND-ON  48 0 DO  I ]Q.DRAW   LOOP MUTE ;
+
 : WAIT-KEY   BEGIN KEY? UNTIL ;
 
 : TEST
    MULTICOLOR
    LOAD-DATA
-   BEGIN
-      RED  20 5 5 VLINE
-      5 /BAR
-   ?TERMINAL
-   UNTIL
+   RED
+   0 .BAR
+   2 .BAR
+   4 .BAR
+   WAIT-KEY
    TEXT ;
 
 

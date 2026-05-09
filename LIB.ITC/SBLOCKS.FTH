@@ -1,5 +1,5 @@
 \ BLOCK  as a method to manage SAMS pages    Jan 15 2021 Brian Fox
-\ 
+\
 \ Jun 2022  Added 32 bit FAR address memory operators
 \ The concept: Keep two 4K "windows" in LOW RAM.
 \ BLOCK returns the window that has requested address.
@@ -32,7 +32,7 @@ CODE BLOCK ( bank -- buffer)
  1603 ,
      0204 , 3000 ,
      045A ,
- 0208 , 0001 , 
+ 0208 , 0001 ,
  2A20 , USE ,
  C808 , USE ,
  A208 ,
@@ -58,16 +58,16 @@ CODE BLOCK ( bank -- buffer)
 
  HEX
 \ This could be code a faster computation
-: >REAL  ( addr seg -- virtual-address) 1000 UM/MOD BLOCK + ;
-: PAGED  ( virtual-addr -- real-addr) SEG @ >REAL ;
+: VIRT>REAL  ( addr seg -- virtual-address) 1000 UM/MOD BLOCK + ;
+: PAGED  ( virtual-addr -- real-addr) SEG @ VIRT>REAL ;
 
 \ True "FAR" memory access words operate on 32 bit address
-: !L    ( n Daddr --)  >REAL ! ;   \ store int
-: C!L   ( c Daddr --)  >REAL C! ;  \ store char
-: 2!L   ( d Daddr --)  >REAL 2@ ;  \ store double
+: !L    ( n Daddr --)  VIRT>REAL ! ;   \ store int
+: C!L   ( c Daddr --)  VIRT>REAL C! ;  \ store char
+: 2!L   ( d Daddr --)  VIRT>REAL 2@ ;  \ store double
 
-: @L    ( Daddr -- n)  >REAL @ ;
-: C@L   ( Daddr -- c)  >REAL C@ ;
-: 2@L   ( Daddr -- d)  >REAL 2@ ;
+: @L    ( Daddr -- n)  VIRT>REAL @ ;
+: C@L   ( Daddr -- c)  VIRT>REAL C@ ;
+: 2@L   ( Daddr -- d)  VIRT>REAL 2@ ;
 
 HERE SWAP - DECIMAL  CR .  .( bytes)
