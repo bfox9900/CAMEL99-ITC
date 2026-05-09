@@ -24,8 +24,8 @@ HEX
     4K +LOOP
     DROP
 ;
-
-1 SEGMENT    \ select the 2nd 64K chunk of SAMS card
+DECIMAL
+1 SEG !    \ select the 2nd 64K "segment" of SAMS card
 
 : DO-PRIME  ( -- n )
   FLAGS SIZE TRUE SAMS.FILLW
