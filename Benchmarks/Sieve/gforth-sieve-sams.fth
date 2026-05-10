@@ -2,11 +2,14 @@
 
 NEEDS .S    FROM DSK1.TOOLS
 NEEDS FILLW FROM DSK1.FILLW \ 16 bit fill
-NEEDS C@L   FROM DSK1.SAMS
+NEEDS C@L   FROM DSK1.SAMSFTH
 
 \ Running on Camel99 Forth
 \ Byte Magazine version:  120 seconds
+
 \ GForth version       :   74.1 seconds (38% faster)
+\ w/SAMSFTH  (Forth)   :
+\ W/SAMS     (ASM)     :   97
 
  DECIMAL
  8190 CONSTANT SIZE
