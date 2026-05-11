@@ -52,9 +52,10 @@ HEX
 
 : CLEAR   ( -- )  PDT  1800  0 VFILL ; \ ERASE pattern table
 
+: BYTEMERGE  ( c c == cc)  SWAP 4 LSHIFT SWAP + ; \ merge colors into a byte
 : COLOR   ( fg bg --)
-      SWAP 4 LSHIFT SWAP +    \ merge colors into a byte
-      CTAB 1800  ROT VFILL ;  \ init color table
+    BYTEMERGE
+    CTAB 1800  ROT VFILL ;  \ init color table
 
 : INIT-IMAGE ( -- )
     -1 IMG 300 BOUNDS DO  1+ DUP 0FF AND I VC!  LOOP  DROP ;
@@ -171,26 +172,24 @@ CREATE BITS ( -- addr) 80 , 40 , 20 , 10 , 8 , 4 , 2 , 1 ,
 \ R8  = W = X division remainder
 HEX
  CODE PIXPOS ( x y -- c Vaddr)
-    *SP R0 MOV,   \ x
+    *SP R3 MOV,   \ x
     TOS R1 MOV,   \ y
     R1 R4 MOV,
     R4 5  SLA,    \ R4 32*
     R1 R4 SOC,    \ mask r4 with R1
     R4 FF07 ANDI,
 
-    R0 R5 MOV,
+    R3 R5 MOV,
     R5 7 ANDI,    \ r5 is index into BITS
+     R5 W MOV,         \ dup R5 in W
+     W    1 SLA,       \ W 2*
+     BITS (W) *SP MOV, \ lookup bit value leave as 2nd on stack
 
-    R5 W MOV,         \ dup R5 in W
-    W    1 SLA,       \ W 2*
-    BITS (W) *SP MOV, \ lookup bit value leave as 2nd on stack
-
-    R0 R4 ADD,
+    R3 R4 ADD,
     R5 R4 SUB,
     R4 PDT AI,   \ add index to pattern table base address
     NEXT,
 ENDCODE
-
 
 \ TEXT macro for speed
 : PLOT   ( x y -- ) S" PIXPOS STYLUS" EVALUATE ; IMMEDIATE
