@@ -18,8 +18,8 @@ NEEDS FILLW   FROM  DSK1.FILLW
 
   0 3   ( -- accumulator 1st-offset)
   EFLAG FLAGS  \ end-address, start-address
-  DO    I C@    \ I is the array address
-        IF  DUP I + DUP EFLAG <
+  DO    I @    \ I is the array address
+        IF  DUP CELLS  I + DUP EFLAG <
            IF
                 EFLAG SWAP
                 DO
@@ -30,8 +30,8 @@ NEEDS FILLW   FROM  DSK1.FILLW
            THEN
            SWAP 1+ SWAP  \ inc. the accumulator
         THEN
-        CELL+            \ inc. offset by 2
-    LOOP
+        2 CELLS +            \ inc. offset by 2
+    2 +LOOP
     DROP ;
 
 : PRIMES ( -- )

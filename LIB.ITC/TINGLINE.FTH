@@ -1,67 +1,86 @@
-\ Dr. C. H. Ting's Simplest Line Drawing Algorithm
-\ Draw a straight line between (x1, y1) and (x2,y2).
-\ Determine the end condition, where (x1,y1) and (x2,y2)
-\ are within one pixel distance.
-\ Find the aid point between (x1,y1) and (x2,y2).
-\ Insert mid point between 1 and 2, then recurse twice
-\ to draw the two segments.
-
-\     HEX
-\     CODE VIDEO ( cx dx ax -- ) \IBM BIOS video service
-\          AX POP DX POP CX POP     10 INT    NEXT END-CODE
-\     : TEXT    0 0 2 VIDEO ;  \ Return to text mode.
-\     : GRAPH   0 0 4 VIDEO ;  \ Set high-resolution graphics mode.
-
-\ Given a coordinate pair and a color code,
-\ Paint one dot on the Screen.
-\     CODE PLOT ( x y color --)
-\          AX POP  0200 # AX ADD  DX POP  CX POP 10 INT
-\          NEXT END-CODE
-
-NEEDS .S       FROM DSK1.TOOLS
-NEEDS INLINE[  FROM DSK1.INLINE
-NEEDS 4TH      FROM DSK1.3RD4TH
-NEEDS ELAPSE   FROM DSK1.ELAPSE
+\ line drawing by Dr. C. H. Ting  R.I.P.
+\ I tried to make it faster with every trick I could think of.
+\ It is not as good as Bresenham but fun example of recursion
 
 DECIMAL
-CHAR * CONSTANT pen
+\ : DXY  ( x y x2 y2 -- dY dX) ROT - ABS -ROT - ABS ;
 
-: PLOT ( x y ) AT-XY pen EMIT 20 MS  ;
+\ name items on the stack for clairity
+\ Using index addressing to avoid 4DUP
+: X1   3 (SP) ;
+: Y1   2 (SP) ;
+: X2   1 (SP) ;
+: Y2   *SP  ;
 
-HERE
-: 2ROT   ( d1 d2 d3 -- d2 d3 d1) 2>R 2SWAP 2R> 2SWAP ;
-: 2OVER  ( d1 d2 -- d1 d2 d1) 4TH 4TH ;
+CODE DXY? ( x y x2 y2 --x y x2 y2 ?)
+      TOS PUSH,
+   Y2 TOS MOV,
+    Y1 Y2 SUB,
+       Y2 ABS,
 
-: TINGLINE ( X1 Y1 X2 Y2 -- ) \ ANS version of Ting's code
-     2OVER 2OVER  ROT - ABS >R
-     - ABS R>
-     MAX  2 <
-     IF  2DROP PLOT EXIT THEN
-     2OVER 2OVER  ROT + 1+ 2/ >R ( Y3)
-     + 1+ 2/ ( X3) R>
-     2DUP 2ROT
-     RECURSE RECURSE ;
+    X1 X2 SUB,
+       X2 ABS,
+\ MAX
+    *SP TOS CMP,
+    LO IF, TOS POP,
+    ELSE,   SP INCT,
+    ENDIF,
+\ 2 <
+    TOS 2 CI,
+    LO IF, TOS SETO,
+    ELSE,  TOS CLR,
+    ENDIF,
+    NEXT,
+ENDCODE
 
-HERE SWAP - DECIMAL .   ( 118 BYTES)
+CODE MIDXY ( x1 y1 x2 y2 -- x1 y1 x2 y2 x' y')
+\ do x mid point
+    TOS PUSH,
+    X1 TOS MOV,
+    X2 TOS ADD,
+       TOS INC,
+       TOS 1 SRA,
+\ do x mid point
+    TOS PUSH,
+    Y1 TOS MOV,
+    Y2 TOS ADD,
+       TOS INC,
+       TOS 1 SRA,
+    NEXT,
+ENDCODE
 
-: TEST1  PAGE  23 0 DO   0 I  39 23 I -  DRAW   2 +LOOP ;
+DECIMAL
+: 2ROT ( d1 d2 d3 -- d2 d3 d1)
+  S" 2>R 2SWAP 2R> 2SWAP" EVALUATE ; IMMEDIATE
 
-\ optimizers
-HERE
- CODE 4DUP   INLINE[ 4TH 4TH 4TH 4TH ]     NEXT,  ENDCODE
- CODE |-|    INLINE[ - ABS ]               NEXT, ENDCODE
- CODE 2ROT   INLINE[ 2>R 2SWAP 2R> 2SWAP ] NEXT, ENDCODE
+HEX
+\ manual tail call optimizer. Improves LINE by 1.5%
+: PREVXT ( -- XT)  HERE 1 CELLS - @ ;
 
-: FDRAW ( X1 Y1 X2 Y2 -- ) \ 10% FASTER
-     4DUP ROT |-| >R
-     |-| R>
-     MAX  2 <
-     IF  2DROP PLOT EXIT THEN
-     4DUP ROT + 1+ 2/ >R ( Y3)
-     + 1+ 2/ ( X3) R>
-     2DUP 2ROT
-     RECURSE RECURSE ;
+\ -; does not end with EXIT because it is branching directly to another
+\ list of tokens. That other list will end in EXIT or NEXT.
+: -;  ( -- ) \ programmer controlled
+      PREVXT >BODY              \ get previous XT, compute PFA
+     -1 CELLS ALLOT             \ erase the previous XT
+      POSTPONE BRANCH HERE - ,  \ compile BRANCH to the PFA
+      POSTPONE [                \ turn off compiler
+      REVEAL
+      ?CSP
+; IMMEDIATE
 
-HERE SWAP - .   ( 206 BYTES)
+: LINE ( x1 y1 x2 y2 -- )
+\ ANS version of Dr. Ting's recursive line.  R.I.P.
+    DXY? IF  2DROP PLOT  EXIT THEN
+    MIDXY 2DUP 2ROT RECURSE RECURSE -;
 
-: TEST2  PAGE  23 0 DO   0 I  39 23 I -  FDRAW  2 +LOOP ;
+0 VALUE x
+0 VALUE y
+
+: MOVETO  ( x y -- ) TO y   TO x ;
+: LINETO  ( x y -- ) 2DUP x y LINE MOVETO ;
+
+\ no safety net !!
+: HLINE ( x y len ) -ROT MOVETO  0 DO  x I +  y  PLOT  LOOP ;
+: VLINE ( x y len ) -ROT MOVETO  0 DO  x  y I +  PLOT  LOOP ;
+
+HERE SWAP - DECIMAL .

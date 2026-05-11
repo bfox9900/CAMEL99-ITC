@@ -15,7 +15,6 @@ NEEDS FILLW   FROM  DSK1.FILLW
 : DO-PRIME  ( -- n )
  \ FLAGS SIZE 1 FILL
    FLAGS SIZE  TRUE FILLW  ( set array )
-
   0 3   ( -- accumulator 1st-offset)
   EFLAG FLAGS  \ end-address, start-address
   DO    I C@    \ I is the array address
