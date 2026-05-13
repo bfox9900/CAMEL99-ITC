@@ -2,7 +2,7 @@
 \ Written in Forth to show methods.
 \ Referenced TI-FORTH: ( CONVERT TO GRAPHICS2 MODE CONFIG 14SEP82 LAO)
 \ 2025 Added TABLE: for faster access into VDP tables
-\ 2026  simplified stackrobatics in PIXPOS
+\ 2026  simplified stackrobatics in PIXPOS, use FUSE for 256* +
 
 \ COMPILES under ITC and DTC systems
 CR .( Two colour bit map mode )
@@ -62,7 +62,7 @@ HEX
 
 \ PENCIL and ERASER are "execution tokens"
 :NONAME ( VOR)     ( c Vaddr -- ) DUP>R VC@  OR  R> VC! ; CONSTANT PENCIL
-:NONAME ( VERASE)  ( c Vaddr -- ) >R INVERT R> VAND ; CONSTANT ERASER
+:NONAME ( VERASE)  ( c Vaddr -- ) SWAP INVERT SWAP VAND ; CONSTANT ERASER
 
 DEFER STYLUS   \ usage:  PENCIL IS STYLUS    ERASER IS STYLUS
 
