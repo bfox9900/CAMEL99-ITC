@@ -99,17 +99,14 @@ DEFER STYLUS   \ usage:  PENCIL IS STYLUS    ERASER IS STYLUS
 \ *Note:
 \ 1. We use UM/MOD because it is the fastest divide in the system
 \ 2. FUSE performs 256* because it puts two bytes together in an integer
-\    AA BB  FUSE -> BBAA   in effect it is: AA * 256 + BB
+\    AA BB  FUSE -> BBAA   in effect it is: BB * 256 + AA
 
 HEX
 : PIXPOS ( x y -- bit PDT_addr)
- ( Y) 0FF AND           \ mask Y is required
-      0 8 UM/MOD        \ -- (Y MOD 8) (Y/8)
-      FUSE              \ do 256*y + (y mod 8)
-
+ ( Y) 0 8 UM/MOD        \ -- (Y MOD 8) (Y/8)
+      FUSE              \  256(y/8) + (y mod 8)
       SWAP
- ( X) FF AND            \ mask X is required
-      0 8 UM/MOD 8*     \ compute X offset into VDP memory
+ ( X) 0 8 UM/MOD 8*     \ compute X offset into VDP memory
       80 ROT RSHIFT     ( -- Y' X' bit )
       -ROT +            ( -- bit ndx)
       ]PDT ;            ( -- bit Vaddr)
