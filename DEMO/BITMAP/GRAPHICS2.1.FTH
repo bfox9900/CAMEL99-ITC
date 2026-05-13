@@ -114,32 +114,4 @@ HEX
 
 : PLOT   ( x y -- ) S" PIXPOS STYLUS" EVALUATE ; IMMEDIATE
 
-DECIMAL
-\ Text macros make a big difference in LINE function speed
-: 2ROT ( d1 d2 d3 -- d2 d3 d1) S" 2>R 2SWAP 2R> 2SWAP" EVALUATE ; IMMEDIATE
-: 4DUP ( d1 d2 -- d1 d2 d1)    S" 4TH 4TH 4TH 4TH" EVALUATE ; IMMEDIATE
-: DXY  ( x y x2 y2 -- dx dy) S" ROT - ABS >R - ABS R>" EVALUATE ; IMMEDIATE
-: MID  ( x y -- n) S" + 1+ 2/" EVALUATE ; IMMEDIATE
-
-DECIMAL
-NEEDS -;  FROM DSK1.TAILCALL
-
-: LINE ( x1 y1 x2 y2 -- )
-\ ANS version of Dr. Ting's recursive line.  R.I.P.
-    4DUP DXY  MAX 2 < IF  2DROP PLOT  EXIT THEN
-    4DUP
-   \ compute mid points
-     ROT MID >R  MID R>
-    2DUP 2ROT RECURSE RECURSE -; \ tail call optimization helps this
-
-0 VALUE x
-0 VALUE y
-
-: MOVETO ( x y -- ) TO y   TO x ;
-: LINETO  ( x y -- ) 2DUP x y LINE MOVETO ;
-
-\ no safety net !!
-: HLINE ( x y len ) -ROT MOVETO  0 DO  x I +  y  PLOT  LOOP ;
-: VLINE ( x y len ) -ROT MOVETO  0 DO  x  y I +  PLOT  LOOP ;
-
-HERE SWAP - DECIMAL . .( bytes )
+HERE SWAP - CR DECIMAL . .( bytes )
