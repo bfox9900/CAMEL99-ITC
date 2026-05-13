@@ -115,3 +115,5 @@ HEX
 : PLOT   ( x y -- ) S" PIXPOS STYLUS" EVALUATE ; IMMEDIATE
 
 HERE SWAP - CR DECIMAL . .( bytes )
+
+CR .( Use BRESENHAM file for line generation)
