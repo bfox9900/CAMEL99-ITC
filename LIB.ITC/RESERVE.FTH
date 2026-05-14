@@ -1,9 +1,7 @@
-\ Minimalist heap memory manager in dictionary 
+\ Minimalist dynamic memory manager in the Forth dictionary
 
-1 CELLS CONSTANT CELL 
+: CELL-   S" 2-" EVALUATE ; IMMEDIATE
 
 : RESERVE ( n -- addr ) DUP , HERE  SWAP DP +! ;
-
-: SIZEOF  ( addr -- u) CELL - @ ;  
-
-: RELEASE ( addr -- ) SIZEOF CELL+ NEGATE 2- DP +! ;
+: SIZEOF  ( addr -- u) CELL- @ ;
+: RELEASE ( addr -- ) SIZEOF CELL+ NEGATE CELL- DP +! ;
