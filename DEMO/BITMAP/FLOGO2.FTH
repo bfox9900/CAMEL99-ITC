@@ -19,6 +19,11 @@
 
 NEEDS PLOT  FROM DSK1.GRAPHICS2B
 
+
+\ timings using ELAPSE32  ()
+\ DEMO time with Forth SIN        1:115.1
+\ DEMO time with machine code SIN 1:14.2
+
 \ ===============================================
 \ named colors
 DECIMAL
@@ -70,8 +75,6 @@ CREATE SINTAB
   243 , 249 , 254 , 255 ,
   000 ,
 
-\ expose the table as a byte array. Use text macro for speed
-\ : ]N@ ( ndx -- n) S" N + C@" EVALUATE ; IMMEDIATE
 
 \ FAST array with machine Forth compilers
 HEX
@@ -80,6 +83,7 @@ HEX
 DECIMAL
 
 CODE SIN ( ndx -- addr)  2*, SINTAB []@,  NEXT, ENDCODE
+\ : SIN   CELLS SINTAB + @ ;
 
 : >DIR ( angle -- coord)
        DUP>R  ABS >R

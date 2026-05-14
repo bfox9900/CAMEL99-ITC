@@ -19,9 +19,10 @@ CR ." Modified for Camel99 Forth  2026 Brian Fox"
 \ *  THIS VERSION REPLACES VARIABLES WITH VALUES FOR FASTER PERFORMANCE *
 \ ***********************************************************************
 \ Machine Forth was used to speed up some computations
+\ Demo speed 1:02.33
 
 
-NEEDS PLOT  FROM DSK1.GRAPHICS2
+NEEDS PLOT  FROM DSK1.GRAPHICS2B
 NEEDS VALUE FROM DSK1.VALUES
 
 \ ===============================================
@@ -82,10 +83,10 @@ CREATE SINTAB
 \ FASTER array with machine Forth compilers
 HEX
 : 2*,   ( n -- 2(n)  A104 , ;             \ A R4,R4
-: []@,   ( addr -- ) C124 , ( addr) , ;   \ MOV addr@(R4),R4
+: [@],   ( addr -- ) C124 , ( addr) , ;   \ MOV addr@(R4),R4
 DECIMAL
 
-CODE SIN ( ndx -- addr)  2*, SINTAB []@,  NEXT, ENDCODE
+CODE SIN ( ndx -- addr)  2*, SINTAB [@],  NEXT, ENDCODE
 
 : >DIR ( angle -- coord)
        DUP>R ABS >R
