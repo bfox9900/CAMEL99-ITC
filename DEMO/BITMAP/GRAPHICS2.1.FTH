@@ -98,7 +98,7 @@ DEFER STYLUS   \ usage:  PENCIL IS STYLUS    ERASER IS STYLUS
 
 \ *Note:
 \ 1. We use UM/MOD because it is the fastest divide in the system
-\ 2. FUSE performs 256* because it puts two bytes together in an integer
+\ 2. FUSE performs 256* and +. It puts two bytes together in an integer
 \    AA BB  FUSE -> BBAA   in effect it is: BB * 256 + AA
 
 HEX
