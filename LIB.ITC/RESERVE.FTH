@@ -1,7 +1,19 @@
 \ Minimalist dynamic memory manager in the Forth dictionary
+INCLUDE DSK1.REQUIRE
+
+REQUIRE DSK1.TOOLS
+REQUIRE DSK1.VALUES
 
 : CELL-   S" 2-" EVALUATE ; IMMEDIATE
 
-: RESERVE ( n -- addr ) DUP , HERE  SWAP DP +! ;
+: RESERVE ( n -- addr ) DUP , HERE  SWAP DP +! ALIGN ;
 : SIZEOF  ( addr -- u) CELL- @ ;
-: RELEASE ( addr -- ) SIZEOF CELL+ NEGATE CELL- DP +! ;
+: RELEASE ( addr -- ) SIZEOF CELL+ NEGATE  DP +! ;
+
+\ TEST
+\ DECIMAL
+\ HERE DUP U.
+\ 1000 RESERVE CONSTANT X
+\ X SIZEOF DUP .
+\ RELEASE
+\ HERE DUP U.
