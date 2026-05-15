@@ -18,6 +18,7 @@ NEEDS REFILL  FROM DSK1.REFILL
          REPEAT
          THEN
      REPEAT
+     2DROP
 ; IMMEDIATE
 
 /* ******************************

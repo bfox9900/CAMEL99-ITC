@@ -11,7 +11,7 @@ DECIMAL
   SOURCE-ID @ 0>  \ input from file?
   IF
     2 FILEOP 0= >R        \ file read. save error flag as a bit mask
-    FGET ( addr len)  \ read PAB string into TIB
+    FGET ( -- addr len)  \ read PAB string into TIB
     R> AND \ AND length with error mask
   ELSE
     80 ACCEPT ( addr len)
