@@ -20,7 +20,7 @@ HEX
 
 CONSOLE   \ init the vectors now
 
-: PERFORM ( addr -- ) @ EXECUTE ;
+\ : PERFORM ( addr -- ) @ EXECUTE ;  \ fast version is in Kernel 2.7
 
 \ re-define FORTH I/O words to use vectors
 \ : EMIT    ( -- )  'EMIT PERFORM ;
@@ -29,5 +29,3 @@ CONSOLE   \ init the vectors now
 : KEY?    ( -- )  'KEY? PERFORM ;
 : TYPE    ( -- )  'TYPE PERFORM ;
 : PAGE    ( -- )  'PAGE PERFORM ;
-
-
