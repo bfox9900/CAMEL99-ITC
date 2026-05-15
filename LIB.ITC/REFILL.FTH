@@ -9,13 +9,13 @@ DECIMAL
 : REFILL ( -- ?) \ len=0 means no input
   TIB DUP        \ read input into terminal input buffer
   SOURCE-ID @ 0>
-  IF   2 FILEOP 0= >R   FGET ( addr len) R> AND
+  IF   2 FILEOP 0= >R   FGET ( addr len) R> AND \ AND length with error flag
   ELSE 80 ACCEPT ( addr len)
   THEN
   DUP  \ Test length
   IF
       'SOURCE 2!  >IN OFF
-       TRUE
+      TRUE
       EXIT
   THEN
   NIP  \ length was zero, remove the address

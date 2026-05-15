@@ -4,19 +4,7 @@
 CR .( [IF] [ELSE] [THEN])
 
 NEEDS COMPARE FROM DSK1.COMPARE
-
-: REFILL ( -- ?) \ ?=0 means no input was recieved
-  TIB DUP        \ use the terminal input buffer
-  SOURCE-ID @    \ 0=console, -1=evaluate, >= 1 is a file
-  IF   2 FILEOP ?FILERR FGET ( -- tib len)
-  ELSE 80 ACCEPT ( -- tib len)
-  THEN
-  DUP IF ( len > 0)
-       'SOURCE 2!  >IN OFF
-        TRUE  \ we got data, return true
-        EXIT
-  THEN NIP    \ return zero
-;
+NEEDS REFILL  FROM DSK1.REFILL
 
 : [ELSE] ( -- )
     1 BEGIN                                \ level
