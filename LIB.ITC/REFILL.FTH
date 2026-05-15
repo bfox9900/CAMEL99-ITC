@@ -7,12 +7,16 @@
 \ *NON* standard for Camel99 Forth
 DECIMAL
 : REFILL ( -- ?) \ len=0 means no input
-  TIB DUP        \ read input into terminal input buffer
-  SOURCE-ID @ 0>
-  IF   2 FILEOP 0= >R   FGET ( addr len) R> AND \ AND length with error flag
-  ELSE 80 ACCEPT ( addr len)
+  TIB DUP         \ use terminal input buffer
+  SOURCE-ID @ 0>  \ input from file?
+  IF
+    2 FILEOP 0= >R    \ file read. save error flag as a bit mask
+    TIB FGET ( addr len)  \ read PAB string into TIB
+    R> AND \ AND length with error mask
+  ELSE
+    80 ACCEPT ( addr len)
   THEN
-  DUP  \ Test length
+  DUP \ Test length
   IF
       'SOURCE 2!  >IN OFF
       TRUE
