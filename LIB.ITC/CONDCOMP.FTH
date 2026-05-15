@@ -8,21 +8,21 @@ NEEDS COMPARE FROM DSK1.COMPARE
 NEEDS REFILL  FROM DSK1.REFILL
 
 : [ELSE] ( -- )
-    1 BEGIN                                          \ level
-       BEGIN PARSE-NAME DUP WHILE                  \ level adr len
-         2DUP S" [IF]" COMPARE 0= IF                  \ level adr len
-             2DROP 1+                                 \ level'
-          ELSE                                        \ level adr len
-            2DUP S" [ELSE]" COMPARE 0= IF             \ level adr len
-                2DROP 1- DUP IF 1+ THEN               \ level'
-            ELSE                                      \ level adr len
-                S" [THEN]" COMPARE 0= IF              \ level
-                   1-                                 \ level'
+    1 BEGIN                                  \ level
+       BEGIN PARSE-NAME DUP WHILE            \ level adr len
+         2DUP S" [IF]" COMPARE 0= IF         \ level adr len
+             2DROP 1+                        \ level'
+          ELSE                               \ level adr len
+            2DUP S" [ELSE]" COMPARE 0= IF    \ level adr len
+                2DROP 1- DUP IF 1+ THEN      \ level'
+            ELSE                             \ level adr len
+                S" [THEN]" COMPARE 0= IF     \ level
+                   1-                        \ level'
                THEN
              THEN
-          THEN ?DUP 0= IF EXIT THEN                   \ level'
-       REPEAT 2DROP                                   \ level
-   REFILL 0= UNTIL                                   \ level
+          THEN ?DUP 0= IF EXIT THEN          \ level'
+       REPEAT 2DROP                          \ level
+   REFILL 0= UNTIL                           \ level
    DROP
 ; IMMEDIATE
 
