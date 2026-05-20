@@ -5,7 +5,7 @@ NEEDS FILLW   FROM  DSK1.FILLW
 
 \ Running on Camel99 Forth
 \ Byte Magazine version:  120 seconds
-\ GForth version       :   74.1 seconds (38% faster)
+\ GForth version       :   73.01 seconds (38% faster)
 
  DECIMAL
  8190 CONSTANT SIZE

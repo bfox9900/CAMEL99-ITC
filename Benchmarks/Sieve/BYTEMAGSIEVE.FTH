@@ -4,7 +4,7 @@
 \ Camel99 DTC     104     103    67.3
 \ TurboForth      107
 
-\ Camel99 ITC     120   \ original code
+\ Camel99 ITC     120.1   \ original code
 \ Primes2         108   \ simplest fixes
 \ Primes3         107   \ faster fill
 \ Primes-opt       76   \ inline optimizer
@@ -41,6 +41,7 @@ DECIMAL
    10 0 DO  DO-PRIME  CR SPACE . ." Primes"  LOOP
    CR ." Done!"
 ;
+
 \ ----------------------------------------------------------
 INCLUDE DSK1.TABLES  \ faster indexed memory access library
 FLAGS TABLE: ]FLAGS
