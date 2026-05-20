@@ -4,7 +4,6 @@ NEEDS COMPARE FROM DSK1.COMPARE
 NEEDS REFILL  FROM DSK1.REFILL
 
 : /* ( -- )
- \    PARSE-NAME 2DROP  \ swallow the first word
      BEGIN
        REFILL
      WHILE

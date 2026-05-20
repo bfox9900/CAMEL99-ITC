@@ -23,9 +23,9 @@ NEEDS REFILL  FROM DSK1.REFILL
        REPEAT 2DROP                        \ level
     REFILL 0= UNTIL                        \ level
     DROP
-; IMMEDIATE
+;
 
-: [IF] ( flag -- )  0= IF POSTPONE [ELSE] THEN ; IMMEDIATE
+: [IF] ( flag -- )  0= IF  [ELSE] THEN ; IMMEDIATE
 : [THEN] ; IMMEDIATE
 
 : [DEFINED]   BL WORD FIND NIP 0 <> ; IMMEDIATE
