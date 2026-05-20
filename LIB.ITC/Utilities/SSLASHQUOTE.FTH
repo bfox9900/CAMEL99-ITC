@@ -2,7 +2,7 @@
 
 \ source: http://www.forth200x.org/escaped-strings.html
 
-\ This code works as designed but the Camel99 but...
+\ This code works as designed but...
 \ Camel99 kernel only interprets 'BACKSPACE' and ^M ( carriage return)
 \   *** USEFUL ONLY FOR CAMEL99 Forth TTY version ***
 
