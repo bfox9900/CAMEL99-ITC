@@ -31,8 +31,6 @@ CODE (KEY?) ( -- ?)      \ return TRUE if any key pressed
     NEXT,              \ Return to Forth
  ENDCODE
 
-
-
 \ used if you need debouncing
 : WAITNOKEY  ( -- ) \ make sure no key is pressed
     BEGIN
@@ -47,15 +45,30 @@ CODE (KEY?) ( -- ?)      \ return TRUE if any key pressed
        (KEY?)
     UNTIL ;
 
-\ over-write the old KEY, but use it for the ascii value
+\ over-write the old KEY, but use it to get the ascii value
 : KEY  ( -- c)  WAITKEY  KEY ;
+
+\ High level: input/output          (c) 31mar95 bjr
+: ACCEPT     ( caddr +n -- +n')
+        OVER + OVER    ( Caddr 'End 'start )
+        BEGIN
+            KEY DUP 0D <>
+        WHILE
+            DUP EMIT
+            8 OVER= IF  DROP 1-  3 PICK  UMAX  ELSE
+
+            OVER C!
+            1+ OVER UMIN
+            THEN
+        REPEAT
+        DROP NIP SWAP - ;
 
 HERE SWAP - DECIMAL .  .( bytes)
 
 \ : TEST  BEGIN  (KEY?)  .   ?TERMINAL UNTIL  ;
 
 \ comparison of ROM version vs this versions (5X faster)
-: .uS ( n -- ) 213 10 */ . ." uS " ; \ convert 9901 timer to micro-seconds
+\ : .uS ( n -- ) 213 10 */ . ." uS " ; \ convert 9901 timer to micro-seconds
 \ : TIMEKEY      TMR@   KEY? TMR@  NIP  - ABS   .uS ; \ 1,171 uS
 \ : TIMEFASTKEY  TMR@  (KEY?) TMR@ NIP  - ABS   .uS ; \ 213 uS
 \
