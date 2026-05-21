@@ -1,4 +1,4 @@
-\ REFILL.FTH   for files only          May 2026   Fox
+\ REFILL.FTH          May 2026   Fox
 
 \ When the input source is a file, attempt to read the next line from the
 \ text-input file. If successful, make the result the current input buffer,

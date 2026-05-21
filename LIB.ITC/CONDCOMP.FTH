@@ -7,9 +7,12 @@ NEEDS COMPARE FROM DSK1.COMPARE
 NEEDS REFILL  FROM DSK1.REFILL
 
 : [ELSE] ( -- )
-    1 BEGIN                                \ level
-       BEGIN BL WORD COUNT DUP WHILE       \ level adr len
-         2DUP S" [IF]" COMPARE 0= IF       \ level adr len
+    1                                      \ level
+    BEGIN
+    \ refill had to go first for Camel99 Forth
+        REFILL WHILE                       \ level
+        BEGIN BL WORD COUNT DUP WHILE      \ level adr len
+          2DUP S" [IF]" COMPARE 0= IF      \ level adr len
              2DROP 1+                      \ level'
           ELSE                             \ level adr len
             2DUP S" [ELSE]" COMPARE 0= IF  \ level adr len
@@ -20,12 +23,12 @@ NEEDS REFILL  FROM DSK1.REFILL
                THEN
              THEN
           THEN ?DUP 0= IF EXIT THEN        \ level'
-       REPEAT 2DROP                        \ level
-    REFILL 0= UNTIL                        \ level
+        REPEAT 2DROP                       \ level
+    REPEAT
     DROP
-;
+; IMMEDIATE
 
-: [IF] ( flag -- )  0= IF  [ELSE] THEN ; IMMEDIATE
+: [IF] ( flag -- )  0= IF  POSTPONE [ELSE] THEN ; IMMEDIATE
 : [THEN] ; IMMEDIATE
 
 : [DEFINED]   BL WORD FIND NIP 0 <> ; IMMEDIATE
