@@ -1,5 +1,9 @@
 \ tail call optimizing semicolon for Camel99 Forth  Nov 27 2022 Brian Fox
 
+\ For evidence of what it does see Benchmarks folder Nesting program
+\ https://github.com/bfox9900/CAMEL99-ITC/blob/master/
+\  Benchmarks/UltimateBenchmarks/Nesting/NESTING-TAILCALL.FTH
+
 HEX
 CODE GOTO   ( *IP+ IP MOV,)  C279 , NEXT, ENDCODE
 
