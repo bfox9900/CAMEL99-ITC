@@ -102,7 +102,7 @@ CODE 2NIP  ( d d' -- d')
        NEXT,
 ENDCODE
 
-: DMAX   ( d d -- d)  4DUP D< IF 2DROP ELSE 2NIP THEN ;
-: DMIN   ( d d -- d)  4DUP D< IF 2NIP  ELSE 2DROP THEN ;
+: DMAX   ( d d -- d)  4DUP D< IF 2DROP EXIT THEN  2NIP ;
+: DMIN   ( d d -- d)  4DUP D< IF 2NIP  EXIT THEN  2DROP THEN ;
 
 HERE SWAP - DECIMAL  CR . .( bytes)
