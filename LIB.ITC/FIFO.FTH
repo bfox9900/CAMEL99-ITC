@@ -13,14 +13,15 @@ HEX
 ;
 
 ( Pointers to the Queue data structure )
-: ->HEAD ( q -- adr )      ;  \ syntax sugar
-: ->TAIL ( q -- adr ) 2+   ;
-: ->MSK  ( q -- adr ) 4 +  ;
-: ->DATA ( q -- adr ) 6 +  ;
+\ change to text macros for speedup
+: ->HEAD ( q -- adr )      ;  IMMEDIATE \ syntax sugar
+: ->TAIL ( q -- adr ) S" 2+"  EVALUATE ; IMMEDIATE
+: ->MSK  ( q -- adr ) S" 4 +" EVALUATE ; IMMEDIATE
+: ->DATA ( q -- adr ) S" 6 +" EVALUATE ; IMMEDIATE
 
 \ Circular pointer incrementing
-: HEAD++ ( q -- )  DUP >R  ->HEAD @ 1+  R@ ->MSK @ AND R> ->HEAD ! ;
-: TAIL++ ( q -- )  DUP >R  ->TAIL @ 1+  R@ ->MSK @ AND R> ->TAIL ! ;
+: HEAD++ ( q -- )  DUP>R  ->HEAD @ 1+  R@ ->MSK @ AND R> ->HEAD ! ;
+: TAIL++ ( q -- )  DUP>R  ->TAIL @ 1+  R@ ->MSK @ AND R> ->TAIL ! ;
 
 : QC@    ( q -- c )
        DUP>R TAIL++
@@ -29,19 +30,15 @@ HEX
        C@ ;                \ fetch the byte
 
 : QC!    ( c q -- )
-       DUP>R HEAD++
-       R@ ->DATA
-       R> ->HEAD @ +       \ [data+head]= adr
-       C! ;                \ store the byte
+      DUP>R HEAD++
+      R@ ->DATA
+      R> ->HEAD @ +       \ [data+head]= adr
+      C! ;                \ store the byte
 
-: WRITEQ  ( addr len queue -- )
-          -ROT BOUNDS
-          ?DO
-             I C@ OVER QC!
-          LOOP
-          DROP ;
+: QPLACE ( addr len queue -- ) \ same stack pic. as PLACE
+      -ROT BOUNDS ?DO  I C@ OVER QC!  LOOP DROP ;
 
-: PRINTQ  ( queue -- )
+: QPRINT  ( queue -- ) \ print until Q is empty
         BEGIN
            DUP 2@ <>   \ 2@ reads head & tail. If not = we have data
         WHILE
@@ -54,7 +51,7 @@ HEX
 
 : TEST
       BEGIN
-        S" Now is the time for all good men..." QX WRITEQ
-        QX PRINTQ 3 SPACES
+        S" Now is the time for all good men..." QX QPLACE
+        QX QPRINT 3 SPACES
         ?TERMINAL
       UNTIL ;
