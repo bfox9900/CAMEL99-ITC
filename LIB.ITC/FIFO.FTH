@@ -55,13 +55,13 @@ DECIMAL CR . .( bytes )
 
 
 \ DEMO code
-HEX
-100 BYTE-QUEUE: QX
+\ HEX
+\ 100 BYTE-QUEUE: QX
 
-: TEST
-      100 0
-      DO
-        S" Now is the time for all good men..." QX QPLACE
-        QX QPRINT 3 SPACES
-      LOOP
-;
+\ : TEST
+\      100 0
+\      DO
+\        S" Now is the time for all good men..." QX QPLACE
+\        QX QPRINT 3 SPACES
+\      LOOP
+\ ;
