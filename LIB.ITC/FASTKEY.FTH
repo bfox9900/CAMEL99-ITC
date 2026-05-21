@@ -31,12 +31,7 @@ CODE (KEY?) ( -- ?)      \ return TRUE if any key pressed
     NEXT,              \ Return to Forth
  ENDCODE
 
-: TEST  BEGIN  (KEY?)  .   ?TERMINAL UNTIL  ;
 
-
-\
-: TIMEKEY  TMR@  (KEY?) TMR@ NIP  - ABS 213 10 */ . ." uS " ;
-\
 
 \ used if you need debouncing
 : WAITNOKEY  ( -- ) \ make sure no key is pressed
@@ -56,3 +51,11 @@ CODE (KEY?) ( -- ?)      \ return TRUE if any key pressed
 : KEY  ( -- c)  WAITKEY  KEY ;
 
 HERE SWAP - DECIMAL .  .( bytes)
+
+\ : TEST  BEGIN  (KEY?)  .   ?TERMINAL UNTIL  ;
+
+\ comparison of ROM version vs this versions (5X faster)
+: .uS ( n -- ) 213 10 */ . ." uS " ; \ convert 9901 timer to micro-seconds
+\ : TIMEKEY      TMR@   KEY? TMR@  NIP  - ABS   .uS ; \ 1,171 uS
+\ : TIMEFASTKEY  TMR@  (KEY?) TMR@ NIP  - ABS   .uS ; \ 213 uS
+\
