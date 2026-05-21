@@ -2,7 +2,7 @@
 \ Create a new definition which redirects to an existing one.
 
 \ Concept "reference implementation". Used by VFX Forth
-\ This version does not work correctly  with IMMEDIATE words
+\ This version does not work correctly with IMMEDIATE words
 
  : SYNONYM \ "newname" "oldname" --
    CREATE     IMMEDIATE
