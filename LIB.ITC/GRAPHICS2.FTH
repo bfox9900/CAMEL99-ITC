@@ -124,28 +124,6 @@ HEX
 :NONAME  ( c Vaddr -- ) DUP>R VC@  XOR  R> VC! ; CONSTANT BRUSH
                                         ' 2DROP  CONSTANT PENUP
 
-DECIMAL
-: 2ROT ( d1 d2 d3 -- d2 d3 d1) S" 2>R 2SWAP 2R> 2SWAP" EVALUATE ;  IMMEDIATE
-: 4DUP  S" 4TH 4TH 4TH 4TH" EVALUATE ; IMMEDIATE
-
-: LINE ( x1 y1 x2 y2 -- )
-\ ANS version of Dr. Ting's recursive line.  R.I.P.
-    4DUP  ROT - ABS >R - ABS R>       \ compute dx dy
-    MAX 2 < IF  2DROP PLOT  EXIT THEN \ nothing do, get out
-
-    4DUP ROT
-    + 1+ 2/ >R    \ compute mid points
-    + 1+ 2/ R>
-    2DUP 2ROT RECURSE RECURSE ;
-
-0 VALUE x
-0 VALUE y
-
-: MOVETO ( x y -- ) TO y   TO x ;
-: LINETO  ( x y -- ) 2DUP x y LINE MOVETO ;
-
-\ no safety net !!
-: HLINE ( x y len ) >R MOVETO R>  0 DO  x I +  y  PLOT  LOOP ;
-: VLINE ( x y len ) >R MOVETO R>  0 DO  y  x I +  PLOT  LOOP ;
+PENCIL IS STYLUS
 
 HERE SWAP - DECIMAL . .( bytes)

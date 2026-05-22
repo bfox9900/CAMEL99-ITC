@@ -1,5 +1,7 @@
-\ BRESENHAM.FTH
-\ Line drawing algorithm                        1/26/2001 Brad Eckert
+\ BRESENHAM.FTH  ported to Camel99 Forth with optimizations 2026 BFOX
+
+CR .( Line drawing algorithm 1/26/2001 Brad Eckert)
+
 \ This is probably the classic Bresenham, or as I call it, "common sense"
 \ algorithm.
 
@@ -87,17 +89,16 @@ NEEDS VALUE FROM DSK1.VALUES
 : HLINE ( x y len ) -ROT MOVETO  0 DO  x I +  y  PLOT  LOOP ;
 : VLINE ( x y len ) -ROT MOVETO  0 DO  x  y I +  PLOT  LOOP ;
 
-HEX F0 CONSTANT $F0
-DECIMAL
-
-: TEST
-        GRAPHICS2
-        PENCIL IS STYLUS
-        21 0
-        DO
-           10 I 4* +  50 I 4* +
-           195 I 10 * DUP>R -  R> LINE
-        LOOP
-        BEGIN KEY? UNTIL
-        TEXT
-;
+\ HEX F0 CONSTANT $F0
+\ DECIMAL
+\ : TEST
+\        GRAPHICS2
+\        PENCIL IS STYLUS
+\        21 0
+\        DO
+\           10 I 4* +  50 I 4* +
+\           195 I 10 * DUP>R -  R> LINE
+\        LOOP
+\        BEGIN KEY? UNTIL
+\        TEXT
+\ ;
