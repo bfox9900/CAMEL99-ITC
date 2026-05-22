@@ -1,6 +1,8 @@
 \ BRESENHAM.FTH  ported to Camel99 Forth with optimizations 2026 BFOX
-
 CR .( Line drawing algorithm 1/26/2001 Brad Eckert)
+
+NEEDS PLOT FROM DSK1.GRAPHICS2
+
 
 \ This is probably the classic Bresenham, or as I call it, "common sense"
 \ algorithm.
@@ -20,7 +22,6 @@ CODE X@     ( addr -- n)  05C4 ,  C114 , NEXT, ENDCODE \ CELL+ @
 
 \ VARIABLE CH
 \ : PLOT ( X Y ) AT-XY CH @ EMIT ;
-NEEDS PLOT FROM DSK1.GRAPHICS2B
 
 \ ----------------------------------------------------------------------------
 \ First, let's define the inner loop since this is where the work gets done.
