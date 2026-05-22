@@ -3,7 +3,7 @@
 \           - Changed ]SMT motion array to machine code. Same size as Forth
 \ Jan1 2022 - use TABLE4: from DIRSPRIT.FTH for sprite motion table
 \           - faster access to x and y vectors
-\ Feb 2023  - Oops! Motion x,y was reversed. Fixed.  Fixed negative motion offset. 
+\ Feb 2023  - Oops! Motion x,y was reversed. Fixed.  Fixed negative motion offset.
 
  NEEDS HCHAR    FROM DSK1.GRAFIX
  NEEDS SPRITE   FROM DSK1.DIRSPRIT
@@ -22,7 +22,7 @@ HEX
 SMT    TABLE4: ]SMT.Y   \ SPRITE Motion Table Y vectors (BYTE)
 SMT 1+ TABLE4: ]SMT.X   \ x vectors (BYTE)
 
-\ Note: You can access both values at once with V@ and V! 
+\ Note: You can access both values at once with V@ and V!
 \  spr# ]SMT.Y V@  SPLIT  ( -- x y )
 
 83C2 CONSTANT AMSQ      \ interrupts, software DISABLE bits
@@ -38,6 +38,6 @@ SMT 1+ TABLE4: ]SMT.X   \ x vectors (BYTE)
 : STOPMOTION ( -- ) AMSQ C@ 40 OR  AMSQ C! ;           \ stop all sprite motion
 : AUTOMOTION ( -- ) SPR# @ 1+ MOVING   AMSQ C@  30 AND  AMSQ C! ;
 : ?NEGX      ( dx dy -- dx dy' ) OVER 0< IF 1+ THEN ; \ compensate for 9918 chip
-: MOTION     ( dx dy spr# --)  >R ?NEGX  FUSE  R>  ]SMT.Y V! ; 
+: MOTION     ( dx dy spr# --)  >R ?NEGX  FUSE  R>  ]SMT.Y V! ;
 
  INITMOTION
