@@ -35,7 +35,9 @@ HEX
 : NOISE,  ( n -- )  0F AND  GEN4 OSC @ OR  VC,  ;
 
 DECIMAL
-\ create a named sound list in VDP RAM that plays when executed
+\ ****************************************************************
+\ create a named sound list in VDP RAM that PLAYS WHEN EXECUTED
+
 : SOUND: ( <text> -- ) CREATE  VHERE ,   !CSP  DOES> @ ISRPLAY ;
 : ;SOUND ( -- )  0 VC,  ?CSP ;
 
@@ -49,7 +51,7 @@ DECIMAL
 
 SOUND: TINK  $[ GEN1 1500 HZ,  -6 DB,  20 MS] [MUTE] ;SOUND
 SOUND: BONK  $[ GEN2  110 HZ   -4 DB,  80 MS] [MUTE] ;SOUND
-
+\ ****************************************************************
 : CLIP   ( n lo hi -- n) S" ROT MIN MAX" EVALUATE ; IMMEDIATE
 
 \ clip x,y sprite positions to within the 4 walls
@@ -133,7 +135,7 @@ DECIMAL
         ?TERMINAL
     UNTIL
     STOPMOTION
-    DELALL
+  \  DELALL
     4 19  2 1 COLORS
     8 SCREEN ;
 
