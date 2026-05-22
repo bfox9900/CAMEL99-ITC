@@ -18,7 +18,7 @@ CODE X@     ( addr -- n)  05C4 ,  C114 , NEXT, ENDCODE \ CELL+ @
 
 \ VARIABLE CH
 \ : PLOT ( X Y ) AT-XY CH @ EMIT ;
-NEEDS PLOT FROM DSK1.GRAPHICS2
+NEEDS PLOT FROM DSK1.GRAPHICS2B
 
 \ ----------------------------------------------------------------------------
 \ First, let's define the inner loop since this is where the work gets done.

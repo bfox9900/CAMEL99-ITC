@@ -1,6 +1,8 @@
 \ Circular byte queue optimized for TSM9900  May 2026 B Fox
 \ fifo "first in, first out"
 
+\ about 40% faster than Forth only version (DSK1.FIFO)
+
 HERE
 : -POWER-OF-2? ( u -- ? ) DUP 1- AND ; \ "not power of 2"
 HEX
@@ -11,7 +13,7 @@ HEX
         0 ,          ( read  pointer {HEAD} )
         DUP 1- INVERT ,  ( mask value. Inverted so it works with SZC instruction)
      \ start of q data is base + 3 cells
-        HERE SWAP DUP ALLOT ERASE  ( data          )
+        HERE SWAP DUP ALLOT ERASE  ( data )
 ;
 
 \ Circular pointer increments
@@ -34,7 +36,7 @@ CODE TAIL++ ( q --  addr)
    C500 ,        \   R0 *TOS MOV,     \ save the new value in the structure
    A100 ,        \   R0 TOS ADD,      \ add new value to base address
    0224 , 0006 , \ TOS 3 CELLS AI,  \ skip past the header info
-      NEXT,
+   NEXT,
 ENDCODE  \ 20 BYTES
 
 : QC@    ( q -- c ) TAIL++ C@ ;
@@ -44,22 +46,23 @@ ENDCODE  \ 20 BYTES
       -ROT BOUNDS ?DO  I C@ OVER QC!  LOOP DROP ;
 
 : QPRINT  ( queue -- ) \ print until Q is empty
-        BEGIN
-           DUP 2@ <>   \ 2@ reads head & tail. If not = we have data
-        WHILE
-           DUP QC@ EMIT
-        REPEAT
-        DROP ;
+      BEGIN
+         DUP 2@ <>   \ 2@ reads head & tail. If not = we have data
+      WHILE
+         DUP QC@ EMIT
+      REPEAT
+      DROP ;
+
 HERE SWAP -
 DECIMAL CR . .( bytes )
 
 \ DEMO code
-100 BYTE-QUEUE: QX
+\ 100 BYTE-QUEUE: QX
 
-: TEST
-      100 0
-      DO
-        S" Now is the time for all good men..." QX QPLACE
-        QX QPRINT 3 SPACES
-      LOOP
-;
+\ : TEST
+\      100 0
+\      DO
+\        S" Now is the time for all good men..." QX QPLACE
+\        QX QPRINT 3 SPACES
+\      LOOP
+\ ;

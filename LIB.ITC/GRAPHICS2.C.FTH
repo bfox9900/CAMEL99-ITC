@@ -181,9 +181,9 @@ HEX
 
     R3 R5 MOV,
     R5 7 ANDI,    \ r5 is index into BITS
-     R5 W MOV,         \ dup R5 in W
-     W    1 SLA,       \ W 2*
-     BITS (W) *SP MOV, \ lookup bit value leave as 2nd on stack
+    R5 W MOV,         \ dup R5 in W
+    W    1 SLA,       \ W 2*
+    BITS (W) *SP MOV, \ lookup bit value leave as 2nd on stack
 
     R3 R4 ADD,
     R5 R4 SUB,
