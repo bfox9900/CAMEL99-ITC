@@ -1,6 +1,6 @@
-\ Graphics2 Mode V2.9 for Camel99 Forth Dec 2022 BJF
+CR .( Graphics2 for Camel99 Forth Dec 2022 BJF)
+CR .( V2C uses Fast Assembler code)
 \ Referenced TI-FORTH:
-( CONVERT TO GRAPHICS2 MODE CONFIG 14SEP82 LAO)
 
 \ Test results using simple program
 \ V2.1  Forth with text macros
@@ -180,7 +180,7 @@ HEX
     R4 FF07 ANDI,
 
     R3 R5 MOV,
-    R5 7 ANDI,    \ r5 is index into BITS
+    R5 7 ANDI,        \ r5 is index into BITS
     R5 W MOV,         \ dup R5 in W
     W    1 SLA,       \ W 2*
     BITS (W) *SP MOV, \ lookup bit value leave as 2nd on stack
