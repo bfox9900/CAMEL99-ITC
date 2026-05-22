@@ -1,13 +1,14 @@
 CR .( Graphics2 for Camel99 Forth Dec 2022 BJF)
 CR .( V2C uses Fast Assembler code)
-\ Referenced TI-FORTH:
+
+\ Referenced TI-FORTH code 1981 LAO
 
 \ Test results using simple program
 \ V2.1  Forth with text macros
 \ 2.7   critical VOR VERASE and XY-offset as CODE
 \ 2.8   PIXPOS re-coded in ASM, LINE uses tail called optimization
 \ 2.9   DXY? removes 1 4DUP call. MID written in code
-\ 2.C   PIXPOS uses ideas from ASM_USR @ ATARTAGE.COM
+\ 2.C   PIXPOS uses ideas from ASM_USR @ ATARTAGE.COM. Removed Ting's line.
 
 \ COMPILES under ITC ONLY
 CR .( Two colour bit map mode )
@@ -106,8 +107,6 @@ ENDCODE
 
 DEFER STYLUS  ( mask Vaddr --)
 
-PENCIL IS STYLUS
-
 \ setup VDP code ...
 : GRAPHICS2
     0000 TO CTAB        \ color table
@@ -193,3 +192,5 @@ ENDCODE
 
 \ TEXT macro for speed
 : PLOT   ( x y -- ) S" PIXPOS STYLUS" EVALUATE ; IMMEDIATE
+
+PENCIL IS STYLUS  \ initialzed the DEFER word at compile time
