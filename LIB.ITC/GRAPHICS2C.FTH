@@ -17,8 +17,6 @@ NEEDS DUMP      FROM DSK1.TOOLS
 NEEDS MOV,      FROM DSK1.ASM9900
 NEEDS VALUE     FROM DSK1.VALUES
 NEEDS CHARSET   FROM DSK1.CHARSET
-NEEDS ARRAY     FROM DSK1.ARRAYS
-NEEDS 4TH       FROM DSK1.3RD4TH \ fast access to deep stack items
 NEEDS DEFER     FROM DSK1.DEFER
 
 HERE
@@ -137,8 +135,6 @@ CREATE BITS ( -- addr) 80 , 40 , 20 , 10 , 8 , 4 , 2 , 1 ,
 
 \ =============================================
 \ Thoughts of ASMUSR @atartiage.com who has made concise way to do this.
-\ My version used 16 instructions but his is only 14 :-)
-
 
 \ "The code is quite impossible to understand without knowing how
 \ the bitmap screen is structured, but here is a rough explanation.
@@ -149,7 +145,6 @@ CREATE BITS ( -- addr) 80 , 40 , 20 , 10 , 8 , 4 , 2 , 1 ,
 \ 5_most_significant_bits_of_y << 8 + 5_most_significant_bits_of_x << 3 +
 \ 3_least_significant_bits_of_y "
 
-\ BF Note:  I adapted his code to work with BITS array
 
 \ MOV  R1,R4         ; 00000000YYYYYYYY
 \ SLA  R4,5          ; 000YYYYYYYY00000
@@ -163,33 +158,21 @@ CREATE BITS ( -- addr) 80 , 40 , 20 , 10 , 8 , 4 , 2 , 1 ,
 \ = 000YYYYY00000YYY + 00000000XXXXX000
 \ = 000YYYYYXXXXXYYY
 
+\ BF Note:  I adapted this code to work with BITS array
 HEX
  CODE PIXPOS ( x y -- c Vaddr)
-    TOS R1 MOV,   \ dup y in R1     ; 00000000YYYYYYYY
-    R4 5  SLA,    \ R4 32*          ; 000YYYYYYYY00000
-    R1 R4 SOC,    \ mask r4 with R1 ; 000YYYYY???YYYYY
-    R4 FF07 ANDI, \ tos = y'        ; 000YYYYY00000YYY
-    *SP R4  ADD,  \ tos = x + y' ; 000YYYYY00000YYY + 00000000XXXXXXXX
+    TOS R1   MOV,    \ dup y in R1     ; 00000000YYYYYYYY
+    TOS 5    SLA,    \ R4 32*          ; 000YYYYYYYY00000
+    R1  TOS  SOC,    \ mask r4 with R1 ; 000YYYYY???YYYYY
+    TOS FF07 ANDI,   \ tos = y'        ; 000YYYYY00000YYY
+   *SP  W    MOV,    \ X -> R8 (Forth W register)
+    W   7    ANDI,   \ 0000000000000XXX
+    W   TOS  ADD,    \ tos = x + y' ; 000YYYYY00000YYY + 00000000XXXXXXXX
+    W   TOS  SUB,    \ 18
 
 \ compute the bit needed, place in NOS
-   *SP W MOV,         \ 26
-    W 7 ANDI,         \ 22
-    W R4 SUB,         \ 18
     W    1 SLA,       \ 18   W 2*
     BITS (W) *SP MOV, \ 46 = 130   lookup bit value leave as 2nd on stack
-
-\ tried this method also
-\   *SP R0 MOV,       \ 26
-\    R0 7 ANDI,       \ 22
-\    R0 R4 SUB,       \ 18
-
-\    R3 0080 LI,      \ 20
-\    R0 R0 MOV,       \ 18
-\    NE IF,           \ 12
-\        R3 R0 SRL,   \ 38
-\    ENDIF,
-\    R3 *SP MOV,      \ 30 =  184  WORSE !!
-
 
     R4 PDT AI,    \ add index to pattern table base VDP address
     NEXT,
