@@ -158,29 +158,44 @@ CREATE BITS ( -- addr) 80 , 40 , 20 , 10 , 8 , 4 , 2 , 1 ,
 \ MOV  R0,R5         ; 00000000XXXXXXXX
 \ ANDI R5,7          ; 0000000000000XXX
 \ A    R0,R4         ; 000YYYYY00000YYY + 00000000XXXXXXXX
-\ S    R5,R4         ; 000YYYYY00000YYY + 00000000XXXXXXXX -
-\ 0000000000000XXX = 000YYYYY00000YYY + 00000000XXXXX000 = 000YYYYYXXXXXYYY
+\ S    R5,R4
+\   000YYYYY00000YYY + 00000000XXXXXXXX - 0000000000000XXX
+\ = 000YYYYY00000YYY + 00000000XXXXX000
+\ = 000YYYYYXXXXXYYY
 
 HEX
  CODE PIXPOS ( x y -- c Vaddr)
- \   *SP R3 MOV,   \ x
-    TOS R1 MOV,   \ dup y in R1
+    TOS R1 MOV,   \ dup y in R1     ; 00000000YYYYYYYY
+    R4 5  SLA,    \ R4 32*          ; 000YYYYYYYY00000
+    R1 R4 SOC,    \ mask r4 with R1 ; 000YYYYY???YYYYY
+    R4 FF07 ANDI, \ tos = y'        ; 000YYYYY00000YYY
+    *SP R4  ADD,  \ tos = x + y' ; 000YYYYY00000YYY + 00000000XXXXXXXX
 
-    R4 5  SLA,    \ R4 32*
-    R1 R4 SOC,    \ mask r4 with R1
-    R4 FF07 ANDI, \ tos = y'
-   *SP R4  ADD,   \ tos = x + y'
+\ compute the bit needed, place in NOS
+   *SP W MOV,         \ 26
+    W 7 ANDI,         \ 22
+    W R4 SUB,         \ 18
+    W    1 SLA,       \ 18   W 2*
+    BITS (W) *SP MOV, \ 46 = 130   lookup bit value leave as 2nd on stack
 
-    *SP R5 MOV,   \ x -> R5
-    R5 7 ANDI,        \ r5 is index into BITS
-    R5 W MOV,         \ dup R5 in W
-    W    1 SLA,       \ W 2*
-    BITS (W) *SP MOV, \ lookup bit value leave as 2nd on stack
+\ tried this method also
+\   *SP R0 MOV,       \ 26
+\    R0 7 ANDI,       \ 22
+\    R0 R4 SUB,       \ 18
 
-    R5 R4 SUB,
-    R4 PDT AI,   \ add index to pattern table base address
+\    R3 0080 LI,      \ 20
+\    R0 R0 MOV,       \ 18
+\    NE IF,           \ 12
+\        R3 R0 SRL,   \ 38
+\    ENDIF,
+\    R3 *SP MOV,      \ 30 =  184  WORSE !!
+
+
+    R4 PDT AI,    \ add index to pattern table base VDP address
     NEXT,
 ENDCODE
+
+
 
 \ TEXT macro for speed
 : PLOT   ( x y -- ) S" PIXPOS STYLUS" EVALUATE ; IMMEDIATE
