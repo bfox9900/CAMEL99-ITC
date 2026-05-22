@@ -161,30 +161,22 @@ CREATE BITS ( -- addr) 80 , 40 , 20 , 10 , 8 , 4 , 2 , 1 ,
 \ S    R5,R4         ; 000YYYYY00000YYY + 00000000XXXXXXXX -
 \ 0000000000000XXX = 000YYYYY00000YYY + 00000000XXXXX000 = 000YYYYYXXXXXYYY
 
-
-\ PIXPOS Register usage
-\ R0  X offset
-\ R1  dup of Y coordinate
-\ R2  Temp Y quotient
-\ R5  Y coordinate
-\ R4  Forth Accumulator, TOS, outputs PDT address
-\ R8  = W = X division remainder
 HEX
  CODE PIXPOS ( x y -- c Vaddr)
-    *SP R3 MOV,   \ x
-    TOS R1 MOV,   \ y
-    R1 R4 MOV,
+ \   *SP R3 MOV,   \ x
+    TOS R1 MOV,   \ dup y in R1
+
     R4 5  SLA,    \ R4 32*
     R1 R4 SOC,    \ mask r4 with R1
-    R4 FF07 ANDI,
+    R4 FF07 ANDI, \ tos = y'
+   *SP R4  ADD,   \ tos = x + y'
 
-    R3 R5 MOV,
+    *SP R5 MOV,   \ x -> R5
     R5 7 ANDI,        \ r5 is index into BITS
     R5 W MOV,         \ dup R5 in W
     W    1 SLA,       \ W 2*
     BITS (W) *SP MOV, \ lookup bit value leave as 2nd on stack
 
-    R3 R4 ADD,
     R5 R4 SUB,
     R4 PDT AI,   \ add index to pattern table base address
     NEXT,
