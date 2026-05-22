@@ -59,13 +59,35 @@ HEX
 : INIT-IMAGE ( -- )
     -1 IMG 300 BOUNDS DO  1+ DUP 0FF AND I VC!  LOOP  DROP ;
 
+\ setup VDP code ...
+: GRAPHICS2
+    0000 TO CTAB        \ color table
+    1800 TO IMG         \ "name" table (TI nomenclature)
+    2000 TO PDT         \ pattern descriptor table
+
+    0A0 1 VWTR          \ VR1 >A0 16K, screen on
+    INIT-IMAGE
+    F 0 COLOR           \ white on transparent
+    CLEAR
+    20 C/L! 300 C/SCR !
+    2 0 VWTR            \ VR0 >02 Bitmap mode on
+    6 2 VWTR            \ Screen image = 6*>400 = 1800
+    07F 3 VWTR          \ Color table at >0000
+    7 4 VWTR            \ PATTERN table= VR4*>800 = 2000
+    70 5 VWTR           \ sprite attribute table: VR5*>80  = >3800
+     7 6 VWTR           \ sprite pattern table: VR6 * >800 = >3800
+    F1 7 VWTR           \ screen background colour white on transparent
+    0E0 DUP VDPR1 C! 1 VWTR   \ set mode, copy into memory for system
+    4 VMODE !
+    0 837A C!  ;        \ highest sprite in auto-motion
+
+8800 CONSTANT VDPRD        \ vdp ram read data port
+8C00 CONSTANT VDPWD        \ vdp ram write data port
 \ replacing text macro with code words
 HEX
 ' VC! 2 CELLS + @ CONSTANT VWMODE  \ Access VDP write address sub-routine
 ' VC@ 2 CELLS + @ CONSTANT VRMODE  \ Access VDP read address sub-routine
 
-8800 CONSTANT VDPRD        \ vdp ram read data port
-8C00 CONSTANT VDPWD        \ vdp ram write data port
 
 \ : VOR   ( c Vaddr -- ) DUP>R VC@  OR  R> VC! ;
 CODE VOR ( c Vaddr -- )
@@ -98,34 +120,6 @@ CODE VERASE ( c Vaddr -- )
         TOS POP,
         NEXT,
 ENDCODE
-
-\ PENCIL and ERASER are "execution tokens"
-' VOR    CONSTANT PENCIL
-' VERASE CONSTANT ERASER
-
-DEFER STYLUS  ( mask Vaddr --)
-
-\ setup VDP code ...
-: GRAPHICS2
-    0000 TO CTAB        \ color table
-    1800 TO IMG         \ "name" table (TI nomenclature)
-    2000 TO PDT         \ pattern descriptor table
-
-    0A0 1 VWTR          \ VR1 >A0 16K, screen on
-    INIT-IMAGE
-    F 0 COLOR           \ white on transparent
-    CLEAR
-    20 C/L! 300 C/SCR !
-    2 0 VWTR            \ VR0 >02 Bitmap mode on
-    6 2 VWTR            \ Screen image = 6*>400 = 1800
-    07F 3 VWTR          \ Color table at >0000
-    7 4 VWTR            \ PATTERN table= VR4*>800 = 2000
-    70 5 VWTR           \ sprite attribute table: VR5*>80  = >3800
-     7 6 VWTR           \ sprite pattern table: VR6 * >800 = >3800
-    F1 7 VWTR           \ screen background colour white on transparent
-    0E0 DUP VDPR1 C! 1 VWTR   \ set mode, copy into memory for system
-    4 VMODE !
-    0 837A C!  ;        \ highest sprite in auto-motion
 
 
 \ Compute offset into pattern table per:
@@ -160,27 +154,31 @@ CREATE BITS ( -- addr) 80 , 40 , 20 , 10 , 8 , 4 , 2 , 1 ,
 
 \ BF Note:  I adapted this code to work with BITS array
 HEX
- CODE PIXPOS ( x y -- c Vaddr)
-    TOS R1   MOV,    \ dup y in R1     ; 00000000YYYYYYYY
-    TOS 5    SLA,    \ R4 32*          ; 000YYYYYYYY00000
-    R1  TOS  SOC,    \ mask r4 with R1 ; 000YYYYY???YYYYY
-    TOS FF07 ANDI,   \ tos = y'        ; 000YYYYY00000YYY
-   *SP  W    MOV,    \ X -> R8 (Forth W register)
-    W   7    ANDI,   \ 0000000000000XXX
-    W   TOS  ADD,    \ tos = x + y' ; 000YYYYY00000YYY + 00000000XXXXXXXX
-    W   TOS  SUB,    \ 18
+CODE PIXPOS ( x y -- c Vaddr)
+   *SP W MOV,      \ X -> R8 (forth W register)     \ 26
+    TOS R1 MOV,    \ dup y in R1     ; 00000000YYYYYYYY
+    TOS 5  SLA,    \ TOS 32*          ; 000YYYYYYYY00000
+    R1 TOS SOC,    \ mask TOS with R1 ; 000YYYYY???YYYYY
+    TOS FF07 ANDI, \ tos = y'        ; 000YYYYY00000YYY
+    W TOS  ADD,    \ tos = x + y' ; 000YYYYY00000YYY + 00000000XXXXXXXX
+    W 7 ANDI,      \ 22
+    W TOS SUB,     \ 18
 
 \ compute the bit needed, place in NOS
-    W    1 SLA,       \ 18   W 2*
+    W    1 SLA,       \ 18   W 2* = index to BITS array
     BITS (W) *SP MOV, \ 46 = 130   lookup bit value leave as 2nd on stack
 
-    R4 PDT AI,    \ add index to pattern table base VDP address
+    TOS PDT AI,    \ add index to pattern table base VDP address
     NEXT,
 ENDCODE
 
+\ PENCIL and ERASER
+: PLOTTING ( x y --) PIXPOS VOR ;     ' PLOTTING CONSTANT PENCIL
+: ERASING  ( x y --) PIXPOS VERASE ;  ' ERASING  CONSTANT ERASER
 
+DEFER STYLUS  ( mask Vaddr --)
 
 \ TEXT macro for speed
-: PLOT   ( x y -- ) S" PIXPOS STYLUS" EVALUATE ; IMMEDIATE
+: PLOT   ( x y -- ) S" STYLUS" EVALUATE ; IMMEDIATE
 
 PENCIL IS STYLUS  \ initialzed the DEFER word at compile time
