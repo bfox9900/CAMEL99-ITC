@@ -51,7 +51,7 @@ DECIMAL
 : [MUTE]      $[ MUTE, ]$ ;
 
 SOUND: TINK  $[ GEN1 1500 HZ,  -6 DB,  20 MS] [MUTE] ;SOUND
-SOUND: BONK  $[ GEN2  110 HZ   -4 DB,  80 MS] [MUTE] ;SOUND
+SOUND: BONK  $[ GEN2 1800 HZ   -4 DB,  20 MS] [MUTE] ;SOUND
 \ ****************************************************************
 : CLIP   ( n lo hi -- n) S" ROT MIN MAX" EVALUATE ; IMMEDIATE
 
@@ -72,23 +72,23 @@ SOUND: BONK  $[ GEN2  110 HZ   -4 DB,  80 MS] [MUTE] ;SOUND
 
 : TRAPX ( spr# -- )
       DUP SP.X VC@
-      XLIMIT? IF  BOUNCE.X  TINK EXIT THEN
+      XLIMIT? IF  BOUNCE.X  ( TINK) EXIT THEN
       DROP  ;
 
 : TRAPY ( spr# -- )
       DUP SP.Y VC@
-      YLIMIT? IF  BOUNCE.Y  TINK  EXIT THEN
+      YLIMIT? IF  BOUNCE.Y  ( TINK)  EXIT THEN
       DROP  ;
 
 \ keep a sprite inside 4 walls
 : TRAP ( spr# -- ) S" DUP TRAPX TRAPY" EVALUATE ; IMMEDIATE
 
 DECIMAL
-: RNDSPEED   ( -- x y) 70 RND 35 -  ;
+: RNDSPEED   ( -- x y) 40 RND 20 -   ;
 : RNDX   ( -- x) 240 RND 15 + ;
 : RNDY   ( -- y) 185 RND 12 + ;
 
-: RND-DXY  ( -- dx dy) \ dx dy are never zero
+: RND-dxy  ( -- dx dy) \ dx dy are never zero
     BEGIN RNDSPEED ?DUP UNTIL
     BEGIN RNDSPEED ?DUP UNTIL ;
 
@@ -97,30 +97,45 @@ CREATE HAPPY 3C42 , A581 , A599 , 423C ,
 
 DECIMAL
 : SPRITES ( n -- ) \ makes n sprites
-    ( char      colr  x    y  sp#         X/Y  spr#   )
-      127       11   10    90  0 SPRITE  RND-DXY  0 MOTION
-    1+ 0
+    0
     DO
-        I [CHAR] A +  I 2 + 3 MAX  RNDX RNDY  I SPRITE
-        RND-DXY I MOTION
+     (   char        colr          x    y   sp#  )
+      [CHAR] 0 I +   I 2+ 3 MAX   RNDX RNDY  I SPRITE
+
+        RND-dxy I MOTION
     LOOP
 ;
 
 \ test sprite coincidence and bounce if detected
+14 CONSTANT TOLERANCE
+
 : ?BUMP ( SPR# SPR# -- )
-  2DUP 10 COINC IF  BOUNCE BOUNCE BONK  EXIT THEN
+  2DUP TOLERANCE COINC IF  BOUNCE BOUNCE BONK  EXIT THEN
   2DROP   \ no coincidence, just drop the args
+  GEN2 MUTE
+;
+
+: WHO-BUMPED ( n --)
+    SPR# @ 1+ 0
+    DO
+        DUP I ?BUMP
+    LOOP
+    DROP
 ;
 
 \ Putting coicidence code in a DO LOOP is slower
 \ than "unwinding" the loop as separate lines of code
 : TRAPPER
-    0LIMI
     SPR# @ 1+ 0
     DO
+        0LIMI
         I TRAP
-    LOOP ;
-    2LIMI
+        COINCALL
+        IF
+          I WHO-BUMPED
+        THEN
+        2LIMI
+    LOOP
 ;
 
 : RUN ( -- )
@@ -132,14 +147,15 @@ DECIMAL
     PAGE ." CAMEL99 Forth Sprite Automotion"
     CR 5 SPACES  ." >> Using ISR sound <<"
     CR
-    4 SPRITES
+    10 SPRITES
     AUTOMOTION
     BEGIN
         TRAPPER
         ?TERMINAL
     UNTIL
     STOPMOTION
-  \  DELALL
+    SILENT
+    DELALL
     4 19  2 1 COLORS
     8 SCREEN ;
 

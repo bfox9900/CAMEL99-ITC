@@ -1,7 +1,7 @@
 \ BRESENHAM.FTH  ported to Camel99 Forth with optimizations 2026 BFOX
 CR .( Line drawing algorithm 1/26/2001 Brad Eckert)
 
-NEEDS PLOT FROM DSK1.GRAPHICS2
+NEEDS PLOT FROM DSK1.GRAPHICS2C
 
 
 \ This is probably the classic Bresenham, or as I call it, "common sense"
@@ -80,6 +80,7 @@ CODE X@     ( addr -- n)  05C4 ,  C114 , NEXT, ENDCODE \ CELL+ @
 
 NEEDS VALUE FROM DSK1.VALUES
 
+DECIMAL
 0 VALUE x
 0 VALUE y
 
@@ -90,16 +91,48 @@ NEEDS VALUE FROM DSK1.VALUES
 : HLINE ( x y len ) -ROT MOVETO  0 DO  x I +  y  PLOT  LOOP ;
 : VLINE ( x y len ) -ROT MOVETO  0 DO  x  y I +  PLOT  LOOP ;
 
-\ HEX F0 CONSTANT $F0
-\ DECIMAL
-\ : TEST
-\        GRAPHICS2
-\        PENCIL IS STYLUS
-\        21 0
-\        DO
-\           10 I 4* +  50 I 4* +
-\           195 I 10 * DUP>R -  R> LINE
-\        LOOP
-\        BEGIN KEY? UNTIL
-\        TEXT
-\ ;
+0 VALUE x2
+0 VALUE y2
+
+
+INCLUDE DSK1.RANDOM
+: RNDX      40 RND 20 -  ;
+: RNDY     255 RND 80 MAX ;
+: RNDLOOP   30 RND 5 + ;
+: RNDSPREAD 14 RND 3 +  ;
+
+: PINWHEEL
+    GRAPHICS2
+    PENCIL IS STYLUS
+    BEGIN
+        CLEAR
+        RNDX TO x   RNDY TO y
+        RNDY TO x2  RNDX TO y2
+
+        21 0 DO
+                x y x2 y2 LINE
+
+                10 +TO x
+               -10 +TO x2
+       LOOP
+
+        KEY?
+   UNTIL
+   TEXT
+;
+
+
+
+
+DECIMAL
+ : TEST
+        GRAPHICS2
+        PENCIL IS STYLUS
+        21 0
+        DO
+           10 I 4* +  50 I 4* +
+           195 I 10 * DUP>R -  R> LINE
+        LOOP
+        BEGIN KEY? UNTIL
+       TEXT
+ ;
