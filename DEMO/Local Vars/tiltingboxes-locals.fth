@@ -1,7 +1,7 @@
 \ Translate a hard BASIC program to FORTH  Mar 2025 Fox
 
 \ X BASIC's sub functions provides local variables.
-\ Without local variable we must stack operations
+\ Without local variable we must use stack operations
 \ This version uses non-standard light-weight locals system
 \ I call CHEAPLOCALS
 \ Local variables live on the return stack and must be
