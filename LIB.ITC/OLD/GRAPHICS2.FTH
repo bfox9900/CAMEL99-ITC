@@ -1,7 +1,7 @@
 \ Graphics2 Mode for Camel99 Forth Dec 2022 BJF
 \ Referenced TI-FORTH: ( CONVERT TO GRAPHICS2 MODE CONFIG 14SEP82 LAO)
 
-\ NEEDS DUMP        FROM DSK1.TOOLS
+NEEDS DUMP        FROM DSK1.TOOLS
 NEEDS VALUE       FROM DSK1.VALUES
 NEEDS CHARSET     FROM DSK1.CHARSET
 NEEDS ARRAY       FROM DSK1.ARRAYS
@@ -51,10 +51,10 @@ HEX
 HEX
 \ machine Forth macros make it easy to create very fast constant arrays
 : 2*,     ( n -- 2(n)   0A14 , ;  \ TOS  1 SLA, ("CELLS")
-: ()@,   ( addr -- )    C124 , ( addr) , ;  \ addr(TOS) TOS MOV,
+: [@],   ( addr -- )    C124 , ( addr) , ;  \ addr(TOS) TOS MOV,
 
 CREATE BITS ( -- addr) 80 , 40 , 20 , 10 , 8 , 4 , 2 , 1 ,
-CODE >BIT ( 0..7 -- char)  2*,  BITS ()@,  NEXT, ENDCODE
+CODE >BIT ( 0..7 -- char)  2*,  BITS [@],  NEXT, ENDCODE
 
 \ drawing code ...
 HEX
@@ -98,11 +98,14 @@ DEFER STYLUS   \ usage:  PENCIL IS STYLUS    ERASER IS STYLUS
 \ : Y-OFF  ( y -- VertOffset)     0 8 UM/MOD >< + ;
 
 : PIXPOS ( x y -- bit Vaddr)
-       >R
-       0 8 UM/MOD 8*  >R >BIT R>
-       R> 0 8 UM/MOD FUSE
-       +
-       PDT + ;
+      >R
+      0 8 UM/MOD 8*  ( -- n n )
+      R> 0 8 UM/MOD FUSE
+      SWAP >BIT SWAP
+      +
+      PDT + ;
+
+\ : T=  TMR@  0 0 PIXPOS  TMR@  NIP NIP - ABS . ; \ = S51 * 21.3= 1086 us
 
 : PLOT   ( x y -- ) PIXPOS STYLUS ;
 

@@ -82,7 +82,7 @@ CREATE SINTAB
 
 \ FASTER array with machine Forth compilers
 HEX
-: 2*,   ( n -- 2(n)  A104 , ;             \ A R4,R4
+: 2*,   ( n -- 2(n)  A104 , ;             \ A   R4,R4
 : [@],   ( addr -- ) C124 , ( addr) , ;   \ MOV addr@(R4),R4
 DECIMAL
 

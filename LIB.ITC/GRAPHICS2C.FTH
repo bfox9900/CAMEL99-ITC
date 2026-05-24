@@ -83,6 +83,7 @@ HEX
 
 8800 CONSTANT VDPRD        \ vdp ram read data port
 8C00 CONSTANT VDPWD        \ vdp ram write data port
+
 \ replacing text macro with code words
 HEX
 ' VC! 2 CELLS + @ CONSTANT VWMODE  \ Access VDP write address sub-routine
@@ -105,8 +106,8 @@ CODE VOR ( c Vaddr -- )
 ENDCODE
 
 \ : VAND  ( c Vaddr -- ) S" DUP>R VC@ AND  R> VC!" EVALUATE ; IMMEDIATE
-\ : VERASE  ( c Vaddr -- ) >R INVERT R> VAND ;
 
+\ : VERASE  ( c Vaddr -- ) >R INVERT R> VAND ;
 CODE VERASE ( c Vaddr -- )
         VRMODE @@ BL,    \ set read address
         W CLR,
@@ -172,9 +173,11 @@ CODE PIXPOS ( x y -- c Vaddr)
     NEXT,
 ENDCODE
 
-\ PENCIL and ERASER
-: PLOTTING ( x y --) PIXPOS VOR ;     ' PLOTTING CONSTANT PENCIL
-: ERASING  ( x y --) PIXPOS VERASE ;  ' ERASING  CONSTANT ERASER
+: *END* ;
+\ PENCIL and ERASER and PENUP are execution tokens
+:NONAME ( x y --) PIXPOS VOR ;    CONSTANT PENCIL
+:NONAME ( x y --) PIXPOS VERASE ; CONSTANT ERASER
+                         ' 2DROP  CONSTANT PENUP
 
 DEFER STYLUS  ( mask Vaddr --)
 

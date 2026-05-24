@@ -150,7 +150,7 @@ DECIMAL
 \ DEMO Programs
 : SPIRAL  ( -- ) BGN 15 0 DO  CIRCLE  4 TURN  LOOP              WAIT ;
 
-: SINE    ( x -- ) BGN  255  0 DO  I  I >DIR 2/ 2/ 80 + PLOT  LOOP  WAIT ;
+: SINE    ( x -- )  255  0 DO  I  I >DIR 2/ 2/ 80 + PLOT  LOOP  WAIT ;
 
 : SQUARE  ( -- ) BGN 4 0 DO 50 FWD 15 TURN   LOOP               WAIT ;
 : BURST   ( -- ) BGN 60 0 DO 0 0 GOTO  I HEAD  110 FWD  LOOP    WAIT ;
@@ -168,8 +168,9 @@ DECIMAL
 
 : DEMO
   GRAPHICS2
+   BGN WHITE HUE  SINE
+   ERASER IS STYLUS  HOME SINE
 
-    WHITE HUE SINE
     MAGENTA HUE BURST
     GREEN HUE SQUIRAL
     BLUE HUE SPIRAL
@@ -177,4 +178,5 @@ DECIMAL
     RED HUE ROSE
     LTRED HUE FLOWER
     TEXT
-    BL [CHAR] _  FUSE  CURS ! ; \ fix cursor
+    [CHAR] _  CURS !  \ fix cursor
+;
