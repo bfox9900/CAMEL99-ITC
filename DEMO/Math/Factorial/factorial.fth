@@ -5,11 +5,11 @@ INCLUDE DSK1.UDOTR
 NEEDS M*/ FROM DSK1.DOUBLE
 
 \ Rossetta code
-: FAC ( n -- n! ) 1 SWAP 1+ 1 ?DO I * LOOP ;
+: FAC ( n -- n! ) 1 SWAP 1+  1 ?DO I * LOOP ;
 
 \ 32 bit version  modified
 
-: FACTORIAL ( n -- )
+: FACTORIAL ( n -- d) \ returns 32 bit integer
     1 0
     ROT 1+ 2
     ?DO
