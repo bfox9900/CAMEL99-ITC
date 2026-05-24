@@ -10,8 +10,7 @@ NEEDS M*/ FROM DSK1.DOUBLE
 \ 32 bit version  modified
 
 : FACTORIAL ( n -- d) \ returns 32 bit integer
-    1 0
-    ROT 1+ 2
+    1 0 ROT 1+ 2
     ?DO
         I 1 M*/
     LOOP
