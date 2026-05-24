@@ -1,11 +1,11 @@
 \ factorial.fth
+
 INCLUDE DSK1.TOOLS
 INCLUDE DSK1.UDOTR
-
-include DSK1.DOUBLE
+INCLUDE DSK1.DOUBLE
 
 \ Rossetta code
-: FAC ( n -- n! ) 1 SWAP 1+  1 ?DO I * LOOP ;
+: FAC ( n -- n! ) 1 SWAP 1+  1 ?DO  I *  LOOP ;
 
 \ 32 bit version  modified
 
