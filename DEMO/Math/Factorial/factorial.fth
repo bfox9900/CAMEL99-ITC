@@ -2,7 +2,7 @@
 INCLUDE DSK1.TOOLS
 INCLUDE DSK1.UDOTR
 
-NEEDS M*/ FROM DSK1.DOUBLE
+include DSK1.DOUBLE
 
 \ Rossetta code
 : FAC ( n -- n! ) 1 SWAP 1+  1 ?DO I * LOOP ;
