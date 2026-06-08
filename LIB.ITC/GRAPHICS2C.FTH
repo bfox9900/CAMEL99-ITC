@@ -185,3 +185,5 @@ DEFER STYLUS  ( mask Vaddr --)
 : PLOT   ( x y -- ) S" STYLUS" EVALUATE ; IMMEDIATE
 
 PENCIL IS STYLUS  \ initialzed the DEFER word at compile time
+HERE SWAP - DECIMAL
+CR . .( bytes)

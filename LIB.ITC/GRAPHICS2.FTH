@@ -105,13 +105,13 @@ HEX
 DEFER STYLUS  ( mask Vaddr --)   \ screen writing routine is changeable
 
 \ ** FUSE joins two bytes into an integer. IE:  ( aa bb ) 256*  + ( -- BBAA)
-JIT: PIXPOS ( x y -- )
+: PIXPOS ( x y -- )
            0 8 UM/MOD FUSE          \ 256(INT(Y/8)) + (Y MOD 8)
       SWAP 0 8 UM/MOD 8* ( y' r x') \ (X MOD 8)  8(INT(X/8))
       80 ROT RSHIFT -ROT ( m y' x') \ convert Rem to bit mask, move to bottom
       +                             \ add Y to X offset
       PDT +                         \ add offset to PDT base address
-     ( mask Vaddr) ;JIT         \ do stylus code
+     ( mask Vaddr) ;         \ do stylus code
 
 : PLOT ( x y -- ) S" PIXPOS STYLUS" EVALUATE ; IMMEDIATE
 
@@ -123,12 +123,11 @@ HEX
 \ Usage:
 \ PENCIL IS STYLUS   ERASER IS STYLUS   BRUSH IS STYLUS
 :NONAME  ( c Vaddr -- ) DUP>R VC@  OR   R> VC! ; CONSTANT PENCIL
-:NONAME  ( c Vaddr -- ) SWAP DROP 0  SWAP VAND  DUP>R VC@  OR   R> VC! ;
-CONSTANT ERASER
-
+:NONAME  ( c Vaddr -- ) SWAP INVERT SWAP VAND ;  CONSTANT ERASER
 :NONAME  ( c Vaddr -- ) DUP>R VC@  XOR  R> VC! ; CONSTANT BRUSH
                                         ' 2DROP  CONSTANT PENUP
 
 PENCIL IS STYLUS
 
-HERE SWAP - DECIMAL . .( bytes)
+HERE SWAP - DECIMAL
+CR . .( bytes)

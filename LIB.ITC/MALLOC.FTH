@@ -6,6 +6,7 @@
 : HEAP   ( -- addr) H @ ;
 : HALLOT ( n --) H +! ;
 : H,     ( n --) HEAP !  2 HALLOT ;
+: HC,    ( c --) HEAP C! 1 HALLOT ;
 
 \ Allocates even number of bytes
 : MALLOC  ( n -- addr ) ALIGNED DUP H, HEAP  SWAP HALLOT ;
