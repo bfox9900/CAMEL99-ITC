@@ -131,13 +131,14 @@ XSTATE OFF
 
 l: _exit    IP RPOP,         \ >8388
 l: _next                     \ Forth ITC NEXT routine (>838A)
-@@9:        *IP+ W  MOV,     \ move CFA into Working register & incr IP
-            *W+  R5 MOV,     \ move contents of CFA to R5 & INCR W
-            *R5  B,          \ branch to the address in R5
+@@9:        *IP+ W  MOV,     \ move CFA into Working register & incr IP ( 26)
+            *W+  R5 MOV,     \ move contents of CFA to R5 & INCR W      ( 26)
+            *R5  B,          \ branch to the address in R5              ( 12)
+                                                                     (  = 64)
 
-l: _enter   IP RPUSH,       \ push IP register onto the return stack
-            W IP MOV,       \ move PFA into Forth IP register
-            @@9 JMP,
+l: _enter   IP RPUSH,       \ push IP register onto the return stack    ( 36)
+            W IP MOV,       \ move PFA into Forth IP register           ( 14)
+            @@9 JMP,                                                    ( 10)
 
 \ This code is for the most critical primitives.
 \ They are copied into 16 bit RAM to run at full CPU speed.
@@ -163,7 +164,7 @@ l: _drop    TOS POP,
 l: _DUP     TOS PUSH,
             @@9 JMP,
 
-\ L: _incr    TOS INC,
+\ L: _incr   TOS INC,
 \            @@9 JMP,
 
 l: _PLUS    *SP+ TOS ADD,     \ ADD 2nd item to TOS and incr stack pointer.
@@ -327,10 +328,9 @@ CODE C!     ( c addr -- )
 CODE COUNT  ( addr -- addr' u)
             TOS PUSH,             \ make a copy of addr
             *SP INC,              \ inc. addr past the count byte
+
 l: _C@      *TOS TOS MOVB,        \ put C@ inline to save space
- \           TOS 8 SRL,           \ 26+32= 58 cycles
-             TOS SWPB,
-             TOS TOS SUBB,        \ clears MSB  54 cycles
+             TOS 8 SRL,          \ 58 CLOCKS TOTAL
             NEXT,
             ENDCODE
 
@@ -579,13 +579,13 @@ CODE LSHIFT ( n bits -- n') \ shift left arithmetic
             ENDCODE
 
 CODE INVERT  ( u -- w)
-              TOS INV,              \ 10
+              TOS INV,           \ 10
               NEXT,
               ENDCODE
 
 \ : +   ( u1 u2 -- u ) UM+ DROP ;  original Camel Forth code is bigger
 CODE +      ( u1 u2 -- u )
-             _PLUS >HSRAM CFA!
+            _PLUS >HSRAM CFA!
 \            *SP+ TOS ADD,       \ ADD 2nd item to TOS and incr stack pointer.
 \           NEXT,
             ENDCODE
@@ -963,15 +963,15 @@ REGISTERS [IF]
 \ conventional do loops use 2 cells on the RSTACK
 [CC] cr .( Rstack based DO/LOOP ) [TC]
 
-CODE <?DO>  ( limit ndx -- )
-            *SP TOS CMP,        \ compare 2 #s
-            @@1 JNE,            \ if they are not the same jump to regular 'do.' (BELOW)
-            TOS POP,            \ remove limit
-            TOS POP,            \ refill TOS
-            IP RPOP,
-            NEXT,
+\ CODE <?DO>  ( limit ndx -- )
+\            *SP TOS CMP,        \ compare 2 #s
+\            @@1 JNE,            \ if they are not the same jump to regular 'do.' (BELOW)
+\            TOS POP,            \ remove limit
+\            TOS POP,            \ refill TOS
+\            IP RPOP,
+\            NEXT,
 
-+CODE <DO>  ( limit indx -- )
+CODE <DO>  ( limit indx -- )
 @@1:        R0  8000 LI,        \ load "fudge factor" to LIMIT
             *SP+ R0  SUB,       \ Pop limit, compute 8000h-limit "fudge factor"
             R0  TOS ADD,        \ loop ctr = index+fudge
@@ -1165,7 +1165,7 @@ CODE (FIND) ( Caddr NFA -- XT ? )
 @@1:    -3 (R3) R3 MOV,      \ fetch LFA, R3 now has new NFA
     EQ UNTIL,
     NEXT,                    \ we got zero. End of the list! Go back to Forth
-    ENDCODE                  \ 42 BYTES
+    ENDCODE
 
 \ ===========================================================
 [CC] cr .( CAMEL99 custom primitives)

@@ -24,12 +24,12 @@ CR .( branch cross-compilers if then else etc...)
 
 \ finite loop cross-compilers
 : DO            TCOMPILE <DO>  THERE ; IMMEDIATE
-: ?DO           TCOMPILE <?DO> THERE ; IMMEDIATE
+\ : ?DO           TCOMPILE <?DO> THERE ; IMMEDIATE
 
 : LOOP          TCOMPILE <LOOP>  <BACK ; IMMEDIATE
 : +LOOP         TCOMPILE <+LOOP> <BACK ; IMMEDIATE
 
-\ : FOR         TCOMPILE <FOR>  THERE ;  IMMEDIATE
+\ : FOR         TCOMPILE >R  THERE ;  IMMEDIATE
 \ : NEXT        TCOMPILE <NEXT> <BACK ;  IMMEDIATE
 
 \ ========================================================================
@@ -52,23 +52,24 @@ host: :                             \ this is the CROSS compiler's ':'
 
 host: ;                            \ this the CROSS-compiler's ';'
                 TREVEAL            \ un-smudge the word so it can be found in the dictionary
-                TCOMPILE EXIT 
+                TCOMPILE EXIT
                 ?CSP               \ check is stack is the same place as when we started the definition
                 T[                 \ reset XSTATE (TARGET STATE) to interpreting
 ;host   immediate
 
-\ tail call optimizing semi-colon. 
-\ Programmer discretion for when a word ends with another high-level Forth word. 
+\ tail call optimizing semi-colon.
+\ Programmer discretion for when a word ends with another high-level Forth word.
 \ >>>DOES NOT WORK<<<
  [CC]
  host: -;  ( -- ) \ programmer controlled
-      TREVEAL
-      THERE 2- @ cell+           \ get previous XT, compute PFA
+      2+
      -2 TALLOT                    \ erase the previous XT
       TCOMPILE BRANCH THERE - T,
+      T[                  \ turn off compiler
+      TREVEAL
       ?CSP
-      T[                          \ turn off compiler
 ;host  IMMEDIATE
+
 
 \ ========================================================================
 \ F I N A L   T A R G E T -  C O M P I L I N G   C O L O N  &  S E M I - C O L O N
@@ -78,4 +79,3 @@ host: ;                            \ this the CROSS-compiler's ';'
 \
 SYNONYM x:   :                     \ "TARGET-compiling colon"
 SYNONYM ;x   ;  IMMEDIATE          \ "TARGET-compiling semi-colon"
-

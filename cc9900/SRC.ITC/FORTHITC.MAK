@@ -6,7 +6,7 @@
 \ **********************************************************************
 CROSS-COMPILING
 TRUE  VALUE ITC          \ used to prevent directly compiling HILEVEL.HSF
-FALSE VALUE SLOWER       \ TRUE saves 64 bytes, FALSE -> 14% FASTER compile times
+TRUE VALUE SLOWER       \ TRUE uses more Forth, FALSE -> 14% FASTER compile times
 FALSE VALUE FAST_TYPE    \ 22% faster SCREEN I/O
 FALSE VALUE HASHING      \ Not working yet
 
@@ -33,7 +33,7 @@ EMEM TIBSIZE -  EQU 'TIB     \ Terminal input buffer just below
 \     FE80       EQU 'RP0    \ FORTH RETURN stack base address
 
 \ ======================================================================
--1    \ true= standard kernel ;  false=non-standard kernel
+TRUE   \ true= standard kernel ;  false=non-standard kernel
 [IF]
     A000 VALUE CODESEG
     2000 VALUE HEAPSEG
@@ -122,7 +122,7 @@ TTYI/O
  \ build the copy command in host Forth PAD memory by appending strings
  S" COPY " PAD PLACE
  FILENAME$ COUNT PAD +PLACE
- S"  cc9900\DISKS.99\dsk1.itc\" PAD +PLACE
+ S"  cc9900\disks.99\dsk1.itc\" PAD +PLACE
 
  CR PAD COUNT 2DUP TYPE SYSTEM  \ SYSTEM calls DOS, gives it the string
 

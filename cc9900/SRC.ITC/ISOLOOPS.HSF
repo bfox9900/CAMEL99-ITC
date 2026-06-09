@@ -1,5 +1,6 @@
 \ ANS/ISO  T A R G E T   B R A N C H   C O M P I L E R S   Aug 18 2021 B Fox
 \ May 13,2022 Changed AHEAD to be consistent with standard
+\ June 2026   Fixed AHEAD to "actually" be compliant :-)
 \             changed ELSE & LEAVE to work with new AHEAD
 
 \               **** Requires FCC99B  with META vocabulary ****
@@ -11,15 +12,16 @@
 
 [CC] HEX
 TARGET-COMPILING
+\ compile jump forward, resolved by THEN
+: AHEAD    ( -- addr) COMPILE BRANCH HERE 0 , ;  IMMEDIATE
+
 \ THEN resolves forward branches
 \ computes offset: (HERE -  addr)  & stores result in addr
-: THEN  ( addr -- )  HERE OVER - SWAP ! ;  XIMMEDIATE
-
-: AHEAD    ( -- addr)   HERE 0 , ;  \ compile empty jump forward
+: THEN  ( addr -- )  HERE OVER - SWAP ! ;  IMMEDIATE
 
 
 \ CAMEL Forth LEAVE stack pointer is called LP. It is initialized by QUIT
-SLOWER [if]
+-1 [if]
 : >L        ( x -- ) ( L: -- x ) 2 LP +!   LP @ ! ;     \ LP stack grows up
 : L>        ( -- x ) ( L: x -- ) LP @ @  -2 LP +! ;
 
@@ -52,26 +54,26 @@ SLOWER [if]
 \       define the TARGET system LOOPS below.
 
 : RAKE  ( -- ) ( L: 0 a1 a2 .. aN -- )
-         BEGIN  L> ?DUP WHILE    [COMPILE] THEN  REPEAT ;
+         BEGIN  L> ?DUP WHILE  [COMPILE] THEN  REPEAT ;
 \ -----------------------------------------------------------------------
 \ SIMPLIFIED LOOPS
 \ Posted by dxforth comp.lang.forth
 \ Modded for FCC99 cross-compiler that has no POSTPONE
 
 : BEGIN   HERE ;                                IMMEDIATE
-: IF      COMPILE ?BRANCH AHEAD ;               IMMEDIATE
-: ELSE    COMPILE BRANCH AHEAD SWAP [COMPILE] THEN ; IMMEDIATE
-: AGAIN   COMPILE BRANCH HERE - ,  ;            IMMEDIATE
-: UNTIL   COMPILE ?BRANCH HERE - ,  ;           IMMEDIATE
-: WHILE   [COMPILE] IF SWAP ;                   IMMEDIATE
+: IF     ( -- a) COMPILE ?BRANCH HERE 0 , ;     IMMEDIATE
+: ELSE   ( -- a a) [COMPILE] AHEAD SWAP [COMPILE] THEN ; IMMEDIATE
+: AGAIN  ( a --) COMPILE BRANCH  HERE - ,  ;    IMMEDIATE
+: UNTIL  ( a --) COMPILE ?BRANCH HERE - ,  ;    IMMEDIATE
+: WHILE  ( a1 -- a1 a2) [COMPILE] IF SWAP ;     IMMEDIATE
 : REPEAT  [COMPILE] AGAIN [COMPILE] THEN ;      IMMEDIATE
 
 \ ========================================================================
 \ DO/LOOP  COMPILERS
 \                          -compile this-    - run this now-
 : DO        ( n n -- adr) ?COMP COMPILE <DO>   0 >L  HERE  ; IMMEDIATE
-: ?DO       ( n n -- adr) ?COMP COMPILE <?DO>  0 >L  HERE  ; IMMEDIATE
-: LEAVE     ( -- ) COMPILE UNLOOP  COMPILE BRANCH AHEAD >L ; IMMEDIATE
+\ : ?DO     ( n n -- adr) ?COMP COMPILE <?DO>  0 >L  HERE  ; IMMEDIATE
+: LEAVE     ( -- ) COMPILE UNLOOP  [COMPILE] AHEAD >L ; IMMEDIATE
 
 \ complete a DO loop
 : LOOP      ( -- )  COMPILE <LOOP>  HERE - ,    RAKE ; IMMEDIATE
