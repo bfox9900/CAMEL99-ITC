@@ -69,12 +69,29 @@ TARGET-COMPILING
 : REPEAT  [COMPILE] AGAIN [COMPILE] THEN ;      IMMEDIATE
 
 \ ========================================================================
-\ DO/LOOP  COMPILERS
-\                          -compile this-    - run this now-
-: DO        ( n n -- adr) ?COMP COMPILE <DO>   0 >L  HERE  ; IMMEDIATE
-\ : ?DO     ( n n -- adr) ?COMP COMPILE <?DO>  0 >L  HERE  ; IMMEDIATE
-: LEAVE     ( -- ) COMPILE UNLOOP  [COMPILE] AHEAD >L ; IMMEDIATE
+\ DO/LOOP  compilers
+-1 [IF]
 
-\ complete a DO loop
-: LOOP      ( -- )  COMPILE <LOOP>  HERE - ,    RAKE ; IMMEDIATE
-: +LOOP     ( -- )  COMPILE <+LOOP> HERE - ,    RAKE ; IMMEDIATE
+\ Proper ?DO is verbose but it works
+: ?DO ( -- addr 'then )
+  ?COMP
+  COMPILE 2DUP    COMPILE =
+  [COMPILE] IF    COMPILE 2DROP
+  [COMPILE] ELSE
+  COMPILE <DO> 0 >L  HERE
+  ['] THEN
+; IMMEDIATE
+
+: DO    ( -- addr 'then )
+  ?COMP COMPILE <DO>  0 >L  HERE  ['] PAUSE ; IMMEDIATE
+
+: LEAVE ( -- ) COMPILE UNLOOP  [COMPILE] AHEAD >L ; IMMEDIATE
+
+: LOOP  ( addr 'then -- )
+  >R COMPILE <LOOP>  HERE - ,   RAKE
+  R> EXECUTE ; IMMEDIATE
+
+: +LOOP ( addr 'then -- )
+  >R COMPILE <+LOOP>  HERE - ,  RAKE
+  R> EXECUTE ; IMMEDIATE
+[THEN]
