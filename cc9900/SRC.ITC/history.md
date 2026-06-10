@@ -1,8 +1,8 @@
 # Camel99 Forth Version History
 
 ### Camel99 V2.84*  2026
-Removed my imperfect ?DO word.  Added compliant version to the library files.
-It's rather bloated and protections can be added simpler on a case by case basis.
+Removed my imperfect ?DO word.  Added compliant version to the kernel.
+It's rather bloated but it works.
 
 Fixed AHEAD to comply with Forth 2012. I misunderstood it in the past.
 
