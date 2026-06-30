@@ -23,6 +23,7 @@ CODE /CHAR ( a u -- a' u')    0604 ,   0596 ,  NEXT, ENDCODE
 
 : 2NIP     2SWAP 2DROP ;
 
+\ string a2 n2 MUST be in RAM
 : SAMS.COMPARE ( a1 n1 a2 n2 -- -1|0|1 )
     ROT  2DUP - >R            ( a1 a2 n2 n1)( R: n2-n1)
     MIN                       ( a1 a2 n3)
