@@ -40,9 +40,6 @@ CODE /CHAR ( a u -- a' u')    0604 ,   0596 ,  NEXT, ENDCODE
     R>  DUP IF  0> 1 OR  THEN  \  2's complement arith.
  ;
 
-
-
-
 DECIMAL
 : SAMS.SEARCH  ( caddr1 u1 caddr2 u2 -- caddr3 u3 flag)
    2OVER                \ retain a copy of 1st string
