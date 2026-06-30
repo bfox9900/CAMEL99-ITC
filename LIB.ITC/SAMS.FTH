@@ -1,7 +1,7 @@
 CR .( SAMS CARD support Faster primitives.  Jan 2026 Brian Fox )
 CR .( 64K segments !L C!L @L C@L )
 
-\ 1 "windiw" only.  Set to >3000 by PMEM (paged memory)
+\ 1 "window" only.  Set to >3000 by PMEM (paged memory)
 \ This version is over 3X faster than the version in SAMSFTH.Fth
 
 \ NEEDS .S FROM DSK1.TOOLS
