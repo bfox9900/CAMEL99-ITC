@@ -42,6 +42,9 @@ HEX
 $2000 VALUE BASE-MEM  \ where we load OBJECT files
 A000  VALUE ORIGIN    \ Where the code will be loaded by AORG
 
+\ this is 5x faster than 1 /STRING
+CODE /CHAR ( a u -- a' u')    0604 ,   0596 ,  NEXT, ENDCODE
+
 : ?BREAK  ( -- ) ?TERMINAL ABORT" *BREAK*" ;
 : SPACEBAR ( -- ) KEY? BL = IF  KEY DROP  THEN ;
 
@@ -69,11 +72,11 @@ HEX
 DECIMAL
 : PARSE# ( addr len -- n )
     BASE @ >R
-    5 CHOP 1 /STRING HEX NUMBER? ABORT" Bad number in object file"
+    5 CHOP /CHAR HEX NUMBER? ABORT" Bad number in object file"
     R> BASE ! ;
 
 : PARSE-DEF  ( addr len -- addr' len' label len)
-    7 CHOP  1 /STRING -TRAILING ;
+    7 CHOP  /CHAR -TRAILING ;
 
 : DODEF ( addr len n -- ) \ compile DEF as a Forth constant
     >R  PARSE-DEF HEADER, COMPILE DOCON  R> , ;
@@ -83,7 +86,7 @@ DECIMAL
     8 /STRING ; \ 8 bytes of module name are ignored
 
 : .TOOLVER  ( addr len -- addr 0)
-    1 /STRING \ skip the tag byte
+    /CHAR \ skip the tag byte
     40 CHOP  CR TYPE  DROP 0 ;
 
 : ?TAG
@@ -149,7 +152,7 @@ HEX
     BEGIN
         OVER C@ DUP TAG !
         TAG-INTERPRETER
-        1 /STRING 0 MAX  \ advance to next char
+        /CHAR 0 MAX  \ advance to next char
     DUP WHILE
     REPEAT
     2DROP ;
@@ -216,7 +219,7 @@ ENDCODE
 
 ONLY FORTH DEFINITIONS ALSO DEFS
 : HELP
-  PAGE ." Camel99 Linker III  May 1 2025"
+  PAGE ." Camel99 Linker III  June 29 2026"
   CR
   CR ." -Commands-"
   CR ." NEW   clear memory & DEFS wordlist"
