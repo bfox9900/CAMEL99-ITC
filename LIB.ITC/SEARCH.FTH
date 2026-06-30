@@ -17,7 +17,7 @@ CODE 2OVER   ( a b c d --  a b c d a b)
       C5A6 , 0008 , \ 8 (SP) *SP MOV,                  \ 26
       NEXT,                                         \ =  76
 ENDCODE
-\ search is almost 2x faster than using 1 /string
+\ search is 16% faster using /CHAR instead of 1 /STRING
 \                           TOS INC,  *SP DEC,
 CODE /CHAR ( a u -- a' u')    0604 ,   0596 ,  NEXT, ENDCODE
 
@@ -31,23 +31,23 @@ DECIMAL
    WHILE
      2OVER 4TH OVER COMPARE
    WHILE
-      /CHAR  \ 1 /STRING
+     /CHAR \ 1 /STRING
    REPEAT
-   2NIP 2NIP TRUE EXIT   \ string found
+   2NIP 2NIP   TRUE EXIT \ string found
    THEN
    2DROP 2DROP FALSE ;   \ string not found
 
-\ test string in LOW RAM
+\ test string search in LOW RAM, string not present
+ HEX 2000 2000 ERASE
 
-: MEN$  S" MEN" ;
-: AID$  S" AID" ;
-: C$   S" COUNTRY" ;
-: F$   S" NO MATCH" ;
-
-
-: A$
+ : A$
  S" NOW IS THE TIME FOR ALL GOOD MEN TO COME TO THE AID OF THEIR COUNTRY." ;
 
 
-\ HEX 2000 2000 CHAR # FILL
-\  2000 2000 AID  ELAPSE SEARCH
+: B$  S" TEST" ;    B$  3FF0 PLACE
+
+A$ 3FAD PLACE
+ 2000 2000 A$ ELAPSE SEARCH
+
+
+ 2000 2000 B$ ELAPSE SEARCH
