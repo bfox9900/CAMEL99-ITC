@@ -20,19 +20,20 @@ DROP
 HEX
 CREATE SQUARE  FFFF , FFFF , FFFF , FFFF ,
 
-: ENUM-BLOCK ( char -- char ) SQUARE OVER CHARDEF 8 + ;
+: ENUM-SQUARE ( char -- char+8 ) SQUARE OVER CHARDEF 8 + ;
 
 DECIMAL
-: ENUM-BLOCKS
-    128
-    ENUM-BLOCK  ENUM-BLOCK  ENUM-BLOCK  ENUM-BLOCK
-    ENUM-BLOCK  ENUM-BLOCK  ENUM-BLOCK  ENUM-BLOCK
-    ENUM-BLOCK  ENUM-BLOCK  ENUM-BLOCK  ENUM-BLOCK
-    ENUM-BLOCK  ENUM-BLOCK  ENUM-BLOCK  ENUM-BLOCK
+: ENUM-SQUARES
+  \ Define 16 color sets as SQUARE characters
+    128 \ 1st character
+    ENUM-SQUARE  ENUM-SQUARE  ENUM-SQUARE  ENUM-SQUARE
+    ENUM-SQUARE  ENUM-SQUARE  ENUM-SQUARE  ENUM-SQUARE
+    ENUM-SQUARE  ENUM-SQUARE  ENUM-SQUARE  ENUM-SQUARE
+    ENUM-SQUARE  ENUM-SQUARE  ENUM-SQUARE  ENUM-SQUARE
     DROP
 ;
 
-: FG-COLOR ( C -- ) 1 COLOR ;
+: FG-COLOR  ( C -- ) 1 COLOR ;
 : NEXTSET#  ( n -- n') 8 + DUP SET# ;
 
 : SET-COLORS
@@ -60,6 +61,13 @@ HEX
 \ Load TI title page font from GROM to VDP
 : BIGCAPS  ( -- ) 4B4  BL ]PDT  200 GVMOVE ;
 
+\ Load LOGO from GROM to VDP pattern table at character #1
+: LOAD-LOGO
+\    GROM     VDP     9 patterns
+\   ------  -------   ----------
+     950     1 ]PDT   9 8*  GVMOVE   \ GROM->VDP move
+;
+
 DECIMAL
 : (c)   10 EMIT ;
 
@@ -70,12 +78,6 @@ CREATE LOGO
     7 C, 8 C, 9 C,
 
 : TI.LOGO ( -- )
-  [ HEX ]
-( Load LOGO from GROM to VDP pattern table at character #1)
-\    GROM     VDP     9 patterns
-\   ------  -------   ----------
-     950     1 ]PDT   9 8*  GVMOVE   \ GROM->VDP move
-  [ DECIMAL ]
     14 5 AT-XY   LOGO      3 VTYPE
     14 6 AT-XY   LOGO 3 +  3 VTYPE
     14 7 AT-XY   LOGO 6 +  3 VTYPE
@@ -109,7 +111,7 @@ HEX
    BOUNDS
    DO
       10 I VC+!
-      65 TICKS
+      70 TICKS
    LOOP
 ;
 
@@ -117,9 +119,9 @@ DECIMAL
 : TITLEPAGE
     GRAPHICS
     CYAN SCREEN
-    BIGCAPS  ENUM-BLOCKS SET-COLORS
+    BIGCAPS  ENUM-SQUARES SET-COLORS
 
-    PAGE
+    PAGE BIGCAPS  LOAD-LOGO
     .BANNER
     TI.LOGO
     .TITLE
