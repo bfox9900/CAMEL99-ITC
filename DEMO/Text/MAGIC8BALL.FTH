@@ -38,5 +38,3 @@ CASE: MAGIC8BALL  20 VECTORS  ;CASE  \ make the case table
        BEGIN CR ." ? :" PAD 80 ACCEPT 0>
        WHILE CR 19 RND MAGIC8BALL CR
        REPEAT ;
-
-

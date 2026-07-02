@@ -24,7 +24,7 @@ CREATE REFDATA
        7 ,   9 , 11 , 06 , 10 ,  4 ,   1 , 14 ,
 
 \ load the array with different kinds of mixed up data
-: LOAD-DATA  ( -- ) REFDATA  0 ]Q  SIZE CELLS MOVE ;
+: LOAD-DATA  ( -- ) REFDATA  0 ]Q  SIZE CELLS CMOVE ;
 
 \ Musical BAR graph
 DECIMAL
@@ -75,8 +75,8 @@ SQR3 SET#    7 2 COLOR  \ red
 
 \ scripting tools
 : CLEARLN ( col row --)  BL 32 HCHAR ;
-: TITLE:  4 1 2DUP CLEARLN  AT-XY ;
-: TIME:   20 1 AT-XY ;
+: TITLE:  0 23 2DUP CLEARLN  AT-XY ;
+: TIME:   0 1 AT-XY ;
 : WAIT-KEY  BEGIN KEY? UNTIL ;
 
 \ ===========================================================
@@ -161,23 +161,37 @@ VARIABLE SORTED
    LOOP
 ;
 
-CR .( mergesort.fth from rosetta code )
+\ macros for words used by Quicksort author
+: -CELL   S" -2" EVALUATE ; IMMEDIATE
+: CELL+   S" 2+" EVALUATE ; IMMEDIATE
+: CELL-   S" 2-" EVALUATE ; IMMEDIATE
+: <=      S" 1+ <" EVALUATE ;  IMMEDIATE
+: MID ( l r -- mid ) OVER - 2/ -CELL AND + ;
 
-\ camel99 forth translation harness
-: RDROP  POSTPONE R> POSTPONE DROP ; IMMEDIATE
-: <=     POSTPONE 1+  POSTPONE < ; IMMEDIATE
+: EXCH    ( adr1 adr2 -- )  OVER @ OVER @ SWAP ROT ! SWAP ! ;
 
-\ mergesort & quicksort use addresses not indices so we need to translate
+\ quick sort uses addresses not indices so we need to translate
 : >COL    ( addr --  n)  0 ]Q - 2/ ;
+
 : .GRN  ( addr -- addr) DUP >COL .GRNBAR ;
 : .RED  ( addr -- addr) DUP >COL .REDBAR ;
 
 : .2BARS    ( addr1 addr2 -- addr1 addr2 )
-    OVER >COL ]Q.DRAW   OVER >COL ]Q.DRAW ;
-
-
+       OVER >COL ]Q.DRAW   OVER >COL ]Q.DRAW ;
 
 1 CELLS CONSTANT CELL
+
+: RDROP  POSTPONE R>  POSTPONE DROP ; IMMEDIATE
+
+\ 6.1.1900 MOVE     LIBRARY FILE FOR CAMEL99
+\ CORE
+: MOVE    ( src dst n -- )
+          >R  2DUP SWAP DUP R@ +  \ -- src dst dst src src+n
+          WITHIN
+          IF    R> CMOVE>         \ src <= dst < src+n
+          ELSE  R> CMOVE
+          THEN ;
+
 
 : MERGE-STEP ( right mid left -- right mid+ left+ )
     .GRN
@@ -202,17 +216,9 @@ CR .( mergesort.fth from rosetta code )
 
 : MSORT ( ADDR LEN -- )  CELLS OVER + SWAP  MERGESORT 2DROP ;
 
+
 \ =============================================================
 \ Quick Sort from Rossetta Code
-\ macros for words used by Quicksort author
-: -CELL   S" -2" EVALUATE ; IMMEDIATE
-: CELL+   S" 2+" EVALUATE ; IMMEDIATE
-: CELL-   S" 2-" EVALUATE ; IMMEDIATE
-
-: MID ( l r -- mid ) OVER - 2/ -CELL AND + ;
-
-: EXCH    ( adr1 adr2 -- )  OVER @ OVER @ SWAP ROT ! SWAP ! ;
-
 DECIMAL
 : PARTITION ( l r -- l r r2 l2 )
   .GRN
@@ -269,12 +275,14 @@ DECIMAL
 ;
 
 : MERGE-SORT
-    LOAD-DATA
-    PAGE SHOWDATA
-    TITLE: ." Merge Sort"
-    0 ]Q SIZE MSORT FINISH
-    TIME: .ELAPSED
+     LOAD-DATA
+     PAGE SHOWDATA
+     TITLE: ." Merge Sort"
+     TICKER OFF
+     0 ]Q SIZE MSORT FINISH
+     TIME: .ELAPSED
 ;
+
 
 : QUICK-SORT
      LOAD-DATA
@@ -285,14 +293,13 @@ DECIMAL
      TIME: .ELAPSED
 ;
 
-DECIMAL
 : RUN
       PAGE
       11 SCREEN
       BUBBLE  1500 MS
       COMB    1500 MS
       INSERTION 1500 MS
-      MERGE-SORT 1500 MS
+      MERGE-SORT  1500 MS
       QUICK-SORT
       WAIT-KEY ;
 
