@@ -8,7 +8,7 @@ NEEDS .TASKS FROM DSK1.MTOOLS
 INIT-MULTI
 
 \ create a task in heap, fork it, assign Execution token and run it
-: SPAWN  ( xt -- ) USIZE MALLOC DUP >R FORK  R@ ASSIGN  R> WAKE ;
+: SPAWN  ( xt -- ) USIZE MALLOC DUP>R FORK  R@ ASSIGN  R> WAKE ;
 
 HEX 10 CONSTANT STKSIZE  \ each task has ONLY 20 cells for each stack
 
