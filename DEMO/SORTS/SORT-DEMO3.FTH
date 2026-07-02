@@ -75,8 +75,8 @@ SQR3 SET#    7 2 COLOR  \ red
 
 \ scripting tools
 : CLEARLN ( col row --)  BL 32 HCHAR ;
-: TITLE:  0 4 2DUP CLEARLN  AT-XY ;
-: TIME:   0 1 AT-XY ;
+: TITLE:  4 1 2DUP CLEARLN  AT-XY ;
+: TIME:   20 1 AT-XY ;
 : WAIT-KEY  BEGIN KEY? UNTIL ;
 
 \ ===========================================================
@@ -285,6 +285,7 @@ DECIMAL
      TIME: .ELAPSED
 ;
 
+DECIMAL
 : RUN
       PAGE
       11 SCREEN

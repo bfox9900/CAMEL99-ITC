@@ -22,8 +22,11 @@ VARIABLE SORTED
 HEX        \          1 LSHIFT  +
 CODE CELLS+ ( n -- n') A104 ,  A136 ,  NEXT, ENDCODE
 
+VARIABLE PASSES  \ counting passes slows things down
+
 DECIMAL
 : COMBSORT ( addr n -- )
+   PASSES OFF
     DUP>R  TO GAP                    \ save n on Rstack and in GAP
     BEGIN
       GAP 1.35/  TO GAP              \ re-compute the gap
@@ -38,6 +41,7 @@ DECIMAL
          ELSE
            2DROP
          THEN
+      \   PASSES 1+!
       LOOP
       SORTED @  GAP 0=  AND          \ test for complete
    UNTIL
@@ -56,7 +60,7 @@ SIZE CELLS  MALLOC CONSTANT Q[]
 
 : ]Q    CELLS Q[] + ;
 
-: ERASE   0 FILL ;
+\ : ERASE   0 FILL ;
 
 : CLEARIT  ( -- ) 0 ]Q SIZE CELLS ERASE ;     \ all the same data 17.7
 : REVERSED ( -- ) SIZE  0 DO  SIZE I -  I ]Q !      LOOP ; \ 17.11 seconds
@@ -76,4 +80,6 @@ SIZE CELLS  MALLOC CONSTANT Q[]
 
 REVERSED
 
-: GO   Q[] SIZE COMBSORT ;  \ 18.6 seconds
+: GO
+   Q[] SIZE COMBSORT
+   CR PASSES ?  ." passes";  \ 18.6 seconds  25274
