@@ -55,15 +55,15 @@ DECIMAL
 
 : HELP
 PAGE
-CR ." TASK DEMO with 30 tasks"
-CR ." ----------------------- "
+CR ." Console and 40 tasks running"
+CR ." ---------------------------- "
 CR ." Type HELP to see this screen."
 CR ." SINGLE will stop multi-tasking"
 CR ." MULTI will start multi-tasking"
 CR
-CR  ." RUN  spawns 30 new tasks"
+CR  ." RUN  spawns 40 new tasks"
 CR ." .TASKS  to see task list"
-CR ." KILLALL destroys all 30 tasks"
+CR ." KILLALL destroys all 40 tasks"
 CR ." (re-type RUN to re-spawn) "
 CR ."  X ?  to see X increment"
 CR ." STOPALL to sleep all tasks"
