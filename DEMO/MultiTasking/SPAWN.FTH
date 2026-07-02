@@ -14,17 +14,16 @@ HEX 10 CONSTANT STKSIZE  \ each task has ONLY 20 cells for each stack
 
 VARIABLE X   \ used to test if tasks are running
 
-: DROPS   ( n --)  0 DO DROP PAUSE LOOP ; \ drop items from the stack
+: DROPS   ( n --)  0 DO  PAUSE DROP  LOOP ; \ drop items from the stack
 
 : STKTHING   \ fill and clear data stack so it can be seen in debugger
           BEGIN
-            STKSIZE 0 DO PAUSE DEAD  LOOP
+            STKSIZE 0 DO  PAUSE DEAD  LOOP
             STKSIZE DROPS
-            20 MS
-            STKSIZE 0 DO PAUSE BEEF  LOOP
+
+            STKSIZE 0 DO  PAUSE BEEF  LOOP
             STKSIZE DROPS
             1 X +!
-            20 MS
           AGAIN ;
 
 \ create and wake n tasks.
@@ -51,6 +50,7 @@ DECIMAL
         MULTI
         PAUSE   \ if we don't come back from this it's a fail
         CR ." Success!"
+        CR #TASKS ?  ." tasks are running"
         ;
 
 : HELP
