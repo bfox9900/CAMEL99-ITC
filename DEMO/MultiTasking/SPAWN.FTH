@@ -20,11 +20,11 @@ VARIABLE X   \ used to test if tasks are running
           BEGIN
             STKSIZE 0 DO PAUSE DEAD  LOOP
             STKSIZE DROPS
-
+            20 MS
             STKSIZE 0 DO PAUSE BEEF  LOOP
             STKSIZE DROPS
             1 X +!
-
+            20 MS
           AGAIN ;
 
 \ create and wake n tasks.
@@ -45,7 +45,7 @@ VARIABLE #TASKS
 DECIMAL
 
 : RUN
-        30 TASKS
+        40 TASKS
         CR
         CR ." Starting Multi-tasker..."
         MULTI
