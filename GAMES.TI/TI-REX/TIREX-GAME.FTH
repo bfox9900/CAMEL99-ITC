@@ -266,7 +266,7 @@ DECIMAL
 
 8 CONSTANT TOLERANCE
 
-\ ** DECTECTER stops sprite motion and kils multi-tasking **
+\ ** DECTECTER stops sprite motion and kills multi-tasking **
 : DETECTER ( -- ?)
    FALSE \ default flag is false
    11 4  \ scan sprites #4 to #PTERODACTYL
@@ -289,6 +289,8 @@ DECIMAL
    LOOP
 ;
 
+\ Scan VDP sprite table for an unused sprite between #4 and #9.
+\ Return the sprite number n
 : FREE-SPRITE ( -- n)
       FALSE
       9 4   \ scan for unused sprite
