@@ -258,21 +258,23 @@ DECIMAL
 \ *************************
 \   COINCIDENCE AND STUFF
 \ *************************
+: BASS  ( f -- ) GEN3 15 *  HZ 30 DB   -5 NOISE  ;
+
 : BA-BUMP
-   GEN1 110 HZ -12 DB 80 MS
+   95 BASS  -2 DB  80 MS
    MUTE 70 MS
-   6 DB 150 MS
-   MUTE ;
+   -4 DB 150 MS MUTE ;
 
 8 CONSTANT TOLERANCE
 
 \ ** DECTECTER stops sprite motion and kills multi-tasking **
 : DETECTER ( -- ?)
-   FALSE \ default flag is false
+   COINCALL 0= IF FALSE EXIT THEN \ quick out if nothing touching
+\ find the culprits
+   FALSE \ default flag
    11 4  \ scan sprites #4 to #PTERODACTYL
    DO
-      #DINO I TOLERANCE COINC
-      OR   \ OR each flag. Any cactus counts
+      #DINO I TOLERANCE COINC OR   \ OR each flag. Any cactus counts
       DUP IF ALL-STOP  LEAVE THEN
       PAUSE
    LOOP
@@ -316,26 +318,25 @@ DECIMAL
 \   DINOSAUR JUMP CONTROL
 \ *************************
 
-10 CONSTANT HEIGHT
+5 CONSTANT HEIGHT
 
 DECIMAL
 : JUMPUP ( == ?)
-   GEN1  525 HZ 0 DB  \ start the tone
+   GEN1  525 HZ -6  DB  \ start the tone
    FALSE
    0 HEIGHT
    DO PAUSE
-      1  I 2* NEGATE #DINO MOTION
-      17 I - DB     \ Fade out fast
+      1  I 8* NEGATE #DINO MOTION
       DETECTER OR   \ test for coincidence during jump
+      MUTE
    -1 +LOOP
-   MUTE
 ;
 
 : DESCEND ( -- ? )
    FALSE
    HEIGHT 0 DO
       PAUSE
-      0  I 2* #DINO MOTION  \ GRAVITY
+      0  I 8* #DINO MOTION  \ GRAVITY
       DETECTER
       OR \ test for coincidence during fall
    LOOP
@@ -388,16 +389,18 @@ CREATE FLAP-STRIP
 : PTERO-CHAR ( -- char )  CELLS FLAP-STRIP + @  ;
 
 : .Pterodactyl ( -- ) \ spawn the flying dinosaur sprite
-    wingsup  RUST  245 115 #PTERODACTYL SPRITE ;
+\                 col   variable row
+    wingsup  RUST  245   115 40 RND -  #PTERODACTYL SPRITE ;
 
-\ **************************
-\        task loops
-\ **************************
+
+\     **************************************************
+\     *                TASK LOOPS                      *
+\     **************************************************
 \ Task to spawn the Pterodactyl
-: FADEUP  PAUSE   8 16 DO  I DB -1 +LOOP ;
-: FADEDN  PAUSE  16  8 DO  I DB  LOOP ;
+: FADEUP  PAUSE   8 16 DO  PAUSE I DB -1 +LOOP ;
+: FADEDN  PAUSE  16  8 DO  PAUSE I DB     LOOP ;
 
-: FLAPPING-NOISE   -4 NOISE  FADEUP MUTE PAUSE FADEDN MUTE ;
+: FLAPPING-NOISE   -4 NOISE  FADEUP FADEDN MUTE 80 MS ;
 
 : FLYING-DINO ( -- )
    BEGIN
@@ -407,10 +410,10 @@ CREATE FLAP-STRIP
      0  \ 1st frame#
      BEGIN
          DUP PTERO-CHAR #PTERODACTYL PATTERN
-         \ FLAPPING-NOISE
-         2000 TICKS
+         FLAPPING-NOISE
+         \ 2000 TICKS
          1+ 7 AND \ circular wrap the frame#
-         #PTERODACTYL SP.X@ 10 <  \ fly until we get to left side
+         #PTERODACTYL SP.X@ 20 <  \ fly until we get to left side
      UNTIL
      DROP                         \ DROP the frame#
      #PTERODACTYL DELSPRITE       \ erase myself
@@ -422,7 +425,7 @@ CREATE FLAP-STRIP
 : CACTUS-GUN
    BEGIN
    \  4 9 HERBICIDE
-     2150 SPEED @ +  RND 40 + MS  \ wait for a random time
+     2500 SPEED @ +  RND 40 + MS  \ wait for a random time
      WAIT-FREE-SPRITE >R
      3 RND ]CACTUSCHAR  OLIVE  SPAWNPOINT R@ SPRITE
      SPEED @ 0  R> MOTION
@@ -434,7 +437,7 @@ CREATE FLAP-STRIP
 : CACTUS-KILLER   ( -- )
 \ searches for cactus at LEFT side of screen and deletes them
    BEGIN
-      4 9 HERBICIDE
+      4 10 HERBICIDE
       PAUSE
    AGAIN
 ;
@@ -455,10 +458,11 @@ HEX 83C8 CONSTANT REPEAT-KEY
 
 DECIMAL
 : PITTER-PATTER  ( of little dinsosaur feet )
-   PAUSE 140 #DINO PATTERN
-   800 TICKS
+   PAUSE
+   140 #DINO PATTERN
+   1800 TICKS
    144 #DINO PATTERN
-   800 TICKS
+   1800 TICKS
 ;
 
 DECIMAL
@@ -485,7 +489,7 @@ DECIMAL
    PAGE GRAY SCREEN
    6 10 AT-XY ."       TI REX"
    6 12 AT-XY ." Adapted by Brian Fox"
-   6 14 AT-XY ."  Version II, 2026"
+   6 14 AT-XY ." Version II, July 2026"
    2000 MS
    PAGE
 ;
