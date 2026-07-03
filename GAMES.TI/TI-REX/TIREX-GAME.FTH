@@ -395,7 +395,7 @@ CREATE FLAP-STRIP
 \ **************************
 \ Task to spawn the Pterodactyl
 : FADEUP  PAUSE   8 16 DO  I DB -1 +LOOP ;
-: FADEDN  PAUSE  16  8 DO  I DB  LOOP ;SADF
+: FADEDN  PAUSE  16  8 DO  I DB  LOOP ;
 
 : FLAPPING-NOISE   -4 NOISE  FADEUP MUTE PAUSE FADEDN MUTE ;
 
