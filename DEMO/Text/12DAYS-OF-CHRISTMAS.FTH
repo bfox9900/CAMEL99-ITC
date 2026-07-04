@@ -41,6 +41,9 @@ CREATE GIFTS
   CR STUFF...
   CR
   CR ." ..."
+  CR
+  CR ." The End (Thanks be to God)"
+  QUIT
 ;
 
 : MAIN   13 1 DO  I DAY  LOOP  ;
