@@ -397,8 +397,8 @@ CREATE FLAP-STRIP
 \     *                TASK LOOPS                      *
 \     **************************************************
 \ Task to spawn the Pterodactyl
-: FADEUP  PAUSE   8 16 DO  PAUSE I DB -1 +LOOP ;
-: FADEDN  PAUSE  16  8 DO  PAUSE I DB     LOOP ;
+: FADEUP  PAUSE   8 16 DO   I DB -1 +LOOP ;
+: FADEDN  PAUSE  16  8 DO   I DB     LOOP ;
 
 : FLAPPING-NOISE   -4 NOISE  FADEUP FADEDN MUTE 80 MS ;
 
@@ -409,14 +409,15 @@ CREATE FLAP-STRIP
     -34 0 #PTERODACTYL MOTION  \ fly fast left
      0  \ 1st frame#
      BEGIN
+         -4 NOISE  FADEUP
          DUP PTERO-CHAR #PTERODACTYL PATTERN
-         FLAPPING-NOISE
-         \ 2000 TICKS
          1+ 7 AND \ circular wrap the frame#
+         FADEDN MUTE
          #PTERODACTYL SP.X@ 20 <  \ fly until we get to left side
      UNTIL
      DROP                         \ DROP the frame#
      #PTERODACTYL DELSPRITE       \ erase myself
+     GEN4 MUTE
    AGAIN
 ;
 
