@@ -21,25 +21,43 @@ NEEDS TABLE2:    FROM DSK1.TABLES
 HEX
 2000 TABLE2: ]DATA  ( n -- [n]data ) \ low RAM array
 
+: FILL.DATA   1000 0 DO  I  DUP ]DATA !  LOOP ;
+: SEE.DATA    1000 0 DO  I ]DATA ?  ?TERMINAL ABORT" BREAK"   LOOP ;
+
 VARIABLE ITEMS
-\ load the name field address (NFA) of all words, into ^DATA
+\ load the name field address (NFA) of all words, into ]DATA
 : LOAD.NAMES ( -- addr cells )
-            0 ]DATA 2000 0 FILL
-             CR ." Loading names... "
-             0 >R                 \ put a loop index on return stack
-             LATEST @             ( -- nfa )
-             BEGIN
-                DUP
-             WHILE
-                DUP R@ ]DATA !    ( -- nfa )
-                R> 1+ >R          \ increment loop counter
-                NFA>LFA @         \ goto link field, fetch next NFA
-            REPEAT
-             0 ]DATA  R> DUP ITEMS ! DUP .  ." words"
+      0 ]DATA 2000 ERASE
+      CR ." Loading names... "
+      ITEMS OFF             \ put a loop index on return stack
+      LATEST @             ( -- nfa )
+      BEGIN
+         DUP
+      WHILE
+         DUP ITEMS @ ]DATA !    ( -- nfa )
+         ITEMS 1+!         \ increment loop counter
+         NFA>LFA @         \ goto link field, fetch next NFA
+      REPEAT
+      0 ]DATA  ITEMS @
+      ITEMS ? ." words"
 ;
 
+\ display the words from []data array
+: .NAMES   ( -- )
+        CR
+        ITEMS @ 1+ 0
+        DO
+            I ]DATA @ .ID SPACE
+            ?BREAK
+            KEY? IF KEY DROP THEN
+        LOOP ;
+
+
 \ compare counted strings using COMPARE
-: COMPARE$ ( $1 $2 -- flag)  COUNT ROT COUNT COMPARE ;
+HEX
+: NFA>$   COUNT 1F AND ;
+DECIMAL
+: COMPARE$ ( $1 $2 -- flag)  NFA>$ ROT NFA>$ COMPARE ;
 : >$       ( $1 $2 -- flag)  COMPARE$ 0> ;  \ $1 > $2
 : <$       ( $1 $2 -- flag)  COMPARE$ 0< ;  \ $1 < $2
 
@@ -61,21 +79,30 @@ DECIMAL
 
 : XCHG  ( addr1 addr2 -- ) 2DUP @ SWAP @  ROT ! SWAP ! ;
 
+\ using CELLS+ improves speed by 13.5%
+HEX        \          1 LSHIFT  +
+CODE CELLS+ ( n -- n') A104 ,  A136 ,  NEXT, ENDCODE
+
+VARIABLE PASSES  \ counting passes slows things down
+
+DECIMAL
 : COMBSORT ( addr n -- )
+   PASSES OFF
     DUP>R  TO GAP                    \ save n on Rstack and in GAP
     BEGIN
       GAP 1.35/  TO GAP              \ re-compute the gap
       SORTED ON
       R@ ( -- n) GAP -  0           \ n-gap is loop limit
       DO ( -- addr )
-         DUP I CELLS +  DUP GAP CELLS +  ( -- addr1 addr2 )
-         OVER @ OVER @ PRECEDE       \ compare the contents of cells, which are strings
+         DUP I CELLS+  DUP GAP CELLS+  ( -- addr1 addr2 )
+         OVER @ OVER @ PRECEDE      \ compare the contents of cells
          IF
             XCHG                     \ Exchange the data in the cells
             SORTED OFF               \ flag we are not sorted
          ELSE
            2DROP
          THEN
+         PASSES 1+!
       LOOP
       SORTED @  GAP 0=  AND          \ test for complete
    UNTIL
@@ -83,20 +110,9 @@ DECIMAL
 ;
 
 DECIMAL
-: SORTWORDS ( -- ) LOAD.NAMES  CR ." Sorting "  COMBSORT ;
-
-\ display the words in sorted order
-: .WORDS   ( -- )
-        CR
-        ITEMS @ 0
-        DO
-            I ]DATA @ .ID SPACE
-            ?BREAK
-            KEY? IF KEY DROP THEN
-        LOOP ;
+: SORTWORDS ( -- ) LOAD.NAMES CELLS  CR ." Sorting "  COMBSORT ;
 
 HEX
-: ID$     ( NFAaddr -- caddr len) COUNT 1F AND  ;
 
 : +PLACE  ( adr n adr -- )   2DUP 2>R  COUNT +  SWAP MOVE 2R> C+! ;
 
@@ -115,7 +131,7 @@ DECIMAL
             ITEMS @ 1-   0
             DO
                 PAD 82 BLANK
-                I ]DATA @ ID$ PAD PLACE
+                I ]DATA @ NFA>$ PAD PLACE
                 PAD 20 PADDED
                 S" ( -- )"  PAD +PLACE
                 PAD COUNT  #1 WRITE-LINE ?FILERR

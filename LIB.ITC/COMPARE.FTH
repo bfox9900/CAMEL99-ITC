@@ -9,7 +9,7 @@ CODE COMPARE
 ENDCODE
 DECIMAL
 
-\CODE COMPARE ( str1,n,str2 n -- 0:SAME, 1:GT, -1:LT)
+\ CODE COMPARE ( str1,n,str2 n -- 0:SAME, 1:GT, -1:LT)
 \    R1 POP,   \ str2
 \    R0 POP,   \ len
 \    R2 POP,   \ str1

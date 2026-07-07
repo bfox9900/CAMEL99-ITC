@@ -1,4 +1,4 @@
-\ GLOSSARY GENERATOR
+\ GLOSSARY GENERATOR  REWORKED to use COMPARE  2026
 
 \ This demo uses some advanced features of CAMEL99 forth
 \ 1. Dynamically allocating memory in the HEAP ( MALLOC )
@@ -11,21 +11,22 @@
 \ usage:  ASCENDING SORTWORDS  -or-  DESCENDING SORTWORDS
 
 NEEDS .ID        FROM DSK1.TOOLS
+NEEDS MOV,       FROM DSK1.ASM9900
 NEEDS TO         FROM DSK1.VALUES
 NEEDS IS         FROM DSK1.DEFER
 NEEDS ELAPSE     FROM DSK1.ELAPSE
 NEEDS WRITE-LINE FROM DSK1.ANSFILES
 NEEDS MORE       FROM DSK1.MORE
-NEEDS S=         FROM DSK1.COMPARE
-NEEDS MALLOC     FROM DSK1.MALLOC 
+NEEDS MALLOC     FROM DSK1.MALLOC
+NEEDS COMPARE    FROM DSK1.COMPARE
 
 HEX
 \ variables uses by COMBSORT
 VARIABLE SFLAG
 VARIABLE ITEMS
-0 VALUE GAP
 
-0 VALUE ^DATA   \ a data array pointer
+0  VALUE GAP
+0  VALUE ^DATA   \ a data array pointer
 
 : ]DATA    ( n -- ^data[n] ) CELLS ^DATA + ; \ index into ^DATA
 
@@ -44,15 +45,18 @@ VARIABLE ITEMS
              R> DUP .  ." words"
              ITEMS !  ;           \ store # items for sort to use
 
-\ compare strings uses S= (Camel Forth word)
-: COMPARE$ ( $1 $2 -- flag)  1+ SWAP COUNT S= ;
-: >$       ( $1 $2 -- flag)  COMPARE$ 0> ;  \ $1 > $2
-: <$       ( $1 $2 -- flag)  COMPARE$ 0< ;  \ $1 < $2
+\ compare strings
+HEX
+: NFA>$   COUNT 1F AND ;
+DECIMAL
+: COMPARE$ ( $1 $2 -- flag)  >R NFA>$ R> NFA>$ COMPARE ;
+: >$       ( $1 $2 -- flag)  COMPARE$ 0< ;  \ $1 > $2
+: <$       ( $1 $2 -- flag)  COMPARE$ 0> ;  \ $1 < $2
 
 
 DEFER PRECEDE   \ vectored string comparison operator
-: ASCENDING  ( -- )  ['] <$ IS PRECEDE ;
-: DESCENDING ( -- )  ['] >$ IS PRECEDE ;
+: ASCENDING  ( -- )  ['] >$ IS PRECEDE ;
+: DESCENDING ( -- )  ['] <$ IS PRECEDE ;
 
 ASCENDING   \ default sort direction
 
@@ -64,19 +68,19 @@ ASCENDING   \ default sort direction
 
 HEX
 : SORTWORDS ( -- )
-    ^DATA 0= ABORT" No buffer allocated" 
+    ^DATA 0= ABORT" No buffer allocated"
     LOAD.NAMES
     CR ." Sorting "
     ITEMS @ TO GAP                   \ init combort gap
     BEGIN
        GAP  /1.3  TO GAP             \ compute new gap width
        SFLAG ON                      \ sort flag set to TRUE
-       ITEMS @  GAP -  0             \ setup loop
+       ITEMS @ 1+ GAP -  0             \ setup loop
        DO
            I  GAP + ]DATA  I ]DATA   ( -- data[gap] data[i]  )
            OVER @ OVER @             ( -- data[gap] data[i] nfa1 nfa2)
            2DUP                      ( -- data[gap] data[i] nfa1 nfa2 nfa1 nfa2)
-           PRECEDE IF                \ compare string at nfa1,nfa2
+           >$ IF                \ compare string at nfa1,nfa2
                XCHG                  \ xchg if wrong order
                SFLAG OFF             \ we are not done yet
            ELSE
@@ -92,23 +96,23 @@ HEX
 \ display the words in sorted order
 : .WORDS   ( -- )
             CR
-            ITEMS @ 0
+            ITEMS @ 1+ 0
             DO
-               I ]DATA @ .ID SPACE
+               I ]DATA @ NFA>$ TYPE SPACE
                ?BREAK
             LOOP ;
 
-: ID$     ( NFAaddr -- caddr len) COUNT 1F AND  ;
 
-: +PLACE  ( adr n adr -- )   2DUP 2>R  COUNT +  SWAP MOVE 2R> C+! ;
+: +PLACE  ( adr n adr -- )   2DUP 2>R  COUNT +  SWAP CMOVE 2R> C+! ;
 
 DECIMAL
 
 CREATE OUT$  82 ALLOT ;
+CREATE BLANK$  HERE 40 BL FILL  \ needs a count
 
 0 VALUE #1
 
-: PADDED ( addr$  n -- )  SWAP C!  ;
+: PADDED ( addr$ n  -- )  SWAP C!  ;
 : BLANKS    BL FILL ;
 
 \ write the words in sorted order
@@ -117,10 +121,10 @@ CREATE OUT$  82 ALLOT ;
             ITEMS @ 0
             DO
                OUT$ 80 BLANKS
-               I ]DATA @ ID$ OUT$ PLACE
-                OUT$ 20 PADDED
+               I ]DATA @ NFA>$ OUT$ PLACE
+                OUT$ 14 PADDED
                 S" ( -- )"  OUT$ +PLACE
-                OUT$ COUNT  #1  WRITE-LINE ?FILERR
+                OUT$ COUNT  #1 WRITE-LINE ?FILERR
                ?BREAK
             LOOP ;
 
@@ -132,16 +136,16 @@ HEX
             ASCENDING SORTWORDS
             CR ." Writing file..."
             WRITE-WORDS
-            #1 CLOSE-FILE ?FILERR          
+            #1 CLOSE-FILE ?FILERR
             1000 MFREE               \ release the mmeory (low ram)
             0 TO ^DATA
             CR ." Complete"
             .ELAPSED
 ;
+DECIMAL
 
 PAGE
 \ A little systems work in Forth
 S" DSK3.GLOSS99" GLOSSARY
 
 MORE DSK3.GLOSS99
-
