@@ -114,7 +114,7 @@ DECIMAL
 
 HEX
 
-: +PLACE  ( adr n adr -- )   2DUP 2>R  COUNT +  SWAP MOVE 2R> C+! ;
+: +PLACE  ( adr n adr -- )   2DUP 2>R  COUNT +  SWAP CMOVE 2R> C+! ;
 
 DECIMAL
 
@@ -132,7 +132,7 @@ DECIMAL
             DO
                 PAD 82 BLANK
                 I ]DATA @ NFA>$ PAD PLACE
-                PAD 20 PADDED
+                PAD 14 PADDED
                 S" ( -- )"  PAD +PLACE
                 PAD COUNT  #1 WRITE-LINE ?FILERR
                ?BREAK
@@ -147,3 +147,7 @@ DECIMAL
             #1 CLOSE-FILE ?FILERR
             CR ." Complete"
 ;
+
+INCLUDE DSK1.MORE
+
+MORE DSK3.GLOSS99
