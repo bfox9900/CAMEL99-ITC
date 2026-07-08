@@ -123,12 +123,12 @@ DECIMAL
             ITEMS @  0
             DO
             \ build the string in PAD buffer
-                PAD 82 BLANK  \ init buffer to all spaces
-                I ]DATA @ NFA>$ PAD PLACE \ put name in buffer
-                PAD 14 PADDED  S" ( -- )"  PAD +PLACE
+               PAD 50 BLANKS  0 PAD C!
+               I ]DATA @ NFA>$ PAD PLACE \ put name in buffer
+               PAD 14 PADDED  S" ( -- )"  PAD +PLACE
 
-                \ if outfile is open this also goes to the file
-                PAD COUNT TYPE CR
+               \ if outfile is open, this also goes to the file
+               PAD COUNT TYPE CR
 
                ?BREAK
             LOOP ;

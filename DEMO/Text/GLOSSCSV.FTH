@@ -114,42 +114,49 @@ DECIMAL
 : +PLACE  ( adr n adr -- )   2DUP 2>R  COUNT +  SWAP CMOVE 2R> C+! ;
 
 DECIMAL
-
-0 VALUE #1
-
 \ output buffer formatting words
 : PADDED ( addr$  n -- )  SWAP C! ;
 : BLANKS ( addr -- )      BL FILL ;
 
-: ','  ( -- )  S"  , "  PAD +PLACE ;  \ add a comma/space to output buffer
+: :="" ( addr -- ) DUP 82 BLANKS  0 SWAP C! ;
+
+: ','  ( --  addr n) S"  , " ;
 
 : S+   ( addr len -- ) PAD +PLACE ; \ add string to outbut buffer
 
 \ write the words in sorted order
 : WRITE-WORDS   ( -- )
-            CR
-            ITEMS @ 1+ 0
-            DO
-               PAD 50 BLANKS
-               \ build the output string
-               I ]DATA @ ID$  PAD PLACE ',' ',' S" ( -- )" S+  ','
-               \ write the buffer to disk
-               PAD COUNT TYPE CR
-               ?BREAK
-            LOOP ;
+   CR
+   ITEMS @ 0
+   DO
+      \ init buffer with blanks, zero length
+      PAD :=""
+
+      \ build the output string
+      I ]DATA @ NFA>$ PAD PLACE  ',' S+  ',' S+  S" ( -- )" S+  ','
+
+     \ write the buffer to screen and disk with make-output
+      PAD COUNT TYPE CR
+
+      ?BREAK
+   LOOP ;
 
 DECIMAL
 : GLOSSARY ( path$ len -- )
-            TICKER OFF
-            DV80 W/O OPEN-FILE ?FILERR TO #1
-            ASCENDING SORTWORDS
+            CR ." Create output file ..."
+            MAKE-OUTPUT
+            CR ." Loading names... "
+            LOAD.NAMES
+            CR ." Sorting "
+            COMBSORT
             CR ." Writing file..."
             WRITE-WORDS
-            #1 CLOSE-FILE ?FILERR
-            CR ." Complete"
-            .ELAPSED
+            CLOSE-OUTPUT
+            CR ." End job"
 ;
 
-PAGE
-\ A little systems work in Forth
-\ S" DSK3.GLOSS99" GLOSSARY
+S" DSK3.GLOSS99" GLOSSARY
+
+INCLUDE DSK1.MORE
+
+MORE DSK3.GLOSS99 \ displays the out file
