@@ -1,4 +1,5 @@
 \ GLOSSARY GENERATOR  Updated to use current libraries  7Jul2022  Brian Fox
+\ reworked using outfile library  july 2026
 
 \ This demo uses some advanced features of CAMEL99 forth
 \ 1. Create a very fast "table" array in low RAM
@@ -9,6 +10,8 @@
 \ 6. Sorts an array of pointers. The actual strings do not move
 
 \ usage:  ASCENDING SORTWORDS  -or-  DESCENDING SORTWORDS
+
+NEEDS MAKE-OUTPUT FROM DSK1.OUTFILE
 
 NEEDS .ID        FROM DSK1.TOOLS
 NEEDS TO         FROM DSK1.VALUES
@@ -21,34 +24,50 @@ NEEDS TABLE2:    FROM DSK1.TABLES
 HEX
 2000 TABLE2: ]DATA  ( n -- [n]data ) \ low RAM array
 
+: FILL.DATA   1000 0 DO  I  DUP ]DATA !  LOOP ;
+: SEE.DATA    1000 0 DO  I ]DATA ?  ?TERMINAL ABORT" BREAK"   LOOP ;
+
 VARIABLE ITEMS
-\ load the name field address (NFA) of all words, into ^DATA
+\ load the name field address (NFA) of all words, into ]DATA
 : LOAD.NAMES ( -- addr cells )
-            0 ]DATA 2000 0 FILL
-             CR ." Loading names... "
-             LATEST @             ( -- nfa )
-             0 >R                 \ put a loop index on return stack
-             BEGIN
-                DUP R@ ]DATA !    ( -- nfa )
-                R> 1+ >R          \ increment loop counter
-                NFA>LFA @         \ goto link field, fetch next NFA
-                DUP 0=            \ is it zero?
-             UNTIL
-             0 ]DATA  R> DUP ITEMS ! DUP .  ." words"
+      0 ]DATA 2000 ERASE
+      ITEMS OFF             \ put a loop index on return stack
+      LATEST @             ( -- nfa )
+      BEGIN
+         DUP
+      WHILE
+         DUP ITEMS @ ]DATA !    ( -- nfa )
+         ITEMS 1+!         \ increment loop counter
+         NFA>LFA @         \ goto link field, fetch next NFA
+      REPEAT
+      0 ]DATA  ITEMS @ CELLS
+      ITEMS ? ." words"
 ;
 
-\ compare strings uses S=
-: COMPARE$ ( $1 $2 -- flag)  COUNT ROT COUNT COMPARE ;
+\ display the words from []data array
+: .NAMES   ( -- )
+        CR
+        ITEMS @ 1+ 0
+        DO
+            I ]DATA @ .ID SPACE
+            ?BREAK
+            KEY? IF KEY DROP THEN
+        LOOP ;
+
+
+\ compare counted strings using COMPARE
+HEX
+: NFA>$   COUNT 1F AND ;
+DECIMAL
+: COMPARE$ ( $1 $2 -- flag)  NFA>$ ROT NFA>$ COMPARE ;
 : >$       ( $1 $2 -- flag)  COMPARE$ 0> ;  \ $1 > $2
 : <$       ( $1 $2 -- flag)  COMPARE$ 0< ;  \ $1 < $2
-
 
 DEFER PRECEDE   \ this will be the string comparison operator
 : ASCENDING  ( -- )  ['] <$ IS PRECEDE ;
 : DESCENDING ( -- )  ['] >$ IS PRECEDE ;
 
  ASCENDING   \ default sort direction
-
 
 HEX
 \ gratuitous variables for clarity
@@ -62,45 +81,39 @@ DECIMAL
 
 : XCHG  ( addr1 addr2 -- ) 2DUP @ SWAP @  ROT ! SWAP ! ;
 
+\ using CELLS+ improves speed by 13.5%
+HEX        \          1 LSHIFT  +
+CODE CELLS+ ( n -- n') A104 ,  A136 ,  NEXT, ENDCODE
+
+VARIABLE PASSES  \ counting passes slows things down
+
+DECIMAL
 : COMBSORT ( addr n -- )
+   PASSES OFF
     DUP>R  TO GAP                    \ save n on Rstack and in GAP
     BEGIN
       GAP 1.35/  TO GAP              \ re-compute the gap
       SORTED ON
       R@ ( -- n) GAP -  0           \ n-gap is loop limit
       DO ( -- addr )
-         DUP I CELLS +  DUP GAP CELLS +  ( -- addr1 addr2 )
-         OVER @ OVER @ PRECEDE       \ compare the contents of cells, which are strings
+         DUP I CELLS+  DUP GAP CELLS+  ( -- addr1 addr2 )
+         OVER @ OVER @ PRECEDE      \ compare the contents of cells
          IF
             XCHG                     \ Exchange the data in the cells
             SORTED OFF               \ flag we are not sorted
          ELSE
            2DROP
          THEN
+         PASSES 1+!
       LOOP
       SORTED @  GAP 0=  AND          \ test for complete
    UNTIL
    R> 2DROP
 ;
 
+: +PLACE  ( adr n adr -- )   2DUP 2>R  COUNT +  SWAP CMOVE 2R> C+! ;
 
 DECIMAL
-: SORTWORDS ( -- ) LOAD.NAMES  CR ." Sorting "  COMBSORT ;
-
-
-\ display the words in sorted order
-: .WORDS   ( -- )
-            CR
-            ITEMS @ 0
-            DO
-               I ]DATA @ .ID SPACE
-               ?BREAK
-            LOOP ;
-HEX
-: ID$     ( NFAaddr -- caddr len) COUNT 1F AND  ;
-DECIMAL
-
-: +PLACE  ( adr n adr -- )   2DUP 2>R  COUNT +  SWAP MOVE 2R> C+! ;
 
 0 VALUE #1
 
@@ -115,13 +128,13 @@ DECIMAL
 \ write the words in sorted order
 : WRITE-WORDS   ( -- )
             CR
-            ITEMS @ 0
+            ITEMS @ 1+ 0
             DO
                PAD 50 BLANKS
                \ build the output string
                I ]DATA @ ID$  PAD PLACE ',' ',' S" ( -- )" S+  ','
                \ write the buffer to disk
-               PAD COUNT #1  WRITE-LINE ?FILERR
+               PAD COUNT TYPE CR
                ?BREAK
             LOOP ;
 

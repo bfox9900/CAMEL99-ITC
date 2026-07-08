@@ -31,7 +31,6 @@ VARIABLE ITEMS
 \ load the name field address (NFA) of all words, into ]DATA
 : LOAD.NAMES ( -- addr cells )
       0 ]DATA 2000 ERASE
-      CR ." Loading names... "
       ITEMS OFF             \ put a loop index on return stack
       LATEST @             ( -- nfa )
       BEGIN
@@ -41,14 +40,14 @@ VARIABLE ITEMS
          ITEMS 1+!         \ increment loop counter
          NFA>LFA @         \ goto link field, fetch next NFA
       REPEAT
-      0 ]DATA  ITEMS @
+      0 ]DATA  ITEMS @ CELLS
       ITEMS ? ." words"
 ;
 
 \ display the words from []data array
 : .NAMES   ( -- )
         CR
-        ITEMS @ 1+ 0
+        ITEMS @  0
         DO
             I ]DATA @ .ID SPACE
             ?BREAK
@@ -112,16 +111,9 @@ DECIMAL
    R> 2DROP
 ;
 
-DECIMAL
-: SORTWORDS ( -- ) LOAD.NAMES CELLS  CR ." Sorting "  COMBSORT ;
-
-HEX
-
 : +PLACE  ( adr n adr -- )   2DUP 2>R  COUNT +  SWAP CMOVE 2R> C+! ;
 
 DECIMAL
-
-\ CREATE OUT$  82 ALLOT
 
 0 VALUE #1
 
@@ -131,27 +123,35 @@ DECIMAL
 \ write the words in sorted order
 : WRITE-WORDS   ( -- )
             CR
-            ITEMS @ 1-   0
+            ITEMS @  0
             DO
+            \ build the string in PAD buffer
                 PAD 82 BLANK  \ init buffer to all spaces
-                I ]DATA @ NFA>$ PAD PLACE
+                I ]DATA @ NFA>$ PAD PLACE \ put name in buffer
                 PAD 14 PADDED  S" ( -- )"  PAD +PLACE
+
+                \ if outfile is open this also goes to the file
                 PAD COUNT TYPE CR
+
                ?BREAK
             LOOP ;
 
 DECIMAL
 : GLOSSARY ( path$ len -- )
+            CR ." Create output file ..."
             MAKE-OUTPUT
-            SORTWORDS
+            CR ." Loading names... "
+            LOAD.NAMES
+            CR ." Sorting "
+            COMBSORT
             CR ." Writing file..."
             WRITE-WORDS
             CLOSE-OUTPUT
-            CR ." Complete"
+            CR ." End job"
 ;
 
-S" DSK3.GLOSS99B" GLOSSARY
+S" DSK3.GLOSS99" GLOSSARY
 
 INCLUDE DSK1.MORE
 
-MORE DSK3.GLOSS99B
+MORE DSK3.GLOSS99 \ displays the out file
