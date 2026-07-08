@@ -1,4 +1,5 @@
 \ GLOSSARY GENERATOR  Updated to use current libraries  7Jul2022  Brian Fox
+\ reworked using outfile library  july 2026
 
 \ This demo uses some advanced features of CAMEL99 forth
 \ 1. Create a very fast "table" array in low RAM
@@ -9,6 +10,8 @@
 \ 6. Sorts an array of pointers. The actual strings do not move
 
 \ usage:  ASCENDING SORTWORDS  -or-  DESCENDING SORTWORDS
+
+NEEDS MAKE-OUTPUT FROM DSK1.OUTFILE
 
 NEEDS .ID        FROM DSK1.TOOLS
 NEEDS TO         FROM DSK1.VALUES
@@ -130,24 +133,25 @@ DECIMAL
             CR
             ITEMS @ 1-   0
             DO
-                PAD 82 BLANK
+                PAD 82 BLANK  \ init buffer to all spaces
                 I ]DATA @ NFA>$ PAD PLACE
-                PAD 14 PADDED
-                S" ( -- )"  PAD +PLACE
-                PAD COUNT  #1 WRITE-LINE ?FILERR
+                PAD 14 PADDED  S" ( -- )"  PAD +PLACE
+                PAD COUNT TYPE CR
                ?BREAK
             LOOP ;
 
 DECIMAL
 : GLOSSARY ( path$ len -- )
-            DV80 W/O OPEN-FILE ?FILERR TO #1
+            MAKE-OUTPUT
             SORTWORDS
             CR ." Writing file..."
             WRITE-WORDS
-            #1 CLOSE-FILE ?FILERR
+            CLOSE-OUTPUT
             CR ." Complete"
 ;
 
+S" DSK3.GLOSS99B" GLOSSARY
+
 INCLUDE DSK1.MORE
 
-MORE DSK3.GLOSS99
+MORE DSK3.GLOSS99B
