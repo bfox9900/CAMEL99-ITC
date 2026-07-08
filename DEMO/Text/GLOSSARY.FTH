@@ -114,9 +114,6 @@ DECIMAL
 : +PLACE  ( adr n adr -- )   2DUP 2>R  COUNT +  SWAP CMOVE 2R> C+! ;
 
 DECIMAL
-
-0 VALUE #1
-
 : PADDED ( addr$  n -- )  SWAP C!  ;
 : BLANK    BL FILL ;
 
