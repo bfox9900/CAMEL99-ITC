@@ -46,7 +46,7 @@ HEX
 : (R13)  R13 () ;   : (R14)  R14 () ;   : (R15)  R15 () ;
 
 
-: L:  ( -- addr)  HERE CONSTANT ;  \ labels return there location address
+: L:  ( -- addr) CREATE ;  \ labels return a memory address
 
 : $># ( addr len -- n)
    OVER C@ [CHAR] > = IF HEX  1 /STRING THEN NUMBER? ABORT" Bad number" ;
