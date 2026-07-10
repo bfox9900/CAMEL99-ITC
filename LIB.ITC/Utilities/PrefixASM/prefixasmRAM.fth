@@ -46,7 +46,8 @@ HEX
 : (R13)  R13 () ;   : (R14)  R14 () ;   : (R15)  R15 () ;
 
 
-: L:  ( -- addr) CREATE ;  \ labels return a memory address
+\ labels return a memory address
+: L:  ( -- addr) CREATE HERE , DOES> @ ;
 
 : $># ( addr len -- n)
    OVER C@ [CHAR] > = IF HEX  1 /STRING THEN NUMBER? ABORT" Bad number" ;
@@ -89,9 +90,13 @@ HEX
 
 : <REG>    ( -- n)    PARSE-NAME EVALUATE  ?REG ;
 
-: <1ARG>   ( -- u u ) 1 PARSE ?REG*+  EVALUATE ;
+: <*REG+>  ( -- u u ) 1 PARSE  EVALUATE  ?REG*+ ;
 : <#ARG>   ( -- u)    BL PARSE  $>#  ;
-: <REG,#>  ( -- ) 1 PARSE <ARG,ARG> 2>R EVALUATE ?REG  2R> EVALUATE ;
+: <REG,#>  ( -- )
+   1 PARSE <ARG,ARG> 2>R EVALUATE \ ?REG
+   2R> $># ;
+
+: <1ARG>  PARSE-NAME EVALUATE ; \ NO protection
 
 : <2ARGS>  ( -- u u )
    1 PARSE <ARG,ARG> 2>R
@@ -197,17 +202,18 @@ CR .( Pseudo instructions...)
 : BEGIN   ( -- addr)  HERE ;
 : WHILE  ( token -- *while *begin) IF  SWAP ;
 : AGAIN  ( *begin --) AGAIN, ;
-: UNTIL   ( *begin token --) <1ARG> UNTIL, ;
+: UNTIL   ( *begin token --)  <1ARG> UNTIL, ;
 : REPEAT ( *while *begin -- ) AGAIN, ENDIF, ;
 
 \ end directive can have a label following to indicate the label to start
 : END      RESOLVER  ;  \ resolve all jmp labels
 
-ONLY FORTH ALSO ASSEMBLER ALSO FORTH DEFINITIONS
+: CODE      ALSO ASSEMBLER  CODE ;
+: ENDCODE   RESOLVER ?CSP  PREVIOUS ;
 
-\ override these words in Forth kernel
-: CODE      ONLY ASSEMBLER ALSO FORTH  CODE ;
-: ENDCODE
-   RESOLVER ENDCODE
-   ONLY FORTH ALSO ASSEMBLER ALSO FORTH DEFINITIONS
-;
+ONLY FORTH DEFINITIONS ALSO ASSEMBLER
+\ OVERride these words in the kernel with the new versions
+: CODE      CODE ;
+: ENDCODE  ENDCODE ;
+
+ONLY FORTH ALSO ASSEMBLER ALSO FORTH

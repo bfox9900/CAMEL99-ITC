@@ -1,6 +1,13 @@
 \ Examples for RAM prefix Assembler
 
 \ structured looping ...
+CODE TEST
+    BEGIN
+    DEC R0
+    UNTIL EQ
+    RET/NEXT
+ENDCODE
+
 CODE LOOP1
     PUSH TOS
     LI   TOS,-1
@@ -11,7 +18,7 @@ CODE LOOP1
         ADD R0,R2
         DEC TOS
     UNTIL EQ
-    TOS POP,
+    POP TOS
     RET/NEXT
 ENDCODE
 
@@ -123,6 +130,5 @@ CODE VARTEST2
         MOV X @@,Y @@
         RET/NEXT
 ENDCODE
-
 
 FORTH
