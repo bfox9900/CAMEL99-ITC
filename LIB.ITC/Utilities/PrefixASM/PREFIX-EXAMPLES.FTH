@@ -42,11 +42,11 @@ ENDCODE
 CODE LOOP3
         PUSH TOS
         LI  TOS,-1
-1 $:    DEC TOS
-        INC R0
+1 $:    INC R0
         INC R1
         MOV R1,R2
         ADD R0,R2
+        DEC TOS
         JNE 1 $
         TOS POP,
         RET/NEXT

@@ -1,7 +1,13 @@
-\ L: and workspace example
+\ Code in nested workspaces example  BFox 2026
 
+ONLY FORTH ALSO ASSEMBLER ALSO FORTH DEFINITIONS
 
-CODE TEST1
+DECIMAL
+CREATE WRKSP1    16 CELLS ALLOT
+CREATE WRKSP2    16 CELLS ALLOT
+CREATE WRKSP3    16 CELLS ALLOT
+
+WRKSP1 PROG: PROG1
     LI   R0,-1
     BEGIN
         INC R1
@@ -12,24 +18,12 @@ CODE TEST1
 
         DEC R0
     UNTIL EQ
-    RET/NEXT
-    \ RTWP  \ return to previous workspace
-
-L: WRKSP1  16 CELLS ALLOT  WRKSP1 16 CELLS ERASE
-L: VECTOR1   WRKSP1 , TEST1 ,
-
-\ CODE words can be called directly from Forth
-CODE WORKSPACE-FUN
-    BLWP VECTOR1 @@
-
-    RET/NEXT
-ENDCODE
+    RTWP         \ return to previous workspace
+;PROG
 
 
-
-L:  TEST2
-    BLWP VECTOR1 @@
-
+WRKSP2 PROG: PROG2
+    BLWP PROG1 @@
     LI   R0,-1
     BEGIN
         DEC R1
@@ -41,15 +35,11 @@ L:  TEST2
         DEC R0
     UNTIL EQ
     RTWP
-
-L: WRKSP2    16 CELLS ALLOT
-L: VECTOR2   WRKSP2 , TEST2 ,
+;PROG
 
 
-
-L: TEST3
-    BLWP VECTOR2 @@
-
+WRKSP3 PROG: PROG3
+    BLWP PROG2 @@
     LI   R0,-1
     BEGIN
         DECT R1
@@ -61,9 +51,10 @@ L: TEST3
         DEC R0
     UNTIL EQ
     RTWP
-
-L: WRKSP3    16 CELLS ALLOT
-L: VECTOR3   WRKSP3 , TEST3 ,
+;PROG
 
 
-L: ?TERMINAL EQU >0020    \ ROM "break" key reader sub-routine
+CODE NESTED
+    BLWP PROG3 @@  \ vector3 calls vector2 which calls vector1
+    RET/NEXT         \ return to Forth
+ENDCODE

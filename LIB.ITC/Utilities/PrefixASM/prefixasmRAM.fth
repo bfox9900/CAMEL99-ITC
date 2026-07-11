@@ -71,7 +71,7 @@ HEX
    2DUP [CHAR] , $POS 0= ABORT" Comma expected" ;
 
 : ?LABEL  ( addr len -- addr len )
-   2DUP [CHAR] $ $POS 0= ABORT" Missing '$'" ;
+   2DUP [CHAR] $ $POS 0= ABORT" '$' expected" ;
 
 : ?1ARG   ( addr len -- addr len)
    2DUP [CHAR] , $POS ABORT" One arg expected" ;
@@ -83,6 +83,8 @@ HEX
 
 \ ************************************************************
 \ *               ARGUMENT PARSING WORDS
+
+: <LABEL>  1 PARSE ?LABEL EVALUATE ;
 
 \ split string at comma & remove comma from $2
 : <ARG,ARG> ( addr len -- addr2 len2 addr1 len1)
@@ -96,18 +98,22 @@ HEX
    1 PARSE <ARG,ARG> 2>R EVALUATE \ ?REG
    2R> $># ;
 
-: <1ARG>  PARSE-NAME EVALUATE ; \ NO protection
+: <1ARG>  ( <text> -- n) 1 PARSE EVALUATE ; \ NO protection
 
 : <2ARGS>  ( -- u u )
    1 PARSE <ARG,ARG> 2>R
    EVALUATE ?REG*+
    2R> EVALUATE ?REG*+ ;
 
+: <JMPTOKEN> ( <text> -- n)
+   <1ARG>  DUP 1 13 WITHIN 0= ABORT" Jump token expected" ;
+
 \ ************************************************************
 \ Prefix instructions with 1 arg
 : B     <1ARG>  B, ;
 : BL    <1ARG>  BL, ;
 : BLWP  <1ARG>  BLWP, ;
+
 : CLR   <1ARG>  CLR, ;
 : SETO  <1ARG>  SETO, ;
 : INV   <1ARG>  INV, ;
@@ -162,7 +168,6 @@ HEX
 : SRC    <REG,#> SRC, ;
 : SRL    <REG,#> SRL, ;
 
-: <LABEL>  1 PARSE ?LABEL EVALUATE ;
 
 : JMP   <LABEL> JMP, ;
 : JLT   <LABEL> JLT, ;
@@ -195,24 +200,48 @@ CR .( Pseudo instructions...)
 : RPUSH  <REG> RPUSH, ;
 : RPOP   <REG> RPOP, ;
 
-: IF      ( addr token -- 'jmp') <1ARG> IF,  ;
+: IF      ( addr token -- 'jmp') <JMPTOKEN> IF,  ;
 : ENDIF   ( 'jmp addr --) ENDIF,  ;
 : ELSE    ( -- addr ) ELSE, ;
 
 : BEGIN   ( -- addr)  HERE ;
 : WHILE  ( token -- *while *begin) IF  SWAP ;
 : AGAIN  ( *begin --) AGAIN, ;
-: UNTIL   ( *begin token --)  <1ARG> UNTIL, ;
+: UNTIL   ( *begin token --)  <JMPTOKEN> UNTIL, ;
 : REPEAT ( *while *begin -- ) AGAIN, ENDIF, ;
 
 \ end directive can have a label following to indicate the label to start
-: END      RESOLVER  ;  \ resolve all jmp labels
+: END       RESOLVER ;  \ resolve all jmp labels
 
 : CODE      ALSO ASSEMBLER  CODE ;
 : ENDCODE   RESOLVER ?CSP  PREVIOUS ;
 
+\ ------------------------------------------------
+: (CODE) ALSO ASSEMBLER CREATE  ;
+
+\ a LEAF: is the simplest 9900 native sub-routine.
+\ Call with BL
+\ Exit with RT
+: LEAF:   (CODE)  !CSP  ;
+: ;LEAF  ?CSP PREVIOUS ;
+
+ \ a "sub:" is a nestable sub-routine.
+ \ Call with BL
+ \ Exit using RET
+: SUB:   (CODE)   R11 PUSH,  !CSP  ;
+: ;SUB   ;LEAF ;
+: RET    R11 POP,  RT,  ;     \ Return from sub-routine
+
+\ A "prog:" Takes a workspace argument and creates a vector
+\ to the code follwing the declaration.
+\ Call with BLWP
+\ Exit with RTWP
+\ Exit a PROG: using the RTWP instrucion
+: PROG: ( wksp -- ) (CODE)   ,  HERE CELL+ , !CSP    ;
+: ;PROG  ( -- ) ;LEAF ;
+
 ONLY FORTH DEFINITIONS ALSO ASSEMBLER
-\ OVERride these words in the kernel with the new versions
+\ override these words in the kernel with the new versions
 : CODE      CODE ;
 : ENDCODE  ENDCODE ;
 
