@@ -45,12 +45,22 @@ HEX
 : (R10)  R10 () ;   : (R11)  R11 () ;   : (R12)  R12 () ;
 : (R13)  R13 () ;   : (R14)  R14 () ;   : (R15)  R15 () ;
 
+\ characters as constants
+CHAR ,  CONSTANT ','
+CHAR $  CONSTANT '$'
+CHAR >  CONSTANT '>'
+CHAR @  CONSTANT '@'
 
 \ labels return a memory address
 : L:  ( -- addr) CREATE HERE , DOES> @ ;
 
+: MATCH  ( addr len char -- ?)  2 PICK C@ = ;
+
+
 : $># ( addr len -- n)
-   OVER C@ [CHAR] > = IF HEX  1 /STRING THEN NUMBER? ABORT" Bad number" ;
+   '>'  MATCH
+   IF HEX  1 /STRING THEN NUMBER? ABORT" Bad number" ;
+
 
 : LASTLABEL! ( n -- )  LATEST @ NFA>CFA >BODY ! ;
 \ EQU must be used with the label definer  'L:'
@@ -65,21 +75,36 @@ HEX
 
 : $POS  ( addr len char -- n) SCAN NIP ;
 
+
+
 \ ************************************************************
 \  ARGUMENT TESTERS
 : ?COMMA  ( addr len -- addr len )
-   2DUP [CHAR] , $POS 0= ABORT" Comma expected" ;
+   2DUP ',' $POS 0= ABORT" Comma expected" ;
 
 : ?LABEL  ( addr len -- addr len )
-   2DUP [CHAR] $ $POS 0= ABORT" '$' expected" ;
+   2DUP '$' $POS 0= ABORT" '$' expected" ;
 
 : ?1ARG   ( addr len -- addr len)
-   2DUP [CHAR] , $POS ABORT" One arg expected" ;
+   2DUP ',' $POS ABORT" One arg expected" ;
 
 : ?REG     ( n -- n ?) DUP 0F 0 WITHIN ABORT" Bad address mode" ;
 
 \ 0 .. 3F covers all registers and addressing modes
 : ?REG*+  ( n -- n ?) DUP 3F 0 WITHIN ABORT" Register required" ;
+
+: ?HEXADDR   '>' MATCH IF HEX  1 /STRING THEN ;
+
+: ?ADDR|REG ( addr len -- addr|reg)
+   '@' MATCH
+   IF    1 /STRING         \ Process as address
+         ?HEXADDR EVALUATE
+         @@                \ symbolic addressing operator
+
+   ELSE  EVALUATE ?REG*+   \ evaluate as register
+   THEN  DECIMAL           \ restore default radix
+;
+
 
 \ ************************************************************
 \ *               ARGUMENT PARSING WORDS
@@ -87,23 +112,33 @@ HEX
 : <LABEL>  1 PARSE ?LABEL EVALUATE ;
 
 \ split string at comma & remove comma from $2
-: <ARG,ARG> ( addr len -- addr2 len2 addr1 len1)
-  ?COMMA  [CHAR] , SPLIT  2SWAP  1 /STRING ;
+: <ARG,ARG> ( addr len -- addr1 len1 addr2 len2)
+  ?COMMA          \ test comma present
+  ',' SPLIT       \ split strings at comma
+   BL SKIP        \ arg1 remove leading spaces
+   2SWAP
+   1 /STRING      \ arg2 cut leading comma
+   BL SKIP        \ skip leading spaces
+;
 
-: <REG>    ( -- n)    PARSE-NAME EVALUATE  ?REG ;
+: <REG>    ( -- n) PARSE-NAME EVALUATE  ?REG ;
 
 : <*REG+>  ( -- u u ) 1 PARSE  EVALUATE  ?REG*+ ;
+
 : <#ARG>   ( -- u)    BL PARSE  $>#  ;
+
 : <REG,#>  ( -- )
-   1 PARSE <ARG,ARG> 2>R EVALUATE \ ?REG
+   1 PARSE <ARG,ARG>
+   2>R  EVALUATE \ ?REG
    2R> $># ;
 
-: <1ARG>  ( <text> -- n) 1 PARSE EVALUATE ; \ NO protection
+: <1ARG>  ( <text> -- n) 1 PARSE  BL SKIP  ?ADDR|REG ;
 
-: <2ARGS>  ( -- u u )
-   1 PARSE <ARG,ARG> 2>R
-   EVALUATE ?REG*+
-   2R> EVALUATE ?REG*+ ;
+: <2ARGS>  ( <arg1>,<arg2> -- u u )
+   1 PARSE <ARG,ARG>
+   2>R ?ADDR|REG  \ process arg1
+   2R> ?ADDR|REG  \ process arg2
+;
 
 : <JMPTOKEN> ( <text> -- n)
    <1ARG>  DUP 1 13 WITHIN 0= ABORT" Jump token expected" ;
