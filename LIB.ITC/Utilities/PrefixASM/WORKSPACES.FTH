@@ -7,16 +7,19 @@ CREATE WRKSP1    16 CELLS ALLOT
 CREATE WRKSP2    16 CELLS ALLOT
 CREATE WRKSP3    16 CELLS ALLOT
 
+L: LRAM  EQU >2000
+
 WRKSP1 PROG: PROG1
     LI   R0,>FFFF
+    CLR @LRAM
     BEGIN
         INC R1
         INC R2
         INC R3
         INC R4
         INC R5
-        MOV R5,@>2000
-        MOV @>2000,@>2020
+        MOV R5,@LRAM
+        MOV @>LRAM,@>2020
         MOV @>2020,R6
 
         DEC R0
@@ -69,3 +72,12 @@ CODE NESTED
     BLWP @PROG3   \ vector3 calls vector2 which calls vector1
     RET/NEXT       \ return to Forth
 ENDCODE
+
+DECIMAL
+: ERASEALL
+  WRKSP1 16 CELLS ERASE
+  WRKSP2 16 CELLS ERASE
+  WRKSP3 16 CELLS ERASE
+;
+
+: RUN  ERASEALL  NESTED ;

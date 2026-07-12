@@ -8,10 +8,11 @@ ONLY FORTH DEFINITIONS
 
 NEEDS MEM@  FROM DSK1.TOOLS
 
-: 3RD  ( a b c -- a b c a ) 2 PICK ;
+\ split a string char. Return 2 strings
 : SPLIT ( addr len char -- str2 len2 str1 len1)
-    >R  2DUP  R> SCAN  2SWAP  3RD - ;
+   >R  2DUP  R> SCAN  2SWAP  2 PICK  - ;
 
+HERE
 DECIMAL
 
 VOCABULARY ASSEMBLER
@@ -54,8 +55,7 @@ CHAR @  CONSTANT '@'
 \ labels return a memory address
 : L:  ( -- addr) CREATE HERE , DOES> @ ;
 
-: MATCH  ( addr len char -- ?)  2 PICK C@ = ;
-
+: MATCH  ( addr len char -- ?) 2 PICK C@ = ;
 
 : $># ( addr len -- n)
    '>'  MATCH
@@ -74,8 +74,6 @@ CHAR @  CONSTANT '@'
 : EQU   PARSE-NAME  $># LASTLABEL! DECIMAL   ;
 
 : $POS  ( addr len char -- n) SCAN NIP ;
-
-
 
 \ ************************************************************
 \  ARGUMENT TESTERS
@@ -118,7 +116,6 @@ CHAR @  CONSTANT '@'
    BL SKIP        \ arg1 remove leading spaces
    2SWAP
    1 /STRING      \ arg2 cut leading comma
-   BL SKIP        \ skip leading spaces
 ;
 
 : <REG>    ( -- n) PARSE-NAME EVALUATE  ?REG ;
@@ -281,3 +278,4 @@ ONLY FORTH DEFINITIONS ALSO ASSEMBLER
 : ENDCODE  ENDCODE ;
 
 ONLY FORTH ALSO ASSEMBLER ALSO FORTH
+HERE SWAP - DECIMAL CR .  .( bytes)
