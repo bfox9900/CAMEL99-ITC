@@ -289,6 +289,8 @@ CR .( Simplified branching and looping)
        REVEAL             \ (just like ";" does)
 ; IMMEDIATE
 
+HERE SWAP - DECIMAL CR .
+
 \ ============================================================
 CR .( CAMEL99 Forth customization)
 4 CONSTANT TOS
@@ -326,7 +328,7 @@ HEX
 : NEXT,   ( -- )  045A ,  ;  \ CAMEL99 NEXT: B *R10
 
 \ PUSH & POP for both stacks
-MACRO PUSH  " SP DECT,  <REG> *SP  MOV,"  \ 10+18 = 28  cycles
+MACRO PUSH  " SP DECT,  <REG> *SP  MOV,"   \ 10+18 = 28  cycles
 MACRO POP   " MOV <REG> *SP+   SWAP MOV,"  \ 22 cycles
 
 : RPUSH,  ( src -- ) RP DECT,  *RP   MOV, ;

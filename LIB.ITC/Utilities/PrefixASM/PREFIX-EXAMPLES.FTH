@@ -108,26 +108,26 @@ VARIABLE X
 VARIABLE Y
 
 CODE VARTEST
-        CLR  X @@
-        SETO Y @@
+        CLR  @X
+        SETO @Y
 
-1 $:    INC X @@
-        DEC Y @@
+1 $:    INC @X
+        DEC @Y
         JNE 1 $
 
-        MOV X @@,Y @@
+        MOV @X,@Y
         RET/NEXT
 ENDCODE
 
 CODE VARTEST2
         LI R0,X
-        SETO Y @@
+        SETO @Y
 
 1 $:    INC *R0    \ incr. X indirectly
-        DEC Y @@
+        DEC @Y
         JNE 1 $
 
-        MOV X @@,Y @@
+        MOV @X,@Y
         RET/NEXT
 ENDCODE
 
