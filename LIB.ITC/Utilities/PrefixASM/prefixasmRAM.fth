@@ -142,6 +142,7 @@ CHAR @  CONSTANT '@'
 
 \ ************************************************************
 \ Prefix instructions with 1 arg
+
 : B     <1ARG>  B, ;
 : BL    <1ARG>  BL, ;
 : BLWP  <1ARG>  BLWP, ;
