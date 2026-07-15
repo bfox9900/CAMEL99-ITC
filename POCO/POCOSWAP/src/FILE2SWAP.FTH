@@ -116,8 +116,6 @@ VARIABLE VMDP   \ virtual memory pointer
     VIRT>REAL 2DUP C! 1+ SWAP 1+ CMOVE ;
 
 \ ==============================================================
-
-
 : PURGE ( -- )
     BASE @ >R
     DECIMAL

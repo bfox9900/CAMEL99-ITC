@@ -1,1 +1,1 @@
-This folder contains files in TI-99 disk format
+This folder contains files in TI-99 disk format for the POCO editor using a SWAPFILE
