@@ -32,7 +32,7 @@ CREATE SRCH$  42 ALLOT
 
 : ?EDIT  0= ABORT" Can't find in file"  EDIT ;
 
-: <LOC>  SRCH$ COUNT  TOPLINE @ FINDER  ?EDIT ;
+: <FIND>  SRCH$ COUNT  TOPLINE @ FINDER  ?EDIT ;
 
 : LOC  ( -- ?)
     TOPLINE OFF CURPOS OFF

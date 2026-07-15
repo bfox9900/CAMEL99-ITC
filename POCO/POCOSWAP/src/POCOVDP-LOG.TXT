@@ -1,0 +1,55 @@
+jULY 30 2025
+
+Changed buffers to use space filled memory.
+Get length with 80 -TRAILING
+Now lots more bugs to kill.
+
+Pushright not retaining changes.
+insert line fails
+
+Oct 14 2025
+Back at it.  Editing saves only 1st character ??
+
+COMPlete re-work. removed []buffers. Use 1 EDIT-BUFFER.
+All text remains in VDP POOL unless it's the cursor line.
+
+cursor line is overwriting the first 5 chars. ???
+Fix:  I was loading  EDIT-BUFFER with VPLACE which puts a string into VDP RAM.
+      Now using V$!  :-)
+
+Bug #4
+CHARACTERS ARE NOT GOING INTO THE EDIT-BUFFER. Fixed!!
+
+Bug #5
+STACK STRING LEFT ON STACK AFTER TYPING A CHAR.
+Problem was in ?WRITE-BACK . Fixed
+
+Bug #6
+Cursor stops at last line. Pressing enter does not add a new line but crashes.
+*temp fix*.  Enter does not append a new line. Stops and end of file.
+
+Bug #7
+Deleteline FNCT-8 not working because I "improved" them. Went back to old versions.
+UPDATE is not needed because we are messing with the NODES not the text.
+
+bUG# 8
+DELChar works from column zero, but not from cursor in middel of line.  fixed.
+
+BUG 9
+NEWLINE not behaving at last line of file. FIXED
+
+V 0.8 Oct 23  Pretty stable.
+big changes in READ-LINE changed READLN so it does not allocate VDP when error is thrown.
+
+Todo:  Change .Fstat  to not do a carriage return and just print on line 23.
+
+FEB 2026 TESTS
+      1. ENTER KEY DOES NOT HOME CURSOR TO COL 0               FIXED
+      2. CURSOR DOWN PUTS JUNK ON LAST LINE. Partial fix.
+      3. dictionary link is corrupt after saving a file        fixed
+      (This was FILENAME allottment set to 16. Changed to 32)
+
+      4. SOL+!  goes past 80 the column
+
+      5. CURSOR UP WITH PAGE REFRESH REMOVES 1ST CHAR WHEN CURSOR IS
+      ON THE FIRST CHAR.  FIXED  changed CUP
