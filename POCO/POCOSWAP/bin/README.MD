@@ -1,0 +1,1 @@
+This folder contains files in TI-99 disk format
