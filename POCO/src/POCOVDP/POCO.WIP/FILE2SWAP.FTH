@@ -138,6 +138,7 @@ VARIABLE VMDP   \ virtual memory pointer
     2DROP
     FLUSH
     VMDP OFF
+    #LINES OFF
 ;
 
 HEX

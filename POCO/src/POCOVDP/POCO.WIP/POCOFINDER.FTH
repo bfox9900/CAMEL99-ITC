@@ -34,8 +34,8 @@ CREATE SRCH$  42 ALLOT
 
 : <FIND>  SRCH$ COUNT  TOPLINE @ FINDER  ?EDIT ;
 
-: FIND  ( -- ?)
+: LOC  ( -- ?)
     TOPLINE OFF CURPOS OFF
     GETSTRING <FIND> ;
 
-: FNEXT ( -- ?)  SRCH$ LEN CURPOS+! <FIND> ;
+: LNEXT ( -- ?)  SRCH$ LEN CURPOS+! <FIND> ;
