@@ -24,7 +24,7 @@ ENDCODE
 
 CODE LOOP2
     PUSH TOS
-    LI TOS,-1
+    LI TOS,>FFFF
     BEGIN
         DEC TOS
     WHILE NE
@@ -41,7 +41,7 @@ ENDCODE
 \ label based looping for the same code as above
 CODE LOOP3
         PUSH TOS
-        LI  TOS,-1
+        LI  TOS,>FFFF
 1 $:    INC R0
         INC R1
         MOV R1,R2
@@ -54,7 +54,7 @@ ENDCODE
 
 CODE LOOP4
         PUSH TOS
-        LI TOS,-1
+        LI TOS,65535
 1 $:    DEC TOS
         JEQ 2 $
         INC R0
@@ -98,7 +98,7 @@ L: QADDR EQU >2000  \ accepts '>' for HEX
 
 CODE TESTEQU
     PUSH TOS
-    LI R0,BEEF   \ load a literal number
+\    LI R0,>BEEF   \ load a literal number
     LI R4,QADDR  \ load an Equate
     RET/NEXT
 ENDCODE

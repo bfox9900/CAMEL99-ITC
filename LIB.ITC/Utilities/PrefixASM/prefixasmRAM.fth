@@ -55,23 +55,25 @@ CHAR @  CONSTANT '@'
 \ labels return a memory address
 : L:  ( -- addr) CREATE HERE , DOES> @ ;
 
-: MATCH  ( addr len char -- ?) 2 PICK C@ = ;
+: MATCH  ( addr len char -- addr' len' ?)
+   OVER 0= ABORT" MATCH: input exhausted"
+   2 PICK C@ =  ( match-flag)
+   DUP>R IF  1 /STRING  THEN  R>
+;
 
 : $># ( addr len -- n)
    '>'  MATCH
-   IF HEX  1 /STRING THEN NUMBER? ABORT" Bad number" ;
+   IF HEX THEN NUMBER? ABORT" Bad number"
+   DECIMAL
+;
 
 
 : LASTLABEL! ( n -- )  LATEST @ NFA>CFA >BODY ! ;
 \ EQU must be used with the label definer  'L:'
 \ L: MYLABEL EQU >BEEF  \ uses '>' prefix to convert to HEX
 
-
-: BASE{  S" BASE @ >R" EVALUATE ; IMMEDIATE
-: }BASE  S" R> BASE !" EVALUATE ; IMMEDIATE
-
 \ equ overwrites the contents of the label with a number.
-: EQU   PARSE-NAME  $># LASTLABEL! DECIMAL   ;
+: EQU   PARSE-NAME  $># LASTLABEL! ;
 
 : $POS  ( addr len char -- n) SCAN NIP ;
 
@@ -91,11 +93,11 @@ CHAR @  CONSTANT '@'
 \ 0 .. 3F covers all registers and addressing modes
 : ?REG*+  ( n -- n ?) DUP 3F 0 WITHIN ABORT" Register required" ;
 
-: ?HEXADDR   '>' MATCH IF HEX  1 /STRING THEN ;
+: ?HEXADDR   '>' MATCH IF HEX  THEN ;
 
 : ?ADDR|REG ( addr len -- addr|reg)
    '@' MATCH
-   IF    1 /STRING         \ Process as address
+   IF   \ Process as address
          ?HEXADDR EVALUATE
          @@                \ symbolic addressing operator
 
@@ -106,8 +108,8 @@ CHAR @  CONSTANT '@'
 
 \ ************************************************************
 \ *               ARGUMENT PARSING WORDS
-
-: <LABEL>  1 PARSE ?LABEL EVALUATE ;
+: PARSE-LINE  ( $ len) 1 PARSE ;
+: <LABEL> PARSE-LINE ?LABEL EVALUATE ;
 
 \ split string at comma & remove comma from $2
 : <ARG,ARG> ( addr len -- addr1 len1 addr2 len2)
@@ -119,20 +121,18 @@ CHAR @  CONSTANT '@'
 ;
 
 : <REG>    ( -- n) PARSE-NAME EVALUATE  ?REG ;
-
-: <*REG+>  ( -- u u ) 1 PARSE  EVALUATE  ?REG*+ ;
-
+: <*REG+>  ( -- u u ) PARSE-LINE EVALUATE  ?REG*+ ;
 : <#ARG>   ( -- u)    BL PARSE  $>#  ;
 
 : <REG,#>  ( -- )
-   1 PARSE <ARG,ARG>
-   2>R  EVALUATE \ ?REG
-   2R> $># ;
+   PARSE-LINE <ARG,ARG>
+   2>R  EVALUATE ?REG
+   2R>  ?HEXADDR EVALUATE ;
 
-: <1ARG>  ( <text> -- n) 1 PARSE  BL SKIP  ?ADDR|REG ;
+: <1ARG>  ( <text> -- n) PARSE-LINE  BL SKIP  ?ADDR|REG ;
 
 : <2ARGS>  ( <arg1>,<arg2> -- u u )
-   1 PARSE <ARG,ARG>
+   PARSE-LINE <ARG,ARG>
    2>R ?ADDR|REG  \ process arg1
    2R> ?ADDR|REG  \ process arg2
 ;
@@ -140,9 +140,9 @@ CHAR @  CONSTANT '@'
 : <JMPTOKEN> ( <text> -- n)
    <1ARG>  DUP 1 13 WITHIN 0= ABORT" Jump token expected" ;
 
-\ ************************************************************
-\ Prefix instructions with 1 arg
+\ **************** PREFIX ASSEMBER BEGINS *********************
 
+\ instructions with 1 arg
 : B     <1ARG>  B, ;
 : BL    <1ARG>  BL, ;
 : BLWP  <1ARG>  BLWP, ;
@@ -195,12 +195,10 @@ CHAR @  CONSTANT '@'
 : LI     <REG,#> LI, ;
 : ORI    <REG,#> ORI, ;
 
-
 : SLA    <REG,#> SLA, ;
 : SRA    <REG,#> SRA, ;
 : SRC    <REG,#> SRC, ;
 : SRL    <REG,#> SRL, ;
-
 
 : JMP   <LABEL> JMP, ;
 : JLT   <LABEL> JLT, ;
@@ -226,15 +224,15 @@ CR .( Pseudo instructions...)
  : ORB SOCB ;
 
 \ PUSH & POP macros for DATA stack
-: PUSH  <REG> PUSH, ;
-: POP   <REG> POP, ;
+: PUSH   <REG> PUSH, ;
+: POP    <REG> POP, ;
 
 \ PUSH & POP macros for RETURN stack
 : RPUSH  <REG> RPUSH, ;
 : RPOP   <REG> RPOP, ;
 
-: IF      ( addr token -- 'jmp') <JMPTOKEN> IF,  ;
-: ENDIF   ( 'jmp addr --) ENDIF,  ;
+: IF      ( addr token -- 'jmp') <JMPTOKEN> IF, ;
+: ENDIF   ( 'jmp addr --) ENDIF, ;
 : ELSE    ( -- addr ) ELSE, ;
 
 : BEGIN   ( -- addr)  HERE ;
@@ -256,21 +254,21 @@ CR .( Pseudo instructions...)
 \ Call with BL
 \ Exit with RT
 : LEAF:   (CODE)  !CSP  ;
-: ;LEAF  ?CSP PREVIOUS ;
+: ;LEAF   ?CSP PREVIOUS ;
 
  \ a "sub:" is a nestable sub-routine.
  \ Call with BL
  \ Exit using RET
-: SUB:   (CODE)   R11 PUSH,  !CSP  ;
+: SUB:   (CODE)   R11 PUSH,  !CSP ;
 : ;SUB   ;LEAF ;
-: RET    R11 POP,  RT,  ;     \ Return from sub-routine
+: RET    R11 POP,  RT, ;     \ Return from sub-routine
 
 \ A "prog:" Takes a workspace argument and creates a vector
 \ to the code follwing the declaration.
 \ Call with BLWP
 \ Exit with RTWP
 \ Exit a PROG: using the RTWP instrucion
-: PROG: ( wksp -- ) (CODE)   ,  HERE CELL+ , !CSP    ;
+: PROG: ( wksp -- ) (CODE)   ,  HERE CELL+ , !CSP ;
 : ;PROG  ( -- ) ;LEAF ;
 
 ONLY FORTH DEFINITIONS ALSO ASSEMBLER
