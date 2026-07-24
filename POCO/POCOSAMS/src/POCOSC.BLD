@@ -1,4 +1,4 @@
-\ POCO,MAK        FEB 2026 BJFOX
+\ POCOSAMS.BLD Camel99 supercart       FEB 2026 BJFOX
 
 \ text editor build file for  VDP RAM file storage 20Feb26 BJF
 
@@ -9,33 +9,26 @@ NEEDS MARKER    FROM DSK1.MARKER
 NEEDS RKEY      FROM DSK1.RKEY
 NEEDS -TRAILING FROM DSK1.TRAILING
 NEEDS MARKER    FROM DSK1.MARKER
+\ load these because they are handy
+INCLUDE DSK1.DIR
+\ INCLUDE DSK1.CATALOG
 
 NEEDS 80COLS FROM DSK1.80COL
  80COLS
 
-: KERNSTART   WARM  80COLS ABORT ;
-
 MARKER /POCO
-LOCK
-INCLUDE DSK1.SAVESYS
-' KERNSTART SAVESYS DSK2.POCOKERNL
-
-\ ================================================
 
 HERE
 \ Editor specific includes
-NEEDS READ-FILE FROM DSK2.FILE2SDPB
+NEEDS READ-FILE FROM DSK2.FILE2SAMS
 INCLUDE DSK2.POCOUTILS
 INCLUDE DSK2.POCODATA
 INCLUDE DSK2.POCOSCREEN
 INCLUDE DSK2.WRITEBACK
 INCLUDE DSK2.TEXTCTRL
 INCLUDE DSK2.COPYPASTE
-
 INCLUDE DSK2.POCOEDITLN
-
 INCLUDE DSK2.POCODISK
-INCLUDE DSK1.DIR   \ handy when you are editing files
 
 CR
 CR .( >> POCO editor compiled normally)
@@ -49,26 +42,21 @@ HERE SWAP - CR DECIMAL . .( Bytes used)
 DECIMAL
 : POCO ( -- ) \ system startup word
     WARM 80COLS
-    ." Camel99 FORTH + Poco Editor 0.9"
+    ." Camel99 SUPERCART + Poco Editor 0.9"
     ENDHEAP H ! \ set the heap memory pointer
     ABORT ;
 
-
-   LOCK
-\
-\ everthing after LOCK will not be in the image
-\
-
+ LOCK
  HEX 2000 H ! \ reset heap so it won't save as a file
- DECIMAL
-  CR
 
-CR .(  Save the program for CAMEL99 FORTH)
-INCLUDE DSK1.SAVESYS
-' POCO  SAVESYS DSK2.POCOSWAP
+ DECIMAL
+ CR
+ CR .( Save the program for SUPERCART)
+ INCLUDE DSK1.SUPERSAVE
+ ' POCO SUPERSAVE DSK1.POCO-SC
 
 DECIMAL
-: COUNTDOWN  0 SWAP DO I .  500 MS  -1  +LOOP 100 MS ;
+: COUNTDOWN  0 SWAP DO I .  1000 MS  -1  +LOOP 500 MS ;
 
 CR
 CR .( Build complete. Restarting in ...)

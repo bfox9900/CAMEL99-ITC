@@ -1,7 +1,4 @@
 \ POCOSCREEN.FTH   screen functions for POCO editor fEB 2026 BJF
-CR .( POCOSCREEN for swapfile version)
-CR
-
 \ line manipulation
 : ?NEG
   GETXY
@@ -34,6 +31,7 @@ VARIABLE SOL    \ "start of line"
 : FITTED ( addr len -- addr' len') SOL @ /STRING 0 MAX SCRWIDTH MIN ;
 
 DECIMAL
+
 : ]TYPELN ( line# -- ) ( TRUE means node is empty )
     DUP ]NODE @ TRUE = IF  DROP  [CHAR] ~ EMIT  RETURN;
     ]POOL$ FITTED VTYPE
@@ -53,13 +51,15 @@ DECIMAL
 : AT-CURSOR ( -- ) CURPOS @ ROW @ AT-XY ;
 : AT-LINE   ( -- ) 0 ROW @ AT-XY ;
 
-: ?SIZE     DUP BUFFSIZE >  ABORT" POOL$ > BUFFSIZE" ;
+: ?SIZE     DUP BUFFSIZE 1+ >  ABORT" POOL$ > BUFFSIZE" ;
 
-: POOL$.GET  ( VIRTaddr len addr ) ROT VIRT>REAL -ROT ?SIZE PLACE   ;
-: ]POOL$.PUT ( $addr len line# ) ]NODE @ VIRT>REAL PLACE ;
+\ : POOL$.GET   ( Vaddr len addr )  2DUP C! 1+  SAMS.GET ;
+: ]POOL$.PUT  ( $addr len line# ) ]NODE @ VIRT>REAL PLACE  ;
 
-: CLEAN      ( caddr -- ) DUP BUFFSIZE BL FILL  0 SWAP C! ;
+\ : CLEAN       ( caddr -- )
+\    DUP 1+ BUFFSIZE 1-  BL FILL
+\    0 SWAP C! ;
 
 : RELOAD-BUFFER
-    EDIT-BUFFER CLEAN
-    THELINE# ]POOL$  EDIT-BUFFER POOL$.GET ;
+    EDIT-BUFFER BUFFSIZE ERASE
+    THELINE# ]POOL$  EDIT-BUFFER PLACE ;

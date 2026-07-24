@@ -11,10 +11,10 @@
 
 NEEDS .S        FROM DSK1.TOOLS
 NEEDS READ-LINE FROM DSK1.ANSFILES
-NEEDS VIRT>REAL FROM DSK1.SAMSFTH
+NEEDS VIRT>REAL FROM DSK1.SAMS
 NEEDS -TRAILING FROM DSK1.TRAILING
+NEEDS MALLOC    FROM DSK1.MALLOC
 NEEDS FILLW     FROM DSK1.FILLW   \ 16 bit fast fill
-NEEDS ERASEW    FROM DSK1.ERASEW  \ fast cell erase
 
 
 HEX 2000 H !   CR .( ** HEAP has been reset ** ) CR
@@ -29,7 +29,7 @@ HEX
         NEXT,
      ENDCODE
 
-1 SEGMENT
+F SEGMENT \ uses the last segment
 
 \ ---------------------------------------------------------------
 \          *** SAMS MEMORY MANAGEMENT and Utilities ***
@@ -43,40 +43,53 @@ VARIABLE SDP   \ sams dictionary pointer
 : C,L      SAMS.HERE C!L 1 SAMS.ALLOT ;
 
 HEX
-: NEXTPAGE   ( dst -- dst')  F000 AND 1000 + ;
-: CROSSOVER? ( len Saddr -- len Saddr ?) 2DUP + F000 AND  OVER F000 AND - ;
+1000             CONSTANT B/PAGE
+B/PAGE 1- INVERT CONSTANT PAGEMASK
+
+\ advance virtual memory address to the next 1K boundary
+: NEXTPAGE   ( dst -- dst')  PAGEMASK AND  B/PAGE + ;
+
+\ test if there is room in the block for len + VMaddr
+: CROSSOVER? ( len VMaddr -- len VMaddr ?)
+  2DUP + ( newdst) PAGEMASK AND  OVER PAGEMASK AND -  0 U> ;
 
 DECIMAL
-: ?NEXTPAGE  ( len dst -- len dst') CROSSOVER? IF NEXTPAGE THEN ;
+: ?NEXTPAGE  ( len dst -- len dst')
+  CROSSOVER? IF NEXTPAGE DUP SDP ! THEN ;
+
+: ?BREAK    ?TERMINAL ABORT" *BREAK*" ;
 
 \ : SAMS.PARA  ( n -- addr)  16 * VIRT>REAL ;
 \ : SAMS.WRITE ( addr len Virtaddr) VIRT>REAL ?NEXTPAGE SWAP MOVE ;
-\ : SAMS.READ  ( Virtaddr len addr ) >R  SWAP VIRT>REAL ?NEXTPAGE  R> MOVE ;
 
 \ SLOW versions. But with 1 byte resolution
 \ : SAMS.MOVE   ( a1 a2 u -- ) BOUNDS DO  DUP @L  I !L   2 +LOOP DROP ;
 \ : SAMS.CMOVE  ( a1 a2 u -- ) BOUNDS DO  DUP C@L I C!L     LOOP DROP ;
+\ : SAMS.CMOVE2    ( a1 a2 u -- ) ROT VIRT>REAL -ROT CMOVE ;
 
 : SAMS.PLACE   ( src n dst -- )
-  VIRT>REAL 2DUP C! 1+ SWAP 1+ CMOVE ( SAMS.ALIGN) ;
+  2DUP C!L       \ store length in SAMS
+  1+             \ add one to skip past the byte count
+  VIRT>REAL      \ ie: pull sams page in memory
+  SWAP 1+ CMOVE ;
 
 
 \ clears 4k pages at a time. *NO PROTECTION*
 HEX 1000 CONSTANT 4K
 
-: SAMS.ERASE  ( addr len --) BOUNDS DO  I VIRT>REAL 4K ERASEW  4K +LOOP ;
+: SAMS.ERASE  ( addr len --) BOUNDS DO  I VIRT>REAL 4K ERASE  4K +LOOP ;
 
 \ ---------------------------------------------------------------
 HEX
  0000 CONSTANT []$POOL       \ Start of free ram for strings
 
 DECIMAL
-1000             CONSTANT MAXLINES
+2000             CONSTANT MAXLINES
 65535 82 -       CONSTANT ENDMEM     \ max segment space we can use
 ENDMEM []$POOL - CONSTANT $POOL-SIZE \ largest file size
 
 \ *FUTURE*  move []NODES to a SAMS page to save dictionary space
-CREATE []NODES     MAXLINES CELLS CELL+ ALLOT
+ MAXLINES CELLS CELL+ MALLOC CONSTANT []NODES
 
 []NODES TABLE2: ]NODE  \ gives fast indexed access to []NODES
 
@@ -89,40 +102,48 @@ HEX
 : NEW-NODES ( -- ) []NODES MAXLINES CELLS  FF FILL ;
 : NEW-$POOL ( -- ) []$POOL $POOL-SIZE SAMS.ERASE  SDP OFF ;
 
-
 \ ** words ending with $ return a stack string (addr,len) pair **
 DECIMAL
 \ Access SAMS strings via the NODE list. Returns a stack string
 : ]POOL$  ( n -- Saddr len) ]NODE @  VIRT>REAL COUNT ;
 
-: ?EOM     ( -- ) SAMS.HERE ENDMEM U> ABORT" SAMS buffer full" ;
+: ?EOM    ( -- ) SAMS.HERE ENDMEM U> ABORT" SAMS buffer full" ;
 
 VARIABLE #LINES      \ no. of lines in file
 
-: READ.RECORD ( hndl -- addr len ior) >R PAD DUP 80 R> READ-LINE NIP ;
+
 \ compile a string into SAMS string pool and record addres in a NODE
 \ never allows a string to cross a page boundary
 : $POOL,       ( c-addr u -- )
-\ if there is NOT room in the SAMS page move to next page
-  SAMS.HERE ?NEXTPAGE SDP !
-
-  SAMS.HERE DUP #LINES @ ]NODE !    \ store the location in a node
+  SAMS.HERE
+  ?NEXTPAGE  \ if there is NOT room in the SAMS page move to next page
+  DUP #LINES @ ]NODE !    \ store the location in a node
   OVER 1+ SAMS.ALLOT SAMS.PLACE     \ place the string in SAMS memory
 ;
 
-HEX FF CONSTANT $FF
+: READ.RECORD ( hndl -- addr len ior) >R PAD DUP 80 R> READ-LINE NIP ;
+
+: .FSTATS  CR #LINES @ U. ." lines, "  SAMS.HERE U. ." bytes" ;
 
 DECIMAL
 \ *****************************************************************
 \ read a file into $pool but do not initialize the system
+: ?#LINES  #LINES @ MAXLINES > ABORT" Too many lines" ;
+
 : APPEND-FILE  ( $addr len -- )
     DV80 R/O OPEN-FILE ?FILERR >R
     BEGIN
       R@ READ.RECORD
     0= WHILE
-      ?EOM
-      ?NODES $POOL,
-      #LINES 1+!             \ count the line
+      ?EOM   ?NODES  ?#LINES  \ error checks
+      $POOL,
+      #LINES 1+!
+
+   \ debug lines
+   \  0 0 AT-XY SAMS.HERE U. ." , "  #LINES @ U.
+   \  MAXLINES 1- ]NODE @ TRUE <> ABORT" GOTCHA!"
+
+      ?BREAK
     REPEAT
     2DROP                    \ last record is invalid.
     R> CLOSE-FILE DROP
@@ -133,23 +154,11 @@ DECIMAL
 \ Since the File starts at line zero, the lastline is one less that #LINES.
 : READ-FILE  ( $addr len -- ) NEW-$POOL  NEW-NODES  #LINES OFF  APPEND-FILE ;
 
-\ for debugging
-: .NODES
-    #LINES @ 0
-    ?DO
-      I ]POOL$ CR TYPE
-      SPACEBAR
-      ?TERMINAL ABORT" *BREAK*"
-    LOOP
-;
-
-: .FSTATS  CR #LINES @ U. ." lines, "  SAMS.HERE U. ." bytes" ;
-
 \ usage:  S" DSK1.MYFILE" WRITE-FILE
 \ write $pool back to disk via the node-list. Remove trailing spaces
 : WRITE-FILE ( addr len -- )
     DV80 W/O  OPEN-FILE ?FILERR >R
-    0 ]NODE          \ address of first node
+    []NODES          \ base address of the array
     BEGIN
        DUP @ TRUE <> \ test for unallocated NODE
     WHILE

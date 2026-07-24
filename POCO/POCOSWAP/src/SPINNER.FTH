@@ -1,9 +1,23 @@
-\ simple waiting spinner
+\ SPINNER.FTH
+
+HEX
+CREATE COMETS
+384C , 0686 , 0600 , 0000 ,
+1004 , 0002 , 0206 , 3C38 ,
+0000 , 00C0 , C0C0 , 6234 ,
+3878 , C080 , 8080 , 4010 ,
+
+:  ]PDT   8* 800 + ; \ NEED TO CHANGE FOR F18A 80 column display
+
+DECIMAL
+: COMETCHARS     COMETS 20 ]PDT  32 VWRITE ;
+
+COMETCHARS
+
+CREATE SCHARS  20 C, 21 C, 22 C, 23 C,
 
 VARIABLE SPIN#
-CREATE SCHARS  S" |/-\"  S,
-
-: SPINCHAR ( -- char) SPIN# @ 3 AND  SCHARS 1+ + C@   SPIN# 1+! ;
+: SPINCHAR ( -- char) SPIN# @ 3 AND   SCHARS + C@   SPIN# 1+! ;
 
 \ VPUT writes to screen at cursor position but does not change cursor
 : SPINNER    SPINCHAR VPUT ;

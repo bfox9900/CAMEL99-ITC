@@ -1,4 +1,4 @@
-\ FILES2BLOCKS.FTH  load/save text files into virtual memory  B Fox July 2026
+\ FILES2SWAP.FTH  load/save text files into virtual memory  B Fox July 2026
 
 \ Concepts:
 \ Use a block file as virtual memory, 64K bytes in size.
@@ -46,9 +46,19 @@ HEX
 \          *** VIRTUAL MEMORY MANAGEMENT and Utilities ***
 
 \                       swapfile management ...
-: $SWAPFILE  S" DSK8.$SWAP$" ;
 
 DECIMAL
+CREATE SWAPPATH  16 ALLOT
+S" DSK8.$SWAP$" SWAPPATH PLACE
+
+: $SWAPFILE  ( -- $ len) SWAPPATH COUNT ;
+
+\ Config file command to set the swap file path
+: ?PATH   2DUP [CHAR] . SCAN  NIP 0= ABORT" File path expected" ;
+: SWAPFILE=   PARSE-NAME ?PATH  SWAPPATH PLACE ;
+
+SWAPFILE= DSK8.$SWAP$
+
 64 CONSTANT LASTBLK
 VARIABLE #LINES  \ double duty: indexs into []NODES list
 
@@ -62,8 +72,8 @@ VARIABLE #LINES  \ double duty: indexs into []NODES list
     IF  CR ." Creating " 2DUP TYPE SPACE LASTBLK . ." Kbytes"
         CR ." ( standby ...)"
         NEW-SWAPFILE
+        CR ." Opening swapfile"
     THEN
-    CR ." Opening swapfile"
     OPEN-BLOCKS
     #LINES OFF ;
 
@@ -115,12 +125,15 @@ VARIABLE VMDP   \ virtual memory pointer
 : VM.PLACE   ( src n dst -- )
     VIRT>REAL 2DUP C! 1+ SWAP 1+ CMOVE ;
 
+: BASE>R  S"  BASE @ >R" EVALUATE ; IMMEDIATE
+: R>BASE  S" R> BASE ! " EVALUATE ; IMMEDIATE
 \ ==============================================================
 : PURGE ( -- )
-    BASE @ >R
+    BASE>R
     DECIMAL
     OPEN-SWAPFILE
     FIRST CELL+ B/BUF ERASE \ erase a buffer
+    CR ." Erasing node list"
     NEW-NODES
     CR ." Erasing " $SWAPFILE TYPE SPACE  GETXY
     LASTBLK 1+  0
@@ -132,7 +145,7 @@ VARIABLE VMDP   \ virtual memory pointer
     FLUSH
     VMDP OFF
     #LINES OFF
-    R> BASE !
+    R>BASE
 ;
 
 HEX
@@ -143,20 +156,26 @@ B/BUF 1- INVERT CONSTANT PAGEMASK
 
 \ test if there is room in the block for len + VMaddr
 : CROSSOVER? ( len VMaddr -- len VMaddr ?)
-  2DUP + ( newdst) PAGEMASK AND  OVER PAGEMASK AND - ;
+  2DUP + ( newdst) PAGEMASK AND  OVER PAGEMASK AND - 0> ;
 
 DECIMAL
-\ if len+dst is to big for this buffer, advance to next page & set VMDP
-: ?NEXTPAGE  ( len dst -- len dst') CROSSOVER? IF NEXTPAGE DUP VMDP ! THEN ;
+\ if len+VHERE is to big for this buffer, advance to next page
+: VM.MALLOC ( len -- VIRTaddr)
+    ALIGNED
+    VM.HERE CROSSOVER?
+    IF
+        NIP NEXTPAGE DUP VMDP !
+    ELSE
+        SWAP VM.ALLOT
+    THEN ;
 
 \ compile a string into virtual memory, protected from page crossing
 \ record VM address in a NODE at index = #LINES
 : $POOL,     ( c-addr u -- )
-    VM.HERE ?NEXTPAGE ( c-addr u dst -- )
-    DUP  #LINES @ ]NODE !          \ store the location in a node. index=#lines
-    OVER 1+ VM.ALLOT               \ allocate space to string & count byte
-    VM.PLACE                       \ place the string in virtual memory
-    UPDATE                         \ mark buffer for saving to disk
+    DUP 1+ VM.MALLOC ( -- VIRTaddr) \ a safe location for string
+    DUP #LINES @ ]NODE !       \ store the location in a node. index=#lines
+    VIRT>REAL PLACE            \ place the string in virtual memory
+    UPDATE                     \ mark buffer for saving to disk
 ;
 
 \ Access vm strings via the NODE list. Returns a stack string
@@ -166,6 +185,10 @@ DECIMAL
 : ?EOM     ( -- ) VM.HERE ENDMEM U> ABORT" SWAP-FILE full" ;
 
 : READ.RECORD ( hndl -- addr len ior) >R PAD DUP 80 R> READ-LINE NIP ;
+
+: .FSTATS
+    CR #LINES @ U. ." lines, "
+    CR VM.HERE  U. ." bytes in virtual memory" ;
 
 DECIMAL
 \ *****************************************************************
@@ -182,6 +205,7 @@ DECIMAL
     REPEAT
     2DROP                    \ last record is invalid.
     R> CLOSE-FILE DROP
+    .FSTATS
 ;
 
 \ ****************************************************************
@@ -200,13 +224,10 @@ DECIMAL
     LOOP
 ;
 
-: .FSTATS
-    CR #LINES @ U. ." lines, "
-    CR VM.HERE  U. ." bytes in virtual memory" ;
-
 \ usage:  S" DSK1.MYFILE" WRITE-FILE
 \ write $pool back to disk via the node-list. Remove trailing spaces
 : WRITE-FILE ( addr len -- )
+    FLUSH     \ saves all updated buffers to swapfile ?needed?
     DV80 W/O  OPEN-FILE ?FILERR >R
     []NODES          \ base address of node array
     BEGIN

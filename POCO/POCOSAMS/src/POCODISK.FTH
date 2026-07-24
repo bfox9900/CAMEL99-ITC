@@ -1,21 +1,21 @@
 \ POCODISK.FTH   disk manager functions for poco editor Frb 2026 BJF
 
 DECIMAL
-
 : GET-PATH ( -- addr len ?)
-  PARSE-NAME ?PATH
+  PARSE-NAME DUP 0= ABORT" File name expected"
   2DUP FILENAME PLACE ;
 
 HEX
 : INIT-MEMORY
+ \   2000 H !
+ \   MAXLINES ALLOCATE-NODES
+ \   BUFFSIZE MALLOC TO EDIT-BUFFER
+    0F SEGMENT
     0 0 ROW/COL 2!  \ resets "CURPOS"
     SOL OFF
     TOPLINE OFF  updated OFF
-    EDIT-BUFFER CLEAN
-   \ PURGE
-    NEW-NODES
-    #LINES OFF
-    VMDP OFF              \ reset virtual memory pointer
+    EDIT-BUFFER BUFFSIZE ERASE
+    PURGE
     EMPTY$ THELINE# ]NEW$
     1 #LINES+!
 ;
@@ -33,11 +33,10 @@ DECIMAL
     INIT-MEMORY
     DECIMAL
     GET-PATH READ-FILE
+    CR .FSTATS
 ;
 
-: READ  INIT-MEMORY  GET-PATH READ-FILE CR .FSTATS ;
-
-: APPEND   GET-PATH  APPEND-FILE   CR .FSTATS ;
+: READ  GET-PATH (READ-FILE) CR .FSTATS ;
 
 : EDIT ( -- )
     ?READ-FILE
@@ -55,7 +54,8 @@ DECIMAL
     HERE >R
     #LINES @  0
     ?DO
-        I ]POOL$ EVALUATE
+        I ]POOL$ TBUFF  VDP$.GET
+        TBUFF COUNT EVALUATE
     LOOP
     CR  #LINES @ . ." lines "
     CR  HERE R> -  DECIMAL . ." bytes"
@@ -64,6 +64,6 @@ DECIMAL
 
 : SAVEAS ( <path> ) GET-PATH  WRITE-FILE ;
 
-: NEW ( <text> ) INIT-MEMORY GET-PATH EDIT ;
+: NEW ( <text> ) INIT-MEMORY  GET-PATH EDIT ;
 
  HEAP BUFFSIZE + CONSTANT ENDHEAP \ remember where HEAP memory ends
