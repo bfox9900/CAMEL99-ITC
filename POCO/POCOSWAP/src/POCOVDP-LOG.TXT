@@ -53,3 +53,11 @@ FEB 2026 TESTS
 
       5. CURSOR UP WITH PAGE REFRESH REMOVES 1ST CHAR WHEN CURSOR IS
       ON THE FIRST CHAR.  FIXED  changed CUP
+
+Jul 2026:
+All of the above are fixed.
+
+Working version (alpha) with cut/copy/paste and LOC command to find text.
+LASTLINE was defined twice, 2 different ways which caused a bug in ]removeln FIXED
+I am sure there are more bugs
+Still a bug when pasting into the topline.
