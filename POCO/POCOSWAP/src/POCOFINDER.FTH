@@ -1,4 +1,5 @@
-\ POCOLOCATE.FTH
+\ POCOFINDER.FTH
+CR .( search function for swapfile POCO)
 
 NEEDS SEARCH FROM DSK1.SEARCH
 
@@ -9,28 +10,27 @@ NEEDS SEARCH FROM DSK1.SEARCH
    ROW OFF
    #LINES @ R>
     DO
-        I ]POOL$ PAD VDP$.GET
-        PAD COUNT RIGHTSIDE  2OVER  SEARCH
-        TRUE =
+        I ]POOL$ CURPOS @ /STRING  BL SKIP
+        2OVER  SEARCH TRUE =
         IF  I TOPLINE !  \ set editor topline
-            DROP NIP
-            ROT DROP TRUE -ROT
+            I ]POOL$
+            ROT -
+            NIP NIP NIP NIP  CURPOS !
+            DROP TRUE
             LEAVE
         ELSE
             2DROP
             CURPOS OFF  \ start of new line
         THEN
     LOOP
-    ROT
-    IF   NIP PAD - 1- 0 MAX CURPOS !  TRUE
-    ELSE 2DROP FALSE
-    THEN
+    TRUE = IF TRUE  EXIT THEN
+    DROP
 ;
 
 CREATE SRCH$  42 ALLOT
 : GETSTRING  1 PARSE-WORD  40 MIN SRCH$ PLACE ;
 
-: ?EDIT  0= ABORT" Can't find in file"  EDIT ;
+: ?EDIT   ( ? -- ) 0= ABORT" Can't find in file"   EDIT ;
 
 : <FIND>  SRCH$ COUNT  TOPLINE @ FINDER  ?EDIT ;
 

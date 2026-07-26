@@ -15,8 +15,9 @@ HEX 1000 CONSTANT LNSTAK[]
 
 VARIABLE 'STAK    \ line stak pointer
 
-: STAK+!  ( n -- )  'STAK @ +  STAKWRAP AND  'STAK ! ;
+: STAK+!  ( n -- )     'STAK @ +  STAKWRAP AND  'STAK ! ;
 : STAKLN  ( n -- addr) 'STAK @ STAKWIDTH *  LNSTAK[] + ;
+
 : $PUSH  ( addr n -- ) 1 STAK+!  STAKLN VPLACE ;
 
 : $POP   ( -- addr n )

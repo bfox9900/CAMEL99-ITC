@@ -19,7 +19,7 @@
 
 \ NAMING CONVENTIONS:;
 \ 1. Words ending with $ return a stack string
-\    i) Be aware: ]POOL$ is in virtual memory but pulls itself into a buffer
+\    i) Note: ]POOL$ is in virtual memory but pulls itself into a buffer
 
 \ 2. Words starting with ] need an indexing argument
 
@@ -45,7 +45,7 @@ HEX
 \ ---------------------------------------------------------------
 \          *** VIRTUAL MEMORY MANAGEMENT and Utilities ***
 
-\                       swapfile management ...
+\  wapfile management ...
 
 DECIMAL
 CREATE SWAPPATH  16 ALLOT
@@ -70,7 +70,7 @@ VARIABLE #LINES  \ double duty: indexs into []NODES list
     BHNDL @ IF  CLOSE-BLOCKS  THEN \ PREVENT using wrong block file
     2DUP MISSING?
     IF  CR ." Creating " 2DUP TYPE SPACE LASTBLK . ." Kbytes"
-        CR ." ( standby ...)"
+        CR ." (standby ...)"
         NEW-SWAPFILE
         CR ." Opening swapfile"
     THEN
@@ -101,7 +101,7 @@ HEX
 : NEW-NODES ( -- ) []NODES MAXLINES CELLS  FF FILL   #LINES OFF ;
 
 \ ==============================================================
-\              ... virtual memory to real memory  ...
+\ virtual memory to real memory  ...
 
 VARIABLE VMDP   \ virtual memory pointer
 
@@ -121,9 +121,7 @@ VARIABLE VMDP   \ virtual memory pointer
 : ,VM       VM.HERE !VM  2 VM.ALLOT ;
 : C,VM      VM.HERE C!VM 1 VM.ALLOT ;
 
-\ RAW place string in virtual memory. **no protection for page crossing"
-: VM.PLACE   ( src n dst -- )
-    VIRT>REAL 2DUP C! 1+ SWAP 1+ CMOVE ;
+: VM.PLACE ( addr len VMaddr -- ) VIRT>REAL PLACE   UPDATE ;
 
 : BASE>R  S"  BASE @ >R" EVALUATE ; IMMEDIATE
 : R>BASE  S" R> BASE ! " EVALUATE ; IMMEDIATE
@@ -161,12 +159,11 @@ B/BUF 1- INVERT CONSTANT PAGEMASK
 DECIMAL
 \ if len+VHERE is to big for this buffer, advance to next page
 : VM.MALLOC ( len -- VIRTaddr)
-    ALIGNED
     VM.HERE CROSSOVER?
     IF
         NIP NEXTPAGE DUP VMDP !
     ELSE
-        SWAP VM.ALLOT
+        SWAP VM.ALLOT  VM.ALIGN
     THEN ;
 
 \ compile a string into virtual memory, protected from page crossing
@@ -176,13 +173,15 @@ DECIMAL
     DUP #LINES @ ]NODE !       \ store the location in a node. index=#lines
     VIRT>REAL PLACE            \ place the string in virtual memory
     UPDATE                     \ mark buffer for saving to disk
+    #LINES 1+!                 \ count the line
 ;
 
 \ Access vm strings via the NODE list. Returns a stack string
 DECIMAL
 : ]POOL$  ( n -- Saddr len) ]NODE @ VIRT>REAL COUNT ;
 
-: ?EOM     ( -- ) VM.HERE ENDMEM U> ABORT" SWAP-FILE full" ;
+: ?EOM    ( -- ) VM.HERE ENDMEM U> ABORT" SWAP-FILE full" ;
+: ?LINES  ( -- ) #LINES @ MAXLINES 1- > ABORT" No more lines" ;
 
 : READ.RECORD ( hndl -- addr len ior) >R PAD DUP 80 R> READ-LINE NIP ;
 
@@ -199,12 +198,13 @@ DECIMAL
     BEGIN
       R@ READ.RECORD
     0= WHILE
-      ?EOM  ?NODES
+      ?EOM  ?NODES ?LINES
     ( 2DUP CR TYPE)  $POOL,
-      #LINES 1+!             \ count the line
+
     REPEAT
     2DROP                    \ last record is invalid.
     R> CLOSE-FILE DROP
+    FLUSH
     .FSTATS
 ;
 

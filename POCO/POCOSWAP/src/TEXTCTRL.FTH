@@ -31,7 +31,7 @@ DECIMAL
    IF   1 SOL+!         \ shift the start of line variable
    ELSE 1 CURPOS+!
    THEN  1 EDIT-BUFFER LEN+! \   CURPOS @ MAX  EDIT-BUFFER C!
-   UPDATE
+   updated ON     \ EDIT buffer marked as changed
 ;
 
 : PUSHRIGHT ( -- )

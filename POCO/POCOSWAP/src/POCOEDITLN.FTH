@@ -16,7 +16,10 @@ DECIMAL
     CURPOS 1 OVER SAFE-!
     @ 0=  IF -1 SOL+!   RETYPE.BUFFER  THEN ;
 
+\ *ALL* cursor movements to a new line must write-back the edit-buffer
+\ to the current line if the 'updated' flag is set.
 : (UP) \ unconditional cursor down
+    ?WRITE-BACK
     ROW 1-!
     ROW @ 0<
     IF
@@ -26,15 +29,13 @@ DECIMAL
     THEN
 ;
 
-\ *ALL* cursor movements to a new line must write-back the current line
-\ move the cursor and then reload the buffer with the new line
 : CUP  ( -- )
     THELINE# 0=  IF BEEP  RETURN;
-
-    ?WRITE-BACK  (UP)  RELOAD-BUFFER  LIMIT-EOL
+    (UP)  RELOAD-BUFFER  LIMIT-EOL
 ;
 
 : (DOWN) \ unconditional cursor down
+    ?WRITE-BACK
     THELINE# LASTLINE >= IF BEEP  RETURN;
     ROW 1+!
     ROW @ 22 >
@@ -44,11 +45,7 @@ DECIMAL
         0 SCROLLUP
     THEN ;
 
-: CDOWN ( -- )
-    ?WRITE-BACK
-\    THELINE# LASTLINE >= IF BEEP  RETURN;
-    (DOWN)  RELOAD-BUFFER LIMIT-EOL
-;
+: CDOWN ( -- ) (DOWN)  RELOAD-BUFFER LIMIT-EOL ;
 
 \ page moves
 : PGUP  ( -- )
@@ -73,8 +70,9 @@ HEX
 
 : DELETELINE ( n -- )
     ]REMOVE-NODE
-\ This bit me. We must reset the lastnode and the next one
-    LASTNODE [ 2 CELLS ] LITERAL  FF FILL
+\ This bit me. We must reset the lastline node and the next one
+    LASTLINE    ERASE-NODE
+    LASTLINE 1+ ERASE-NODE
     -1 #LINES+!
 ;
 
@@ -91,6 +89,8 @@ HEX
 
 : DELCHAR    ( -- )
     CURPOS @ EDIT-BUFFER LEN = IF  RETURN;
+
+    ?WRITE-BACK
     $EDIT-BUFFER 2DUP 'LASTCHAR >R  \ save last character address
     RIGHTSIDE >R   ( a   ) ( R: U)
     DUP 1+         ( a a')
@@ -98,7 +98,7 @@ HEX
     R> ( a' a u) CMOVE    \ slide text left
     BL R> C!              \ blank the last character
     -1 EDIT-BUFFER LEN+!  \ dec. count byte in buffer
-    UPDATE                \ mark as modified for ?write-back
+    updated ON            \ mark as modified for ?write-back
 ;
 
 : DELETE-KEY
