@@ -59,5 +59,6 @@ All of the above are fixed.
 
 Working version (alpha) with cut/copy/paste and LOC command to find text.
 LASTLINE was defined twice, 2 different ways which caused a bug in ]removeln FIXED
-I am sure there are more bugs
 Still a bug when pasting into the topline.
+
+I am sure there are more bugs
