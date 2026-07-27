@@ -183,7 +183,7 @@ DECIMAL
 : ]POOL$  ( n -- Saddr len) ]NODE @ VIRT>REAL COUNT ;
 
 
-: READ.RECORD ( hndl -- addr len ior) >R PAD DUP 80 R> READ-LINE NIP ;
+\ : READ.RECORD ( hndl -- addr len ior) >R PAD DUP 80 R> READ-LINE NIP ;
 
 : .FSTATS
     CR #LINES @ U. ." lines, "
@@ -196,7 +196,7 @@ DECIMAL
     OPEN-SWAPFILE
     DV80 R/O OPEN-FILE ?FILERR >R
     BEGIN
-       R@ READ.RECORD
+       PAD DUP 80 R@ READ-LINE NIP
     0= WHILE
        $POOL,
     REPEAT

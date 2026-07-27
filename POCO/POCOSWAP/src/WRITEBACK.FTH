@@ -46,9 +46,9 @@ CR
     DUP>R ]NODE @ C@VM  \ fetch the len byte in virtual memory
     EDIT-BUFFER LEN >=  \ compare node len to buffer len
     IF
-        $EDIT-BUFFER R> ]$OVERWRITE    \ re-use $pool address
+        $EDIT-BUFFER -TRAILING R> ]$OVERWRITE    \ re-use $pool address
     ELSE
-        $EDIT-BUFFER R> ]NEW$         \ add a new string
+        $EDIT-BUFFER -TRAILING R> ]NEW$         \ add a new string
     THEN
     updated OFF
 ;
