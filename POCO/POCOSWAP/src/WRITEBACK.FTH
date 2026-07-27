@@ -33,11 +33,9 @@ CR
 ;
 
 : ]INSERT$   ( addr len line#--)
-    >R
-    DUP 1+ VM.MALLOC
-    DUP R> ]INSERT-NODE !
+    ]INSERT-NODE >R
+    DUP 1+ VM.MALLOC  DUP R> !
     VM.PLACE
-\  1 #LINES+!
 ;
 
 \ When the edit-buffer is edited we can save it back to the same $POOL address
