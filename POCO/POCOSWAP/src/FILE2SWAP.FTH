@@ -84,7 +84,7 @@ VARIABLE #LINES  \ double duty: indexs into []NODES list
 DECIMAL
 0000             CONSTANT []$POOL    \ Start of free virtual memory for strings
 1000             CONSTANT MAXLINES
-65535 82 -       CONSTANT ENDMEM     \ max segment space we can use
+65535 82 -       CONSTANT ENDMEM     \ max VM space we will use
 ENDMEM []$POOL - CONSTANT $POOL-SIZE
 
 \ *FUTURE*  move []NODES to virtual memory to save dictionary space?
@@ -160,19 +160,15 @@ DECIMAL
 \ if len+VHERE is to big for this buffer, advance to next page
 : VM.MALLOC ( len -- VIRTaddr)
     VM.HERE CROSSOVER?
-    IF
-        NIP NEXTPAGE DUP VMDP !
-    ELSE
-        SWAP VM.ALLOT  VM.ALIGN
-    THEN ;
+    IF   NEXTPAGE DUP VMDP !
+    THEN  SWAP 1+ VM.ALLOT VM.ALIGN ;
 
 \ compile a string into virtual memory, protected from page crossing
 \ record VM address in a NODE at index = #LINES
 : $POOL,     ( c-addr u -- )
     DUP 1+ VM.MALLOC ( -- VIRTaddr) \ a safe location for string
     DUP #LINES @ ]NODE !       \ store the location in a node. index=#lines
-    VIRT>REAL PLACE            \ place the string in virtual memory
-    UPDATE                     \ mark buffer for saving to disk
+    VM.PLACE                   \ string to virtual memory & UPDATE buffer
     #LINES 1+!                 \ count the line
 ;
 
