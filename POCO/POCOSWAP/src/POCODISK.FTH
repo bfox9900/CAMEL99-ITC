@@ -17,7 +17,7 @@ HEX
     #LINES OFF
     VMDP OFF              \ reset virtual memory pointer
     EMPTY$ THELINE# ]NEW$
-    1 #LINES+!
+\    1 #LINES+!
 ;
 
 DECIMAL

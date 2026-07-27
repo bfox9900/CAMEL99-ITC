@@ -62,3 +62,8 @@ LASTLINE was defined twice, 2 different ways which caused a bug in ]removeln FIX
 Still a bug when pasting into the topline.
 
 I am sure there are more bugs
+
+Jul 27 2026
+Found the reason for occasional line duplication.
+In VM.ALLOC after a block change I did not call VM.ALLOT. DUH!
+Fixed.

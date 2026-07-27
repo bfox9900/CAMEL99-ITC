@@ -1,8 +1,5 @@
 \ FILES2SWAP.FTH  load/save text files into virtual memory  B Fox July 2026
 
-\ This version assumes 3 block buffers & 2000 nodes in low RAM
-\ 1000 lines of text is the limit.
-
 \ Concepts:
 \ Use a block file as virtual memory, 64K bytes in size.
 \ Use the blocks to store "packed" counted strings
@@ -52,7 +49,7 @@ HEX
 
 DECIMAL
 CREATE SWAPPATH  16 ALLOT
-S" DSK2.$SWAP$" SWAPPATH PLACE \ can be changed in POCOCONFIG file
+S" DSK8.$SWAP$" SWAPPATH PLACE
 
 : $SWAPFILE  ( -- $ len) SWAPPATH COUNT ;
 
@@ -83,34 +80,34 @@ VARIABLE #LINES  \ double duty: indexs into []NODES list
 : OPEN-SWAPFILE ( -- ) $SWAPFILE OPEN/CREATE ;
 
 \ ==============================================================
-\                NODE TABLE for Virtual Memory Pointers
+\                NODE TABLE or Virtual Memory Pointers
 DECIMAL
 0000             CONSTANT []$POOL    \ Start of free virtual memory for strings
 1000             CONSTANT MAXLINES
-MAXLINES 2*      CONSTANT #NODES
 65535 82 -       CONSTANT ENDMEM     \ max VM space we will use
 ENDMEM []$POOL - CONSTANT $POOL-SIZE
 
-2 CELLS H +!  \ a tiny space between disk buffers and node array
+\ *FUTURE*  move []NODES to virtual memory to save dictionary space?
+CREATE []NODES     MAXLINES CELLS CELL+ ALLOT
 
-#NODES MALLOC CONSTANT []NODES
-[]NODES TABLE2: ]NODE    \ expose []nodes as fast integer array
-#NODES ]NODE  CONSTANT LASTNODE
+[]NODES TABLE2: ]NODE  \ gives fast indexed access to []NODES
+
+[]NODES  MAXLINES 1- CELLS +  CONSTANT LASTNODE
 
 HEX
 \ NODES are filled with $FFFF to indicate empty
-: NEW-NODES ( -- ) []NODES MAXLINES CELLS  TRUE FILLW   #LINES OFF ;
+: NEW-NODES ( -- ) []NODES MAXLINES CELLS  FF FILL   #LINES OFF ;
 
 \ ==============================================================
 \ virtual memory to real memory  ...
-
-: VIRT>REAL ( VMaddr -- addr ) 0  B/BUF UM/MOD BLOCK + ;
 
 VARIABLE VMDP   \ virtual memory pointer
 
 : VM.HERE   ( -- VMaddr) VMDP @ ;
 : VM.ALLOT  VMDP +! ;
 : VM.ALIGN  VM.HERE ALIGNED VMDP ! ;
+
+: VIRT>REAL ( VMaddr -- addr ) 0  B/BUF UM/MOD BLOCK + ;
 
 \ store and fetch operators for virtual memory
 : !VM  ( n vmaddr -- ) VIRT>REAL ! ;
