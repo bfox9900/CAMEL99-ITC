@@ -139,6 +139,9 @@ HEX
     ?WRITE-BACK
     BLK/CYAN SCREEN
     PAGE ." Forth"
+    CR
+    $FILENAME TYPE
+    .FSTATS
     CR QUIT ;
 
 : NEVER-NULL ( -- ) \ TI-99 blank lines are 1 space
@@ -189,6 +192,9 @@ DECIMAL
 
 : -TAB ( -- ) TAB# 0 DO  CLEFT  LOOP ;
 
+DEFER SEARCH1ST
+DEFER SEARCHNEXT
+
 HEX
 : KEYHANDLER ( char -- )
     CASE
@@ -205,6 +211,9 @@ HEX
         0B OF   CUP             ENDOF
         0C OF   PGUP            ENDOF
         02 OF   PGDN            ENDOF
+
+        86 OF   SEARCH1ST       ENDOF \ ^F
+        98 OF   SEARCHNEXT      ENDOF \ ^down arrow
 
         83 OF   COPY            ENDOF \ ^C
         96 OF   PASTE           ENDOF \ ^V

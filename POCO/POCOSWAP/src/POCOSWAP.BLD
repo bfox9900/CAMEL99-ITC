@@ -1,7 +1,5 @@
 \ POCOSWAP.BLD for Camel99 supercart with swapfile       Jul 2026 BJFOX
 
-\ text editor build file for  VDP RAM file storage 20Feb26 BJF
-
 CR .( library includes)
 CR
 NEEDS DUMP      FROM DSK1.TOOLS

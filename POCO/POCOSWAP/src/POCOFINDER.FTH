@@ -13,29 +13,37 @@ NEEDS SEARCH FROM DSK1.SEARCH
         I ]POOL$ CURPOS @ /STRING  BL SKIP
         2OVER  SEARCH TRUE =
         IF  I TOPLINE !  \ set editor topline
-            I ]POOL$
-            ROT -
-            NIP NIP NIP NIP  CURPOS !
-            DROP TRUE
+            I ]NODE @ C@VM SWAP - CURPOS !
+            NIP
+            ROT DROP TRUE -ROT
             LEAVE
         ELSE
             2DROP
             CURPOS OFF  \ start of new line
         THEN
     LOOP
-    TRUE = IF TRUE  EXIT THEN
-    DROP
+    2DROP
 ;
 
+\ : TEST  TOPLINE OFF CURPOS OFF  FINDER ;
+
 CREATE SRCH$  42 ALLOT
-: GETSTRING  1 PARSE-WORD  40 MIN SRCH$ PLACE ;
+: GETSTRING
+    PROMPT: ." Search for?: "  PAD DUP 40 ACCEPT SRCH$ PLACE ;
 
-: ?EDIT   ( ? -- ) 0= ABORT" Can't find in file"   EDIT ;
+: ?EDIT   ( ? -- )
+  0= IF BEEP PROMPT: ." Searched to end of file" KEY DROP
+  THEN EDIT ;
 
-: <FIND>  SRCH$ COUNT  TOPLINE @ FINDER  ?EDIT ;
+: <FINDER>
+    PROMPT: ." Seaching..."
+    SRCH$ COUNT  TOPLINE @ FINDER  ?EDIT ;
 
 : LOC  ( -- ?)
     TOPLINE OFF CURPOS OFF
-    GETSTRING <FIND> ;
+    GETSTRING <FINDER> ;
 
-: LNEXT ( -- ?)  SRCH$ LEN CURPOS+! <FIND> ;
+: LNEXT ( -- ?)  SRCH$ LEN 1+ CURPOS+! <FINDER> ;
+
+' LOC   IS SEARCH1ST
+' LNEXT IS SEARCHNEXT
