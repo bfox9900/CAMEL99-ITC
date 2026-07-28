@@ -1,0 +1,40 @@
+*** POCOSWAP  EDITOR  COMMAND AND CONTROL KEYS ***
+---------------------------------------------------
+
+Commands in Forth console
+-------------------------
+NEW DSK1.FILE2    create a new file and start editor
+
+LOAD DSK1.MYFILE  put file in editor memory and return to Forth
+
+EDIT              start the editor
+
+EDIT <DSK1.XXX>   load file and start editor
+
+SAVEAS DSK1.FILE3 save file in memory as FILE3
+
+PURGE     erase node array and the entire swapfile
+
+DIR DSK3. show the directory of the disk argument
+
+---------------
+    Keys
+----------------
+^S          save file and reload to garbage collect
+
+CLIPBOARD   (Holds 100 lines maximum)
+^X          cut line to a clipboard in VDP ram.
+^C          copy line to a clipboard in VDP ram
+^V          paste clipboard into file at the current line
+
+FCTN 3      delete line forever
+FCTN 8      insert blank line at the cursor
+<Enter>     inserts a new line into the file
+
+HOME         goto start of line
+^right arrow  goto end of line
+
+Searching
+----------
+^F           prompt for string. Find 1st ocurrence
+^down arrow  Find next ocurrence of string
