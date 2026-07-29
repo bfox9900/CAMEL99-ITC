@@ -259,9 +259,9 @@ CR .( Pseudo instructions...)
  \ a "sub:" is a nestable sub-routine.
  \ Call with BL
  \ Exit using RET
-: SUB:   (CODE)   R11 PUSH,  !CSP ;
+: SUB:   (CODE)   R11 RPUSH,  !CSP ;
 : ;SUB   ;LEAF ;
-: RET    R11 POP,  RT, ;     \ Return from sub-routine
+: RET    R11 RPOP,  RT, ;     \ Return from sub-routine
 
 \ A "prog:" Takes a workspace argument and creates a vector
 \ to the code follwing the declaration.
