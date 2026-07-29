@@ -14,7 +14,7 @@ CR
 \ It's pretty fast to slide the node memory with CMOVE> to make space
 : ]OPEN-NODE ( line#--)
     ]NODE DUP CELL+   ( src dst )
-    LASTLINE ]NODE [ 2 CELLS ] LITERAL +  OVER -  CMOVE>
+    #LINES @ ]NODE  [ 2 CELLS ] LITERAL +  OVER -  CMOVE>
 ;
 
 : ]INSERT-NODE ( line# -- addr) DUP ]OPEN-NODE ]NODE TRUE OVER ! ;
@@ -33,8 +33,9 @@ CR
 ;
 
 : ]INSERT$   ( addr len line#--)
-    ]INSERT-NODE >R
-    DUP 1+ VM.MALLOC  DUP R> !
+    >R
+    DUP 1+ VM.MALLOC
+    DUP R> ]INSERT-NODE !
     VM.PLACE
 ;
 

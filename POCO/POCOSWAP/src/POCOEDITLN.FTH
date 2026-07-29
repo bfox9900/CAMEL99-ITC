@@ -156,7 +156,7 @@ HEX
         $EDIT-BUFFER NEVER-NULL THELINE# ]NEW$
         (DOWN) INSERT-BLANKLN
     ELSE
-        CURPOS @ 0=
+        CURPOS @ 0=  EDIT-BUFFER LEN 1 > AND
         IF
             INSERT-BLANKLN  (DOWN)
         ELSE

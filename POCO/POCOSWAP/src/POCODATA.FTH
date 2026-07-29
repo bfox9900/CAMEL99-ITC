@@ -37,7 +37,7 @@ CREATE FILENAME  32 ALLOT
 \  VALUE EDIT-BUFFER \ allocated at start up
 : EDIT-BUFFER ( -- addr) HEAP ; ( use un-allocated memory)
 
-: $EDIT-BUFFER ( -- addr len) EDIT-BUFFER COUNT ;  \ access as a stack string
+: $EDIT-BUFFER ( -- addr len) EDIT-BUFFER COUNT ; \ access as a stack string
 
 : 'TEXT  ( -- addr) EDIT-BUFFER 1+ ; \ skip the byte count
 
