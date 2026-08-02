@@ -29,7 +29,7 @@ CR
     DUP 1+ VM.MALLOC ( -- addr len VMaddr)
     DUP R> ]NODE !             \ copy vm address into NODE
     VM.PLACE
-    1 #LINES+!
+\  1 #LINES+!
 ;
 
 : ]INSERT$   ( addr len line#--)

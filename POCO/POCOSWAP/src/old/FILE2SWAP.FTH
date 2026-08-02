@@ -179,12 +179,10 @@ DECIMAL
 DECIMAL
 : ]POOL$  ( n -- Saddr len) ]NODE @ VIRT>REAL COUNT ;
 
-
 : READ.RECORD ( hndl -- addr len ior) >R PAD DUP 80 R> READ-LINE NIP ;
 
 : .FSTATS
-    CR #LINES @ U. ." lines, "
-    CR VM.HERE  U. ." bytes in virtual memory" ;
+    CR #LINES @ U. ." lines, " VM.HERE U. ." bytes" ;
 
 DECIMAL
 \ *****************************************************************
@@ -200,7 +198,7 @@ DECIMAL
     2DROP                    \ last record is invalid.
     R> CLOSE-FILE DROP
     FLUSH
-    .FSTATS
+\   .FSTATS
 ;
 
 \ ****************************************************************

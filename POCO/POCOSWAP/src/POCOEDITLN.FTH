@@ -122,7 +122,7 @@ HEX
 : SAVE ( -- )
     THELINE# WRITE-BACK  \ force save editbuffer
     PROMPT: ." Saving " $FILENAME 2DUP TYPE  WRITE-FILE
-    PURGE
+  \  PURGE
     PROMPT: ." Reloading ..." $FILENAME READ-FILE
     REDRAW
 ;
