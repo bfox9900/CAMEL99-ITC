@@ -69,10 +69,8 @@ HEX
 ;
 
 : DELETELINE ( n -- )
-    ]REMOVE-NODE
-\ This bit me. We must reset the lastline node and the next one
-    LASTLINE    ERASE-NODE
-    LASTLINE 1+ ERASE-NODE
+    ]REMOVE-NODE           \ slide node array up one
+    #LINES @ ERASE-NODE    \ make the old last node free for use
     -1 #LINES+!
 ;
 
@@ -110,10 +108,11 @@ HEX
 
 : EMPTY$ S"  " ; \ dv80 file empty line, is 1 space
 
-: INSERTLN ( $addr -- )
+: INSERTLN ( $addr len -- )
     ROW @ SCROLLDN
     ?WRITE-BACK
     THELINE# ]INSERT$
+    1 #LINES+!
 ;
 
 : INSERT-BLANKLN    EMPTY$ INSERTLN  RELOAD-BUFFER ;
@@ -121,32 +120,43 @@ HEX
 \ file is saved and reloaded to reclaim VDP memory and nodes
 : SAVE ( -- )
     THELINE# WRITE-BACK  \ force save editbuffer
+    FLUSH
     PROMPT: ." Saving " $FILENAME 2DUP TYPE  WRITE-FILE
-  \  PURGE
+\   PURGE
     PROMPT: ." Reloading ..." $FILENAME READ-FILE
+    PROMPT: .FSTATS 250 MS
     REDRAW
 ;
 
 : HOME  ( -- ) SOL OFF CURPOS OFF ( REDRAW) ;
 
-: SPLITLN ( addr len -- right len left len)
-   2DUP RIGHTSIDE 2SWAP LEFTSIDE
-;
-
 : GOTO-EOL ( -- ) EDIT-BUFFER LEN  CURPOS ! ;
 
 : ESCAPE
-    ?WRITE-BACK
+    ?WRITE-BACK FLUSH
+
     BLK/CYAN SCREEN
-    PAGE ." Forth"
-    CR
+    PAGE
     $FILENAME TYPE
     .FSTATS
+    CR
+    CR ." Forth"
+
     CR QUIT ;
 
-: NEVER-NULL ( -- ) \ TI-99 blank lines are 1 space
-    EDIT-BUFFER DUP LEN 0= IF  EMPTY$ ROT PLACE   updated ON  RETURN;
-    DROP
+
+: NEVER-NULL ( $addr len -- ) \ TI-99 blank lines are 1 space
+    DUP 0= IF 2DROP  EMPTY$   updated ON  THEN
+;
+
+: SPLITLN ( addr n )
+    PAD PLACE
+    PAD COUNT LEFTSIDE  THELINE# ]$OVERWRITE
+    RELOAD-BUFFER   RETYPE.BUFFER
+    (DOWN)
+    PAD COUNT RIGHTSIDE INSERTLN
+    HOME
+    RELOAD-BUFFER
 ;
 
 : NEWLINE
@@ -156,7 +166,7 @@ HEX
         $EDIT-BUFFER NEVER-NULL THELINE# ]NEW$
         (DOWN) INSERT-BLANKLN
     ELSE
-        CURPOS @ 0=  EDIT-BUFFER LEN 1 > AND
+        CURPOS @ 0=
         IF
             INSERT-BLANKLN  (DOWN)
         ELSE
@@ -213,7 +223,7 @@ HEX
         02 OF   PGDN            ENDOF
 
         86 OF   SEARCH1ST       ENDOF \ ^F
-        98 OF   SEARCHNEXT      ENDOF \ ^down arrow
+        8E OF   SEARCHNEXT      ENDOF \ ^down arrow
 
         83 OF   COPY            ENDOF \ ^C
         96 OF   PASTE           ENDOF \ ^V
@@ -222,6 +232,9 @@ HEX
         93 OF   SAVE            ENDOF
         95 OF   HOME            ENDOF
         84 OF   GOTO-EOL        ENDOF \ ^D or ^right arrow
+
+        BB OF   $EDIT-BUFFER SPLITLN ENDOF  \ ^/
+
         ESC OF  ESCAPE          ENDOF
 
     \ DEFAULT CASE:
@@ -231,7 +244,7 @@ HEX
 ;
 
 DECIMAL
-VARIABLE DEBUG \ Enable with DEBUG ON
+VARIABLE DEBUG     \ Enable with DEBUG ON
 
 DEFER DEBUGGER
 
@@ -250,7 +263,12 @@ DEFER DEBUGGER
 
 : .BUFFER   GETXY PROMPT: $EDIT-BUFFER TYPE  AT-XY ;
 
-' .BUFFER IS DEBUGGER
+: .STATUS
+GETXY PROMPT: ." Line# " THELINE# . SPACE ." Lines= " #LINES ?
+AT-XY ;
+
+\ ' .BUFFER IS DEBUGGER
+' .STATUS IS DEBUGGER
 
 : EDITLINE ( -- )
     RELOAD-BUFFER
@@ -269,7 +287,8 @@ DEFER DEBUGGER
 : (EDIT)
     REDRAW
     BEGIN
-       EDITLINE NEVER-NULL
+       EDITLINE
+       $EDIT-BUFFER NEVER-NULL EDIT-BUFFER PLACE
        NEWLINE  \ handle ^m from EDITLINE
     AGAIN
 ;

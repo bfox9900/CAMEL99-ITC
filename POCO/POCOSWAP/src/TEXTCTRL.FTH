@@ -8,6 +8,7 @@ HEX
 0F CONSTANT ESC
 
 DECIMAL
+: +PLACE   ( addr n $ -- ) 2DUP 2>R  COUNT +  SWAP CMOVE 2R> C+! ;
 : PUTCURS   ROW/COL 2@ AT-XY ;
 : CLIPPED  0 SCRWIDTH CLIP ;
 
@@ -36,9 +37,8 @@ DECIMAL
 
 : PUSHRIGHT ( -- )
     1 EDIT-BUFFER LEN+!
-\  source string  destination  len
     ( *MUST USE CMOVE> here * )
-    $EDIT-BUFFER RIGHTSIDE -TRAILING  'CURSOR 1+  SWAP CMOVE>
+    $EDIT-BUFFER   RIGHTSIDE -TRAILING  'CURSOR 1+  SWAP CMOVE>
     BL 'CURSOR C!
     UPDATE
 ;
