@@ -113,8 +113,9 @@ VARIABLE VMDP   \ virtual memory pointer
 : VM.ALIGN  VM.HERE ALIGNED VMDP ! ;
 
 \ store and fetch operators for virtual memory
-: !VM  ( n vmaddr -- ) VIRT>REAL ! ;
-: C!VM ( c vmaddr -- ) VIRT>REAL C! ;
+\ All store functions must mark buffer for FLUSHing with UPDATE
+: !VM  ( n vmaddr -- ) VIRT>REAL !   UPDATE ;
+: C!VM ( c vmaddr -- ) VIRT>REAL C!  UPDATE ;
 
 : @VM  ( vmaddr -- n ) VIRT>REAL @ ;
 : C@VM ( vmaddr -- c ) VIRT>REAL C@ ;

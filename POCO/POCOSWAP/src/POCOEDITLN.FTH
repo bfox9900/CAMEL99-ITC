@@ -69,18 +69,17 @@ HEX
 ;
 
 : DELETELINE ( n -- )
-    ]REMOVE-NODE           \ slide node array up one
+    DUP>R ]REMOVE-NODE     \ slide node array up one
     #LINES @ ERASE-NODE    \ make the old last node free for use
+    RELOAD-BUFFER
+    ROW @ 1+ SCROLLUP
+    R> PARTLIST
     -1 #LINES+!
 ;
 
 : FCTN-3
     THELINE# LASTLINE >= IF  BEEP  RETURN;
-
     THELINE# DELETELINE
-    RELOAD-BUFFER
-    ROW @ 1+ SCROLLUP
-    THELINE# PARTLIST
 ;
 
 : 'LASTCHAR  ( addr len -- addr' ) + 1- ; \ address of last character
@@ -145,8 +144,9 @@ HEX
     CR QUIT ;
 
 
-: NEVER-NULL ( $addr len -- ) \ TI-99 blank lines are 1 space
-    DUP 0= IF 2DROP  EMPTY$   updated ON  THEN
+: NEVER-NULL ( -- ) \ TI-99 blank lines are 1 space
+    EDIT-BUFFER DUP LEN 0= IF  EMPTY$ ROT PLACE   updated ON  RETURN;
+    DROP
 ;
 
 : SPLITLN ( addr n )
@@ -159,9 +159,24 @@ HEX
     RELOAD-BUFFER
 ;
 
+DECIMAL
+: JOINLINES
+    THELINE#  #LINES @ = IF  BEEP EXIT RETURN;
+    ?WRITE-BACK
+    EDIT-BUFFER LEN THELINE# 1+ ]NODE @ C@VM +  \ total  len of 2 lines
+    80 > IF  BEEP PROMPT: ." Too long" 300 MS
+             REDRAW
+          RETURN;
+
+    THELINE# 1+ ]POOL$  EDIT-BUFFER +PLACE
+    THELINE# WRITE-BACK
+    THELINE# 1+ DELETELINE
+    REDRAW
+;
+
 : NEWLINE
     ?WRITE-BACK
-    THELINE# LASTLINE =
+    THELINE# #LINES @ =
     IF
         $EDIT-BUFFER NEVER-NULL THELINE# ]NEW$
         (DOWN) INSERT-BLANKLN
@@ -233,7 +248,8 @@ HEX
         95 OF   HOME            ENDOF
         84 OF   GOTO-EOL        ENDOF \ ^D or ^right arrow
 
-        BB OF   $EDIT-BUFFER SPLITLN ENDOF  \ ^/
+        8A OF   JOINLINES       ENDOF       \ ^J  join lines
+        8B OF   $EDIT-BUFFER SPLITLN ENDOF  \ ^K ("kut")
 
         ESC OF  ESCAPE          ENDOF
 
@@ -263,9 +279,16 @@ DEFER DEBUGGER
 
 : .BUFFER   GETXY PROMPT: $EDIT-BUFFER TYPE  AT-XY ;
 
+\ Using VTYPE to keep editor interaction fast
 : .STATUS
-GETXY PROMPT: ." Line# " THELINE# . SPACE ." Lines= " #LINES ?
-AT-XY ;
+    GETXY
+    PROMPT:  $FILENAME VTYPE
+    34 VCOL ! S" Line# " VTYPE THELINE# (.) VTYPE
+    [CHAR] / (EMIT)  #LINES @ 1- (.) VTYPE
+
+    60 VCOL !
+    S" Clipboard " VTYPE 'STAK @ (.) VTYPE
+    AT-XY ;
 
 \ ' .BUFFER IS DEBUGGER
 ' .STATUS IS DEBUGGER
@@ -287,8 +310,7 @@ AT-XY ;
 : (EDIT)
     REDRAW
     BEGIN
-       EDITLINE
-       $EDIT-BUFFER NEVER-NULL EDIT-BUFFER PLACE
+       EDITLINE NEVER-NULL
        NEWLINE  \ handle ^m from EDITLINE
     AGAIN
 ;
