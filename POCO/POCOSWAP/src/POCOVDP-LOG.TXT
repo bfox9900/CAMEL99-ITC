@@ -67,3 +67,9 @@ Jul 27 2026
 Found the reason for occasional line duplication.
 In VM.ALLOC after a block change I did not call VM.ALLOT. DUH!
 Fixed.
+
+
+10AUG26
+Adding back features developed in POCOSWAP version.
+New FIND (^F)
+Cutline & JOINLINE

@@ -93,13 +93,38 @@ HEX
 ;
 
 DECIMAL
-: .DEBUG
+VARIABLE DEBUG     \ Enable with DEBUG ON
+
+DEFER DEBUGGER
+
+: .DEBUG     DEBUG @ IF  DEBUGGER    THEN  ;
+
+\ : .DEBUGSTUFF
+\        GETXY
+\        PROMPT:
+\         THELINE# . SPACE 80COL-CURSOR .
+\       SPACE ." Lines " #LINES @ U. ." | " ." Depth= "  DEPTH . SPACE
+\         ." | " ." Node " THELINE# ]NODE @ HEX .
+\         SPACE EDIT-BUFFER LEN .
+\        DECIMAL
+\        AT-XY
+\ ;
+
+: .BUFFER   GETXY PROMPT: $EDIT-BUFFER TYPE  AT-XY ;
+
+\ Using VTYPE to keep editor interaction fast
+: .STATUS
     GETXY
-        0 23 AT-XY  THELINE# . SPACE 80COL-CURSOR .
-        SPACE ." Lines " #LINES @ U. ." | " ." Depth= "  DEPTH . SPACE
-        ." | " ." Node " THELINE# ]NODE @ HEX .
-        DECIMAL
+    PROMPT:  $FILENAME VTYPE
+    34 VCOL ! S" Line# " VTYPE THELINE# (.) VTYPE
+    [CHAR] / (EMIT)  #LINES @ 1- (.) VTYPE
+
+  \  60 VCOL !
+  \  S" Clipboard " VTYPE 'STAK @ (.) VTYPE
     AT-XY ;
+
+\ ' .BUFFER IS DEBUGGER
+' .STATUS IS DEBUGGER
 
 
 : EDITLINE ( addr n -- addr n')
