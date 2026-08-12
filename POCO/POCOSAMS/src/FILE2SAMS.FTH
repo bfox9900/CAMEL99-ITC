@@ -172,4 +172,4 @@ DECIMAL
       CELL+
     REPEAT
     DROP
-   R> CLOSE-FILE DROP ;
+    R> CLOSE-FILE DROP ;
