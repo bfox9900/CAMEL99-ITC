@@ -5,6 +5,9 @@ HEX
 0F CONSTANT ESC
 
 DECIMAL
+: +PLACE     ( addr n $ -- ) 2DUP 2>R  COUNT +  SWAP CMOVE 2R> C+! ;
+: VDP$+PLACE ( Vaddr n $ -- ) 2DUP 2>R  COUNT +  SWAP VREAD 2R> C+! ;
+
 : PUTCURS   ROW/COL 2@ AT-XY ;
 : CLIPPED  0 SCRWIDTH CLIP ;
 
@@ -12,7 +15,6 @@ DECIMAL
 : CURPOS+!  ( n -- ) CURPOS @ +  CLIPPED   CURPOS ! ;
 
 : LEN+! ( n Caddr -- ) DUP>R C@ + CLIPPED R> C! ;
-
 
 \ =======================
 \ text functions

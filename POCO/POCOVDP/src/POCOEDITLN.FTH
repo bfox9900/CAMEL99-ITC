@@ -131,10 +131,6 @@ HEX
 
 : HOME  ( -- ) SOL OFF CURPOS OFF ( REDRAW) ;
 
-: SPLITLN ( addr len -- right len left len)
-   2DUP RIGHTSIDE 2SWAP LEFTSIDE
-;
-
 : GOTO-EOL ( -- ) EDIT-BUFFER LEN  CURPOS ! ;
 
 : ESCAPE
@@ -146,6 +142,33 @@ HEX
 : NEVER-NULL ( -- ) \ TI-99 blank lines are 1 space
     EDIT-BUFFER DUP LEN 0= IF  EMPTY$ ROT PLACE   updated ON  RETURN;
     DROP
+;
+
+: SPLITLN ( addr n )
+    PAD PLACE
+    PAD COUNT LEFTSIDE  THELINE# ]$OVERWRITE
+    RELOAD-BUFFER   RETYPE.BUFFER
+    (DOWN)
+    PAD COUNT RIGHTSIDE INSERTLN
+    HOME
+    RELOAD-BUFFER
+;
+
+: KUTLINE   $EDIT-BUFFER SPLITLN ;
+
+DECIMAL
+: JOINLINES
+    THELINE#  #LINES @ = IF  BEEP EXIT RETURN;
+    ?WRITE-BACK
+    EDIT-BUFFER LEN  THELINE# 1+ ]NODE @ VLEN +
+    80 > IF  BEEP PROMPT: ." Too long" 300 MS
+             REDRAW
+          RETURN;
+
+    THELINE# 1+ ]POOL$  EDIT-BUFFER +PLACE
+    THELINE# WRITE-BACK
+    THELINE# 1+ DELETELINE
+    REDRAW
 ;
 
 : NEWLINE
@@ -214,15 +237,19 @@ HEX
         02 OF   PGDN            ENDOF
 
         86 OF   SEARCH1ST       ENDOF \ ^F
-        8E OF   SEARCHNEXT      ENDOF \ ^down arrow
+        8E OF   SEARCHNEXT      ENDOF \ ^N
 
         83 OF   COPY            ENDOF \ ^C
         96 OF   PASTE           ENDOF \ ^V
         98 OF   CUT             ENDOF \ ^X
 
-        93 OF   SAVE            ENDOF
-        95 OF   HOME            ENDOF
+        93 OF   SAVE            ENDOF \ ^S
+        95 OF   HOME            ENDOF \ Home key
         84 OF   GOTO-EOL        ENDOF \ ^D or ^right arrow
+
+        8A OF   JOINLINES       ENDOF  \ ^J
+        8B OF   KUTLINE         ENDOF  \ ^K
+
        ESC OF   ESCAPE          ENDOF
 
     \ DEFAULT CASE:
