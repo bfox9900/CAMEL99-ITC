@@ -7,19 +7,16 @@ DECIMAL
 : LIMIT-EOL   CURPOS @  EDIT-BUFFER LEN  MIN  CURPOS ! ;
 
 : CRIGHT ( -- )
-    CURPOS @ SCRWIDTH = IF  1 SOL+! RETYPE.BUFFER  RETURN;
+    CURPOS @ SCRWIDTH = IF  1 SOL+! REDRAW  RETURN;
     CURPOS @ EDIT-BUFFER LEN >= IF LIMIT-EOL RETURN;
     1 CURPOS+!
 ;
 
 : CLEFT  ( -- )
     CURPOS 1 OVER SAFE-!
-    @ 0=  IF -1 SOL+!   RETYPE.BUFFER  THEN ;
+    @ 0=  IF -1 SOL+!   REDRAW  THEN ;
 
-\ *ALL* cursor movements to a new line must write-back the edit-buffer
-\ to the current line if the 'updated' flag is set.
 : (UP) \ unconditional cursor down
-    ?WRITE-BACK
     ROW 1-!
     ROW @ 0<
     IF
@@ -38,8 +35,6 @@ DECIMAL
 ;
 
 : (DOWN) \ unconditional cursor down
-    ?WRITE-BACK
-    THELINE# LASTLINE >= IF BEEP  RETURN;
     ROW 1+!
     ROW @ 22 >
     IF
@@ -48,7 +43,13 @@ DECIMAL
         0 SCROLLUP
     THEN ;
 
-: CDOWN ( -- ) (DOWN)  RELOAD-BUFFER LIMIT-EOL ;
+: LASTNODE?  THELINE# 1+ ]NODE @ TRUE = ;
+
+: CDOWN ( -- )
+    ?WRITE-BACK
+    LASTNODE? IF BEEP  RETURN;
+    (DOWN) RELOAD-BUFFER  LIMIT-EOL
+;
 
 \ page moves
 : PGUP  ( -- )
@@ -79,16 +80,19 @@ HEX
 ;
 
 : FCTN-3
-    THELINE# LASTLINE >= IF  BEEP  RETURN;
+\   THELINE# LASTLINE >= IF  BEEP  RETURN;
+    LASTNODE? IF  BEEP  RETURN;
+
     THELINE# DELETELINE
+    RELOAD-BUFFER
+    ROW @ 1+ SCROLLUP
+    THELINE# PARTLIST
 ;
 
 : 'LASTCHAR  ( addr len -- addr' ) + 1- ; \ address of last character
 
 : DELCHAR    ( -- )
     CURPOS @ EDIT-BUFFER LEN = IF  RETURN;
-
-    ?WRITE-BACK
     $EDIT-BUFFER 2DUP 'LASTCHAR >R  \ save last character address
     RIGHTSIDE >R   ( a   ) ( R: U)
     DUP 1+         ( a a')
@@ -96,7 +100,7 @@ HEX
     R> ( a' a u) CMOVE    \ slide text left
     BL R> C!              \ blank the last character
     -1 EDIT-BUFFER LEN+!  \ dec. count byte in buffer
-    updated ON            \ mark as modified for ?write-back
+    UPDATE                \ mark as modified for ?write-back
 ;
 
 : DELETE-KEY
@@ -108,11 +112,10 @@ HEX
 
 : EMPTY$ S"  " ; \ dv80 file empty line, is 1 space
 
-: INSERTLN ( $addr len -- )
+: INSERTLN ( $addr -- )
     ROW @ SCROLLDN
     ?WRITE-BACK
     THELINE# ]INSERT$
-    1 #LINES+!
 ;
 
 : INSERT-BLANKLN    EMPTY$ INSERTLN  RELOAD-BUFFER ;
@@ -121,9 +124,8 @@ HEX
 : SAVE ( -- )
     THELINE# WRITE-BACK  \ force save editbuffer
     PROMPT: ." Saving " $FILENAME 2DUP TYPE  WRITE-FILE
-\   PURGE
+    PURGE
     PROMPT: ." Reloading ..." $FILENAME READ-FILE
-    PROMPT: .FSTATS 250 MS
     REDRAW
 ;
 
@@ -134,11 +136,7 @@ HEX
 : ESCAPE
     ?WRITE-BACK
     BLK/CYAN SCREEN
-    PAGE
-    $FILENAME TYPE
-    .FSTATS
-    CR
-    CR ." Forth"
+    PAGE ." Forth"
     CR QUIT ;
 
 : NEVER-NULL ( -- ) \ TI-99 blank lines are 1 space
@@ -156,16 +154,21 @@ HEX
     RELOAD-BUFFER
 ;
 
+: KUTLINE   $EDIT-BUFFER SPLITLN ;
+
 DECIMAL
+\ append addr n to $
+: +PLACE      ( addr n $ -- ) 2DUP 2>R  COUNT +  SWAP CMOVE 2R> C+! ;
+
 : JOINLINES
     THELINE#  #LINES @ = IF  BEEP EXIT RETURN;
     ?WRITE-BACK
-    EDIT-BUFFER LEN THELINE# 1+ ]NODE @ C@L +  \ total  len of 2 lines
+    EDIT-BUFFER LEN  THELINE# 1+ ]NODE @ C@L +
     80 > IF  BEEP PROMPT: ." Too long" 300 MS
              REDRAW
           RETURN;
 
-    THELINE# 1+ ]POOL$  EDIT-BUFFER +PLACE
+    THELINE# 1+ ]POOL$ EDIT-BUFFER +PLACE
     THELINE# WRITE-BACK
     THELINE# 1+ DELETELINE
     REDRAW
@@ -214,6 +217,8 @@ DECIMAL
 
 : -TAB ( -- ) TAB# 0 DO  CLEFT  LOOP ;
 
+DEFER  FIND-TEXT \ This needs to have code assigned to it
+
 DEFER SEARCH1ST
 DEFER SEARCHNEXT
 
@@ -235,20 +240,20 @@ HEX
         02 OF   PGDN            ENDOF
 
         86 OF   SEARCH1ST       ENDOF \ ^F
-        8E OF   SEARCHNEXT      ENDOF \ ^down arrow
+        8E OF   SEARCHNEXT      ENDOF \ ^N
 
         83 OF   COPY            ENDOF \ ^C
         96 OF   PASTE           ENDOF \ ^V
         98 OF   CUT             ENDOF \ ^X
 
-        93 OF   SAVE            ENDOF
-        95 OF   HOME            ENDOF
+        93 OF   SAVE            ENDOF \ ^S
+        95 OF   HOME            ENDOF \ Home key
         84 OF   GOTO-EOL        ENDOF \ ^D or ^right arrow
 
-        8A OF   JOINLINES       ENDOF       \ ^J  join lines
-        8B OF   $EDIT-BUFFER SPLITLN ENDOF  \ ^K ("kut")
+        8A OF   JOINLINES       ENDOF  \ ^J
+        8B OF   KUTLINE         ENDOF  \ ^K
 
-        ESC OF  ESCAPE          ENDOF
+       ESC OF   ESCAPE          ENDOF
 
     \ DEFAULT CASE:
                 BEEP
@@ -261,21 +266,6 @@ VARIABLE DEBUG \ Enable with DEBUG ON
 
 DEFER DEBUGGER
 
-: .DEBUG     DEBUG @ IF  DEBUGGER    THEN  ;
-
-\ : .DEBUGSTUFF
-\        GETXY
-\        PROMPT:
-\         THELINE# . SPACE 80COL-CURSOR .
-\       SPACE ." Lines " #LINES @ U. ." | " ." Depth= "  DEPTH . SPACE
-\         ." | " ." Node " THELINE# ]NODE @ HEX .
-\         SPACE EDIT-BUFFER LEN .
-\        DECIMAL
-\        AT-XY
-\ ;
-
-: .BUFFER   GETXY PROMPT: $EDIT-BUFFER TYPE  AT-XY ;
-
 \ Using VTYPE to keep editor interaction fast
 : .STATUS
     GETXY
@@ -283,12 +273,12 @@ DEFER DEBUGGER
     34 VCOL ! S" Line# " VTYPE THELINE# (.) VTYPE
     [CHAR] / (EMIT)  #LINES @ 1- (.) VTYPE
 
-    60 VCOL !
-    S" Clipboard " VTYPE 'STAK @ (.) VTYPE
+  \  60 VCOL !
+  \  S" Clipboard " VTYPE 'STAK @ (.) VTYPE
     AT-XY ;
 
-\ ' .BUFFER IS DEBUGGER
 ' .STATUS IS DEBUGGER
+
 
 : EDITLINE ( -- )
     RELOAD-BUFFER
@@ -299,8 +289,7 @@ DEFER DEBUGGER
         DUP BL [CHAR] ~ BETWEEN
         IF   WRITE.CHAR
         ELSE KEYHANDLER
-        THEN .DEBUG
-       \ THELINE$ WRITE-BACK
+        THEN DEBUGGER
     REPEAT
     DROP
 ;

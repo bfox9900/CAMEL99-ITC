@@ -54,7 +54,7 @@ DECIMAL
 : ?SIZE     DUP BUFFSIZE 1+ >  ABORT" POOL$ > BUFFSIZE" ;
 
 \ : POOL$.GET   ( Vaddr len addr )  2DUP C! 1+  SAMS.GET ;
-: ]POOL$.PUT  ( $addr len line# ) ]NODE @ VIRT>REAL PLACE  ;
+: ]POOL$.PUT  ( $addr len line# ) ]NODE @ SAMS.PLACE  ;
 
 \ : CLEAN       ( caddr -- )
 \    DUP 1+ BUFFSIZE 1-  BL FILL

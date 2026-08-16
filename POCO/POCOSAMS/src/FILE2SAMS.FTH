@@ -35,12 +35,12 @@ F SEGMENT \ uses the last segment
 \          *** SAMS MEMORY MANAGEMENT and Utilities ***
 VARIABLE SDP   \ sams dictionary pointer
 
-: SAMS.HERE   SDP @ ;
-: SAMS.ALLOT  SDP +! ;
-: SAMS.ALIGN  SAMS.HERE ALIGNED SDP ! ;
+: SAMS.HERE   ( -- VirtAddr) SDP @ ;
+: SAMS.ALLOT  ( u -- ) SDP +! ;
+: SAMS.ALIGN  ( -- ) SAMS.HERE ALIGNED SDP ! ;
 
-: ,L       SAMS.HERE !L  2 SAMS.ALLOT ;
-: C,L      SAMS.HERE C!L 1 SAMS.ALLOT ;
+: ,L     ( u -- ) SAMS.HERE !L  2 SAMS.ALLOT ;
+: C,L    ( c -- ) SAMS.HERE C!L 1 SAMS.ALLOT ;
 
 HEX
 1000             CONSTANT B/PAGE
@@ -67,12 +67,7 @@ DECIMAL
 \ : SAMS.CMOVE  ( a1 a2 u -- ) BOUNDS DO  DUP C@L I C!L     LOOP DROP ;
 \ : SAMS.CMOVE2    ( a1 a2 u -- ) ROT VIRT>REAL -ROT CMOVE ;
 
-: SAMS.PLACE   ( src n dst -- )
-  2DUP C!L       \ store length in SAMS
-  1+             \ add one to skip past the byte count
-  VIRT>REAL      \ ie: pull sams page in memory
-  SWAP 1+ CMOVE ;
-
+: SAMS.PLACE   ( src n dst -- ) VIRT>REAL PLACE ;
 
 \ clears 4k pages at a time. *NO PROTECTION*
 HEX 1000 CONSTANT 4K
@@ -98,8 +93,8 @@ ENDMEM []$POOL - CONSTANT $POOL-SIZE \ largest file size
 : ?NODES  ( -- )  LINES @ ]NODE  LASTNODE > ABORT" No more nodes" ;
 
 HEX
-\ NODES are filled with $FFFF to indicate empty
-: NEW-NODES ( -- ) []NODES MAXLINES CELLS  FF FILL ;
+\ NODES are filled with TRUE ($FFFF) to indicate empty
+: NEW-NODES ( -- ) []NODES MAXLINES CELLS TRUE FILLW ;
 : NEW-$POOL ( -- ) []$POOL $POOL-SIZE SAMS.ERASE  SDP OFF ;
 
 \ ** words ending with $ return a stack string (addr,len) pair **
@@ -165,11 +160,8 @@ DECIMAL
     \ * fetch the SAMS "virtual" address from the NODE.
       DUP @
     \ convert to REAL address which pulls the sams page into CPU memory
-      VIRT>REAL
-    \ now use regular Forth words
-      COUNT -TRAILING R@ WRITE-LINE ?FILERR
-    \ advance to next node ...
-      CELL+
+      VIRT>REAL COUNT -TRAILING R@ WRITE-LINE ?FILERR
+      CELL+      \ advance to next node ...
     REPEAT
     DROP
     R> CLOSE-FILE DROP ;

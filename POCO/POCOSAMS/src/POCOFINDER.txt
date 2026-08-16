@@ -1,0 +1,50 @@
+\ POCOFINDER.FTH
+CR .( search function for swapfile POCO)
+
+NEEDS SEARCH FROM DSK1.SEARCH
+
+\ Ugly but it works
+: FINDER  ( addr len line# -- 0 | curpos )
+   >R
+   FALSE -ROT
+   ROW OFF
+   #LINES @ R>
+    DO
+        I ]POOL$ PAD 2DUP C! 1+ SWAP VREAD
+        PAD COUNT RIGHTSIDE  BL SKIP
+        2OVER  SEARCH TRUE =
+        IF  I TOPLINE !  \ set editor topline
+            I ]NODE @ VC@ SWAP -  CURPOS !
+            NIP
+            ROT DROP TRUE -ROT
+            LEAVE
+        ELSE
+            2DROP
+            CURPOS OFF  \ start of new line
+        THEN
+    LOOP
+    2DROP
+;
+
+\ : TEST  TOPLINE OFF CURPOS OFF  FINDER ;
+
+CREATE SRCH$  42 ALLOT
+: GETSTRING
+    PROMPT: ." Search for?: "  PAD DUP 40 ACCEPT SRCH$ PLACE ;
+
+: ?EDIT   ( ? -- )
+  0= IF BEEP PROMPT: ." Searched to end of file" KEY DROP
+  THEN EDIT ;
+
+: <FINDER>
+    PROMPT: ." Seaching..."
+    SRCH$ COUNT  TOPLINE @ FINDER  ?EDIT ;
+
+: LOC  ( -- ?)
+    TOPLINE OFF CURPOS OFF
+    GETSTRING <FINDER> ;
+
+: LNEXT ( -- ?)  SRCH$ LEN 1+ CURPOS+! <FINDER> ;
+
+' LOC   IS SEARCH1ST
+' LNEXT IS SEARCHNEXT

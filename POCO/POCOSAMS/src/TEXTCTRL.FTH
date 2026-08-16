@@ -5,6 +5,9 @@ HEX
 0F CONSTANT ESC
 
 DECIMAL
+\ append addr n to $
+: +PLACE      ( addr n $ -- ) 2DUP 2>R  COUNT +  SWAP CMOVE 2R> C+! ;
+
 : PUTCURS   ROW/COL 2@ AT-XY ;
 : CLIPPED  0 SCRWIDTH CLIP ;
 

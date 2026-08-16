@@ -14,7 +14,9 @@ VARIABLE SORTED
 
 \ divide by 1.35 using Forth's scaling operator
 \ found this ratio to be the fastest
-: 1.35/  ( n -- n' ) 100 135 */ ;
+: 1.35/  ( n -- n' ) 100 139 */ ;
+
+: .707*   769 1000 */ ;
 
 : XCHG  ( addr1 addr2 -- ) 2DUP @ SWAP @  ROT ! SWAP ! ;
 
@@ -29,7 +31,7 @@ DECIMAL
    PASSES OFF
     DUP>R  TO GAP                    \ save n on Rstack and in GAP
     BEGIN
-      GAP 1.35/  TO GAP              \ re-compute the gap
+      GAP 1.35/ TO GAP              \ re-compute the gap
       SORTED ON
       R@ ( -- n) GAP -  0           \ n-gap is loop limit
       DO ( -- addr )
@@ -57,16 +59,15 @@ DECIMAL
 1000 CONSTANT SIZE
 
 SIZE CELLS  MALLOC CONSTANT Q[]
-INCLUDE DSK1.TABLES
 
 : ]Q    CELLS Q[] + ;
 
 \ : ERASE   0 FILL ;
 
-: CLEARIT  ( -- ) 0 ]Q SIZE CELLS ERASE ;     \ all the same data 17.7
-: REVERSED ( -- ) SIZE  0 DO  SIZE I -  I ]Q !      LOOP ; \ 17.11 seconds
-: ASCENDING ( -- ) SIZE  0 DO     I  I ]Q !      LOOP ;    \ 16.3
-: RANDIT   ( -- ) SIZE  0 DO  256 RND I ]Q !   LOOP ;  \ 18.11
+: CLEARIT   ( -- ) 0 ]Q SIZE CELLS ERASE ;     \ all the same data 17.7
+: REVERSED  ( -- ) SIZE  0 DO  SIZE I -  I ]Q ! LOOP ; \ 17.11 seconds
+: ASCENDING ( -- ) SIZE  0 DO     I  I ]Q !     LOOP ;    \ 16.3
+: RANDIT    ( -- ) SIZE  0 DO  256 RND I ]Q !   LOOP ;  \ 18.11
 \ 2 different records 16.3
 : TWOIT    ( -- ) CLEARIT   99 45 ]Q !  777 SIZE 2/ ]Q ! ;
 : TURTLES  ( -- ) \ 16.6

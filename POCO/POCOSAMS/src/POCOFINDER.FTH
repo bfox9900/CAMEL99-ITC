@@ -9,8 +9,7 @@ NEEDS SEARCH FROM DSK1.SEARCH
    ROW OFF
    #LINES @ R>
     DO
-        I ]POOL$ PAD VDP$.GET
-        PAD COUNT RIGHTSIDE  2OVER  SEARCH
+        I ]POOL$ RIGHTSIDE  2OVER  SEARCH
         TRUE =
         IF  I TOPLINE !  \ set editor topline
             DROP NIP

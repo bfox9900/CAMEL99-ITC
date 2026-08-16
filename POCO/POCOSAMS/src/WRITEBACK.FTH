@@ -5,8 +5,8 @@
 \ : ?MEMORY  LASTNODE @  $POOL-SIZE > ABORT" $POOL full" ;
 \ : FREE-NODE ( n -- ) TRUE SWAP ]NODE ! ; \ mark node as free
 
-: ]REMOVE-NODE ( n -- )
-    DUP 1+ ]NODE SWAP ]NODE  LASTNODE OVER -  2 MAX  CMOVE ;
+: ]REMOVE-NODE ( n -- ) \ use MOVE for 16 bit movement
+    DUP 1+ ]NODE SWAP ]NODE  LASTNODE OVER -  2 MAX  MOVE ;
 
 \ : ]ALLOT-NODE ( line# --) SAMS.HERE SWAP ]NODE ! ;
 \ more complicated with SAMS. Must test page boundary for the new string
@@ -34,7 +34,7 @@
     DUP>R ]NODE @ C@L   \ Note: C@L maps in the SAMS page
     EDIT-BUFFER LEN >=  \ compare node len to buffer len
     IF
-        $EDIT-BUFFER R> ]NODE @ PLACE \ re-use $pool address
+        $EDIT-BUFFER R> ]NODE @ SAMS.PLACE \ re-use $pool address
     ELSE
         $EDIT-BUFFER  R> ]NEW$
         1 #LINES+!
