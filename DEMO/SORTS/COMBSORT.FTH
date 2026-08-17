@@ -14,9 +14,9 @@ VARIABLE SORTED
 
 \ divide by 1.35 using Forth's scaling operator
 \ found this ratio to be the fastest
-: 1.35/  ( n -- n' ) 100 139 */ ;
-
-: .707*   769 1000 */ ;
+: 1.30/  ( n -- n' )  100 130 */ ; \ 1.35: 2000 @ 39.38sec
+: 1.35/  ( n -- n' )  100 135 */ ; \ 1.35: 2000 @ 39.38sec
+: 1.414/  ( n -- n' ) 1000 1414 */ ; \ 2000 @ 34.21
 
 : XCHG  ( addr1 addr2 -- ) 2DUP @ SWAP @  ROT ! SWAP ! ;
 
@@ -29,7 +29,7 @@ VARIABLE PASSES  \ counting passes slows things down
 DECIMAL
 : COMBSORT ( addr n -- )
    PASSES OFF
-    DUP>R  TO GAP                    \ save n on Rstack and in GAP
+    DUP>R  TO GAP                   \ save n on Rstack and in GAP
     BEGIN
       GAP 1.35/ TO GAP              \ re-compute the gap
       SORTED ON
@@ -56,7 +56,7 @@ HEX
 2000 H !   \ reset the heap
 
 DECIMAL
-1000 CONSTANT SIZE
+2000 CONSTANT SIZE
 
 SIZE CELLS  MALLOC CONSTANT Q[]
 
@@ -79,6 +79,14 @@ SIZE CELLS  MALLOC CONSTANT Q[]
 
 \ use this to print the array (use FNCT 4 to break out (ALT 4 on PC)
 : .Q   ( -- ) CR  SIZE  0 DO  I ]Q @ U. ?BREAK  LOOP ;
+
+: TEST ( -- )
+      Q[] SIZE 1-  BOUNDS
+      DO
+         I @  I CELL+ @ > ABORT" Not sorted"
+      LOOP
+      ." Sorted in ascending order"
+;
 
 REVERSED
 
