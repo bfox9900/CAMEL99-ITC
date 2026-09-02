@@ -4,6 +4,7 @@ INCLUDE DSK1.TOOLS
 INCLUDE DSK1.RANDOM
 INCLUDE DSK1.MALLOC
 INCLUDE DSK1.ELAPSE
+INCLUDE DSK1.VALUES
 
 DECIMAL
 
@@ -14,7 +15,8 @@ DECIMAL
 \ 6.1.1900 MOVE     LIBRARY FILE FOR CAMEL99
 \ CORE
 : MOVE    ( src dst n -- )
-          >R  2DUP SWAP DUP R@ +  \ -- src dst dst src src+n
+          >R
+          2DUP SWAP DUP R@ +  \ -- src dst dst src src+n
           WITHIN
           IF    R> CMOVE>         \ src <= dst < src+n
           ELSE  R> CMOVE
@@ -24,7 +26,7 @@ DECIMAL
 1 CELLS CONSTANT CELL
 
 : MERGE-STEP ( RIGHT MID LEFT -- RIGHT MID+ LEFT+ )
-  OVER @ OVER @ < IF
+    OVER @ OVER @ < IF
     OVER @ >R
     2DUP - OVER DUP CELL+ ROT MOVE
     R> OVER !
@@ -36,11 +38,12 @@ DECIMAL
 
 : MID ( L R -- MID ) OVER - 2/ CELL NEGATE AND + ;
 
+
 : MERGESORT ( RIGHT LEFT -- RIGHT LEFT )
   2DUP CELL+ <= IF EXIT THEN
   SWAP 2DUP MID RECURSE ROT RECURSE MERGE ;
 
-: MSORT ( ADDR LEN -- )  CELLS OVER + SWAP MERGESORT 2DROP ;
+: MSORT ( addr len -- )  CELLS OVER + SWAP MERGESORT 2DROP ;
 
 \ ============ TESTING COMMANDS ======================
 \ load the array with different kinds of mixed up data
@@ -48,7 +51,7 @@ HEX
 2000 H !   \ reset the heap
 
 DECIMAL
-1000 CONSTANT SIZE
+1000 VALUE SIZE
 
 SIZE CELLS  MALLOC CONSTANT Q[]
 

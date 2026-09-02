@@ -78,3 +78,11 @@ SIZE CELLS  MALLOC CONSTANT Q[]
    QUICKSORT
    CR .ELAPSED
    CR ." Type .Q to see array " ; \ 4.4 SECONDS
+
+\ REAL IRON RESULTS
+\             reversed    sorted     Random
+\ SIZE= 1000   4.41        3.88        7.78
+\ SIZE= 500    2.08        1.81        3.60
+\ SIZE= 200    0.85        0.75        1.30
+\ SIZE= 100    0.41        0.36        0.63
+\ SIZE= 50     0.20        0.18        0.30

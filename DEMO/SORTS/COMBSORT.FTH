@@ -1,10 +1,9 @@
 \ combsort for the non-forth programmer
 
-INCLUDE DSK1.TOOLS
-INCLUDE DSK1.RANDOM
-INCLUDE DSK1.MALLOC
-INCLUDE DSK1.ELAPSE
-
+NEEDS DUMP FROM DSK1.TOOLS
+NEEDS RND  FROM DSK1.RANDOM
+NEEDS MALLOC FROM DSK1.MALLOC
+NEEDS ELAPSE FROM DSK1.ELAPSE
 NEEDS VALUE FROM DSK1.VALUES
 
 HEX
@@ -14,6 +13,7 @@ VARIABLE SORTED
 
 \ divide by 1.35 using Forth's scaling operator
 \ found this ratio to be the fastest
+DECIMAL
 : 1.30/  ( n -- n' )  100 130 */ ; \ 1.35: 2000 @ 39.38sec
 : 1.35/  ( n -- n' )  100 135 */ ; \ 1.35: 2000 @ 39.38sec
 : 1.414/  ( n -- n' ) 1000 1414 */ ; \ 2000 @ 34.21
@@ -55,19 +55,21 @@ DECIMAL
 HEX
 2000 H !   \ reset the heap
 
+: SET-SEED   994A SEED ;
+: ?BREAK   KEY? 3 = ABORT" *BREAK*" ;
+
 DECIMAL
-2000 CONSTANT SIZE
+1000 CONSTANT SIZE
 
 SIZE CELLS  MALLOC CONSTANT Q[]
 
 : ]Q    CELLS Q[] + ;
 
-\ : ERASE   0 FILL ;
-
+: ERASE   0 FILL ;
 : CLEARIT   ( -- ) 0 ]Q SIZE CELLS ERASE ;     \ all the same data 17.7
 : REVERSED  ( -- ) SIZE  0 DO  SIZE I -  I ]Q ! LOOP ; \ 17.11 seconds
 : ASCENDING ( -- ) SIZE  0 DO     I  I ]Q !     LOOP ;    \ 16.3
-: RANDIT    ( -- ) SIZE  0 DO  256 RND I ]Q !   LOOP ;  \ 18.11
+: RANDIT    ( -- ) SET-SEED  SIZE  0 DO  256 RND I ]Q !   LOOP ;  \ 18.11
 \ 2 different records 16.3
 : TWOIT    ( -- ) CLEARIT   99 45 ]Q !  777 SIZE 2/ ]Q ! ;
 : TURTLES  ( -- ) \ 16.6
@@ -91,3 +93,12 @@ SIZE CELLS  MALLOC CONSTANT Q[]
 REVERSED
 
 : GO    Q[] SIZE COMBSORT ;
+
+\ REAL IRON RESULTS
+\             reversed    sorted     Random
+\ SIZE=1000  12.30        11.31      13.58
+\ SIZE=500    5.48         5.05       6.08
+\ SIZE=200    1.85         1.66       2.01
+\ SIZE= 50    0.36         0.33       0.38
+
+\ SIZE=2000  49.89

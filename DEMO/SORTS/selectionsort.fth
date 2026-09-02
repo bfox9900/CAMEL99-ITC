@@ -1,0 +1,24 @@
+
+\ ** LOAD THE SORTTESTSUITE.FTH  FIRST
+
+NEEDS DEFER FROM DSK1.DEFER
+
+: CELL-   POSTPONE 2- ; IMMEDIATE
+2 CONSTANT CELL
+
+DEFER LESS?   ' < IS LESS?
+
+: LEAST ( start end -- least )
+  OVER CELL+ DO
+    I @ OVER @ LESS? IF DROP I THEN
+  CELL +LOOP ;
+
+: SELECTION ( array len -- )
+  CELLS OVER + TUCK ( end start end )
+  CELL- SWAP DO   ( end )
+    I OVER LEAST ( end least )
+    I @ OVER @ I ! SWAP !
+  CELL +LOOP
+  DROP ;
+
+ \ Q[] SIZE ELAPSE SELECTION
