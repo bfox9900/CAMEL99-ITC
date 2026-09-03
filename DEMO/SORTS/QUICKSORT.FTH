@@ -12,15 +12,17 @@ INCLUDE DSK1.ELAPSE
 
 : <=      S" 1+ <" EVALUATE ;  IMMEDIATE
 
-: MID ( l r -- mid ) OVER - 2/ -CELL AND + ;
+\ returns the value in the mid point of the array
+: PIVOT ( l r -- PIVOT ) OVER - 2/ -CELL AND +  @ ;
 
 \ tried a few of these...
 \ : EXCH ( addr1 addr2 -- ) DUP @ >R OVER @ SWAP ! R> SWAP ! ;
 \ : EXCH ( addr1 addr2 -- ) OVER @ OVER @ SWAP ROT ! SWAP ! ;
-: EXCH   ( addr1 addr2 -- ) 2DUP @ SWAP @  ROT ! SWAP ! ;
+: EXCH   ( addr1 addr2 -- )
+  S" 2DUP @ SWAP @  ROT ! SWAP !" EVALUATE ; IMMEDIATE
 
 : PARTITION ( l r -- l r r2 l2 )
-  2DUP MID @ >R ( r: pivot )
+  2DUP PIVOT >R ( r: pivot )
   2DUP
   BEGIN
     SWAP BEGIN  DUP @  R@  < WHILE CELL+ REPEAT
