@@ -45,7 +45,7 @@ DECIMAL
          THEN
       \   PASSES 1+!
       LOOP
-      SORTED @  GAP 0=  AND          \ test for complete
+      SORTED @ TRUE =  GAP 0=  AND          \ test for complete
    UNTIL
    R> 2DROP
 ;

@@ -67,7 +67,7 @@ DECIMAL
 
 : TESTLINE2
    MULTICOLOR
-   \ BEGIN
+   BEGIN
       CLEAR
       RNDX RNDY MOVETO
       50 0
@@ -78,7 +78,7 @@ DECIMAL
            UNLOOP TEXT ABORT
          THEN
       LOOP
-  \ AGAIN
+   ?TERMINAL UNTIL
   TEXT
 ;
 

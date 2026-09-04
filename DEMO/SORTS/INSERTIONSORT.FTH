@@ -18,8 +18,7 @@ NEEDS VALUE FROM DSK1.VALUES
          WHILE
               R@ OVER CELL- @ <
          WHILE
-              CELL-
-              DUP @ OVER CELL+ !
+              CELL- DUP @ OVER CELL+ !
          REPEAT
          THEN
          R> SWAP ! ;
@@ -31,7 +30,6 @@ NEEDS VALUE FROM DSK1.VALUES
          DROP ;
 
 CREATE TEST 7 , 3 , 0 , 2 , 9 , 1 , 6 , 8 , 4 , 5 ,
-
 
 TEST 10 INSORT
 TEST 10 CELLS DUMP

@@ -26,7 +26,8 @@ VARIABLE SWAPS
 
 
 \ This is the original rosseta code but it cheats by reducing the inner loop
-: INSERTION ( ADDR CNT -- )
+\ But it is faster than above.
+: BUBBLE2 ( ADDR CNT -- )
   SWAPS OFF
   PASSES OFF
 
