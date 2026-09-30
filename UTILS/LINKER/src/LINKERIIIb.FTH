@@ -194,7 +194,7 @@ DECIMAL
        CR .AVAIL
        CR
        CR ." DEFs in Memory:"
-       ALSO DEFS WORDS PREVIOUS  \ show the defintions in the file
+       ALSO DEFS WORDS PREVIOUS  \ show the definitions in the file
        DECIMAL
        HEAP TO BASE-MEM  \ needed for relocating next object files
 ;
