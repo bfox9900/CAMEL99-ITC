@@ -61,7 +61,7 @@ HEX
     $2000 H !
     HEAP $2000 FF FILL  \ erase low ram
     HEAP TO BASE-MEM
-    ['] DEFS  >BODY OFF \ skip all DEFS words
+    ['] DEFS  >BODY OFF \ ERASE all words in DEFS vocabulary
     ORGDP @ DP !
 ;
 
