@@ -89,13 +89,16 @@ NEEDS VALUE FROM DSK1.VALUES
 
 HEX F0 CONSTANT $F0
 DECIMAL
+INCLUDE DSK1.RANDOM
+: RNDX   50 RND 10 + ;
+: RNDY   ;
 
 : TEST
         GRAPHICS2
         PENCIL IS STYLUS
         21 0
         DO
-           10 I 4* +  50 I 4* +
+           50 RND 10 I 4* +  50 I 4* +
            195 I 10 * DUP>R -  R> LINE
         LOOP
         BEGIN KEY? UNTIL

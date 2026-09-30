@@ -12,7 +12,7 @@
 \ REM *********************************
 
 \ this program draws multiples of different lengths and colour on the same diagonal
-\ Camel99 Graphics2 system needs to add pixel specific colour funtion
+\ Camel99 Graphics2 system needs to add pixel specific colour function
 
 \ :START
 \    RND 1 Z
@@ -22,16 +22,27 @@
 \    X TO X+X X+X
 \ GOTO :START
 
-
+\ Camel99 Forth equivalent
 NEEDS PLOT   FROM DSK1.GRAPHICS2 \ slower Forth code version
 NEEDS RDN    FROM DSK1.RANDOM
+NEEDS VALUE  FROM DSK1.VALUES
 
-: START
+0 VALUE Z
+0 VALUE A
+0 VALUE X
+
+DECIMAL
+: START                 \ :START
     GRAPHICS2
     5 0 COLOR
-    1 RND  13 RND 2+
+BEGIN
+    1 RND  TO Z         \    RND 1 Z
+    13 RND TO A         \    RND 13 A
+    2 +TO A             \    A=A+2
+    200 RND  X  \    RND 200 X COLOR A SET X
 
 
-
+    ?TERMINAL
+UNTIL
     TEXT
 ;

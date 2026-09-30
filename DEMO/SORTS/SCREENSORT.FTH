@@ -1,6 +1,6 @@
 
 
-NEEDS DUMP    FROM DSK1.LOWTOOLS
+NEEDS DUMP    FROM DSK1.TOOLS
 NEEDS CHARSET FROM DSK1.CHARSET
 NEEDS RND     FROM DSK1.RANDOM
 NEEDS VALUE   FROM DSK1.VALUES
@@ -22,6 +22,9 @@ CREATE BLKS
     ,8+ ,8+ ,8+ ,8+
     DROP
 
+: VC! ( C vaddr --) DUP 200 + GEN1  HZ  -6 DB VC! ; \ added sound
+: V!  ( N Vaddr --) DUP 200 + GEN1  HZ  -6 DB  V! ;
+
 : ]BLK ( n -- char)  BLKS + C@ ;
 
 : DEF-BLKS  16 0 DO  BLK  I ]BLK CHARDEF  LOOP ;
@@ -33,16 +36,15 @@ CREATE BLKS
     DO
        15 RND ]BLK I VC!
     LOOP
+    MUTE
 ;
 
 DECIMAL
 : 1.35/  ( n -- n' )  100 135 */ ;
 
-: SQUEEK ( addr -- ) 200 + HZ 6 DB  ;
 
 : XCHG  ( addr1 addr2 -- )
-    2DUP VC@ SWAP VC@  ROT
-    DUP SQUEEK VC! SWAP DUP SQUEEK VC! ;
+    2DUP VC@ SWAP VC@  ROT VC! SWAP VC! ;
 
 VARIABLE SORTED
 0 VALUE GAP
@@ -104,7 +106,7 @@ DECIMAL
     DEF-BLKS
     SET-COLORS
     FILLSCREEN
-    0 C/SCR @ INSORT
+    0 C/SCR @ INSORT MUTE
     BEGIN KEY? UNTIL
     CLEAR
 ;
@@ -125,6 +127,7 @@ DECIMAL
 
     LOOP
   LOOP
+  MUTE
   2DROP ;
 
 
