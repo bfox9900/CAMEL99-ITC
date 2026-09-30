@@ -213,9 +213,9 @@ CODE CALL ( def --) \ call a BL sub-routine and return
     NEXT,
 ENDCODE
 
-: EXTERN:   ( def --) CODE  0460 , ( addr) ,  NEXT,  ;   \ B @def
-: EXT-SUB:  ( def --) CODE  06A0 , ( addr)  ,  NEXT,  ;  \ BL @def
-: EXT-PROG: ( def --) CODE  0420 , ( vector) ,  NEXT,  ; \ BLWP @def
+: EXTERN:   ( def --) CODE   0460 , ( addr) ,  NEXT,  ;   \ B @def
+: EXT-SUB:  ( def --) CODE   06A0 , ( addr)  ,  NEXT,  ;  \ BL @def
+: EXT-PROG: ( def --) CODE   0420 , ( vector) ,  NEXT,  ; \ BLWP @def
 
 ONLY FORTH DEFINITIONS ALSO DEFS
 : HELP
