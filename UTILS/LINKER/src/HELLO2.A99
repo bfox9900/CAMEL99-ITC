@@ -2,13 +2,19 @@
 
 *  Instructions
 
-* This file is in the /bin  folder in TI-99 text file format.
-
-* The object file is has been assembled as HELLO,OBJ
-*
 * Set the /bin folder set as DSK2 in your emulator
+* This file is in the /bin folder as HELLO2,A99
 
- * At the Forth console type:  LINK DSK2.VDPLIB,OBJ
+* With the editor assembler cartridge RUN program DSK2.LINKEXE
+
+* The program is assembled as object file HELLO,OBJ
+* It requires the external libarye DSK2.VDPLIB,OBJ
+* At the Forth console type:  LINK DSK2.VDPLIB,OBJ
+
+* Next type:  LINK DSK2.VDPLIB,OBJ
+
+* t
+ * When linking is complete type:  START
 
 
 **********************************************************************
