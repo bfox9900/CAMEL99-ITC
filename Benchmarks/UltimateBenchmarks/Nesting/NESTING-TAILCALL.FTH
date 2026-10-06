@@ -10,8 +10,11 @@
 
 \ TI-99
 \                 TurboForth 1.21     Nesting 1Mil  2:29
+
 \                 Camel99 Forth ITC   Nesting 1Mil  2:30.7
-\                 w/tail-call optimization          1:49.6
+\                 w/tail-call with GOTO             1:49.6
+\                 w/tail-call + inline next         1:54.1
+\                 w/tail-call with BRANCH           1:54.1
 
 \                 Camel99 Forth DTC   Nesting 1Mil  2:16.6
 \                 w/tail-call optimization          1.38
@@ -24,8 +27,6 @@ INCLUDE DSK1.ELAPSE
 \ bigger data stack in Low RAM was done for recursion
 HEX
 : NEW-RSTACK  3FFE ['] RP0 >BODY !  ABORT ;
-
-
 
 : BOTTOM ;
 : 1st BOTTOM BOTTOM ;  : 2nd 1st 1st ;      : 3rd 2nd 2nd ;
