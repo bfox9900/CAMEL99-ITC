@@ -6,7 +6,7 @@ for the curious. The source code for the cross-compiler is in the src
 folder is rather messy but it works.
 
 ### Disk System Organization
-The newest version of the cross-compiler is FCC99D.exe.
+The newest version of the cross-compiler is FCC99E.exe.
 It is in the FCC99E.ZIP file.
 
 The cross-compiler runs on MS DOS. Hey it's retro computing. I used DOSBOX.
