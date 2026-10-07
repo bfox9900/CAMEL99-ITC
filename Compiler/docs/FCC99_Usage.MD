@@ -46,7 +46,7 @@ TRUE \ true= standard kernel ;  false=non-standard kernel
 	2000 VALUE HEAPORG  \ initial HEAP address when kernel boots
 [THEN]
 ```
-At the DOS prompt type: C:\> FCC99D  fload cc9900\src.itc\forthitc.mak
+At the DOS prompt type: C:\> FCC99E  fload cc9900\src.itc\forthitc.mak
 
 ### SuperCart Kernel Build
 This script makes a version of Camel99 Forth that loads and runs with Editor Assembler Super Cartridge that has an 8K RAM chip installed.
