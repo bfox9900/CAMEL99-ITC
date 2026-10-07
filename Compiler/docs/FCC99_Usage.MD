@@ -20,7 +20,9 @@ All paths in the source files are explicitly spelled out in the form:
 
 Therefore unzip FCC99E.ZIP in a folder below CC9900.
 Example:
+
 c:\forth             has FCC99E.EXE
+
 c:\forth\cc9900\SRC.ITC      contains the source files
 
 ## Standard Kernel Build V2.69
