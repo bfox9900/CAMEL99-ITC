@@ -877,7 +877,7 @@ DECIMAL
   \ use (EMIT) to print control char values.
   CR   ." A STAR"        25 TAB  'STAR'   (EMIT)
   CR
-  CR   ." Our COLONY"      25 TAB  'COLONY' (EMIT)
+  CR   ." Our COLONY"    25 TAB  'COLONY' (EMIT)
   CR
   CR   ." Empty PLANET"  25 TAB  'PLANET' (EMIT)
   CR
@@ -932,13 +932,11 @@ DECIMAL
 
 DECIMAL
 : COMPUTER? ( -- ?)   ( is it the computers turn or not)
-   TIMER DUP DECREMENT @
-   IF ( <>0)
-       FALSE
-   ELSE
+   TIMER DUP DECREMENT @ 0=
+   DUP IF
       SPEED TIMER !  \ reset countdown timer
-      TRUE
-   ENDIF ;
+   ENDIF
+;
 
 : GAME-END? ( -- ? )
    [MY SHIPS]@ 0=    \ out of ships
