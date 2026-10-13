@@ -1,8 +1,8 @@
 \ COSMIC CONQUEST TI-99 Native version                 Nov 2021 Brian Fox
-\ Updated to create a binary program Feb 2023 
+\ Updated to create a binary program Feb 2023
 
 \ Original Fig-Forth version by  ALAN SARTORI-ANGUS for Apple][
-\ The version based on Gforth version by Rick Carlino 
+\ The version based on Gforth version by Rick Carlino
 \ This version uses the Graphics features of TI-99 hardware
 
 \ Change log from GForth verison: (This is a big re-write)
@@ -32,9 +32,9 @@
 \ Camel99 Forth Library requirements
 INCLUDE DSK1.CASE
 INCLUDE DSK1.UDOTR
-INCLUDE DSK1.MARKER 
+INCLUDE DSK1.MARKER
 
-MARKER /REMOVE 
+MARKER /REMOVE
 
 HERE
 DECIMAL
@@ -94,7 +94,7 @@ DECIMAL
 : DELAY      delayms MS ;
 : BLANKLN    VPOS C/L@ VBLANK ; \ FAST video memory write
 
-\ These are now in the CAMEL99 kernel as CODE 
+\ These are now in the CAMEL99 kernel as CODE
 \ : 1+!   ( int-addr -- )  1 SWAP +! ;  \ like C  ++
 \ : 1-!   ( int-addr -- ) -1 SWAP +! ;  \ like C  --
 
@@ -115,7 +115,7 @@ HEX
 DECIMAL
 CR .( Heap management and matrix creators)
 \ \\\\\\\\\\\\\\\  TI99 CODE  \\\\\\\\\\\\\\\\\\
-\ TI99 has 32K RAM total 
+\ TI99 has 32K RAM total
 \ 24K Hi RAM, Forth uses 8K of this
 \ 8K low RAM
 \ Matrices need 7.3K
@@ -223,19 +223,21 @@ DECIMAL
 : CHARDEF ( data[] ascii -- ) ]PDT 32 VWRITE ; \ write 32 bytes to video RAM
 
 CR .( graphics shapes )
- \ TI-99 specific
+\ TI-99 specific strategy
+\ Re-define shape of characters used in the matrix map
+\ This allows us to PLOT the map directly to the video screen
 
- \ outer-space characters
+ \ RADAR screen characters
  HEX
  CREATE ACOLONY 7884 , 3040 , 4030 , 8478 ,
- CREATE OPLANET 0078 , 8484 , 8484 , 8478 ,
- CREATE EPLANET 0070 , 8850 , 2050 , 8870 ,
+ CREATE OPLANET 0038 , 4482 , 9282 , 4438 , ( OPEN PLANET)
+ CREATE EPLANET 0038 , 44AA , 92AA , 4438 ,
  CREATE ASTAR   0000 , 1054 , 2854 , 1000 ,
  CREATE PFLEET  40F8 , 503C , 1040 , F840 ,
  CREATE EFLEET  20C0 , 2438 , 0410 , E010 ,
  CREATE BLKHOLE 7884 , 3078 , 7830 , 8478 ,
  CREATE NOFLEET 0084 , 4800 , 0048 , 8400 , \ fleet empty icon
- CREATE NOENEMY 8244 , 2810 , 2844 , 8200 , \ enemy out of ships 
+ CREATE NOENEMY 8244 , 2810 , 2844 , 8200 , \ enemy out of ships
 
  \ double line box chars
  CREATE VBARS  2828 , 2828 , 2828 , 2828 ,
@@ -245,9 +247,6 @@ CR .( graphics shapes )
  CREATE LLEFT  2828 , 282F , 203F , 0000 ,
  CREATE LRIGHT 2828 , 28E8 , 08F8 , 0000 ,
 
-\ TI-99 specific strategy
-\ Re-define shape of characters used in the matrix map
-\ This allows us to PLOT the map directly to the video screen
 
 \ name the graphic characters used
 DECIMAL
@@ -320,12 +319,13 @@ CR .( initialisers)
    CASE
       [CHAR] 1 OF 250 #MOVES ! ( 350 moves) ENDOF
       [CHAR] 2 OF 400 #MOVES ! ( 700 moves) ENDOF
-                  800 #MOVES ! ( 1500 moves otherwise)
+                 1000 #MOVES ! ( 1000 moves otherwise)
    ENDCASE
 ;
 
 ( how often computer creates fleets)
-: RESET-NEW-TIMER  29 3 DIFF @ * - NEW ! ; 
+\ *CHANGE*  This was running too fast in the changed program
+: RESET-NEW-TIMER  50  3 DIFF @ * - NEW ! ;
 
 DECIMAL
 : INITIALISE
@@ -363,7 +363,7 @@ DECIMAL
    22 [HIS X] C!            ( enemy x)
 
    RESET-NEW-TIMER   ( how often computer creates fleets)
-   
+
    15 DIFF @ 4* * TROOPS !  ( initial no. of computer troops)
    20 DIFF @ * C-LEGIONS !  ( no. of spare computer legions)
    SPEED TIMER !            ( how often computer moves)
@@ -432,8 +432,8 @@ DECIMAL
 
 \ : PRINT-IT  ( c  --- ) X @ CELLS 12 +  Y @ 8 +  AT-XY VPUT  ;
 
-\ Camel99 specific: 
-\ >VPOS ( col row -- Vaddr)  computes video address. 
+\ Camel99 specific:
+\ >VPOS ( col row -- Vaddr)  computes video address.
 \ Screen Vaddr is 0..3C0
 \ Does not affect cursor variables
 
@@ -441,7 +441,7 @@ DECIMAL
 
 : PLOT  ( char row col -- ) CELLS 12 + SWAP 8 + >VPOS ( c Vaddr) VC! ;
 
-\ This is slow, from original code 
+\ This is slow, from original code
  : DRAW-VIEWER  ( draw the screen display)
    [MY X]@ 5 -  [MY Y]@ 5 -
    11 0 DO ( rows)
@@ -495,8 +495,8 @@ DECIMAL
                   HONK DELAY
                   MOVE-FLEET
                   NEW-FLEET
-                  LOPROMPT:           
-                  
+                  LOPROMPT:
+
                                        ENDOF
 
     ( default)    2DROP
@@ -570,7 +570,7 @@ DECIMAL
       PROMPT: ." NO SHIPS AVAILABLE"
       HONK DELAY
       REDRAW
-   ENDIF SET-FLEET-ICON 
+   ENDIF SET-FLEET-ICON
 ;
 
 : GATHER   ( pick up legions from garrison onto fleet)
@@ -707,8 +707,8 @@ DECIMAL
    CASE
       'PLANET'  OF EMPTY-PLANET    ENDOF
       'ALIENS'  OF ENEMY-PLANET    ENDOF
-      'COLONY'  OF LANDING-MENU ENDOF
-                 NOT-PLANET
+      'COLONY'  OF LANDING-MENU    ENDOF
+                   NOT-PLANET
    ENDCASE ;
 
 : REVOLT? ( planet at X,Y revolts)
@@ -764,10 +764,10 @@ DECIMAL
       3 BEEPS                         \ ring bell to warn player
       C-FLEETS 1+!                    \ update comp. fleets
       SET-ENEMY-ICON
-      RESET-NEW-TIMER     
+      RESET-NEW-TIMER
       CLASS-TOTALS @ 8 / ( -- n)
-      DUP C-LEGIONS +!   ( -- n)      \ increase enemy legions 
-      DUP TROOPS +!      ( -- n)  
+      DUP C-LEGIONS +!   ( -- n)      \ increase enemy legions
+      DUP TROOPS +!      ( -- n)
       BEGIN
          NEWXY GALAXY C@ 0=           \ check random galaxy location
          IF ( empty )
@@ -870,20 +870,20 @@ DECIMAL
 : ANYKEY   LOPROMPT: ." Press a key to return" KEY DROP ;
 
 
-: INFO
-  PAGE ."  Scanner Display Information"
-  CR   ." -----------------------------"
+: LEGEND
+  PAGE ."  RADAR Scanner Legend"
+  CR   ." ----------------------"
   CR
-  \ use (EMIT) to print control char values. 
-  CR   ." A STAR"        25 TAB  'STAR'   (EMIT) 
+  \ use (EMIT) to print control char values.
+  CR   ." A STAR"        25 TAB  'STAR'   (EMIT)
   CR
-  CR   ." A COLONY"      25 TAB  'COLONY' (EMIT)
+  CR   ." Our COLONY"      25 TAB  'COLONY' (EMIT)
   CR
   CR   ." Empty PLANET"  25 TAB  'PLANET' (EMIT)
   CR
   CR   ." Enemy PLANET"  25 TAB  'ALIENS' (EMIT)
   CR
-  CR   ." Black hole"    25 TAB  'BLKHOLE' (EMIT) 
+  CR   ." Black hole"    25 TAB  'BLKHOLE' (EMIT)
   CR
   CR   ." Player FLEET"  25 TAB  'FLEET'  (EMIT)
   CR
@@ -892,18 +892,19 @@ DECIMAL
 ;
 
 : HELP
-  PAGE ." Key controls:
+  PAGE ." Key controls:"
   CR
   CR ." W, Z  up,down"
   CR ." A, S  left,right"
   CR
   CR ." L - Land on a planet"
   CR ." T - Tax your planets"
-  CR ." I - SCANNER screen legend"
   CR ." F - Fire / attack enemy"
   CR ." O - Switch to Other fleet"
   CR ." ESC/FCTN 9  escape to Forth"
-
+  CR
+  CR ." R - RADAR scanner legend"
+  CR
   CR ." H - show this HELP screen"
   CR ANYKEY
 ;
@@ -918,12 +919,13 @@ DECIMAL
       [CHAR] W OF MOVE-UP     ENDOF
       [CHAR] Z OF MOVE-DOWN   ENDOF
       [CHAR] O OF OTHER-FLEET ENDOF
-      [CHAR] I OF INFO REDRAW ENDOF
       [CHAR] L OF LAND        ENDOF
       [CHAR] T OF TAX         ENDOF
       [CHAR] F OF FIRE        ENDOF
+
       [CHAR] H OF HELP REDRAW ENDOF
-      [CHAR] I OF INFO        ENDOF 
+      [CHAR] R OF LEGEND REDRAW ENDOF
+
        15      OF >FORTH      ENDOF  \ escape key for debugging
    ENDCASE
 ;
@@ -938,19 +940,19 @@ DECIMAL
       TRUE
    ENDIF ;
 
-: GAME-END? ( -- ? ) 
-   [MY SHIPS]@ 0=    \ out of ships 
-   CREDIT @ 0=  AND  \ and out of money 
+: GAME-END? ( -- ? )
+   [MY SHIPS]@ 0=    \ out of ships
+   CREDIT @ 0=  AND  \ and out of money
 
-   #MOVES @ 0=  OR   \ OR out of moves 
-;  
+   #MOVES @ 0=  OR   \ OR out of moves
+;
 
-: END-MSG   
-   CLEAR-MSG  
-   0 12 AT-XY ." END OF GAME COMMANDER" 
+: END-MSG
+   CLEAR-MSG
+   0 12 AT-XY ." END OF GAME COMMANDER"
    LOPROMPT: ." TYPE RUN TO PLAY AGAIN"
    ABORT
-;   
+;
 
 : GAME       ( GAME LOOP )
    REDRAW
@@ -984,7 +986,7 @@ DECIMAL
    BEGIN
       CR ." WHAT LEVEL OF DIFFICULTY (1-4) "
       #INPUT
-      DUP 5 1 WITHIN ( reversed args [(5 1]  means "NOT WITHIN")
+      DUP 5 1 WITHIN ( reversed args [5 1]  means "NOT WITHIN")
    WHILE
       DROP HONK
    REPEAT
@@ -1034,8 +1036,8 @@ DECIMAL
 : STARTER   WARM  RUN  ;
 
 \ ************************************************************
-\ Un-comment the 3 lines below to save as a binary image program 
+\ Un-comment the 3 lines below to save as a binary image program
 
-LOCK 
+LOCK
 INCLUDE DSK1.SAVESYS
 ' STARTER SAVESYS DSK3.CONQUEST
