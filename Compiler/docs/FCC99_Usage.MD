@@ -6,7 +6,7 @@ for the curious. The source code for the cross-compiler is in the src
 folder is rather messy but it works.
 
 ### Disk System Organization
-The newest version of the cross-compiler is FCC99D.exe.
+The newest version of the cross-compiler is FCC99E.exe.
 It is in the FCC99E.ZIP file.
 
 The cross-compiler runs on MS DOS. Hey it's retro computing. I used DOSBOX.
@@ -19,8 +19,11 @@ All paths in the source files are explicitly spelled out in the form:
           CC9900\SRC.ITC\HILEVEL.HSF
 
 Therefore unzip FCC99E.ZIP in a folder below CC9900.
+
 Example:
+
 c:\forth             has FCC99E.EXE
+
 c:\forth\cc9900\SRC.ITC      contains the source files
 
 ## Standard Kernel Build V2.69
@@ -43,7 +46,7 @@ TRUE \ true= standard kernel ;  false=non-standard kernel
 	2000 VALUE HEAPORG  \ initial HEAP address when kernel boots
 [THEN]
 ```
-At the DOS prompt type: C:\> FCC99D  fload cc9900\src.itc\forthitc.mak
+At the DOS prompt type: C:\> FCC99E  fload cc9900\src.itc\forthitc.mak
 
 ### SuperCart Kernel Build
 This script makes a version of Camel99 Forth that loads and runs with Editor Assembler Super Cartridge that has an 8K RAM chip installed.
