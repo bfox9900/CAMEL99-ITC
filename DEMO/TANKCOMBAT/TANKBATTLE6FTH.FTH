@@ -26,7 +26,7 @@ MARKER /ALPHA
 HEX
 : NEW-HEAP  2000 H !   H @ 2000 0 FILL ; \ reset & erase heap
 
-\ create a task in heap, fork it, assign Execution token
+\ create a task in heap, fork it, assign Execution token, return PID
 : SPAWN ( xt -- pid) USIZE MALLOC DUP>R FORK R@ ASSIGN R> ;
 
 \ spawn n NULL tasks and compile the PIDs sequentially in memory
