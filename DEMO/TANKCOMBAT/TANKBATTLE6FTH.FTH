@@ -26,9 +26,6 @@ MARKER /ALPHA
 HEX
 : NEW-HEAP  2000 H !   H @ 2000 0 FILL ; \ reset & erase heap
 
-\ create a task in heap, fork it, assign Execution token, return PID
-: SPAWN ( xt -- pid) USIZE MALLOC DUP>R FORK R@ ASSIGN R> ;
-
 \ spawn n NULL tasks and compile the PIDs sequentially in memory
 : TASKS ( n -- ) 0 DO  ['] PAUSE SPAWN ,  LOOP ;
 
@@ -89,12 +86,13 @@ DROP
 
 
 \ --------------------------------------
-\ user variables are local for each tank task
+\ Forth "user" variables are local for each task.
+\ Each TANK has a set of these.
 HEX
-30 USER KILLS     \
-44 USER HEADING   \ compass heading is the direction control
-\ 46 USER TPAD    \ defined in Kernel
-48 USER Y
+30 USER KILLS
+44 USER HEADING  \ compass heading is the direction control
+\ 46 USER TPAD   \ defined in Kernel
+48 USER Y        \ x and y can be accessed as a 2variable with 2@ 2!
 4A USER X
 4C USER DY       \ dx and dy can be accessed as a 2variable
 4E USER DX
@@ -208,7 +206,7 @@ CREATE TANKS ( -- addr)
 \   1 CONSTANT NE
 \   2 CONSTANT EAST
 \   3 CONSTANT SE
-\   4 CONSTANT SOUTH`
+\   4 CONSTANT SOUTH
 \   5 CONSTANT SW
 \   6 CONSTANT WEST
 \   7 CONSTANT NW
@@ -258,14 +256,14 @@ DECIMAL
 
 \ EXPLOSION......................
 HEX
-CREATE SHRAPNEL  \ :-)
+CREATE SHRAPNEL  \ 5 Char patterns for explosion :-)
     0000 , 125C , 1E2C , 0000 ,
     0042 , 1498 , 0250 , 1400 ,
     1084 , 2200 , 1280 , 2400 ,
     2002 , 8001 , 0000 , 8104 ,
     0000 , 0000 , 0000 , 0000 ,
 
-: ]SHRAP  8* SHRAPNEL +    ;
+: ]SHRAPNEL ( n -- addr) 8* SHRAPNEL + ; \ Array of 5 patterns
 
 DECIMAL
 : EXPLODE ( char -- )
@@ -274,12 +272,13 @@ DECIMAL
     ]PDT
      5 0 DO
         PAUSE
-        I ]SHRAP OVER 8 VWRITE
+        I ]SHRAPNEL OVER 8 VWRITE
         80 MS
-        I 4* DB
+        I 4* DB  \ volumes reducer
     LOOP
     DROP
-    GEN4 -26 DB 60 MS GEN4 MUTE
+    GEN4 -26 DB 60 MS
+    GEN4 MUTE
 ;
 
 \ add coordinates to a vector
@@ -343,7 +342,7 @@ DECIMAL
         CLEAR-AHEAD?
       WHILE
         ADVANCE
-        THINK    \ this can RUN anything
+        THINK    \ this can CONSOLE-TASK anything
       REPEAT
       BONK  MUTE
       RND-HEADING
@@ -364,11 +363,11 @@ DECIMAL
 
 : RABBIT-THOUGHTS
     MUTE
-    7  %CHANCE IF GO-LEFT            EXIT THEN
-    7  %CHANCE IF GO-RIGHT           EXIT THEN
-    4  %CHANCE IF TURN-AROUND        EXIT THEN
-    1  %CHANCE IF FREEZE             EXIT THEN
-    6  %CHANCE IF 50 RND 5 + SPEED ! EXIT THEN
+    7 %CHANCE IF GO-LEFT            EXIT THEN
+    7 %CHANCE IF GO-RIGHT           EXIT THEN
+    4 %CHANCE IF TURN-AROUND        EXIT THEN
+    1 %CHANCE IF FREEZE             EXIT THEN
+    6 %CHANCE IF 50 RND 5 + SPEED ! EXIT THEN
 ;
 
 : RABBIT-TANK ( --)
@@ -556,7 +555,7 @@ HEX
 : UPCASE ( c --c') 5F AND ;
 
 DECIMAL
-: RUN
+: CONSOLE-TASK
   BEGIN
     DECIMAL
     INIT-MULTI
@@ -564,13 +563,14 @@ DECIMAL
     BUILD-TANKS
     MONITOR_ACTIVITY \ console task just watches things
     SINGLE SILENT    \ turn off multi-tasking, kill all sound
+    SP0 SP!          \ RESET data stack (cheap bug fix)
     PROMPT ." Restarting ..."
     2000 MS
   AGAIN
 ;
 
 \ this words starts the binary program
-: STARTER   WARM  GRAPHICS QUIT-ON  RUN   ABORT ;
+: STARTER   WARM  GRAPHICS QUIT-ON  CONSOLE-TASK   ABORT ;
 
   LOCK
   INCLUDE DSK1.SAVESYS
