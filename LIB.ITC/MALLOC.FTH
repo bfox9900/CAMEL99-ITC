@@ -13,4 +13,4 @@
 : CMALLOC ( n -- addr ) ALIGNED DUP MALLOC SWAP  2DUP ERASE ;
 : CELL-   POSTPONE 2- ; IMMEDIATE \ 9900 cell size is 2
 : SIZEOF  ( addr -- u) CELL- @ ;
-: MFREE   ( n -- ) NEGATE H +! ;
+: MFREE   ( n -- ) DUP SIZEOF NEGATE H +!  CELL- OFF ;
