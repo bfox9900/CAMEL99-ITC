@@ -11,6 +11,6 @@
 \ Allocates even number of bytes
 : MALLOC  ( n -- addr ) ALIGNED DUP H, HEAP  SWAP HALLOT ;
 : CMALLOC ( n -- addr ) ALIGNED DUP MALLOC SWAP  2DUP ERASE ;
-
-: SIZEOF  ( addr -- u) 2- @ ;  \ 9900 cell size is 2
+: CELL-   POSTPONE 2- ; IMMEDIATE \ 9900 cell size is 2
+: SIZEOF  ( addr -- u) CELL- @ ;
 : MFREE   ( n -- ) NEGATE H +! ;
