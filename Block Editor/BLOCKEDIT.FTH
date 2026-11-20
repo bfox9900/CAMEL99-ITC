@@ -1,12 +1,14 @@
 ( simple block editor with few frills  Aug 2025 Brian Fox)
 NEEDS DUMP      FROM DSK1.TOOLS
+NEEDS VOCABULARY FROM DSK1.WORDLISTS
+
 NEEDS BLOCK     FROM DSK1.BLOCKS
 NEEDS 80COLS    FROM DSK1.80COL
 NEEDS -TRAILING FROM DSK1.TRAILING
 NEEDS CASE      FROM DSK1.CASE
 NEEDS .R        FROM DSK1.UDOTR
 NEEDS RKEY      FROM DSK1.RKEY
-NEEDS VOCABULARY FROM DSK1.WORDLISTS
+NEEDS CASE      FROM DSK1.CASE
 
 HERE
 VOCABULARY EDITOR
@@ -36,12 +38,12 @@ DECIMAL
 
 \ fitted allows us to handle 64 char lines on a 40 col screen
 : FITTED ( addr n -- addr' n') SOL @ /STRING ;
-: .LINE#  ( n --) 2 .R  [CHAR] | EMIT ;
+: .LINE#  ( n --) 2 .R  [CHAR] | (EMIT) ;
 
 \ Fast type to VDP with no scrolling
-: VTYPE  ( addr len --) DUP>R  VPOS SWAP VWRITE  R> VCOL +! ;
+\ : VTYPE  ( addr len --) DUP>R  VPOS SWAP VWRITE  R> VCOL +! ;
 
-: .LINE  ( addr -- addr') DUP #64 -TRAILING VTYPE  #64 + ;
+: .LINE  ( addr -- addr') DUP #64 -TRAILING TYPE  #64 + ;
 
 : LIST   ( n --)
     SCR !
@@ -96,7 +98,7 @@ DECIMAL
   BL 'EOT 1- ( char addr )
   <SLIDELN
   C! UPDATE
-  RIGHTSIDE VTYPE ;
+  RIGHTSIDE TYPE ;
 
 : PRINTABLE?   32 127 BETWEEN ;
 
@@ -109,7 +111,7 @@ VARIABLE INSERT
 : WRITECHAR ( n -- )
   INSERT @ DUP>R ( copy the flag )
   IF  SLIDELN> THEN PUTCHAR
-  R> IF ATCURS RIGHTSIDE VTYPE THEN ;
+  R> IF ATCURS RIGHTSIDE TYPE THEN ;
 
 \ create copy stack in VDP RAM --------------
 HEX
@@ -146,15 +148,12 @@ CREATE LNSTK  STKBASE , \ init pointer to stkbase
 
 : ?CLOSE  BHNDL @ IF CLOSE-BLOCKS THEN ;
 
-\ user console commands
-: CLEAR     ( n -- ) BLOCK B/BUF BLANK UPDATE ;
-: >>   1 SCR +!  RELIST  HOME ; \ page up
-: <<   SCR @ 1- 0 MAX SCR !  RELIST  HOME ; \ page down
-: USE  ( <path> ) ?CLOSE  PARSE-NAME OPEN-BLOCKS ;
-: UNDO ( -- ) EMPTY-BUFFERS ;
 
 : PROMPT  0 19 AT-XY  VPOS #64  BL VFILL ;
 : SAVE  PROMPT ." Saving.. "  FLUSH PROMPT ;
+
+: >>   1 SCR +!  RELIST  HOME ; \ page up
+: <<   SCR @ 1- 0 MAX SCR !  RELIST  HOME ; \ page down
 
 DECIMAL
 : CONTROLLER ( n -- )
@@ -176,12 +175,12 @@ DECIMAL
       13 OF 1 ROW+! COL OFF             ENDOF \ ENTER
      131 OF COPYLN                      ENDOF \ ^C
      144 OF PASTELN ( overwrite)        ENDOF \ ^P
-     147 OF SAVE                       ENDOF  \ ^S
+     147 OF SAVE                        ENDOF  \ ^S
      149 OF HOME                        ENDOF \ HOME
      150 OF INSERT-PASTE                ENDOF \ ^V
      152 OF CUTLN  RELINE               ENDOF \ ^X
 
-      15 OF 0 18 AT-XY ." Forth> " QUIT ENDOF
+      15 OF PROMPT ." Forth> " QUIT     ENDOF
   ENDCASE ;
 
 : CLIP  ROT MIN MAX ;
@@ -193,13 +192,13 @@ DECIMAL
 ;
 
 : EDIT ( n -- )
-      SCR !
+      0 MAX SCR !
       80COLS
       2 30 CURSOR-SPEED
       RELIST
       INSERT ON   TOGGLE-INSERT
       BEGIN
-        PROMPT DEPTH . \ DEBUG line
+      \  PROMPT DEPTH . \ DEBUG line
         ATCURS RKEY
         DUP PRINTABLE?
         IF    WRITECHAR
@@ -207,21 +206,25 @@ DECIMAL
         THEN
       AGAIN ;
 
+ONLY FORTH ALSO EDITOR ALSO FORTH DEFINITIONS
+\ user console commands
+: CLEAR     ( n -- ) BLOCK B/BUF BLANK UPDATE ;
+: USE  ( <path> ) ?CLOSE  PARSE-NAME OPEN-BLOCKS ;
+: UNDO ( -- ) EMPTY-BUFFERS ;
 : ED   SCR @ EDIT ;
+
+\ : DEBUG
+\ PAGE
+\ HEX
+\ CONTEXT 8 CELLS DUMP
+\ CR ." 'latest = " LATEST U.
+\ CR ."  Latest = " LATEST @ U.
+\ CR ."  DP =     " DP     @ U.
+\ CR ." ' EDITOR =" ['] EDITOR 4 CELLS DUMP
+\ ;
 
 HERE SWAP - DECIMAL . .( bytes)
 
-: DEBUG
-PAGE
-HEX
-CONTEXT 8 CELLS DUMP
-CR ." 'latest = " LATEST U.
-CR ."  Latest = " LATEST @ U.
-CR ."  DP =     " DP     @ U.
-CR ." ' EDITOR =" ' EDITOR 4 CELLS DUMP
-;
-
-ONLY FORTH DEFINITIONS
 \ to make Forth system for block editing
 \ lock the current dictionary for COLD boots
 : LOCK    DP @ ORGDP !
@@ -231,13 +234,14 @@ ONLY FORTH DEFINITIONS
 : COLD
     WARM
     ['] FIND12 'FIND !
-  \  DEBUG
     INIT-WORDLISTS
-    ONLY FORTH DEFINITIONS ALSO EDITOR
+    ONLY FORTH ALSO EDITOR ALSO FORTH DEFINITIONS
+    CONTEXT @ @ LATEST !
+  \  DEBUG
     ORDER
     ABORT ;
 
-ONLY FORTH DEFINITIONS ALSO EDITOR
+ONLY FORTH ALSO EDITOR ALSO FORTH DEFINITIONS
 
 LOCK
 
