@@ -66,9 +66,9 @@ DECIMAL
 : PUTCHAR ( c -- ) DUP !CHAR  1 COL+!  VPOS VC! ;
 
 : /CHAR   ( addr n -- addr' n') 1 /STRING 0 MAX ;
-: TAILEN    ( -- n)  #64 COL @ - ; \ bytes after cursor
+: RIGHTSIDE ( -- n)  #64 COL @ - ; \ bytes after cursor
 
-: <SLIDELN ( -- ) 'CURSOR DUP>R TAILEN   /CHAR  R> SWAP CMOVE ;
+: <SLIDELN ( -- ) 'CURSOR DUP>R RIGHTSIDE /CHAR  R> SWAP CMOVE ;
 : SLIDELN> ( -- )
    'CURSOR #64 -TRAILING 'CURSOR 1+ SWAP CMOVE> ;
 
@@ -154,7 +154,7 @@ CREATE LNSTK  STKBASE , \ init pointer to stkbase
 : UNDO ( -- ) EMPTY-BUFFERS ;
 
 : PROMPT  0 19 AT-XY  VPOS #64  BL VFILL ;
-: SAVE  PROMPT ." Saving.. "  PROMPT ;
+: SAVE  PROMPT ." Saving.. "  FLUSH PROMPT ;
 
 DECIMAL
 : CONTROLLER ( n -- )
@@ -176,7 +176,7 @@ DECIMAL
       13 OF 1 ROW+! COL OFF             ENDOF \ ENTER
      131 OF COPYLN                      ENDOF \ ^C
      144 OF PASTELN ( overwrite)        ENDOF \ ^P
-     147 OF SAVE                       ENDOF \ ^S
+     147 OF SAVE                       ENDOF  \ ^S
      149 OF HOME                        ENDOF \ HOME
      150 OF INSERT-PASTE                ENDOF \ ^V
      152 OF CUTLN  RELINE               ENDOF \ ^X
@@ -232,6 +232,7 @@ ONLY FORTH DEFINITIONS
     WARM
     ['] FIND12 'FIND !
   \  DEBUG
+    INIT-WORDLISTS
     ONLY FORTH DEFINITIONS ALSO EDITOR
     ORDER
     ABORT ;
