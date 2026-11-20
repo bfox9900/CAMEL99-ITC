@@ -152,8 +152,8 @@ CREATE LNSTK  STKBASE , \ init pointer to stkbase
 : PROMPT  0 19 AT-XY  VPOS #64  BL VFILL ;
 : SAVE  PROMPT ." Saving.. "  FLUSH PROMPT ;
 
-: >>   1 SCR +!  RELIST  HOME ; \ page up
-: <<   SCR @ 1- 0 MAX SCR !  RELIST  HOME ; \ page down
+: >>   1 SCR +!  RELIST  HOME ; \ page up from console
+: <<   SCR @ 1- 0 MAX SCR !  RELIST  HOME ; \ page down console
 
 DECIMAL
 : CONTROLLER ( n -- )
