@@ -50,6 +50,7 @@ HEX
 \ They use the words (HZ) and (DB) from the sound libary
 \ to mix the correct oscillator or attenuator values for
 \ the active signal generator channel.
+HERE
 DECIMAL
 : HZ,     ( f -- )     (HZ) SPLIT VC, VC,   ;
 : DB,     ( level -- ) (DB) VC,  ;
@@ -81,7 +82,7 @@ DECIMAL
 
 \ mark end of sound list, check for clean stack
 : ;SOUND ( -- )  0 VC,  ?CSP ;
-
+HERE SWAP - DECIMAL . .( bytes)
 \
 \ *********************************************
 \        * SET THE VDP RAM POINTER *
