@@ -1,4 +1,4 @@
-\ Roman Numerals in Fig-Forth with early escape from IF 
+\ Roman Numerals in Fig-Forth with early escape from IF
 
 : >=   ( n1 n2 -- 0/1 ) < 0= ;
 : END    COMPILE ;S  [COMPILE] ENDIF ;  IMMEDIATE
