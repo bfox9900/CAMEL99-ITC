@@ -17,3 +17,19 @@ and also behaves like the BASIC PRINT statement and output the text on a new lin
 
 The total amount of text in the is about 8.7Kbytes so putting in VDP RAM freed up a
 lot program memory in TI-99 terms.
+
+
+## Instructions for Use
+
+Use the folders in bin/ folder as DSK1 and DSK3 on the Classic99 Emulator.
+The Camel99 system disk must in in DSK1.
+The disk with the three OREGON game files must be in DSK3.
+
+Insert the EDITOR/ASSEMBLER CARTRIDGE into the TI-99.
+Select menu option 5:  RUN PROGRAM FILE
+At the prompt type:  DSK1.CAMEL99
+Wait for Forth to start.
+At the Forth console, type:  INCLUDE DSK3.OREGON
+and follow the prompts.
+
+The game takes about a minute to compile and will run when the compile if finished.
