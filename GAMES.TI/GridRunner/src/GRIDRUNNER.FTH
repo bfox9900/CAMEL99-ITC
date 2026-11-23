@@ -245,7 +245,8 @@ DEFER MOVE-SHIP
     0 7 AT-XY ." Press 1 for Joystick 1"
     0 9 AT-XY ." Press 2 for Keyboard"
 
-    KEY DUP [CHAR] 1  [CHAR] 2 BETWEEN 0=
+    CR KEY DUP
+    [CHAR] 1  [CHAR] 2 BETWEEN 0=
   WHILE
       DROP HONK
   REPEAT
