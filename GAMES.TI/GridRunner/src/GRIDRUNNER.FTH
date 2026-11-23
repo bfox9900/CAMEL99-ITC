@@ -3,6 +3,7 @@
 \ SteveB's LSCROLL demo in TiCodEd
 \ Features added by 2026 Brad Snyder
 \ re-write in Forth by Brian Fox for Camel99 Forth
+\ Added Joystick support Nov 2026
 
 \ add some stuff to the kernel
 \ INCLUDE DSK1.TOOLS
