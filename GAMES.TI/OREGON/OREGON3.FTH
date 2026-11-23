@@ -84,7 +84,7 @@ CASE: ANATOMY   4 CHOICES,   ;CASE
       20 %CHANCE:  ( don't report this all the time)
       HEALTH @ 20 <
       IF CR PRINT." You don't look so good partner."  DOCTOR?  ENDIF
- 
+
       HEALTH @ 20 30 BETWEEN
       IF CR PRINT." You gotta look after yerself better."  ENDIF
 
@@ -112,7 +112,7 @@ CASE: ANATOMY   4 CHOICES,   ;CASE
             WOUNDED OFF
            10 HEALTH DEBIT
           ;CHANCE
-     ENDIF 
+     ENDIF
      ?DEAD ;
 
 : GOTSHOT
@@ -126,7 +126,7 @@ CASE: ANATOMY   4 CHOICES,   ;CASE
              PRINT." and they took one of your oxen."
              1 OXEN DEBIT
          ;CHANCE
-        
+
          ?SEE-DOCTOR
 ;
 
@@ -142,40 +142,50 @@ CASE: ANATOMY   4 CHOICES,   ;CASE
           QUALITY 1 3 VALID-INPUT
 ;
 
-: RUNNING 
+: RUNNING
           PRINT." You are running away" ...
-          40 RANDOM 1+ MILEAGE CREDIT
+          23 RANDOM 1+ MILEAGE DEBIT
           10 RANDOM HEALTH DEBIT
           20 OXEN DEBIT
 
-           2 RANDOM DAY CREDIT
+          2 RANDOM 1+ DAY CREDIT
 
           15 %CHANCE: WOUNDED ON ;CHANCE
           12 %CHANCE: GOTSHOT    ;CHANCE
-
 ;
 
-: ATTACK    PRINT."  You are attacking " ...
-            55 %CHANCE:
-                GOTSHOT
-            ELSE
-               PRINT." You scared them off!"
-               PRINT." and found their money and food"
-               CR
-               60 RANDOM 10 FOOD CREDIT
-              120 RANDOM 30 CASH CREDIT
-               15 RANDOM HEALTH CREDIT
-           ;CHANCE
+: SCARED-OFF
+          PRINT." You scared them off!" ...
+          PRINT." and found their money and food"
+          CR
+          60 RANDOM 10 FOOD CREDIT
+          120 RANDOM 30 CASH CREDIT
+          15 RANDOM HEALTH CREDIT
+;
+
+: RETREAT
+          PRINT." You are out-numbered!" ...
+          PRINT." You had to retreat " 10 RANDOM 1+ DUP . ." miles!"
+          NEGATE CREDIT  ( move back)
+;
+
+: WIN/LOSE
+     50 %CHANCE: SCARED-OFF OTHERWISE RETREAT ;CHANCE
+;
+
+: ATTACK  PRINT."  You are attacking " ...
+          50 %CHANCE: GOTSHOT  OTHERWISE  WIN/LOSE  ;CHANCE
 ;
 
 : CONTINUE  CR
-            PRINT."  Continuing " ...
-            20 RANDOM 1+ MILEAGE CREDIT
-            2 RANDOM HEALTH DEBIT
+          PRINT."  Continuing " ...
+          22 %CHANCE: SHITHAPPENS
+          OTHERWISE
+            15 RANDOM 1+ MILEAGE CREDIT
+             4 RANDOM  1 MAX HEALTH DEBIT
             10 RANDOM 2+ OXEN DEBIT
-            1 RANDOM DAY CREDIT
-
-            2 %CHANCE: WOUNDED ON ;CHANCE
+             1 RANDOM DAY CREDIT
+          ;CHANCE
 ;
 
 : DEFEND    PRINT." We circled the wagons" ...
@@ -230,8 +240,8 @@ CASE: FOODS  4 CHOICES,  ;CASE
 
 \ ======================================
 \ game animals
-CHOICE: ." deer"     
-        PRINT." We got food for days!" CR 
+CHOICE: ." deer"
+        PRINT." We got food for days!" CR
         100 FOOD CREDIT ;
 
 CHOICE: ." possum"
@@ -259,7 +269,7 @@ CASE: VARMINTS  5 CHOICES,   ;CASE
         PRINT." Be vaarrwee quiet " ...
         PRINT." Press space bar to fire"
         BEGIN KEY? BL = UNTIL
-        CR PRINT." BANG!" CR 
+        CR PRINT." BANG!" CR
 
         ACCURACY @ HEALTH @ *    \  HEALTH affect accuracy
         55 MAX %CHANCE:

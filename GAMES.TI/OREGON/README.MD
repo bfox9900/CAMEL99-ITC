@@ -21,7 +21,7 @@ lot program memory in TI-99 terms.
 
 ## Instructions for Use
 
-Use the folders in bin/ folder as DSK1 and DSK3 on the Classic99 Emulator.
+Use the folders in the  bin/ folder as DSK1 and DSK3 on the Classic99 Emulator.
 The Camel99 system disk must in in DSK1.
 The disk with the three OREGON game files must be in DSK3.
 

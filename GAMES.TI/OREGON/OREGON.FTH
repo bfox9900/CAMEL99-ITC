@@ -1,6 +1,7 @@
 \ ORGEGON TRAIL BY  majestyx on Atariage
 \ RE-WRITE for  CAMEL99 Forth. Game specific language demonstration
 \ Brian Fox  Dec 12, 2019
+\ Update game probabilities  Nov 2026
 
 \ INCLUDE DSK1.TOOLS
 INCLUDE DSK1.RANDOM
@@ -181,21 +182,26 @@ CASE: LUCKY   | NATIVES  | HUNTER  | GRAZING  ;CASE
          SETUP
 ;
 
+: RECUPERATE
+      10 RANDOM 4 MAX FOOD DEBIT
+      10 RANDOM 3 MAX HEALTH CREDIT
+      50 RANDOM 15 MAX OXEN CREDIT
+;
+
 : CAMP   CR
          PRINT." Oxen are tied up, fire is lit."
          PRINT." Get some sleep partner" ...
+         RECUPERATE
+
          33 %CHANCE:
               PRINT." Uhoh! I heard some footsteps"
               PRINT." over yonder!"
               HOSTILE-DECIDE
-        OTHERWISE
+         OTHERWISE
               CR
               PRINT." We had a peacful night"
               PRINT." Eat some vittles and git goin'"
-              10 RANDOM 1+  FOOD DEBIT
-              10 HEALTH CREDIT
-              50 RANDOM 15 + OXEN CREDIT
-        ;CHANCE
+         ;CHANCE
 ;
 
 : VALIDATE ( c addr len -- ? )  ROT SCAN NIP ;
