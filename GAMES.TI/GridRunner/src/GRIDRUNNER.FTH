@@ -13,11 +13,13 @@ INCLUDE DSK1.COLORS
 INCLUDE DSK1.RANDOM
 INCLUDE DSK1.SOUND
 INCLUDE DSK1.JOYST
+INCLUDE DSK1.DEFER
 INCLUDE DSK1.MALLOC  \ simple low ram allocator
 
 \ utilities
 : VBLANK  ( Vaddr n -- ) BL VFILL ; \ fill VDP memory with space char
 : CLIP    ( n lo hi -- n') ROT MIN MAX ; \ CLIP n to lo  hi range
+: BETWEEN ( n lo hi -- ?)  1+ WITHIN ;
 
 \ simple faster, case structure. EXITs as soon as match is found
 : :CASE  ( n --) POSTPONE OVER=  POSTPONE IF  POSTPONE DROP ; IMMEDIATE
@@ -214,7 +216,9 @@ DECIMAL
 ;
 
  DECIMAL
-: MOVE-SHIP ( -- )
+DEFER MOVE-SHIP
+
+: KEY-MOVER ( -- )
     RPTKEY ON
     KEY?
     [CHAR] E :CASE  MOVE-UP     BREAK;  \ move ship up
@@ -224,7 +228,32 @@ DECIMAL
     STOP-MOVING
 ;
 
-\ : COLLISION?  ( -- ?) #SHIP POSITION >XY  GCHAR  BL <> ;
+: JOYST-MOVER ( -- )
+    0 JOYST
+    16 :CASE  MOVE-UP     BREAK;  \ move ship up
+    08 :CASE  MOVE-DOWN   BREAK;  \ move ship down
+  \ no key detected actions:
+    DROP
+    STOP-MOVING
+;
+
+: CONTROL-SELECTOR
+  BEGIN
+    PAGE
+    0 5 AT-XY ." Control Selector"
+
+    0 7 AT-XY ." Press 1 for Joystick 1"
+    0 9 AT-XY ." Press 2 for Keyboard"
+
+    KEY DUP [CHAR] 1  [CHAR] 2 BETWEEN 0=
+  WHILE
+      DROP HONK
+  REPEAT
+
+  [CHAR] 1 :CASE  ['] JOYST-MOVER IS MOVE-SHIP  BREAK;
+  [CHAR] 2 :CASE  ['] KEY-MOVER IS MOVE-SHIP    BREAK;
+  DROP
+;
 
 \ return true if ship position is over a space char (BL)
 : SAFE?       ( -- ?) #SHIP POSITION >XY  GCHAR BL = ;
@@ -405,6 +434,7 @@ VARIABLE SPEED
     AUTOMOTION
     GRAPHICS
     TITLE-PAGE
+    CONTROL-SELECTOR
     BEGIN
       GameInit
       .SCORE
@@ -421,9 +451,8 @@ VARIABLE SPEED
 \ Menu selection 5.
 
 : START   WARM DECIMAL  RUN ; \ 1ST Forth word that will RUN
-
   HEX 2000 H !         \ set heap to default value so it won't be saved
-DECIMAL
+  DECIMAL
   DP @      ORGDP !    \ save the booting dictionary pointer
   LATEST @  ORGLAST !  \ save the booting last word in the dictionary
 
