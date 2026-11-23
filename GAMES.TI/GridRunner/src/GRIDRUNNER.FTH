@@ -5,13 +5,14 @@
 \ re-write in Forth by Brian Fox for Camel99 Forth
 
 \ add some stuff to the kernel
-INCLUDE DSK1.TOOLS
+\ INCLUDE DSK1.TOOLS
 INCLUDE DSK1.VALUES
 INCLUDE DSK1.GRAFIX
 INCLUDE DSK1.AUTOMOTION
 INCLUDE DSK1.COLORS
 INCLUDE DSK1.RANDOM
 INCLUDE DSK1.SOUND
+INCLUDE DSK1.JOYST
 INCLUDE DSK1.MALLOC  \ simple low ram allocator
 
 \ utilities
@@ -42,8 +43,26 @@ ENUM PURPLE   \ 14
 ENUM GRAY     \ 15
 ENUM WHITE    \ 16
 DROP
+
+
 \ ======================================================================
 \                  >>> GAME CODE BEGINS <<<
+
+: TITLE-PAGE
+  PAGE  GRAY SCREEN
+  3   4 AT-XY ." ** G R I D  R U N N E R ** "
+
+  2   8 AT-XY ." based on TICodEd LSCROLL Demo"
+  5   9 AT-XY ." by STEVEB @atariage.com"
+
+  3  11 AT-XY ." enhancements by Brad Snyder"
+
+  4  17 AT-XY ." Adapted for Camel99 Forth"
+  7  18 AT-XY ."  by Brian Fox 2026"
+
+  7  23 AT-XY ." Press a key to begin"
+  KEY DROP
+;
 
 \ define variables.
 \ Used VALUES because they are normally faster in games
@@ -56,6 +75,7 @@ DECIMAL
 
 \ name sprites
   0 CONSTANT #SHIP          \ ship Sprite. (sprite no.s start at zero)
+  1 CONSTANT #FLAME         \ retro-rocket flame
 
 \ name some characters
   1 CONSTANT Brick
@@ -178,27 +198,30 @@ HEX
 83C8 CONSTANT RPTKEY \ magic address in TI-99 system
 
 DECIMAL
-: RETRO ( char -- ) \ fire retro-rocket
+: retro-rocket ( char -- ) \ fire retro-rocket
    -10 DB  \ engine volume up
  \ fire burst has no motion assigned. It follows the ship.
-   ORANGE  #SHIP POSITION  1 SPRITE
+   ORANGE  #SHIP POSITION  #FLAME SPRITE
 ;
 
-: MOVE-UP     LOJET RETRO    1 -11 #SHIP MOTION ;
-: MOVE-DOWN   HIJET RETRO    0 11  #SHIP MOTION ;
+: MOVE-UP     LOJET retro-rocket    1 -11 #SHIP MOTION ;
+: MOVE-DOWN   HIJET retro-rocket    0  11 #SHIP MOTION ;
 
+: STOP-MOVING
+    0 0 #SHIP MOTION         \ stop motion
+    #FLAME DELSPRITE
+    -24 DB                   \ engine "idle" volume
+;
 
  DECIMAL
 : MOVE-SHIP ( -- )
     RPTKEY ON
-    KEY?              \ Scan for a key.move
+    KEY?
     [CHAR] E :CASE  MOVE-UP     BREAK;  \ move ship up
     [CHAR] X :CASE  MOVE-DOWN   BREAK;  \ move ship down
   \ no key detected actions:
     DROP
-    0 0 #SHIP MOTION         \ stop motion
-    1 DELSPRITE
-    -24 DB
+    STOP-MOVING
 ;
 
 \ : COLLISION?  ( -- ?) #SHIP POSITION >XY  GCHAR  BL <> ;
@@ -380,6 +403,8 @@ VARIABLE SPEED
 
 : RUN
     AUTOMOTION
+    GRAPHICS
+    TITLE-PAGE
     BEGIN
       GameInit
       .SCORE
