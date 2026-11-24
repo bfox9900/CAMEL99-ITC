@@ -439,10 +439,10 @@ VARIABLE SPEED
   CLEAR ." Camel99 Forth" 500 MS CR ." Bye!"  1000 MS  BYE ;
 
 : RUN
-    AUTOMOTION
     GRAPHICS
     TITLE-PAGE
     CONTROL-SELECTOR
+    AUTOMOTION
     BEGIN
       GameInit
       .SCORE
