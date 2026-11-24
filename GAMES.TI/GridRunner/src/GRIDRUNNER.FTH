@@ -161,11 +161,19 @@ DECIMAL
 : DELSPRITES ( n 1st -- ) ]SAT SWAP 4* VBLANK ;
 
 \ divide by 8 using 3 shifts to the right (TEXT MACRO)
-: 8/   ( n -- n') S" 3 RSHIFT" EVALUATE ; IMMEDIATE
-
+\ : 8/   ( n -- n') S" 3 RSHIFT" EVALUATE ; IMMEDIATE
 \ Convert pixels to character coordinates
-: >XY  ( pix piy -- x y)  8/ 1+  SWAP 8/ 1+ SWAP ;
+\ : >XY  ( pix piy -- x y)  8/ 1+  SWAP 8/ 1+ SWAP ;
 
+\ Same word as above but using machine Forth to optimize
+HEX
+: 1+,    0584 , ; \ TOS INC,
+: 8/,    0834 , ; \ TOS 3 SRA,
+
+CODE 8/1+   ( n -- n')  8/, 1+, NEXT, ENDCODE
+: >XY  ( pix piy -- x y)  8/1+  SWAP  8/1+ SWAP ;
+
+DECIMAL
 \ Random motion vector -5 .. 5
 : RNDV ( -- dx dy) 11 RND 5 - ;
 
@@ -192,10 +200,7 @@ DECIMAL
     1 MOVING
 ;
 
-: CRASH \  Oh no, we crashed!
-  Explode      \ debris flying off of ship
-  DELALL       \ Clean up all the sprites
-;
+: CRASH  ( -- )  Explode  DELALL ;
 
 HEX
 83C8 CONSTANT RPTKEY \ magic address in TI-99 system
@@ -217,6 +222,7 @@ DECIMAL
 ;
 
  DECIMAL
+\ DEFER works like a forward reference. We assign what it does later
 DEFER MOVE-SHIP
 
 : KEY-MOVER ( -- )
